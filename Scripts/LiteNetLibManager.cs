@@ -23,12 +23,9 @@ public class LiteNetLibManager : MonoBehaviour
 
     [Header("Client & Server Configs")]
     public LogLevel currentLogLevel = LogLevel.Info;
-    [SerializeField]
-    private string connectKey = "SampleConnectKey";
-    [SerializeField]
-    private string networkAddress = "localhost";
-    [SerializeField]
-    private int networkPort = 7770;
+    public string connectKey = "SampleConnectKey";
+    public string networkAddress = "localhost";
+    public int networkPort = 7770;
     [SerializeField, Tooltip("enable messages receiving without connection. (with SendUnconnectedMessage method), default value: false")]
     private bool unconnectedMessagesEnabled;
     [SerializeField, Tooltip("enable nat punch messages, default value: false")]
@@ -250,6 +247,15 @@ public class LiteNetLibManager : MonoBehaviour
         return peers.TryGetValue(connectId, out peer);
     }
 
+    public GameObject NetworkSpawn(GameObject gameObject)
+    {
+        return Assets.NetworkSpawn(gameObject);
+    }
+
+    public bool NetworkDestroy(GameObject gameObject)
+    {
+        return Assets.NetworkDestroy(gameObject);
+    }
 
     public static byte[] StringToBytes(string str)
     {
