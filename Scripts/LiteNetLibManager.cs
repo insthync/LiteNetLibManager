@@ -190,6 +190,48 @@ public class LiteNetLibManager : MonoBehaviour
     {
     }
 
+    #region Network Events Callbacks
+    public virtual void OnServerNetworkError(NetEndPoint endPoint, int socketErrorCode)
+    {
+
+    }
+
+    public virtual void OnServerConnected(NetPeer peer)
+    {
+
+    }
+
+    public virtual void OnServerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+    {
+
+    }
+
+    public virtual void OnServerReceivedDiscoveryRequest(NetEndPoint endPoint)
+    {
+
+    }
+
+    public virtual void OnClientNetworkError(NetEndPoint endPoint, int socketErrorCode)
+    {
+
+    }
+
+    public virtual void OnClientConnected(NetPeer peer)
+    {
+
+    }
+
+    public virtual void OnClientDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+    {
+
+    }
+
+    public virtual void OnClientReceivedDiscoveryResponse(NetEndPoint endPoint)
+    {
+
+    }
+    #endregion
+
     #region Start / Stop Callbacks
     // Since there are multiple versions of StartServer, StartClient and StartHost, to reliably customize
     // their functionality, users would need override all the versions. Instead these callbacks are invoked
