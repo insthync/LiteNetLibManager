@@ -31,18 +31,20 @@ public class LiteNetLibServer : INetEventListener
     public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
     {
         if (messageType == UnconnectedMessageType.DiscoveryRequest)
-            manager.OnServerReceivedDiscoveryRequest(remoteEndPoint);
+            manager.OnServerReceivedDiscoveryRequest(remoteEndPoint, LiteNetLibManager.BytesToString(reader.Data));
     }
 
     public void OnPeerConnected(NetPeer peer)
     {
         if (manager.writeLog) Debug.LogError("[" + manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
+        manager.AddPeer(peer);
         manager.OnServerConnected(peer);
     }
 
     public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
     {
         if (manager.writeLog) Debug.LogError("[" + manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
+        manager.RemovePeer(peer);
         manager.OnServerDisconnected(peer, disconnectInfo);
     }
 }

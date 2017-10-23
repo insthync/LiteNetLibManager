@@ -31,7 +31,7 @@ public class LiteNetLibClient : INetEventListener
     public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
     {
         if (messageType == UnconnectedMessageType.DiscoveryResponse)
-            manager.OnClientReceivedDiscoveryResponse(remoteEndPoint);
+            manager.OnClientReceivedDiscoveryResponse(remoteEndPoint, LiteNetLibManager.BytesToString(reader.Data));
     }
 
     public void OnPeerConnected(NetPeer peer)

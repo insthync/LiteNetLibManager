@@ -44,7 +44,9 @@ public class LiteNetLibManager : MonoBehaviour
 
     [Header("Network Discovery")]
     [SerializeField, Tooltip("Allows receive DiscoveryRequests, default value: false")]
-    private bool discoveryEnabled; 
+    private bool discoveryEnabled;
+    public string discoveryRequestData;
+    public string discoveryResponseData;
 
     [Header("Server Only Configs")]
     [SerializeField]
@@ -58,6 +60,8 @@ public class LiteNetLibManager : MonoBehaviour
 
     [Header("Logging")]
     public bool writeLog;
+
+    protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
 
     public bool IsServer
     {
@@ -74,7 +78,20 @@ public class LiteNetLibManager : MonoBehaviour
         if (IsServer)
             server.netManager.PollEvents();
         if (IsClient)
+        {
             client.netManager.PollEvents();
+            if (discoveryEnabled)
+                client.netManager.SendDiscoveryRequest(StringToBytes(discoveryRequestData), networkPort);
+        }
+    }
+
+    protected virtual void OnDestroy()
+    {
+        isNetworkActive = false;
+        if (IsServer)
+            server.netManager.Stop();
+        if (IsClient)
+            client.netManager.Stop();
     }
 
     protected void SetConfigs(NetManager netManager)
@@ -142,8 +159,7 @@ public class LiteNetLibManager : MonoBehaviour
         networkAddress = "localhost";
         return StartClient();
     }
-
-
+    
     public void StopHost()
     {
         OnStopHost();
@@ -164,6 +180,7 @@ public class LiteNetLibManager : MonoBehaviour
         if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
         server.netManager.Stop();
         server = null;
+        peers.Clear();
     }
 
     public void StopClient()
@@ -178,6 +195,40 @@ public class LiteNetLibManager : MonoBehaviour
         if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
         client.netManager.Stop();
         client = null;
+    }
+
+    public void AddPeer(NetPeer peer)
+    {
+        if (peer == null)
+            return;
+        peers.Add(peer.ConnectId, peer);
+    }
+
+    public bool RemovePeer(NetPeer peer)
+    {
+        if (peer == null)
+            return false;
+        return peers.Remove(peer.ConnectId);
+    }
+
+    public bool TryGetPeer(long connectId, out NetPeer peer)
+    {
+        return peers.TryGetValue(connectId, out peer);
+    }
+
+
+    public static byte[] StringToBytes(string str)
+    {
+        byte[] bytes = new byte[str.Length * sizeof(char)];
+        System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
+        return bytes;
+    }
+
+    public static string BytesToString(byte[] bytes)
+    {
+        char[] chars = new char[bytes.Length / sizeof(char)];
+        System.Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
+        return new string(chars);
     }
 
     // ----------------------------- Message Registration --------------------------------
@@ -206,7 +257,7 @@ public class LiteNetLibManager : MonoBehaviour
 
     }
 
-    public virtual void OnServerReceivedDiscoveryRequest(NetEndPoint endPoint)
+    public virtual void OnServerReceivedDiscoveryRequest(NetEndPoint endPoint, string data)
     {
 
     }
@@ -226,7 +277,7 @@ public class LiteNetLibManager : MonoBehaviour
 
     }
 
-    public virtual void OnClientReceivedDiscoveryResponse(NetEndPoint endPoint)
+    public virtual void OnClientReceivedDiscoveryResponse(NetEndPoint endPoint, string data)
     {
 
     }
