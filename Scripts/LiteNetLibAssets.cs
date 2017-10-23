@@ -6,8 +6,8 @@ using UnityEngine;
 public class LiteNetLibAssets : MonoBehaviour
 {
     public LiteNetLibIdentity[] registeringPrefabs;
-    protected readonly Dictionary<string, GameObject> guidToPrefabs = new Dictionary<string, GameObject>();
-    protected readonly Dictionary<long, GameObject> spawnedObjects = new Dictionary<long, GameObject>();
+    protected readonly Dictionary<string, LiteNetLibIdentity> guidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
+    protected readonly Dictionary<long, LiteNetLibIdentity> spawnedObjects = new Dictionary<long, LiteNetLibIdentity>();
     protected long objectIdCounter = 0;
 
     private LiteNetLibManager manager;
@@ -21,6 +21,11 @@ public class LiteNetLibAssets : MonoBehaviour
         }
     }
 
+    public void ClearRegisterPrefabs()
+    {
+        guidToPrefabs.Clear();
+    }
+
     public void RegisterPrefabs()
     {
         foreach (var registeringPrefab in registeringPrefabs)
@@ -29,14 +34,9 @@ public class LiteNetLibAssets : MonoBehaviour
         }
     }
 
-    public void ClearRegisterPrefabs()
-    {
-        guidToPrefabs.Clear();
-    }
-
     public void RegisterPrefab(LiteNetLibIdentity prefab)
     {
-        guidToPrefabs.Add(prefab.assetId, prefab.gameObject);
+        guidToPrefabs.Add(prefab.assetId, prefab);
     }
 
     public bool UnregisterPrefab(LiteNetLibIdentity prefab)
@@ -44,7 +44,15 @@ public class LiteNetLibAssets : MonoBehaviour
         return guidToPrefabs.Remove(prefab.assetId);
     }
 
-    public GameObject NetworkSpawn(GameObject gameObject)
+    public void ClearSpawnedObjects()
+    {
+        foreach (var objectId in spawnedObjects.Keys)
+        {
+            NetworkDestroy(objectId);
+        }
+    }
+
+    public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
     {
         if (gameObject == null)
         {
@@ -55,7 +63,7 @@ public class LiteNetLibAssets : MonoBehaviour
         return NetworkSpawn(obj);
     }
 
-    public GameObject NetworkSpawn(LiteNetLibIdentity obj)
+    public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity obj)
     {
         if (obj == null)
         {
@@ -65,9 +73,9 @@ public class LiteNetLibAssets : MonoBehaviour
         return NetworkSpawn(obj.assetId);
     }
 
-    public GameObject NetworkSpawn(string assetId)
+    public LiteNetLibIdentity NetworkSpawn(string assetId)
     {
-        GameObject spawningObject = null;
+        LiteNetLibIdentity spawningObject = null;
         if (guidToPrefabs.TryGetValue(assetId, out spawningObject))
             spawnedObjects.Add(++objectIdCounter, spawningObject);
         else if (Manager.LogWarn)
@@ -98,10 +106,10 @@ public class LiteNetLibAssets : MonoBehaviour
 
     public bool NetworkDestroy(long objectId)
     {
-        GameObject spawnedObject;
+        LiteNetLibIdentity spawnedObject;
         if (spawnedObjects.TryGetValue(objectId, out spawnedObject) && spawnedObjects.Remove(objectId))
         {
-            Destroy(spawnedObject);
+            Destroy(spawnedObject.gameObject);
             return true;
         }
         else if (Manager.LogWarn)
