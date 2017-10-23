@@ -15,7 +15,7 @@ public class LiteNetLibBehaviour : MonoBehaviour {
         }
     }
 
-    public long ObjectId
+    public uint ObjectId
     {
         get { return Identity.objectId; }
     }

@@ -1,13 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class LiteNetLibAssets : MonoBehaviour
 {
     public LiteNetLibIdentity[] registeringPrefabs;
     protected readonly Dictionary<string, LiteNetLibIdentity> guidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
-    protected readonly Dictionary<long, LiteNetLibIdentity> spawnedObjects = new Dictionary<long, LiteNetLibIdentity>();
-    protected long objectIdCounter = 0;
+    protected readonly Dictionary<uint, LiteNetLibIdentity> spawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
     private LiteNetLibManager manager;
     public LiteNetLibManager Manager
@@ -35,11 +37,21 @@ public class LiteNetLibAssets : MonoBehaviour
 
     public void RegisterPrefab(LiteNetLibIdentity prefab)
     {
+        if (prefab == null)
+        {
+            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterPrefab - prefab is null.");
+            return;
+        }
         guidToPrefabs.Add(prefab.assetId, prefab);
     }
 
     public bool UnregisterPrefab(LiteNetLibIdentity prefab)
     {
+        if (prefab == null)
+        {
+            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::UnregisterPrefab - prefab is null.");
+            return false;
+        }
         return guidToPrefabs.Remove(prefab.assetId);
     }
 
@@ -55,28 +67,28 @@ public class LiteNetLibAssets : MonoBehaviour
     {
         if (gameObject == null)
         {
-            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - GameObject is null.");
+            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - gameObject is null.");
             return null;
         }
         var obj = gameObject.GetComponent<LiteNetLibIdentity>();
         return NetworkSpawn(obj);
     }
 
-    public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity obj)
+    public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity netObject)
     {
-        if (obj == null)
+        if (netObject == null)
         {
-            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - LiteNetLibIdentity is null.");
+            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - netObject is null.");
             return null;
         }
-        return NetworkSpawn(obj.assetId);
+        return NetworkSpawn(netObject.assetId);
     }
 
     public LiteNetLibIdentity NetworkSpawn(string assetId)
     {
         LiteNetLibIdentity spawningObject = null;
         if (guidToPrefabs.TryGetValue(assetId, out spawningObject))
-            spawnedObjects.Add(++objectIdCounter, spawningObject);
+            spawnedObjects.Add(LiteNetLibIdentity.GetNewObjectId(), spawningObject);
         else if (Manager.LogWarn)
             Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + assetId + " is not registered.");
         return spawningObject;
@@ -86,24 +98,24 @@ public class LiteNetLibAssets : MonoBehaviour
     {
         if (gameObject == null)
         {
-            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - GameObject is null.");
+            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - gameObject is null.");
             return false;
         }
         var obj = gameObject.GetComponent<LiteNetLibIdentity>();
         return NetworkDestroy(obj);
     }
 
-    public bool NetworkDestroy(LiteNetLibIdentity obj)
+    public bool NetworkDestroy(LiteNetLibIdentity netObject)
     {
-        if (obj == null)
+        if (netObject == null)
         {
-            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - LiteNetLibIdentity is null.");
+            if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - netObject is null.");
             return false;
         }
-        return NetworkDestroy(obj.objectId);
+        return NetworkDestroy(netObject.objectId);
     }
 
-    public bool NetworkDestroy(long objectId)
+    public bool NetworkDestroy(uint objectId)
     {
         LiteNetLibIdentity spawnedObject;
         if (spawnedObjects.TryGetValue(objectId, out spawnedObject) && spawnedObjects.Remove(objectId))
