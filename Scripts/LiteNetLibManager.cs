@@ -143,7 +143,7 @@ public class LiteNetLibManager : MonoBehaviour
         SetConfigs(Server.NetManager);
         if (!Server.NetManager.Start(networkPort))
         {
-            if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port:" + networkPort);
+            if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
             Server = null;
             return false;
         }
@@ -178,7 +178,7 @@ public class LiteNetLibManager : MonoBehaviour
 
     protected virtual LiteNetLibClient ConnectLocalClient()
     {
-        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StartHost port:" + networkPort);
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StartHost port: " + networkPort);
         networkAddress = "localhost";
         return StartClient();
     }
