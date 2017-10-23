@@ -6,18 +6,19 @@ using LiteNetLib.Utils;
 
 public class LiteNetLibServer : INetEventListener
 {
-    public LiteNetLibManager manager { get; protected set; }
-    public NetManager netManager { get; protected set; }
+    public LiteNetLibManager Manager { get; protected set; }
+    public NetManager NetManager { get; protected set; }
+
     public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey)
     {
-        this.manager = manager;
-        netManager = new NetManager(this, maxConnections, connectKey);
+        this.Manager = manager;
+        NetManager = new NetManager(this, maxConnections, connectKey);
     }
 
     public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
     {
-        if (manager.LogError) Debug.LogError("[" + manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
-        manager.OnServerNetworkError(endPoint, socketErrorCode);
+        if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
+        Manager.OnServerNetworkError(endPoint, socketErrorCode);
     }
 
     public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
@@ -31,20 +32,20 @@ public class LiteNetLibServer : INetEventListener
     public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
     {
         if (messageType == UnconnectedMessageType.DiscoveryRequest)
-            manager.OnServerReceivedDiscoveryRequest(remoteEndPoint, StringBytesConverter.ConvertToString(reader.Data));
+            Manager.OnServerReceivedDiscoveryRequest(remoteEndPoint, StringBytesConverter.ConvertToString(reader.Data));
     }
 
     public void OnPeerConnected(NetPeer peer)
     {
-        if (manager.LogInfo) Debug.Log("[" + manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
-        manager.AddPeer(peer);
-        manager.OnServerConnected(peer);
+        if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
+        Manager.AddPeer(peer);
+        Manager.OnServerConnected(peer);
     }
 
     public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
     {
-        if (manager.LogInfo) Debug.Log("[" + manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
-        manager.RemovePeer(peer);
-        manager.OnServerDisconnected(peer, disconnectInfo);
+        if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
+        Manager.RemovePeer(peer);
+        Manager.OnServerDisconnected(peer, disconnectInfo);
     }
 }

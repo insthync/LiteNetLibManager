@@ -5,7 +5,6 @@ using UnityEngine;
 [RequireComponent(typeof(LiteNetLibManager))]
 public class LiteNetLibManagerUI : MonoBehaviour
 {
-    public LiteNetLibManager manager;
     [SerializeField]
     public bool showGUI = true;
     [SerializeField]
@@ -13,9 +12,15 @@ public class LiteNetLibManagerUI : MonoBehaviour
     [SerializeField]
     public int offsetY;
 
-    void Awake()
+    private LiteNetLibManager manager;
+    public LiteNetLibManager Manager
     {
-        manager = GetComponent<LiteNetLibManager>();
+        get
+        {
+            if (manager == null)
+                manager = GetComponent<LiteNetLibManager>();
+            return manager;
+        }
     }
 
     void OnGUI()
@@ -24,71 +29,64 @@ public class LiteNetLibManagerUI : MonoBehaviour
             return;
 
         int xpos = 10 + offsetX;
-        int ypos = 40 + offsetY;
+        int ypos = 10 + offsetY;
         const int spacing = 24;
 
-        bool noConnection = (manager.client == null);
-
-        if (!manager.IsClient && !manager.IsServer)
+        bool noConnection = Manager.Client == null;
+        if (!Manager.IsClientConnected && !Manager.IsServer)
         {
             if (noConnection)
             {
-                if (Application.platform != RuntimePlatform.WebGLPlayer)
-                {
-                    if (GUI.Button(new Rect(xpos, ypos, 200, 20), "LAN Host(H)"))
-                    {
-                        manager.StartHost();
-                    }
-                    ypos += spacing;
-                }
-
-                if (GUI.Button(new Rect(xpos, ypos, 105, 20), "LAN Client(C)"))
-                {
-                    manager.StartClient();
-                }
-
-                manager.networkAddress = GUI.TextField(new Rect(xpos + 100, ypos, 95, 20), manager.networkAddress);
+                GUI.Label(new Rect(xpos, ypos, 100, 20), "Network Address");
+                Manager.networkAddress = GUI.TextField(new Rect(xpos + 105, ypos, 95, 20), Manager.networkAddress);
                 ypos += spacing;
 
-                if (GUI.Button(new Rect(xpos, ypos, 200, 20), "LAN Server Only(S)"))
-                {
-                    manager.StartServer();
-                }
+                GUI.Label(new Rect(xpos, ypos, 100, 20), "Network Port");
+                Manager.networkPort = int.Parse(GUI.TextField(new Rect(xpos + 105, ypos, 95, 20), "" + Manager.networkPort));
+                ypos += spacing;
+
+                if (GUI.Button(new Rect(xpos, ypos, 200, 20), "Start Host"))
+                    Manager.StartHost();
+                ypos += spacing;
+
+                if (GUI.Button(new Rect(xpos, ypos, 200, 20), "Start Client"))
+                    Manager.StartClient();
+                ypos += spacing;
+
+                if (GUI.Button(new Rect(xpos, ypos, 200, 20), "Start Server"))
+                    Manager.StartServer();
                 ypos += spacing;
             }
             else
             {
-                GUI.Label(new Rect(xpos, ypos, 200, 20), "Connecting to " + manager.networkAddress + ":" + manager.networkPort + "..");
+                GUI.Label(new Rect(xpos, ypos, 200, 20), "Connecting to " + Manager.networkAddress + ":" + Manager.networkPort + "..");
                 ypos += spacing;
-
-
+                
                 if (GUI.Button(new Rect(xpos, ypos, 200, 20), "Cancel Connection Attempt"))
                 {
-                    manager.StopClient();
+                    Manager.StopClient();
                 }
+                ypos += spacing;
             }
         }
         else
         {
-            if (manager.IsServer)
+            if (Manager.IsServer)
             {
-                string serverMsg = "Server: port=" + manager.networkPort;
-                GUI.Label(new Rect(xpos, ypos, 300, 20), serverMsg);
+                GUI.Label(new Rect(xpos, ypos, 300, 20), "Server: port=" + Manager.networkPort);
                 ypos += spacing;
             }
-            if (manager.IsClient)
+            if (Manager.IsClient)
             {
-                GUI.Label(new Rect(xpos, ypos, 300, 20), "Client: address=" + manager.networkAddress + " port=" + manager.networkPort);
+                GUI.Label(new Rect(xpos, ypos, 300, 20), "Client: address=" + Manager.networkAddress + " port=" + Manager.networkPort);
                 ypos += spacing;
             }
         }
 
-        if (manager.IsServer || manager.IsClient)
+        if (Manager.IsServer || Manager.IsClient)
         {
             if (GUI.Button(new Rect(xpos, ypos, 200, 20), "Stop (X)"))
-            {
-                manager.StopHost();
-            }
+                Manager.StopHost();
             ypos += spacing;
         }
     }

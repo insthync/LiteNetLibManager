@@ -17,9 +17,17 @@ public class LiteNetLibManager : MonoBehaviour
         Fatal = 5,
     };
 
-    public LiteNetLibClient client { get; protected set; }
-    public LiteNetLibServer server { get; protected set; }
-    public bool isNetworkActive { get; protected set; }
+    public LiteNetLibClient Client { get; protected set; }
+    public LiteNetLibServer Server { get; protected set; }
+    public bool IsServer { get { return Server != null; } }
+    public bool IsClient { get { return Client != null; } }
+    public bool IsClientConnected { get { return Client != null && Client.IsConnected; } }
+    public bool LogDev { get { return currentLogLevel <= LogLevel.Developer; } }
+    public bool LogDebug { get { return currentLogLevel <= LogLevel.Debug; } }
+    public bool LogInfo { get { return currentLogLevel <= LogLevel.Info; } }
+    public bool LogWarn { get { return currentLogLevel <= LogLevel.Warn; } }
+    public bool LogError { get { return currentLogLevel <= LogLevel.Error; } }
+    public bool LogFatal { get { return currentLogLevel <= LogLevel.Fatal; } }
 
     [Header("Client & Server Configs")]
     public LogLevel currentLogLevel = LogLevel.Info;
@@ -68,15 +76,7 @@ public class LiteNetLibManager : MonoBehaviour
     private int maxConnectAttempts = 10;
     
     protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
-
-
-    public bool LogDev { get { return currentLogLevel <= LogLevel.Developer; } }
-    public bool LogDebug { get { return currentLogLevel <= LogLevel.Debug; } }
-    public bool LogInfo { get { return currentLogLevel <= LogLevel.Info; } }
-    public bool LogWarn { get { return currentLogLevel <= LogLevel.Warn; } }
-    public bool LogError { get { return currentLogLevel <= LogLevel.Error; } }
-    public bool LogFatal { get { return currentLogLevel <= LogLevel.Fatal; } }
-
+    
     private LiteNetLibAssets assets;
     public LiteNetLibAssets Assets
     {
@@ -88,16 +88,6 @@ public class LiteNetLibManager : MonoBehaviour
         }
     }
 
-    public bool IsServer
-    {
-        get { return server != null; }
-    }
-
-    public bool IsClient
-    {
-        get { return client != null; }
-    }
-
     protected virtual void Awake()
     {
         Assets.ClearRegisterPrefabs();
@@ -107,22 +97,21 @@ public class LiteNetLibManager : MonoBehaviour
     protected virtual void Update()
     {
         if (IsServer)
-            server.netManager.PollEvents();
+            Server.NetManager.PollEvents();
         if (IsClient)
         {
-            client.netManager.PollEvents();
+            Client.NetManager.PollEvents();
             if (discoveryEnabled)
-                client.netManager.SendDiscoveryRequest(StringBytesConverter.ConvertToBytes(discoveryRequestData), networkPort);
+                Client.NetManager.SendDiscoveryRequest(StringBytesConverter.ConvertToBytes(discoveryRequestData), networkPort);
         }
     }
 
     protected virtual void OnDestroy()
     {
-        isNetworkActive = false;
         if (IsServer)
-            server.netManager.Stop();
+            Server.NetManager.Stop();
         if (IsClient)
-            client.netManager.Stop();
+            Client.NetManager.Stop();
     }
 
     protected void SetConfigs(NetManager netManager)
@@ -143,45 +132,39 @@ public class LiteNetLibManager : MonoBehaviour
         netManager.MaxConnectAttempts = maxConnectAttempts;
     }
 
-    public virtual bool StartServer()
+    public virtual void StartServer()
     {
-        if (server != null)
-            return true;
+        if (Server != null)
+            return;
 
         OnStartServer();
-        server = new LiteNetLibServer(this, maxConnections, connectKey);
+        Server = new LiteNetLibServer(this, maxConnections, connectKey);
         RegisterServerMessages();
-        SetConfigs(server.netManager);
-        server.netManager.Start(networkPort);
-
-        return isNetworkActive;
+        SetConfigs(Server.NetManager);
+        Server.NetManager.Start(networkPort);
     }
 
     public virtual LiteNetLibClient StartClient()
     {
-        if (client != null)
-            return client;
+        if (Client != null)
+            return Client;
 
-        client = new LiteNetLibClient(this, connectKey);
+        Client = new LiteNetLibClient(this, connectKey);
         RegisterClientMessages();
-        SetConfigs(client.netManager);
-        client.netManager.Start();
-        client.netManager.Connect(networkAddress, networkPort);
-        isNetworkActive = true;
-        OnStartClient(client);
-        return client;
+        SetConfigs(Client.NetManager);
+        Client.NetManager.Start();
+        Client.NetManager.Connect(networkAddress, networkPort);
+        OnStartClient(Client);
+        return Client;
     }
 
     public virtual LiteNetLibClient StartHost()
     {
         OnStartHost();
-        if (StartServer())
-        {
-            var localClient = ConnectLocalClient();
-            OnStartClient(localClient);
-            return localClient;
-        }
-        return null;
+        StartServer();
+        var localClient = ConnectLocalClient();
+        OnStartClient(localClient);
+        return localClient;
     }
 
     protected virtual LiteNetLibClient ConnectLocalClient()
@@ -201,31 +184,27 @@ public class LiteNetLibManager : MonoBehaviour
 
     public void StopServer()
     {
-        isNetworkActive = false;
-
-        if (server == null)
+        if (Server == null)
             return;
 
         OnStopServer();
 
         if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
-        server.netManager.Stop();
-        server = null;
+        Server.NetManager.Stop();
+        Server = null;
         peers.Clear();
     }
 
     public void StopClient()
     {
-        isNetworkActive = false;
-
-        if (client == null)
+        if (Client == null)
             return;
 
         OnStopClient();
 
         if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
-        client.netManager.Stop();
-        client = null;
+        Client.NetManager.Stop();
+        Client = null;
     }
 
     public void AddPeer(NetPeer peer)
