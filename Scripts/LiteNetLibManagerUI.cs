@@ -85,7 +85,7 @@ public class LiteNetLibManagerUI : MonoBehaviour
 
         if (Manager.IsServer || Manager.IsClient)
         {
-            if (GUI.Button(new Rect(xpos, ypos, 200, 20), "Stop (X)"))
+            if (GUI.Button(new Rect(xpos, ypos, 200, 20), "Stop"))
                 Manager.StopHost();
             ypos += spacing;
         }
