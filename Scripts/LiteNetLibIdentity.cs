@@ -7,7 +7,9 @@ using UnityEditor;
 
 public class LiteNetLibIdentity : MonoBehaviour
 {
+    [ShowOnly]
     public string assetId;
+    [ShowOnly]
     public long objectId;
 
 #if UNITY_EDITOR
