@@ -6,11 +6,22 @@ using LiteNetLib.Utils;
 
 public class LiteNetLibManager : MonoBehaviour
 {
+    public enum LogLevel : short
+    {
+        Developer = 0,
+        Debug = 1,
+        Info = 2,
+        Warn = 3,
+        Error = 4,
+        Fatal = 5,
+    };
+
     public LiteNetLibClient client { get; protected set; }
     public LiteNetLibServer server { get; protected set; }
     public bool isNetworkActive { get; protected set; }
 
     [Header("Client & Server Configs")]
+    public LogLevel currentLogLevel = LogLevel.Info;
     [SerializeField]
     private string connectKey = "SampleConnectKey";
     [SerializeField]
@@ -57,11 +68,18 @@ public class LiteNetLibManager : MonoBehaviour
     private int reconnectDelay = 500;
     [SerializeField, Tooltip("maximum connection attempts before client stops and call disconnect event, default value: 10")]
     private int maxConnectAttempts = 10;
+    
 
-    [Header("Logging")]
-    public bool writeLog;
-
+    protected LiteNetLibAssets assets;
     protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
+
+
+    public bool LogDev { get { return currentLogLevel <= LogLevel.Developer; } }
+    public bool LogDebug { get { return currentLogLevel <= LogLevel.Debug; } }
+    public bool LogInfo { get { return currentLogLevel <= LogLevel.Info; } }
+    public bool LogWarn { get { return currentLogLevel <= LogLevel.Warn; } }
+    public bool LogError { get { return currentLogLevel <= LogLevel.Error; } }
+    public bool LogFatal { get { return currentLogLevel <= LogLevel.Fatal; } }
 
     public bool IsServer
     {
@@ -71,6 +89,11 @@ public class LiteNetLibManager : MonoBehaviour
     public bool IsClient
     {
         get { return client != null; }
+    }
+
+    protected virtual void Awake()
+    {
+        assets = GetComponent<LiteNetLibAssets>();
     }
 
     protected virtual void Update()
@@ -155,7 +178,7 @@ public class LiteNetLibManager : MonoBehaviour
 
     protected virtual LiteNetLibClient ConnectLocalClient()
     {
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StartHost port:" + networkPort);
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StartHost port:" + networkPort);
         networkAddress = "localhost";
         return StartClient();
     }
@@ -177,7 +200,7 @@ public class LiteNetLibManager : MonoBehaviour
 
         OnStopServer();
 
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
         server.netManager.Stop();
         server = null;
         peers.Clear();
@@ -192,7 +215,7 @@ public class LiteNetLibManager : MonoBehaviour
 
         OnStopClient();
 
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
         client.netManager.Stop();
         client = null;
     }
@@ -292,7 +315,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStartHost()
     {
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStartHost");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStartHost");
     }
 
     /// <summary>
@@ -300,7 +323,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStartServer()
     {
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStartServer");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStartServer");
     }
 
     /// <summary>
@@ -309,7 +332,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// <param name="client"></param>
     public virtual void OnStartClient(LiteNetLibClient client)
     {
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStartClient");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStartClient");
     }
 
     /// <summary>
@@ -317,7 +340,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStopServer()
     {
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStopServer");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopServer");
     }
 
     /// <summary>
@@ -325,7 +348,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStopClient()
     {
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStopClient");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopClient");
     }
 
     /// <summary>
@@ -333,7 +356,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStopHost()
     {
-        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
+        if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
     }
     #endregion
 }

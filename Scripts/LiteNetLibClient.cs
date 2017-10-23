@@ -16,7 +16,7 @@ public class LiteNetLibClient : INetEventListener
 
     public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
     {
-        if (manager.writeLog) Debug.LogError("[" + manager.name + "] LiteNetLibClient::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
+        if (manager.LogError) Debug.LogError("[" + manager.name + "] LiteNetLibClient::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
         manager.OnClientNetworkError(endPoint, socketErrorCode);
     }
 
@@ -36,13 +36,13 @@ public class LiteNetLibClient : INetEventListener
 
     public void OnPeerConnected(NetPeer peer)
     {
-        if (manager.writeLog) Debug.LogError("[" + manager.name + "] LiteNetLibClient::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
+        if (manager.LogInfo) Debug.Log("[" + manager.name + "] LiteNetLibClient::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
         manager.OnClientConnected(peer);
     }
 
     public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
     {
-        if (manager.writeLog) Debug.LogError("[" + manager.name + "] LiteNetLibClient::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
+        if (manager.LogInfo) Debug.Log("[" + manager.name + "] LiteNetLibClient::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
         manager.OnClientDisconnected(peer, disconnectInfo);
     }
 }
