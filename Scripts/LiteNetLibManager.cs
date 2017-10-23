@@ -138,7 +138,7 @@ public class LiteNetLibManager : MonoBehaviour
 
     protected virtual LiteNetLibClient ConnectLocalClient()
     {
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple StartHost port:" + networkPort);
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StartHost port:" + networkPort);
         networkAddress = "localhost";
         return StartClient();
     }
@@ -161,7 +161,7 @@ public class LiteNetLibManager : MonoBehaviour
 
         OnStopServer();
 
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple StopServer");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
         server.netManager.Stop();
         server = null;
     }
@@ -175,7 +175,7 @@ public class LiteNetLibManager : MonoBehaviour
 
         OnStopClient();
 
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple StopClient");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
         client.netManager.Stop();
         client = null;
     }
@@ -190,8 +190,7 @@ public class LiteNetLibManager : MonoBehaviour
     {
     }
 
-    //------------------------------ Start & Stop callbacks -----------------------------------
-
+    #region Start / Stop Callbacks
     // Since there are multiple versions of StartServer, StartClient and StartHost, to reliably customize
     // their functionality, users would need override all the versions. Instead these callbacks are invoked
     // from all versions, so users only need to implement this one case.
@@ -200,7 +199,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStartHost()
     {
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple:OnStartHost");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStartHost");
     }
 
     /// <summary>
@@ -208,7 +207,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStartServer()
     {
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple:OnStartServer");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStartServer");
     }
 
     /// <summary>
@@ -217,7 +216,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// <param name="client"></param>
     public virtual void OnStartClient(LiteNetLibClient client)
     {
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple:OnStartClient");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStartClient");
     }
 
     /// <summary>
@@ -225,7 +224,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStopServer()
     {
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple:OnStopServer");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStopServer");
     }
 
     /// <summary>
@@ -233,7 +232,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStopClient()
     {
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple:OnStopClient");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStopClient");
     }
 
     /// <summary>
@@ -241,6 +240,7 @@ public class LiteNetLibManager : MonoBehaviour
     /// </summary>
     public virtual void OnStopHost()
     {
-        if (writeLog) Debug.Log("[" + name + "] NetworkManagerSimple:OnStopHost");
+        if (writeLog) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
     }
+    #endregion
 }
