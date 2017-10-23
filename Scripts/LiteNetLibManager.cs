@@ -247,7 +247,7 @@ public class LiteNetLibManager : MonoBehaviour
         return peers.TryGetValue(connectId, out peer);
     }
 
-    public GameObject NetworkSpawn(GameObject gameObject)
+    public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
     {
         return Assets.NetworkSpawn(gameObject);
     }
