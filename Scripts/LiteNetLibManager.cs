@@ -101,6 +101,12 @@ public class LiteNetLibManager : MonoBehaviour
         get { return client != null; }
     }
 
+    protected virtual void Awake()
+    {
+        Assets.ClearRegisterPrefabs();
+        Assets.RegisterPrefabs();
+    }
+
     protected virtual void Update()
     {
         if (IsServer)
