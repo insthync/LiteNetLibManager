@@ -132,16 +132,22 @@ public class LiteNetLibManager : MonoBehaviour
         netManager.MaxConnectAttempts = maxConnectAttempts;
     }
 
-    public virtual void StartServer()
+    public virtual bool StartServer()
     {
         if (Server != null)
-            return;
+            return true;
 
         OnStartServer();
         Server = new LiteNetLibServer(this, maxConnections, connectKey);
         RegisterServerMessages();
         SetConfigs(Server.NetManager);
-        Server.NetManager.Start(networkPort);
+        if (!Server.NetManager.Start(networkPort))
+        {
+            if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port:" + networkPort);
+            Server = null;
+            return false;
+        }
+        return true;
     }
 
     public virtual LiteNetLibClient StartClient()
@@ -161,10 +167,13 @@ public class LiteNetLibManager : MonoBehaviour
     public virtual LiteNetLibClient StartHost()
     {
         OnStartHost();
-        StartServer();
-        var localClient = ConnectLocalClient();
-        OnStartClient(localClient);
-        return localClient;
+        if (StartServer())
+        {
+            var localClient = ConnectLocalClient();
+            OnStartClient(localClient);
+            return localClient;
+        }
+        return null;
     }
 
     protected virtual LiteNetLibClient ConnectLocalClient()
