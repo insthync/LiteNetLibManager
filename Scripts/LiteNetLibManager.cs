@@ -4,6 +4,7 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
+[RequireComponent(typeof(LiteNetLibAssets))]
 public class LiteNetLibManager : MonoBehaviour
 {
     public enum LogLevel : short
@@ -69,8 +70,6 @@ public class LiteNetLibManager : MonoBehaviour
     [SerializeField, Tooltip("maximum connection attempts before client stops and call disconnect event, default value: 10")]
     private int maxConnectAttempts = 10;
     
-
-    protected LiteNetLibAssets assets;
     protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
 
 
@@ -81,6 +80,17 @@ public class LiteNetLibManager : MonoBehaviour
     public bool LogError { get { return currentLogLevel <= LogLevel.Error; } }
     public bool LogFatal { get { return currentLogLevel <= LogLevel.Fatal; } }
 
+    private LiteNetLibAssets assets;
+    public LiteNetLibAssets Assets
+    {
+        get
+        {
+            if (assets == null)
+                assets = GetComponent<LiteNetLibAssets>();
+            return assets;
+        }
+    }
+
     public bool IsServer
     {
         get { return server != null; }
@@ -89,11 +99,6 @@ public class LiteNetLibManager : MonoBehaviour
     public bool IsClient
     {
         get { return client != null; }
-    }
-
-    protected virtual void Awake()
-    {
-        assets = GetComponent<LiteNetLibAssets>();
     }
 
     protected virtual void Update()
