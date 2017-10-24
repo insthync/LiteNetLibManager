@@ -42,7 +42,7 @@ public class LiteNetLibAssets : MonoBehaviour
             if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterPrefab - prefab is null.");
             return;
         }
-        guidToPrefabs.Add(prefab.assetId, prefab);
+        guidToPrefabs[prefab.assetId] = prefab;
     }
 
     public bool UnregisterPrefab(LiteNetLibIdentity prefab)
@@ -88,7 +88,7 @@ public class LiteNetLibAssets : MonoBehaviour
     {
         LiteNetLibIdentity spawningObject = null;
         if (guidToPrefabs.TryGetValue(assetId, out spawningObject))
-            spawnedObjects.Add(LiteNetLibIdentity.GetNewObjectId(), spawningObject);
+            spawnedObjects[LiteNetLibIdentity.GetNewObjectId()] = spawningObject;
         else if (Manager.LogWarn)
             Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + assetId + " is not registered.");
         return spawningObject;
