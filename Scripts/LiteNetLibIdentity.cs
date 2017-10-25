@@ -102,9 +102,11 @@ namespace LiteNetLibHighLevel
             return false;
         }
 
-        public void Initial(LiteNetLibManager manager)
+        public void Initial(LiteNetLibManager manager, uint objectId = 0, long connectId = 0)
         {
             Manager = manager;
+            this.objectId = objectId;
+            this.connectId = connectId;
             InitialObjectId();
         }
 
