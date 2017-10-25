@@ -4,49 +4,52 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
-public class LiteNetLibServer : INetEventListener
+namespace LiteNetLibHighLevel
 {
-    public LiteNetLibManager Manager { get; protected set; }
-    public NetManager NetManager { get; protected set; }
-
-    public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey)
+    public class LiteNetLibServer : INetEventListener
     {
-        this.Manager = manager;
-        NetManager = new NetManager(this, maxConnections, connectKey);
-    }
+        public LiteNetLibManager Manager { get; protected set; }
+        public NetManager NetManager { get; protected set; }
 
-    public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
-    {
-        if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
-        Manager.OnServerNetworkError(endPoint, socketErrorCode);
-    }
+        public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey)
+        {
+            this.Manager = manager;
+            NetManager = new NetManager(this, maxConnections, connectKey);
+        }
 
-    public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
-    {
-    }
+        public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
+        {
+            if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
+            Manager.OnServerNetworkError(endPoint, socketErrorCode);
+        }
 
-    public void OnNetworkReceive(NetPeer peer, NetDataReader reader)
-    {
-        Manager.ServerReadPacket(peer, reader);
-    }
+        public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
+        {
+        }
 
-    public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
-    {
-        if (messageType == UnconnectedMessageType.DiscoveryRequest)
-            Manager.OnServerReceivedDiscoveryRequest(remoteEndPoint, StringBytesConverter.ConvertToString(reader.Data));
-    }
+        public void OnNetworkReceive(NetPeer peer, NetDataReader reader)
+        {
+            Manager.ServerReadPacket(peer, reader);
+        }
 
-    public void OnPeerConnected(NetPeer peer)
-    {
-        if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
-        Manager.AddPeer(peer);
-        Manager.OnServerConnected(peer);
-    }
+        public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
+        {
+            if (messageType == UnconnectedMessageType.DiscoveryRequest)
+                Manager.OnServerReceivedDiscoveryRequest(remoteEndPoint, StringBytesConverter.ConvertToString(reader.Data));
+        }
 
-    public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
-    {
-        if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
-        Manager.RemovePeer(peer);
-        Manager.OnServerDisconnected(peer, disconnectInfo);
+        public void OnPeerConnected(NetPeer peer)
+        {
+            if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
+            Manager.AddPeer(peer);
+            Manager.OnServerConnected(peer);
+        }
+
+        public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+        {
+            if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
+            Manager.RemovePeer(peer);
+            Manager.OnServerDisconnected(peer, disconnectInfo);
+        }
     }
 }

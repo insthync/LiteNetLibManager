@@ -5,127 +5,129 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-
-public class LiteNetLibIdentity : MonoBehaviour
+namespace LiteNetLibHighLevel
 {
-    public static uint HighestObjectId { get; private set; }
-    [ShowOnly]
-    public string assetId;
-    [ShowOnly]
-    public uint objectId;
+    public class LiteNetLibIdentity : MonoBehaviour
+    {
+        public static uint HighestObjectId { get; private set; }
+        [ShowOnly]
+        public string assetId;
+        [ShowOnly]
+        public uint objectId;
 #if UNITY_EDITOR
-    [Header("Helpers")]
-    public bool reorderSceneObjectId;
+        [Header("Helpers")]
+        public bool reorderSceneObjectId;
 #endif
 
 #if UNITY_EDITOR
-    protected virtual void OnValidate()
-    {
-        SetupIDs();
-        if (reorderSceneObjectId)
+        protected virtual void OnValidate()
         {
-            reorderSceneObjectId = false;
-            ReorderSceneObjectId();
+            SetupIDs();
+            if (reorderSceneObjectId)
+            {
+                reorderSceneObjectId = false;
+                ReorderSceneObjectId();
+            }
         }
-    }
 
-    private void AssignAssetID(GameObject prefab)
-    {
-        string path = AssetDatabase.GetAssetPath(prefab);
-        assetId = AssetDatabase.AssetPathToGUID(path);
-    }
-
-    private bool ThisIsAPrefab()
-    {
-        PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-        if (prefabType == PrefabType.Prefab)
-            return true;
-        return false;
-    }
-
-    private bool ThisIsASceneObjectWithPrefabParent(out GameObject prefab)
-    {
-        prefab = null;
-        PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-        if (prefabType == PrefabType.None)
-            return false;
-        prefab = (GameObject)PrefabUtility.GetPrefabParent(gameObject);
-        if (prefab == null)
+        private void AssignAssetID(GameObject prefab)
         {
-            Debug.LogError("Failed to find prefab parent for scene object [name:" + gameObject.name + "]");
-            return false;
+            string path = AssetDatabase.GetAssetPath(prefab);
+            assetId = AssetDatabase.AssetPathToGUID(path);
         }
-        return true;
-    }
 
-    private void SetupIDs()
-    {
-        GameObject prefab;
-        if (ThisIsAPrefab())
+        private bool ThisIsAPrefab()
         {
-            // This is a prefab
-            AssignAssetID(gameObject);
-            objectId = 0;
-        }
-        else if (ThisIsASceneObjectWithPrefabParent(out prefab))
-        {
-            // This is a scene object with prefab link
-            AssignAssetID(prefab);
-            if (objectId == 0 || IsSceneObjectExists(objectId))
-                objectId = GetNewObjectId();
-        }
-        else
-        {
-            // This is a pure scene object (Not a prefab)
-            assetId = string.Empty;
-            if (objectId == 0 || IsSceneObjectExists(objectId))
-                objectId = GetNewObjectId();
-        }
-    }
-#endif
-
-    public bool IsSceneObjectExists(uint objectId)
-    {
-        LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
-        foreach (LiteNetLibIdentity netObject in netObjects)
-        {
-            if (netObject == this)
-                continue;
-            if (netObject.objectId == objectId)
+            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
+            if (prefabType == PrefabType.Prefab)
                 return true;
+            return false;
         }
-        return false;
-    }
 
-    public static void ResetObjectId()
-    {
-        HighestObjectId = 0;
-    }
-
-    public static void ReorderSceneObjectId()
-    {
-        ResetObjectId();
-        LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
-        foreach (LiteNetLibIdentity netObject in netObjects)
+        private bool ThisIsASceneObjectWithPrefabParent(out GameObject prefab)
         {
-            netObject.objectId = ++HighestObjectId;
+            prefab = null;
+            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
+            if (prefabType == PrefabType.None)
+                return false;
+            prefab = (GameObject)PrefabUtility.GetPrefabParent(gameObject);
+            if (prefab == null)
+            {
+                Debug.LogError("Failed to find prefab parent for scene object [name:" + gameObject.name + "]");
+                return false;
+            }
+            return true;
         }
-    }
 
-    public static uint GetNewObjectId()
-    {
-        LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
-        if (HighestObjectId == 0)
+        private void SetupIDs()
         {
-            uint result = HighestObjectId;
+            GameObject prefab;
+            if (ThisIsAPrefab())
+            {
+                // This is a prefab
+                AssignAssetID(gameObject);
+                objectId = 0;
+            }
+            else if (ThisIsASceneObjectWithPrefabParent(out prefab))
+            {
+                // This is a scene object with prefab link
+                AssignAssetID(prefab);
+                if (objectId == 0 || IsSceneObjectExists(objectId))
+                    objectId = GetNewObjectId();
+            }
+            else
+            {
+                // This is a pure scene object (Not a prefab)
+                assetId = string.Empty;
+                if (objectId == 0 || IsSceneObjectExists(objectId))
+                    objectId = GetNewObjectId();
+            }
+        }
+#endif
+
+        public bool IsSceneObjectExists(uint objectId)
+        {
+            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
             foreach (LiteNetLibIdentity netObject in netObjects)
             {
-                if (netObject.objectId > result)
-                    result = netObject.objectId;
+                if (netObject == this)
+                    continue;
+                if (netObject.objectId == objectId)
+                    return true;
             }
-            HighestObjectId = result;
+            return false;
         }
-        ++HighestObjectId;
-        return HighestObjectId;
+
+        public static void ResetObjectId()
+        {
+            HighestObjectId = 0;
+        }
+
+        public static void ReorderSceneObjectId()
+        {
+            ResetObjectId();
+            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            foreach (LiteNetLibIdentity netObject in netObjects)
+            {
+                netObject.objectId = ++HighestObjectId;
+            }
+        }
+
+        public static uint GetNewObjectId()
+        {
+            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            if (HighestObjectId == 0)
+            {
+                uint result = HighestObjectId;
+                foreach (LiteNetLibIdentity netObject in netObjects)
+                {
+                    if (netObject.objectId > result)
+                        result = netObject.objectId;
+                }
+                HighestObjectId = result;
+            }
+            ++HighestObjectId;
+            return HighestObjectId;
+        }
     }
 }

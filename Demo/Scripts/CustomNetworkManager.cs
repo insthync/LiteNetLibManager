@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using LiteNetLibHighLevel;
 
 public class CustomNetworkManager : LiteNetLibManager {
     public static CustomNetworkManager Singleton { get; private set; }

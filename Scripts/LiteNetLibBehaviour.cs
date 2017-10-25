@@ -2,21 +2,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(LiteNetLibIdentity))]
-public class LiteNetLibBehaviour : MonoBehaviour {
-    private LiteNetLibIdentity identity;
-    public LiteNetLibIdentity Identity
+namespace LiteNetLibHighLevel
+{
+    [RequireComponent(typeof(LiteNetLibIdentity))]
+    public class LiteNetLibBehaviour : MonoBehaviour
     {
-        get
+        private LiteNetLibIdentity identity;
+        public LiteNetLibIdentity Identity
         {
-            if (identity == null)
-                identity = GetComponent<LiteNetLibIdentity>();
-            return identity;
+            get
+            {
+                if (identity == null)
+                    identity = GetComponent<LiteNetLibIdentity>();
+                return identity;
+            }
         }
-    }
 
-    public uint ObjectId
-    {
-        get { return Identity.objectId; }
+        public uint ObjectId
+        {
+            get { return Identity.objectId; }
+        }
     }
 }
