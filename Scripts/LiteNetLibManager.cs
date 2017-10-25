@@ -79,6 +79,8 @@ namespace LiteNetLibHighLevel
         private int maxConnectAttempts = 10;
 
         protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
+        protected readonly Dictionary<short, MessageHandlerDelegate> serverMessageHandlers = new Dictionary<short, MessageHandlerDelegate>();
+        protected readonly Dictionary<short, MessageHandlerDelegate> clientMessageHandlers = new Dictionary<short, MessageHandlerDelegate>();
 
         private LiteNetLibAssets assets;
         public LiteNetLibAssets Assets
@@ -240,12 +242,46 @@ namespace LiteNetLibHighLevel
 
         public void ServerReadPacket(NetPeer peer, NetDataReader reader)
         {
-            var messageType = reader.GetShort();
+            ReadPacket(peer, reader, serverMessageHandlers);
         }
 
         public void ClientReadPacket(NetPeer peer, NetDataReader reader)
         {
-            var messageType = reader.GetShort();
+            ReadPacket(peer, reader, clientMessageHandlers);
+        }
+
+        private void ReadPacket(NetPeer peer, NetDataReader reader, Dictionary<short, MessageHandlerDelegate> registerDict)
+        {
+            var msgType = reader.GetShort();
+            MessageHandlerDelegate handlerDelegate;
+            if (registerDict.TryGetValue(msgType, out handlerDelegate))
+            {
+                var messageHandler = new LiteNetLibMessageHandler();
+                messageHandler.msgType = msgType;
+                messageHandler.peer = peer;
+                messageHandler.reader = reader;
+                handlerDelegate.Invoke(messageHandler);
+            }
+        }
+
+        public void RegisterServerMessage(short msgType, MessageHandlerDelegate handlerDelegate)
+        {
+            serverMessageHandlers[msgType] = handlerDelegate;
+        }
+
+        public void UnregisterServerMessage(short msgType)
+        {
+            serverMessageHandlers.Remove(msgType);
+        }
+
+        public void RegisterClientMessage(short msgType, MessageHandlerDelegate handlerDelegate)
+        {
+            clientMessageHandlers[msgType] = handlerDelegate;
+        }
+
+        public void UnregisterClientMessage(short msgType)
+        {
+            clientMessageHandlers.Remove(msgType);
         }
 
         public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
