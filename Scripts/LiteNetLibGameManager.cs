@@ -38,7 +38,7 @@ namespace LiteNetLibHighLevel
         public override LiteNetLibClient StartClient()
         {
             var client = base.StartClient();
-            if (client != null)
+            if (client != null && !IsServer)
                 Assets.RegisterSceneObjects();
             return client;
         }
