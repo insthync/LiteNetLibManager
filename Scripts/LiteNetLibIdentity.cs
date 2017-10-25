@@ -10,14 +10,17 @@ namespace LiteNetLibHighLevel
     public class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
-        [ShowOnly]
-        public string assetId;
-        [ShowOnly]
-        public uint objectId;
+        [ShowOnly, SerializeField]
+        private string assetId;
+        [ShowOnly, SerializeField]
+        private uint objectId;
 #if UNITY_EDITOR
         [Header("Helpers")]
         public bool reorderSceneObjectId;
 #endif
+
+        public string AssetId { get { return assetId; } }
+        public uint ObjectId { get { return objectId; } }
 
 #if UNITY_EDITOR
         protected virtual void OnValidate()
@@ -72,15 +75,13 @@ namespace LiteNetLibHighLevel
             {
                 // This is a scene object with prefab link
                 AssignAssetID(prefab);
-                if (objectId == 0 || IsSceneObjectExists(objectId))
-                    objectId = GetNewObjectId();
+                InitialObjectId();
             }
             else
             {
                 // This is a pure scene object (Not a prefab)
                 assetId = string.Empty;
-                if (objectId == 0 || IsSceneObjectExists(objectId))
-                    objectId = GetNewObjectId();
+                InitialObjectId();
             }
         }
 #endif
@@ -96,6 +97,12 @@ namespace LiteNetLibHighLevel
                     return true;
             }
             return false;
+        }
+
+        public void InitialObjectId()
+        {
+            if (objectId == 0 || IsSceneObjectExists(objectId))
+                objectId = GetNewObjectId();
         }
 
         public static void ResetObjectId()

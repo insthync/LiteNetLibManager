@@ -44,7 +44,7 @@ namespace LiteNetLibHighLevel
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterPrefab - prefab is null.");
                 return;
             }
-            guidToPrefabs[prefab.assetId] = prefab;
+            guidToPrefabs[prefab.AssetId] = prefab;
         }
 
         public bool UnregisterPrefab(LiteNetLibIdentity prefab)
@@ -54,7 +54,7 @@ namespace LiteNetLibHighLevel
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::UnregisterPrefab - prefab is null.");
                 return false;
             }
-            return guidToPrefabs.Remove(prefab.assetId);
+            return guidToPrefabs.Remove(prefab.AssetId);
         }
 
         public void ClearSpawnedObjects()
@@ -62,6 +62,21 @@ namespace LiteNetLibHighLevel
             foreach (var objectId in spawnedObjects.Keys)
             {
                 NetworkDestroy(objectId);
+            }
+        }
+
+        public void RegisterSceneObjects()
+        {
+            if (spawnedObjects.Count > 0)
+            {
+                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterSceneObjects - Cannot register scene objects, they're already spawned or this is called after spawn any objects.");
+                return;
+            }
+            var netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            foreach (var netObject in netObjects)
+            {
+                if (netObject.ObjectId > 0)
+                    spawnedObjects[netObject.ObjectId] = netObject;
             }
         }
 
@@ -83,14 +98,18 @@ namespace LiteNetLibHighLevel
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - netObject is null.");
                 return null;
             }
-            return NetworkSpawn(netObject.assetId);
+            return NetworkSpawn(netObject.AssetId);
         }
 
         public LiteNetLibIdentity NetworkSpawn(string assetId)
         {
             LiteNetLibIdentity spawningObject = null;
             if (guidToPrefabs.TryGetValue(assetId, out spawningObject))
-                spawnedObjects[LiteNetLibIdentity.GetNewObjectId()] = spawningObject;
+            {
+                var spawnedObject = Instantiate(spawningObject);
+                spawnedObject.InitialObjectId();
+                spawnedObjects[spawnedObject.ObjectId] = spawnedObject;
+            }
             else if (Manager.LogWarn)
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + assetId + " is not registered.");
             return spawningObject;
@@ -114,7 +133,7 @@ namespace LiteNetLibHighLevel
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - netObject is null.");
                 return false;
             }
-            return NetworkDestroy(netObject.objectId);
+            return NetworkDestroy(netObject.ObjectId);
         }
 
         public bool NetworkDestroy(uint objectId)

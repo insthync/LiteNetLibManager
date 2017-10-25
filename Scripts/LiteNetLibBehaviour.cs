@@ -20,7 +20,7 @@ namespace LiteNetLibHighLevel
 
         public uint ObjectId
         {
-            get { return Identity.objectId; }
+            get { return Identity.ObjectId; }
         }
     }
 }
