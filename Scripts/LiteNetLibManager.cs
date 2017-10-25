@@ -7,7 +7,7 @@ using LiteNetLibHighLevel.Utils;
 
 namespace LiteNetLibHighLevel
 {
-    [RequireComponent(typeof(LiteNetLibAssets))]
+    [RequireComponent(typeof(LiteNetLibAssets)), RequireComponent(typeof(LiteNetLibMessageHandlers))]
     public class LiteNetLibManager : MonoBehaviour
     {
         public enum LogLevel : short
@@ -79,8 +79,6 @@ namespace LiteNetLibHighLevel
         private int maxConnectAttempts = 10;
 
         protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
-        protected readonly Dictionary<short, MessageHandlerDelegate> serverMessageHandlers = new Dictionary<short, MessageHandlerDelegate>();
-        protected readonly Dictionary<short, MessageHandlerDelegate> clientMessageHandlers = new Dictionary<short, MessageHandlerDelegate>();
 
         private LiteNetLibAssets assets;
         public LiteNetLibAssets Assets
@@ -90,6 +88,17 @@ namespace LiteNetLibHighLevel
                 if (assets == null)
                     assets = GetComponent<LiteNetLibAssets>();
                 return assets;
+            }
+        }
+
+        private LiteNetLibMessageHandlers messageHandlers;
+        public LiteNetLibMessageHandlers MessageHandlers
+        {
+            get
+            {
+                if (messageHandlers == null)
+                    messageHandlers = GetComponent<LiteNetLibMessageHandlers>();
+                return messageHandlers;
             }
         }
 
@@ -144,7 +153,7 @@ namespace LiteNetLibHighLevel
 
             OnStartServer();
             Server = new LiteNetLibServer(this, maxConnections, connectKey);
-            RegisterServerMessages();
+            MessageHandlers.RegisterServerMessages();
             SetConfigs(Server.NetManager);
             if (!Server.NetManager.Start(networkPort))
             {
@@ -161,7 +170,7 @@ namespace LiteNetLibHighLevel
                 return Client;
 
             Client = new LiteNetLibClient(this, connectKey);
-            RegisterClientMessages();
+            MessageHandlers.RegisterClientMessages();
             SetConfigs(Client.NetManager);
             Client.NetManager.Start();
             Client.NetManager.Connect(networkAddress, networkPort);
@@ -240,47 +249,7 @@ namespace LiteNetLibHighLevel
             return peers.TryGetValue(connectId, out peer);
         }
 
-        public void ServerReadPacket(NetPeer peer, NetDataReader reader)
-        {
-            ReadPacket(peer, reader, serverMessageHandlers);
-        }
-
-        public void ClientReadPacket(NetPeer peer, NetDataReader reader)
-        {
-            ReadPacket(peer, reader, clientMessageHandlers);
-        }
-
-        private void ReadPacket(NetPeer peer, NetDataReader reader, Dictionary<short, MessageHandlerDelegate> registerDict)
-        {
-            var msgType = reader.GetShort();
-            MessageHandlerDelegate handlerDelegate;
-            if (registerDict.TryGetValue(msgType, out handlerDelegate))
-            {
-                var messageHandler = new LiteNetLibMessageHandler(msgType, peer, reader);
-                handlerDelegate.Invoke(messageHandler);
-            }
-        }
-
-        public void RegisterServerMessage(short msgType, MessageHandlerDelegate handlerDelegate)
-        {
-            serverMessageHandlers[msgType] = handlerDelegate;
-        }
-
-        public void UnregisterServerMessage(short msgType)
-        {
-            serverMessageHandlers.Remove(msgType);
-        }
-
-        public void RegisterClientMessage(short msgType, MessageHandlerDelegate handlerDelegate)
-        {
-            clientMessageHandlers[msgType] = handlerDelegate;
-        }
-
-        public void UnregisterClientMessage(short msgType)
-        {
-            clientMessageHandlers.Remove(msgType);
-        }
-
+        #region Relates components functions
         public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
         {
             return Assets.NetworkSpawn(gameObject);
@@ -291,15 +260,34 @@ namespace LiteNetLibHighLevel
             return Assets.NetworkDestroy(gameObject);
         }
 
-        #region Messages Registeration
-        protected virtual void RegisterServerMessages()
+        public void ServerReadPacket(NetPeer peer, NetDataReader reader)
         {
-
+            MessageHandlers.ServerReadPacket(peer, reader);
         }
 
-        protected virtual void RegisterClientMessages()
+        public void ClientReadPacket(NetPeer peer, NetDataReader reader)
         {
+            MessageHandlers.ClientReadPacket(peer, reader);
+        }
 
+        public void RegisterServerMessage(short msgType, MessageHandlerDelegate handlerDelegate)
+        {
+            MessageHandlers.RegisterServerMessage(msgType, handlerDelegate);
+        }
+
+        public void UnregisterServerMessage(short msgType)
+        {
+            MessageHandlers.UnregisterServerMessage(msgType);
+        }
+
+        public void RegisterClientMessage(short msgType, MessageHandlerDelegate handlerDelegate)
+        {
+            MessageHandlers.RegisterClientMessage(msgType, handlerDelegate);
+        }
+
+        public void UnregisterClientMessage(short msgType)
+        {
+            MessageHandlers.UnregisterClientMessage(msgType);
         }
         #endregion
 
