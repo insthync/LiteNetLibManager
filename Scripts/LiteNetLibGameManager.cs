@@ -28,7 +28,10 @@ namespace LiteNetLibHighLevel
         public override bool StartServer()
         {
             if (base.StartServer())
+            {
                 Assets.RegisterSceneObjects();
+                return true;
+            }
             return false;
         }
 
