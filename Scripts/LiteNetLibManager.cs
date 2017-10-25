@@ -256,10 +256,7 @@ namespace LiteNetLibHighLevel
             MessageHandlerDelegate handlerDelegate;
             if (registerDict.TryGetValue(msgType, out handlerDelegate))
             {
-                var messageHandler = new LiteNetLibMessageHandler();
-                messageHandler.msgType = msgType;
-                messageHandler.peer = peer;
-                messageHandler.reader = reader;
+                var messageHandler = new LiteNetLibMessageHandler(msgType, peer, reader);
                 handlerDelegate.Invoke(messageHandler);
             }
         }

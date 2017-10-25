@@ -6,9 +6,16 @@ namespace LiteNetLibHighLevel
 {
     public class LiteNetLibMessageHandler
     {
-        public short msgType;
-        public NetPeer peer;
-        public NetDataReader reader;
+        public short msgType { get; private set; }
+        public NetPeer peer { get; private set; }
+        public NetDataReader reader { get; private set; }
+
+        public LiteNetLibMessageHandler(short msgType, NetPeer peer, NetDataReader reader)
+        {
+            this.msgType = msgType;
+            this.peer = peer;
+            this.reader = reader;
+        }
 
         public T ReadMessage<T>() where T : LiteNetLibMessageBase, new()
         {
