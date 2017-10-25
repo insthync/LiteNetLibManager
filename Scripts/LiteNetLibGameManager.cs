@@ -86,11 +86,15 @@ namespace LiteNetLibHighLevel
 
         public void SendClientReady()
         {
+            if (!IsClientConnected)
+                return;
             SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientReady);
         }
 
         public void SendServerSpawnObject(LiteNetLibIdentity identity)
         {
+            if (!IsServer)
+                return;
             foreach (var peer in peers.Values)
             {
                 SendServerSpawnObject(peer, identity);
@@ -99,12 +103,33 @@ namespace LiteNetLibHighLevel
 
         public void SendServerSpawnObject(NetPeer peer, LiteNetLibIdentity identity)
         {
+            if (!IsServer)
+                return;
             var message = new ServerSpawnObjectMessage();
             message.assetId = identity.AssetId;
             message.objectId = identity.ObjectId;
             message.connectId = identity.ConnectId;
             message.position = identity.transform.position;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnObject, message);
+        }
+
+        public void SendServerDestroyObject(uint objectId)
+        {
+            if (!IsServer)
+                return;
+            foreach (var peer in peers.Values)
+            {
+                SendServerDestroyObject(peer, objectId);
+            }
+        }
+
+        public void SendServerDestroyObject(NetPeer peer, uint objectId)
+        {
+            if (!IsServer)
+                return;
+            var message = new ServerDestroyObjectMessage();
+            message.objectId = objectId;
+            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
@@ -123,13 +148,20 @@ namespace LiteNetLibHighLevel
 
         protected virtual void HandleServerSpawnObject(LiteNetLibMessageHandler messageHandler)
         {
+            // Object spawned at server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
             var message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
             Assets.NetworkSpawn(message.assetId, message.position, message.objectId, message.connectId);
         }
 
         protected virtual void HandleServerDestroyObject(LiteNetLibMessageHandler messageHandler)
         {
-
+            // Object spawned at server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
+            var message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
+            Assets.NetworkDestroy(message.objectId);
         }
 
         protected virtual void HandleServerUpdateSyncField(LiteNetLibMessageHandler messageHandler)
