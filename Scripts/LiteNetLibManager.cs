@@ -80,17 +80,6 @@ namespace LiteNetLibHighLevel
 
         protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
 
-        private LiteNetLibAssets assets;
-        public LiteNetLibAssets Assets
-        {
-            get
-            {
-                if (assets == null)
-                    assets = GetComponent<LiteNetLibAssets>();
-                return assets;
-            }
-        }
-
         private LiteNetLibMessageHandlers messageHandlers;
         public LiteNetLibMessageHandlers MessageHandlers
         {
@@ -102,11 +91,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        protected virtual void Awake()
-        {
-            Assets.ClearRegisterPrefabs();
-            Assets.RegisterPrefabs();
-        }
+        protected virtual void Awake() { }
 
         protected virtual void Update()
         {
@@ -146,13 +131,9 @@ namespace LiteNetLibHighLevel
             netManager.MaxConnectAttempts = maxConnectAttempts;
         }
 
-        protected virtual void RegisterServerMessages()
-        {
-        }
+        protected virtual void RegisterServerMessages() { }
 
-        protected virtual void RegisterClientMessages()
-        {
-        }
+        protected virtual void RegisterClientMessages() { }
 
         public virtual bool StartServer()
         {
@@ -258,16 +239,6 @@ namespace LiteNetLibHighLevel
         }
 
         #region Relates components functions
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
-        {
-            return Assets.NetworkSpawn(gameObject);
-        }
-
-        public bool NetworkDestroy(GameObject gameObject)
-        {
-            return Assets.NetworkDestroy(gameObject);
-        }
-
         public void ServerReadPacket(NetPeer peer, NetDataReader reader)
         {
             MessageHandlers.ServerReadPacket(peer, reader);
@@ -300,45 +271,21 @@ namespace LiteNetLibHighLevel
         #endregion
 
         #region Network Events Callbacks
-        public virtual void OnServerNetworkError(NetEndPoint endPoint, int socketErrorCode)
-        {
+        public virtual void OnServerNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
 
-        }
+        public virtual void OnServerConnected(NetPeer peer) { }
 
-        public virtual void OnServerConnected(NetPeer peer)
-        {
+        public virtual void OnServerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
 
-        }
+        public virtual void OnServerReceivedDiscoveryRequest(NetEndPoint endPoint, string data) { }
 
-        public virtual void OnServerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
-        {
+        public virtual void OnClientNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
 
-        }
+        public virtual void OnClientConnected(NetPeer peer) { }
 
-        public virtual void OnServerReceivedDiscoveryRequest(NetEndPoint endPoint, string data)
-        {
+        public virtual void OnClientDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
 
-        }
-
-        public virtual void OnClientNetworkError(NetEndPoint endPoint, int socketErrorCode)
-        {
-
-        }
-
-        public virtual void OnClientConnected(NetPeer peer)
-        {
-
-        }
-
-        public virtual void OnClientDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
-        {
-
-        }
-
-        public virtual void OnClientReceivedDiscoveryResponse(NetEndPoint endPoint, string data)
-        {
-
-        }
+        public virtual void OnClientReceivedDiscoveryResponse(NetEndPoint endPoint, string data) { }
         #endregion
 
         #region Start / Stop Callbacks
