@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using LiteNetLibHighLevel.Utils;
 
 namespace LiteNetLibHighLevel
 {

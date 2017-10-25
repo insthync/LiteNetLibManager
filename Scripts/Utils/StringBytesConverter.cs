@@ -1,5 +1,4 @@
-﻿
-namespace LiteNetLibHighLevel.Utils
+﻿namespace LiteNetLibHighLevel.Utils
 {
     public class StringBytesConverter
     {
