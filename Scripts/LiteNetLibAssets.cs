@@ -72,11 +72,14 @@ namespace LiteNetLibHighLevel
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterSceneObjects - Cannot register scene objects, they're already spawned or this is called after spawn any objects.");
                 return;
             }
-            var netObjects = FindObjectsOfType<LiteNetLibIdentity>();
-            foreach (var netObject in netObjects)
+            var sceneObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            foreach (var sceneObject in sceneObjects)
             {
-                if (netObject.ObjectId > 0)
-                    spawnedObjects[netObject.ObjectId] = netObject;
+                if (sceneObject.ObjectId > 0)
+                {
+                    sceneObject.Initial(Manager);
+                    spawnedObjects[sceneObject.ObjectId] = sceneObject;
+                }
             }
         }
 
@@ -107,7 +110,7 @@ namespace LiteNetLibHighLevel
             if (guidToPrefabs.TryGetValue(assetId, out spawningObject))
             {
                 var spawnedObject = Instantiate(spawningObject);
-                spawnedObject.InitialObjectId();
+                spawnedObject.Initial(Manager);
                 spawnedObjects[spawnedObject.ObjectId] = spawnedObject;
             }
             else if (Manager.LogWarn)

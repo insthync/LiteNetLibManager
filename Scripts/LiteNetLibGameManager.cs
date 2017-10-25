@@ -25,6 +25,32 @@ namespace LiteNetLibHighLevel
             Assets.RegisterPrefabs();
         }
 
+        public override bool StartServer()
+        {
+            if (base.StartServer())
+                Assets.RegisterSceneObjects();
+            return false;
+        }
+
+        public override LiteNetLibClient StartClient()
+        {
+            var client = base.StartClient();
+            if (client != null)
+                Assets.RegisterSceneObjects();
+            return client;
+        }
+
+        protected override void RegisterServerMessages()
+        {
+            base.RegisterServerMessages();
+        }
+
+        protected override void RegisterClientMessages()
+        {
+            base.RegisterClientMessages();
+        }
+
+        #region Relates components functions
         public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
         {
             return Assets.NetworkSpawn(gameObject);
@@ -34,6 +60,7 @@ namespace LiteNetLibHighLevel
         {
             return Assets.NetworkDestroy(gameObject);
         }
+        #endregion
     }
 }
 

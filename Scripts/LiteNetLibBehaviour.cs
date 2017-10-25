@@ -18,9 +18,34 @@ namespace LiteNetLibHighLevel
             }
         }
 
+        public long ConnectId
+        {
+            get { return Identity.ConnectId; }
+        }
+
         public uint ObjectId
         {
             get { return Identity.ObjectId; }
+        }
+
+        public LiteNetLibManager Manager
+        {
+            get { return Identity.Manager; }
+        }
+
+        public bool IsServer
+        {
+            get { return Manager.IsServer; }
+        }
+
+        public bool IsClient
+        {
+            get { return Manager.IsClient; }
+        }
+        
+        public bool IsLocalClient
+        {
+            get { return ConnectId == Manager.Client.Peer.ConnectId; }
         }
     }
 }

@@ -14,13 +14,16 @@ namespace LiteNetLibHighLevel
         private string assetId;
         [ShowOnly, SerializeField]
         private uint objectId;
+        [ShowOnly, SerializeField]
+        private long connectId;
 #if UNITY_EDITOR
         [Header("Helpers")]
         public bool reorderSceneObjectId;
 #endif
-
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
+        public long ConnectId { get { return connectId; } }
+        public LiteNetLibManager Manager { get; protected set; }
 
 #if UNITY_EDITOR
         protected virtual void OnValidate()
@@ -99,7 +102,13 @@ namespace LiteNetLibHighLevel
             return false;
         }
 
-        public void InitialObjectId()
+        public void Initial(LiteNetLibManager manager)
+        {
+            Manager = manager;
+            InitialObjectId();
+        }
+
+        private void InitialObjectId()
         {
             if (objectId == 0 || IsSceneObjectExists(objectId))
                 objectId = GetNewObjectId();
