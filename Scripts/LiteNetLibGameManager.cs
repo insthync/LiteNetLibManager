@@ -34,7 +34,7 @@ namespace LiteNetLibHighLevel
         protected override void Awake()
         {
             base.Awake();
-            Assets.ClearRegisterPrefabs();
+            Assets.ClearRegisteredPrefabs();
             Assets.RegisterPrefabs();
         }
 
@@ -70,6 +70,24 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.ServerRpc, HandleServerRpc);
+        }
+
+        public override void OnClientConnected(NetPeer peer)
+        {
+            base.OnClientConnected(peer);
+            SendClientReady();
+        }
+
+        public override void OnStopServer()
+        {
+            base.OnStopServer();
+            Assets.ClearSpawnedObjects();
+        }
+
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            Assets.ClearSpawnedObjects();
         }
 
         #region Relates components functions

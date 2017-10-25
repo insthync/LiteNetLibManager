@@ -44,8 +44,8 @@ namespace LiteNetLibHighLevel
         public void OnPeerConnected(NetPeer peer)
         {
             if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibClient::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
-            Manager.OnClientConnected(peer);
             Peer = peer;
+            Manager.OnClientConnected(peer);
         }
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)

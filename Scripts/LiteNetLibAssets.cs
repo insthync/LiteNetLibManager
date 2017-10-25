@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -25,15 +26,16 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void ClearRegisterPrefabs()
+        public void ClearRegisteredPrefabs()
         {
             GuidToPrefabs.Clear();
         }
 
         public void RegisterPrefabs()
         {
-            foreach (var registeringPrefab in registeringPrefabs)
+            for (var i = 0; i < registeringPrefabs.Length; ++i)
             {
+                var registeringPrefab = registeringPrefabs[i];
                 RegisterPrefab(registeringPrefab);
             }
         }
@@ -60,22 +62,24 @@ namespace LiteNetLibHighLevel
 
         public void ClearSpawnedObjects()
         {
-            foreach (var objectId in SpawnedObjects.Keys)
+            var objectIds = SpawnedObjects.Keys.ToArray();
+            for (var i = objectIds.Length - 1; i >= 0; --i)
             {
-                NetworkDestroy(objectId);
+                var objectId = objectIds[i];
+                LiteNetLibIdentity spawnedObject;
+                if (!SceneObjects.ContainsKey(objectId) && 
+                    SpawnedObjects.TryGetValue(objectId, out spawnedObject) && 
+                    SpawnedObjects.Remove(objectId))
+                    Destroy(spawnedObject.gameObject);
             }
         }
 
         public void RegisterSceneObjects()
         {
-            if (SpawnedObjects.Count > 0)
-            {
-                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterSceneObjects - Cannot register scene objects, they're already spawned or this is called after spawn any objects.");
-                return;
-            }
             var sceneObjects = FindObjectsOfType<LiteNetLibIdentity>();
-            foreach (var sceneObject in sceneObjects)
+            for (var i = 0; i < sceneObjects.Length; ++i)
             {
+                var sceneObject = sceneObjects[i];
                 if (sceneObject.ObjectId > 0)
                 {
                     sceneObject.Initial(Manager);
@@ -108,6 +112,11 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibIdentity NetworkSpawn(string assetId, Vector3 position, uint objectId = 0, long connectId = 0)
         {
+            if (!Manager.IsNetworkActive)
+            {
+                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Network is not active cannot spawn");
+                return null;
+            }
             // Scene objects cannot be spawned
             if (SceneObjects.ContainsKey(objectId))
                 return null;
@@ -144,6 +153,11 @@ namespace LiteNetLibHighLevel
 
         public bool NetworkDestroy(uint objectId)
         {
+            if (!Manager.IsNetworkActive)
+            {
+                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Network is not active cannot destroy");
+                return false;
+            }
             // Scene objects cannot be destroyed
             if (SceneObjects.ContainsKey(objectId))
                 return false;
@@ -151,6 +165,8 @@ namespace LiteNetLibHighLevel
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && SpawnedObjects.Remove(objectId))
             {
                 Destroy(spawnedObject.gameObject);
+                if (Manager.IsServer)
+                    Manager.SendServerDestroyObject(objectId);
                 return true;
             }
             else if (Manager.LogWarn)
