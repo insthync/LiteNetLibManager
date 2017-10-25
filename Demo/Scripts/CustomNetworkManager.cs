@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLibHighLevel;
 
-public class CustomNetworkManager : LiteNetLibManager {
+public class CustomNetworkManager : LiteNetLibGameManager {
     public static CustomNetworkManager Singleton { get; private set; }
     protected override void Awake()
     {
