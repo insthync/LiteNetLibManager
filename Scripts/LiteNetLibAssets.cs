@@ -10,9 +10,9 @@ namespace LiteNetLibHighLevel
     public class LiteNetLibAssets : MonoBehaviour
     {
         public LiteNetLibIdentity[] registeringPrefabs;
-        protected readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
-        protected readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        protected readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        public readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
+        public readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        public readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
         private LiteNetLibGameManager manager;
         public LiteNetLibGameManager Manager
@@ -87,6 +87,11 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectId = 0)
         {
+            return NetworkSpawn(gameObject, Vector3.zero, objectId, connectId);
+        }
+
+        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, Vector3 position, uint objectId = 0, long connectId = 0)
+        {
             if (gameObject == null)
             {
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - gameObject is null.");
@@ -98,17 +103,23 @@ namespace LiteNetLibHighLevel
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
                 return null;
             }
-            return NetworkSpawn(identity.AssetId, objectId, connectId);
+            return NetworkSpawn(identity.AssetId, position, objectId, connectId);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(string assetId, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(string assetId, Vector3 position, uint objectId = 0, long connectId = 0)
         {
+            // Scene objects cannot be spawned
+            if (SceneObjects.ContainsKey(objectId))
+                return null;
             LiteNetLibIdentity spawningObject = null;
             if (GuidToPrefabs.TryGetValue(assetId, out spawningObject))
             {
                 var spawnedObject = Instantiate(spawningObject);
+                spawnedObject.transform.position = position;
                 spawnedObject.Initial(Manager, objectId, connectId);
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
+                if (Manager.IsServer)
+                    Manager.SendServerSpawnObject(spawnedObject);
             }
             else if (Manager.LogWarn)
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + assetId + " is not registered.");

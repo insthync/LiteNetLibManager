@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using LiteNetLibHighLevel.Messages;
 using LiteNetLibHighLevel.Utils;
 
 namespace LiteNetLibHighLevel
@@ -243,6 +244,26 @@ namespace LiteNetLibHighLevel
         public void ClientReadPacket(NetPeer peer, NetDataReader reader)
         {
             MessageHandlers.ClientReadPacket(peer, reader);
+        }
+
+        public void SendPacket<T>(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        {
+            MessageHandlers.SendPacket(writer, options, peer, msgType, messageData);
+        }
+
+        public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        {
+            MessageHandlers.SendPacket(options, peer, msgType, messageData);
+        }
+
+        public void SendPacket(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType)
+        {
+            MessageHandlers.SendPacket(writer, options, peer, msgType);
+        }
+
+        public void SendPacket(SendOptions options, NetPeer peer, short msgType)
+        {
+            MessageHandlers.SendPacket(options, peer, msgType);
         }
 
         public void RegisterServerMessage(short msgType, MessageHandlerDelegate handlerDelegate)

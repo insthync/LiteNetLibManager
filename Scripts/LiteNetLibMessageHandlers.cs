@@ -22,6 +22,8 @@ namespace LiteNetLibHighLevel
                 return manager;
             }
         }
+
+        private NetDataWriter writer = new NetDataWriter();
         
         public void ServerReadPacket(NetPeer peer, NetDataReader reader)
         {
@@ -31,6 +33,31 @@ namespace LiteNetLibHighLevel
         public void ClientReadPacket(NetPeer peer, NetDataReader reader)
         {
             ReadPacket(peer, reader, clientMessageHandlers);
+        }
+        
+        public void SendPacket<T>(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        {
+            writer.Reset();
+            writer.Put(msgType);
+            messageData.Serialize(writer);
+            peer.Send(writer, options);
+        }
+
+        public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        {
+            SendPacket(writer, options, peer, msgType, messageData);
+        }
+
+        public void SendPacket(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType)
+        {
+            writer.Reset();
+            writer.Put(msgType);
+            peer.Send(writer, options);
+        }
+
+        public void SendPacket(SendOptions options, NetPeer peer, short msgType)
+        {
+            SendPacket(writer, options, peer, msgType);
         }
 
         private void ReadPacket(NetPeer peer, NetDataReader reader, Dictionary<short, MessageHandlerDelegate> registerDict)
