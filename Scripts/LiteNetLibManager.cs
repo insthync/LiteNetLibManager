@@ -235,6 +235,16 @@ public class LiteNetLibManager : MonoBehaviour
         return peers.TryGetValue(connectId, out peer);
     }
 
+    public void ServerReadPacket(NetPeer peer, NetDataReader reader)
+    {
+        var messageType = reader.GetShort();
+    }
+
+    public void ClientReadPacket(NetPeer peer, NetDataReader reader)
+    {
+        var messageType = reader.GetShort();
+    }
+
     public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
     {
         return Assets.NetworkSpawn(gameObject);
@@ -245,15 +255,17 @@ public class LiteNetLibManager : MonoBehaviour
         return Assets.NetworkDestroy(gameObject);
     }
 
-    // ----------------------------- Message Registration --------------------------------
-
+    #region Messages Registeration
     protected virtual void RegisterServerMessages()
     {
+
     }
 
     protected virtual void RegisterClientMessages()
     {
+
     }
+    #endregion
 
     #region Network Events Callbacks
     public virtual void OnServerNetworkError(NetEndPoint endPoint, int socketErrorCode)

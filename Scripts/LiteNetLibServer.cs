@@ -27,6 +27,7 @@ public class LiteNetLibServer : INetEventListener
 
     public void OnNetworkReceive(NetPeer peer, NetDataReader reader)
     {
+        Manager.ServerReadPacket(peer, reader);
     }
 
     public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
