@@ -14,7 +14,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey)
         {
-            this.Manager = manager;
+            Manager = manager;
             NetManager = new NetManager(this, maxConnections, connectKey);
         }
 
