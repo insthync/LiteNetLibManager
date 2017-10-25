@@ -13,13 +13,13 @@ namespace LiteNetLibHighLevel
         protected readonly Dictionary<string, LiteNetLibIdentity> guidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
         protected readonly Dictionary<uint, LiteNetLibIdentity> spawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
-        private LiteNetLibManager manager;
-        public LiteNetLibManager Manager
+        private LiteNetLibGameManager manager;
+        public LiteNetLibGameManager Manager
         {
             get
             {
                 if (manager == null)
-                    manager = GetComponent<LiteNetLibManager>();
+                    manager = GetComponent<LiteNetLibGameManager>();
                 return manager;
             }
         }

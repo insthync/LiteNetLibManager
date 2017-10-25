@@ -63,15 +63,5 @@ namespace LiteNetLibHighLevel
         {
             clientMessageHandlers.Remove(msgType);
         }
-        
-        public virtual void RegisterServerMessages()
-        {
-
-        }
-
-        public virtual void RegisterClientMessages()
-        {
-
-        }
     }
 }

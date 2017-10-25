@@ -7,7 +7,7 @@ using LiteNetLibHighLevel.Utils;
 
 namespace LiteNetLibHighLevel
 {
-    [RequireComponent(typeof(LiteNetLibAssets)), RequireComponent(typeof(LiteNetLibMessageHandlers))]
+    [RequireComponent(typeof(LiteNetLibMessageHandlers))]
     public class LiteNetLibManager : MonoBehaviour
     {
         public enum LogLevel : short
@@ -146,6 +146,14 @@ namespace LiteNetLibHighLevel
             netManager.MaxConnectAttempts = maxConnectAttempts;
         }
 
+        protected virtual void RegisterServerMessages()
+        {
+        }
+
+        protected virtual void RegisterClientMessages()
+        {
+        }
+
         public virtual bool StartServer()
         {
             if (Server != null)
@@ -153,7 +161,7 @@ namespace LiteNetLibHighLevel
 
             OnStartServer();
             Server = new LiteNetLibServer(this, maxConnections, connectKey);
-            MessageHandlers.RegisterServerMessages();
+            RegisterServerMessages();
             SetConfigs(Server.NetManager);
             if (!Server.NetManager.Start(networkPort))
             {
@@ -170,7 +178,7 @@ namespace LiteNetLibHighLevel
                 return Client;
 
             Client = new LiteNetLibClient(this, connectKey);
-            MessageHandlers.RegisterClientMessages();
+            RegisterClientMessages();
             SetConfigs(Client.NetManager);
             Client.NetManager.Start();
             Client.NetManager.Connect(networkAddress, networkPort);
