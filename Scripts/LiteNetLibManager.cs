@@ -171,11 +171,7 @@ namespace LiteNetLibHighLevel
         {
             OnStartHost();
             if (StartServer())
-            {
-                var localClient = ConnectLocalClient();
-                OnStartClient(localClient);
-                return localClient;
-            }
+                return ConnectLocalClient();
             return null;
         }
 
