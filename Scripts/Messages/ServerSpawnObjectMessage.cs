@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using LiteNetLib.Utils;
 using UnityEngine;
 
-namespace LiteNetLibHighLevel.Messages
+namespace LiteNetLibHighLevel
 {
     public class ServerSpawnObjectMessage : LiteNetLibMessageBase
     {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
-using LiteNetLibHighLevel.Messages;
 
 namespace LiteNetLibHighLevel
 {

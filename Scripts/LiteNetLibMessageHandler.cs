@@ -1,6 +1,5 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
-using LiteNetLibHighLevel.Messages;
 
 namespace LiteNetLibHighLevel
 {

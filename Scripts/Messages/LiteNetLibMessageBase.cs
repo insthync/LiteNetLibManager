@@ -1,6 +1,6 @@
 ﻿using LiteNetLib.Utils;
 
-namespace LiteNetLibHighLevel.Messages
+namespace LiteNetLibHighLevel
 {
     public abstract class LiteNetLibMessageBase
     {

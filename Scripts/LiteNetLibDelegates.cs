@@ -1,6 +1,4 @@
-﻿using LiteNetLibHighLevel.Messages;
-
-namespace LiteNetLibHighLevel
+﻿namespace LiteNetLibHighLevel
 {
     public delegate void MessageHandlerDelegate(LiteNetLibMessageHandler messageHandler);
 }
