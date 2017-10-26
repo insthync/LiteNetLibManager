@@ -1,5 +1,4 @@
-﻿using LiteNetLib;
-using LiteNetLib.Utils;
+﻿using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
@@ -12,5 +11,13 @@ namespace LiteNetLibHighLevel
 
         public virtual void Deserialize(NetDataReader reader) { }
         public virtual void Serialize(NetDataWriter writer) { }
+    }
+
+    public class LiteNetLibFunctionParameter<T> : LiteNetLibFunctionParameter
+    {
+        public static implicit operator T(LiteNetLibFunctionParameter<T> parameter)
+        {
+            return (T)parameter.Value;
+        }
     }
 }
