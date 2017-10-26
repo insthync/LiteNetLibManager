@@ -5,7 +5,7 @@ using UnityEngine;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldVector2 : LiteNetLibSyncFieldBase<Vector2>
+    public class SyncFieldVector2 : LiteNetLibSyncField<Vector2>
     {
         public override bool IsValueChanged(Vector2 newValue)
         {

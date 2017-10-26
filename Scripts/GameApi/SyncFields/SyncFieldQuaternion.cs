@@ -5,7 +5,7 @@ using UnityEngine;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldQuaternion : LiteNetLibSyncFieldBase<Quaternion>
+    public class SyncFieldQuaternion : LiteNetLibSyncField<Quaternion>
     {
         public override bool IsValueChanged(Quaternion newValue)
         {

@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldFloat : LiteNetLibSyncFieldBase<float>
+    public class SyncFieldFloat : LiteNetLibSyncField<float>
     {
         public override bool IsValueChanged(float newValue)
         {

@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldULong : LiteNetLibSyncFieldBase<ulong>
+    public class SyncFieldULong : LiteNetLibSyncField<ulong>
     {
         public override bool IsValueChanged(ulong newValue)
         {

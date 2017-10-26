@@ -17,7 +17,7 @@ namespace LiteNetLibHighLevel
         }
     }
     
-    public abstract class LiteNetLibSyncFieldBase
+    public abstract class LiteNetLibSyncField
     {
         public SendOptions sendOptions;
         [ReadOnly, SerializeField]
@@ -27,22 +27,22 @@ namespace LiteNetLibHighLevel
             get { return behaviour; }
         }
 
-        [ShowOnly, SerializeField]
+        [ReadOnly, SerializeField]
         protected ushort fieldId;
         public ushort FieldId
         {
             get { return fieldId; }
         }
-        
-        public virtual void OnValidateNetworkFunctions(LiteNetLibBehaviour behaviour, ushort fieldId)
-        {
-            this.behaviour = behaviour;
-            this.fieldId = fieldId;
-        }
 
         public LiteNetLibGameManager Manager
         {
             get { return behaviour.Manager; }
+        }
+
+        public virtual void OnRegister(LiteNetLibBehaviour behaviour, ushort fieldId)
+        {
+            this.behaviour = behaviour;
+            this.fieldId = fieldId;
         }
 
         public SyncFieldInfo GetSyncFieldInfo()
@@ -54,7 +54,7 @@ namespace LiteNetLibHighLevel
         public virtual void Serialize(NetDataWriter writer) { }
     }
 
-    public abstract class LiteNetLibSyncFieldBase<T> : LiteNetLibSyncFieldBase
+    public abstract class LiteNetLibSyncField<T> : LiteNetLibSyncField
     {
         [ReadOnly, SerializeField]
         protected T value;
@@ -83,7 +83,7 @@ namespace LiteNetLibHighLevel
 
         public abstract bool IsValueChanged(T newValue);
 
-        public static implicit operator T(LiteNetLibSyncFieldBase<T> field)
+        public static implicit operator T(LiteNetLibSyncField<T> field)
         {
             return field.Value;
         }
