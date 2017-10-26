@@ -108,10 +108,7 @@ namespace LiteNetLibHighLevel
 
         protected virtual void OnDestroy()
         {
-            if (IsServer)
-                Server.NetManager.Stop();
-            if (IsClient)
-                Client.NetManager.Stop();
+            StopHost();
         }
 
         protected void SetConfigs(NetManager netManager)
