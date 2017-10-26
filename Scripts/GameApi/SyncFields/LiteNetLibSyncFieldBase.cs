@@ -8,12 +8,12 @@ namespace LiteNetLibHighLevel
     {
         public uint objectId;
         public int behaviourIndex;
-        public int fieldIndex;
-        public SyncFieldInfo(uint objectId, int behaviourIndex, int variableIndex)
+        public ushort fieldId;
+        public SyncFieldInfo(uint objectId, int behaviourIndex, ushort fieldId)
         {
             this.objectId = objectId;
             this.behaviourIndex = behaviourIndex;
-            this.fieldIndex = variableIndex;
+            this.fieldId = fieldId;
         }
     }
     
@@ -28,19 +28,17 @@ namespace LiteNetLibHighLevel
         }
 
         [ShowOnly, SerializeField]
-        protected int variableIndex;
-        public int VariableIndex
+        protected ushort fieldId;
+        public ushort FieldId
         {
-            get { return variableIndex; }
+            get { return fieldId; }
         }
-
-#if UNITY_EDITOR
-        public virtual void OnValidateIdentity(LiteNetLibBehaviour behaviour, int variableIndex)
+        
+        public virtual void OnValidateNetworkFunctions(LiteNetLibBehaviour behaviour, ushort fieldId)
         {
             this.behaviour = behaviour;
-            this.variableIndex = variableIndex;
+            this.fieldId = fieldId;
         }
-#endif
 
         public LiteNetLibGameManager Manager
         {
@@ -49,7 +47,7 @@ namespace LiteNetLibHighLevel
 
         public SyncFieldInfo GetSyncFieldInfo()
         {
-            return new SyncFieldInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, VariableIndex);
+            return new SyncFieldInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, FieldId);
         }
 
         public virtual void Deserialize(NetDataReader reader) { }
@@ -65,9 +63,14 @@ namespace LiteNetLibHighLevel
             get { return value; }
             set
             {
-                if (Behaviour == null || !Behaviour.IsServer)
+                if (Behaviour == null)
                 {
-                    Debug.LogError("Sync field error, manager is empty or not the server");
+                    Debug.LogError("Sync field error while set value, behaviour is empty");
+                    return;
+                }
+                if (!Behaviour.IsServer)
+                {
+                    Debug.LogError("Sync field error while set value, not the server");
                     return;
                 }
                 if (IsValueChanged(value))

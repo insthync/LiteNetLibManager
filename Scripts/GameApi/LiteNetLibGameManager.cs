@@ -82,12 +82,14 @@ namespace LiteNetLibHighLevel
         {
             base.OnStopServer();
             Assets.ClearSpawnedObjects();
+            LiteNetLibIdentity.ResetObjectId();
         }
 
         public override void OnStopClient()
         {
             base.OnStopClient();
             Assets.ClearSpawnedObjects();
+            LiteNetLibIdentity.ResetObjectId();
         }
 
         #region Relates components functions
@@ -172,13 +174,13 @@ namespace LiteNetLibHighLevel
             var syncFieldInfo = syncField.GetSyncFieldInfo();
             writer.Put(syncFieldInfo.objectId);
             writer.Put(syncFieldInfo.behaviourIndex);
-            writer.Put(syncFieldInfo.fieldIndex);
+            writer.Put(syncFieldInfo.fieldId);
             syncField.Serialize(writer);
         }
 
         protected void DeserializeSyncFieldInfo(NetDataReader reader, out SyncFieldInfo info)
         {
-            info = new SyncFieldInfo(reader.GetUInt(), reader.GetInt(), reader.GetInt());
+            info = new SyncFieldInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)

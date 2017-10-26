@@ -16,8 +16,7 @@ namespace LiteNetLibHighLevel
             get { return behaviourIndex; }
         }
 
-        [SerializeField, HideInInspector]
-        private List<LiteNetLibSyncFieldBase> syncFields = new List<LiteNetLibSyncFieldBase>();
+        private readonly Dictionary<ushort, LiteNetLibSyncFieldBase> syncFields = new Dictionary<ushort, LiteNetLibSyncFieldBase>();
 
         private LiteNetLibIdentity identity;
         public LiteNetLibIdentity Identity
@@ -60,34 +59,23 @@ namespace LiteNetLibHighLevel
             get { return Identity.IsLocalClient; }
         }
 
-#if UNITY_EDITOR
-        public virtual void OnValidateIdentity(int behaviourIndex)
+        public void OnValidateNetworkFunctions(int behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
-            syncFields.Clear();
-            var baseType = typeof(LiteNetLibSyncFieldBase);
-            var type = GetType();
-            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            foreach (var field in fields)
-            {
-                var fieldType = field.FieldType;
-                if (fieldType.BaseType.BaseType == baseType)
-                {
-                    var fieldValue = field.GetValue(this) as LiteNetLibSyncFieldBase;
-                    fieldValue.OnValidateIdentity(this, syncFields.Count);
-                    syncFields.Add(fieldValue);
-                }
-            }
         }
-#endif
+
+        public void RegisterSyncField(ushort id, LiteNetLibSyncFieldBase syncField)
+        {
+            syncField.OnValidateNetworkFunctions(this, id);
+            syncFields[id] = syncField;
+        }
 
         public void ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return;
-            if (info.fieldIndex < 0 || info.fieldIndex >= syncFields.Count)
-                return;
-            syncFields[info.fieldIndex].Deserialize(reader);
+            if (syncFields.ContainsKey(info.fieldId))
+                syncFields[info.fieldId].Deserialize(reader);
         }
     }
 }
