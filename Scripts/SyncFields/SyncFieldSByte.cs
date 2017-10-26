@@ -4,16 +4,16 @@ using LiteNetLib.Utils;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldInt : LiteNetLibSyncFieldBase<int>
+    public class SyncFieldSByte : LiteNetLibSyncFieldBase<sbyte>
     {
-        public override bool IsValueChanged(int newValue)
+        public override bool IsValueChanged(sbyte newValue)
         {
             return newValue != value;
         }
 
         public override void Deserialize(NetDataReader reader)
         {
-            value = reader.GetInt();
+            value = reader.GetSByte();
         }
 
         public override void Serialize(NetDataWriter writer)
