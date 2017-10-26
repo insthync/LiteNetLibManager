@@ -152,7 +152,7 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
 
-        public void SendServerUpdateSyncField<T>(LiteNetLibSyncFieldBase<T> syncField)
+        public void SendServerUpdateSyncField<T>(LiteNetLibSyncField<T> syncField)
         {
             if (!IsServer)
                 return;
@@ -162,14 +162,19 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendServerUpdateSyncField<T>(NetPeer peer, LiteNetLibSyncFieldBase<T> syncField)
+        public void SendServerUpdateSyncField<T>(NetPeer peer, LiteNetLibSyncField<T> syncField)
         {
             if (!IsServer)
                 return;
             SendPacket(syncField.sendOptions, peer, GameMsgTypes.ServerUpdateSyncField, (writer) => SerializeSyncField(writer, syncField));
         }
 
-        protected void SerializeSyncField<T>(NetDataWriter writer, LiteNetLibSyncFieldBase<T> syncField)
+        public void SendNetworkFunction(SendOptions sendOptions, LiteNetLibFunction netFunction)
+        {
+            // TODO: implement this
+        }
+
+        protected void SerializeSyncField<T>(NetDataWriter writer, LiteNetLibSyncField<T> syncField)
         {
             var syncFieldInfo = syncField.GetSyncFieldInfo();
             writer.Put(syncFieldInfo.objectId);

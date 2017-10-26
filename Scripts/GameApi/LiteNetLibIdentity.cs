@@ -12,11 +12,11 @@ namespace LiteNetLibHighLevel
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
-        [ShowOnly, SerializeField]
+        [ReadOnly, SerializeField]
         private string assetId;
-        [ShowOnly, SerializeField]
+        [ReadOnly, SerializeField]
         private uint objectId;
-        [ShowOnly, SerializeField]
+        [ReadOnly, SerializeField]
         private long connectId;
         [ReadOnly, SerializeField]
         private LiteNetLibGameManager manager;
