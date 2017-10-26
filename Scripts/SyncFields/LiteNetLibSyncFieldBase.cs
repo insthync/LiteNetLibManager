@@ -21,14 +21,14 @@ namespace LiteNetLibHighLevel
     {
         public SendOptions sendOptions;
         [ReadOnly, SerializeField]
-        private LiteNetLibBehaviour behaviour;
+        protected LiteNetLibBehaviour behaviour;
         public LiteNetLibBehaviour Behaviour
         {
             get { return behaviour; }
         }
 
         [ShowOnly, SerializeField]
-        private int variableIndex;
+        protected int variableIndex;
         public int VariableIndex
         {
             get { return variableIndex; }
@@ -59,7 +59,7 @@ namespace LiteNetLibHighLevel
     public abstract class LiteNetLibSyncFieldBase<T> : LiteNetLibSyncFieldBase
     {
         [ReadOnly, SerializeField]
-        private T value;
+        protected T value;
         public T Value
         {
             get { return value; }
@@ -70,11 +70,15 @@ namespace LiteNetLibHighLevel
                     Debug.LogError("Sync field error, manager is empty or not the server");
                     return;
                 }
-                if (this.value == null || !this.value.Equals(value))
+                if (IsValueChanged(value))
+                {
+                    this.value = value;
                     Manager.SendServerUpdateSyncField(this);
-                this.value = value;
+                }
             }
         }
+
+        public abstract bool IsValueChanged(T newValue);
 
         public static implicit operator T(LiteNetLibSyncFieldBase<T> field)
         {

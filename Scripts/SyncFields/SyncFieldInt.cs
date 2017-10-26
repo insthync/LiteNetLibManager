@@ -1,18 +1,24 @@
-﻿using LiteNetLib.Utils;
+﻿using System;
+using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
     [System.Serializable]
     public class SyncFieldInt : LiteNetLibSyncFieldBase<int>
     {
+        public override bool IsValueChanged(int newValue)
+        {
+            return newValue != value;
+        }
+
         public override void Deserialize(NetDataReader reader)
         {
-            Value = reader.GetInt();
+            value = reader.GetInt();
         }
 
         public override void Serialize(NetDataWriter writer)
         {
-            writer.Put(Value);
+            writer.Put(value);
         }
     }
 }
