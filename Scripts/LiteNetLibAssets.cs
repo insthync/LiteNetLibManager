@@ -10,7 +10,9 @@ namespace LiteNetLibHighLevel
 {
     public class LiteNetLibAssets : MonoBehaviour
     {
+        public LiteNetLibIdentity registeringPlayerPrefab;
         public LiteNetLibIdentity[] registeringPrefabs;
+        public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         public readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
         public readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         public readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
@@ -37,6 +39,11 @@ namespace LiteNetLibHighLevel
             {
                 var registeringPrefab = registeringPrefabs[i];
                 RegisterPrefab(registeringPrefab);
+            }
+            if (registeringPlayerPrefab != null)
+            {
+                PlayerPrefab = registeringPlayerPrefab;
+                RegisterPrefab(registeringPlayerPrefab);
             }
         }
 
