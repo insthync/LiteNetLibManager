@@ -136,10 +136,11 @@ namespace LiteNetLibHighLevel
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 if (Manager.IsServer)
                     Manager.SendServerSpawnObject(spawnedObject);
+                return spawnedObject;
             }
             else if (Manager.LogWarn)
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + assetId + " is not registered.");
-            return spawningObject;
+            return null;
         }
 
         public bool NetworkDestroy(GameObject gameObject)
