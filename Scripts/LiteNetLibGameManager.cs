@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
+using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
@@ -149,6 +150,37 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
 
+        public void SendServerUpdateSyncField<T>(LiteNetLibSyncFieldBase<T> syncField)
+        {
+            if (!IsServer)
+                return;
+            foreach (var peer in peers.Values)
+            {
+                SendServerUpdateSyncField(peer, syncField);
+            }
+        }
+
+        public void SendServerUpdateSyncField<T>(NetPeer peer, LiteNetLibSyncFieldBase<T> syncField)
+        {
+            if (!IsServer)
+                return;
+            SendPacket(syncField.sendOptions, peer, GameMsgTypes.ServerUpdateSyncField, (writer) => SerializeSyncField(writer, syncField));
+        }
+
+        protected void SerializeSyncField<T>(NetDataWriter writer, LiteNetLibSyncFieldBase<T> syncField)
+        {
+            var syncFieldInfo = syncField.GetSyncFieldInfo();
+            writer.Put(syncFieldInfo.objectId);
+            writer.Put(syncFieldInfo.behaviourIndex);
+            writer.Put(syncFieldInfo.fieldIndex);
+            syncField.Serialize(writer);
+        }
+
+        protected void DeserializeSyncFieldInfo(NetDataReader reader, out SyncFieldInfo info)
+        {
+            info = new SyncFieldInfo(reader.GetUInt(), reader.GetInt(), reader.GetInt());
+        }
+
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
             var spawnedObjects = Assets.SpawnedObjects.Values;
@@ -183,7 +215,15 @@ namespace LiteNetLibHighLevel
 
         protected virtual void HandleServerUpdateSyncField(LiteNetLibMessageHandler messageHandler)
         {
-
+            // Field updated at server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
+            var reader = messageHandler.reader;
+            SyncFieldInfo info;
+            DeserializeSyncFieldInfo(reader, out info);
+            LiteNetLibIdentity identity;
+            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
+                identity.ProcessSyncField(info, reader);
         }
 
         protected virtual void HandleServerRpc(LiteNetLibMessageHandler messageHandler)

@@ -4,10 +4,12 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
-    public class LiteNetLibIdentity : MonoBehaviour
+    [DisallowMultipleComponent]
+    public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
         [ShowOnly, SerializeField]
@@ -16,6 +18,8 @@ namespace LiteNetLibHighLevel
         private uint objectId;
         [ShowOnly, SerializeField]
         private long connectId;
+        [SerializeField, HideInInspector]
+        private List<LiteNetLibBehaviour> behaviours = new List<LiteNetLibBehaviour>();
 #if UNITY_EDITOR
         [Header("Helpers")]
         public bool reorderSceneObjectId;
@@ -23,16 +27,35 @@ namespace LiteNetLibHighLevel
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
-        public LiteNetLibManager Manager { get; protected set; }
+        public LiteNetLibGameManager Manager { get; private set; }
+        public bool IsServer
+        {
+            get { return Manager != null && Manager.IsServer; }
+        }
+        public bool IsClient
+        {
+            get { return Manager != null && Manager.IsClient; }
+        }
+        public bool IsLocalClient
+        {
+            get { return Manager != null && ConnectId == Manager.Client.Peer.ConnectId; }
+        }
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate()
+        private void OnValidate()
         {
             SetupIDs();
             if (reorderSceneObjectId)
             {
                 reorderSceneObjectId = false;
                 ReorderSceneObjectId();
+            }
+            behaviours.Clear();
+            var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
+            foreach (var behaviour in behaviourComponents)
+            {
+                behaviour.OnValidateIdentity(behaviours.Count);
+                behaviours.Add(behaviour);
             }
         }
 
@@ -89,6 +112,15 @@ namespace LiteNetLibHighLevel
         }
 #endif
 
+        public void ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
+        {
+            if (info.objectId != ObjectId)
+                return;
+            if (info.behaviourIndex < 0 || info.behaviourIndex >= behaviours.Count)
+                return;
+            behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
+        }
+
         public bool IsSceneObjectExists(uint objectId)
         {
             LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
@@ -102,7 +134,7 @@ namespace LiteNetLibHighLevel
             return false;
         }
 
-        public void Initial(LiteNetLibManager manager, uint objectId = 0, long connectId = 0)
+        public void Initial(LiteNetLibGameManager manager, uint objectId = 0, long connectId = 0)
         {
             Manager = manager;
             this.objectId = objectId;

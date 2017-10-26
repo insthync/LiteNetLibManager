@@ -22,7 +22,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        private NetDataWriter writer = new NetDataWriter();
+        public readonly NetDataWriter Writer = new NetDataWriter();
         
         public void ServerReadPacket(NetPeer peer, NetDataReader reader)
         {
@@ -33,18 +33,28 @@ namespace LiteNetLibHighLevel
         {
             ReadPacket(peer, reader, clientMessageHandlers);
         }
-        
-        public void SendPacket<T>(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+
+        public void SendPacket(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, System.Action<NetDataWriter> serializer)
         {
             writer.Reset();
             writer.Put(msgType);
-            messageData.Serialize(writer);
+            serializer(writer);
             peer.Send(writer, options);
+        }
+
+        public void SendPacket(SendOptions options, NetPeer peer, short msgType, System.Action<NetDataWriter> serializer)
+        {
+            SendPacket(Writer, options, peer, msgType, serializer);
+        }
+
+        public void SendPacket<T>(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        {
+            SendPacket(writer, options, peer, msgType, messageData.Serialize);
         }
 
         public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
         {
-            SendPacket(writer, options, peer, msgType, messageData);
+            SendPacket(Writer, options, peer, msgType, messageData);
         }
 
         public void SendPacket(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType)
@@ -56,7 +66,7 @@ namespace LiteNetLibHighLevel
 
         public void SendPacket(SendOptions options, NetPeer peer, short msgType)
         {
-            SendPacket(writer, options, peer, msgType);
+            SendPacket(Writer, options, peer, msgType);
         }
 
         private void ReadPacket(NetPeer peer, NetDataReader reader, Dictionary<short, MessageHandlerDelegate> registerDict)

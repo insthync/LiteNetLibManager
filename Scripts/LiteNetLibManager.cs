@@ -246,19 +246,14 @@ namespace LiteNetLibHighLevel
             MessageHandlers.ClientReadPacket(peer, reader);
         }
 
-        public void SendPacket<T>(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        public void SendPacket(SendOptions options, NetPeer peer, short msgType, System.Action<NetDataWriter> serializer)
         {
-            MessageHandlers.SendPacket(writer, options, peer, msgType, messageData);
+            MessageHandlers.SendPacket(options, peer, msgType, serializer);
         }
 
         public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
         {
             MessageHandlers.SendPacket(options, peer, msgType, messageData);
-        }
-
-        public void SendPacket(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType)
-        {
-            MessageHandlers.SendPacket(writer, options, peer, msgType);
         }
 
         public void SendPacket(SendOptions options, NetPeer peer, short msgType)
