@@ -109,13 +109,22 @@ namespace LiteNetLibHighLevel
         }
 #endif
 
-        public void ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
+        public LiteNetLibSyncField ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
-                return;
+                return null;
             if (info.behaviourIndex < 0 || info.behaviourIndex >= behaviours.Count)
-                return;
-            behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
+                return null;
+            return behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
+        }
+
+        public LiteNetLibFunction ProcessNetFunction(NetFunctionInfo info, NetDataReader reader, bool hookCallback)
+        {
+            if (info.objectId != ObjectId)
+                return null;
+            if (info.behaviourIndex < 0 || info.behaviourIndex >= behaviours.Count)
+                return null;
+            return behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
         }
 
         public bool IsSceneObjectExists(uint objectId)

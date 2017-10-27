@@ -4,12 +4,12 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
-    public struct SyncFunctionInfo
+    public struct NetFunctionInfo
     {
         public uint objectId;
         public int behaviourIndex;
         public ushort functionId;
-        public SyncFunctionInfo(uint objectId, int behaviourIndex, ushort functionId)
+        public NetFunctionInfo(uint objectId, int behaviourIndex, ushort functionId)
         {
             this.objectId = objectId;
             this.behaviourIndex = behaviourIndex;
@@ -17,10 +17,18 @@ namespace LiteNetLibHighLevel
         }
     }
 
+    public enum FunctionReceivers : byte
+    {
+        Target,
+        All,
+        Server,
+    }
+
     public class LiteNetLibFunction
     {
         private NetFunctionDelegate callback;
 
+        public SendOptions sendOptions;
         [ReadOnly, SerializeField]
         protected LiteNetLibBehaviour behaviour;
         public LiteNetLibBehaviour Behaviour
@@ -63,9 +71,9 @@ namespace LiteNetLibHighLevel
             this.functionId = functionId;
         }
 
-        public SyncFunctionInfo GetSyncFunctionInfo()
+        public NetFunctionInfo GetNetFunctionInfo()
         {
-            return new SyncFunctionInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, FunctionId);
+            return new NetFunctionInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, FunctionId);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -93,13 +101,32 @@ namespace LiteNetLibHighLevel
             callback();
         }
 
-        public void Call(SendOptions sendOptions, params object[] parameterValues)
+        public void Call(FunctionReceivers receivers, params object[] parameterValues)
         {
-            for (var i = 0; i < parameterValues.Length; ++i)
+            if (Parameters != null)
             {
-                Parameters[i].Value = parameterValues[i];
+                for (var i = 0; i < parameterValues.Length; ++i)
+                {
+                    Parameters[i].Value = parameterValues[i];
+                    if (i + 1 >= Parameters.Length)
+                        break;
+                }
             }
-            Manager.CallNetworkFunction(sendOptions, this);
+            Manager.CallNetFunction(receivers, this);
+        }
+
+        public void Call(long connectId, params object[] parameterValues)
+        {
+            if (Parameters != null)
+            {
+                for (var i = 0; i < parameterValues.Length; ++i)
+                {
+                    Parameters[i].Value = parameterValues[i];
+                    if (i + 1 >= Parameters.Length)
+                        break;
+                }
+            }
+            Manager.CallNetFunction(connectId, this);
         }
     }
 

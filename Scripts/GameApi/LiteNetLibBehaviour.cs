@@ -120,13 +120,13 @@ namespace LiteNetLibHighLevel
             netFunctionIds[id] = realId;
         }
 
-        public void CallNetFunction(string id, SendOptions sendOptions, params object[] parameters)
+        public void CallNetFunction(string id, FunctionReceivers receivers, params object[] parameters)
         {
             ushort realId;
             if (netFunctionIds.TryGetValue(id, out realId))
             {
                 var syncFunction = netFunctions[realId];
-                syncFunction.Call(sendOptions, parameters);
+                syncFunction.Call(receivers, parameters);
             }
             else
             {
@@ -135,37 +135,57 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
+        public void CallNetFunction(string id, long connectId, params object[] parameters)
+        {
+            ushort realId;
+            if (netFunctionIds.TryGetValue(id, out realId))
+            {
+                var syncFunction = netFunctions[realId];
+                syncFunction.Call(connectId, parameters);
+            }
+            else
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot call function, function [" + id + "] not found.");
+            }
+        }
+
+        public LiteNetLibSyncField ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
-                return;
+                return null;
             if (syncFields.ContainsKey(info.fieldId))
             {
                 var syncField = syncFields[info.fieldId];
                 syncField.Deserialize(reader);
+                return syncField;
             }
             else
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + info.fieldId + "] not found.");
             }
+            return null;
         }
 
-        public void ProcessNetFunction(SyncFunctionInfo info, NetDataReader reader)
+        public LiteNetLibFunction ProcessNetFunction(NetFunctionInfo info, NetDataReader reader, bool hookCallback)
         {
             if (info.objectId != ObjectId)
-                return;
+                return null;
             if (netFunctions.ContainsKey(info.functionId))
             {
-                var syncFunction = netFunctions[info.functionId];
-                syncFunction.Deserialize(reader);
-                syncFunction.HookCallback();
+                var netFunction = netFunctions[info.functionId];
+                netFunction.Deserialize(reader);
+                if (hookCallback)
+                    netFunction.HookCallback();
+                return netFunction;
             }
             else
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot process net function, functionId [" + info.functionId + "] not found.");
             }
+            return null;
         }
     }
 }
