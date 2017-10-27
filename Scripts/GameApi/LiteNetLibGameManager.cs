@@ -169,7 +169,7 @@ namespace LiteNetLibHighLevel
             SendPacket(syncField.sendOptions, peer, GameMsgTypes.ServerUpdateSyncField, (writer) => SerializeSyncField(writer, syncField));
         }
 
-        public void SendNetworkFunction(SendOptions sendOptions, LiteNetLibFunction netFunction)
+        public void CallNetworkFunction(SendOptions sendOptions, LiteNetLibFunction netFunction)
         {
             // TODO: implement this
         }

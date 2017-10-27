@@ -99,7 +99,7 @@ namespace LiteNetLibHighLevel
             {
                 Parameters[i].Value = parameterValues[i];
             }
-            Manager.SendNetworkFunction(sendOptions, this);
+            Manager.CallNetworkFunction(sendOptions, this);
         }
     }
 

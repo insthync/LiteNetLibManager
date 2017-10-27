@@ -17,7 +17,22 @@ namespace LiteNetLibHighLevel
         }
 
         private readonly Dictionary<ushort, LiteNetLibSyncField> syncFields = new Dictionary<ushort, LiteNetLibSyncField>();
+        private readonly Dictionary<string, ushort> syncFieldIds = new Dictionary<string, ushort>();
         private readonly Dictionary<ushort, LiteNetLibFunction> netFunctions = new Dictionary<ushort, LiteNetLibFunction>();
+        private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
+        private ushort syncFieldIdCounter = 0;
+        private ushort netFunctionIdCounter = 0;
+
+        private string typeName;
+        public string TypeName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(typeName))
+                    typeName = GetType().Name;
+                return typeName;
+            }
+        }
 
         private LiteNetLibIdentity identity;
         public LiteNetLibIdentity Identity
@@ -60,29 +75,63 @@ namespace LiteNetLibHighLevel
             get { return Identity.IsLocalClient; }
         }
 
-        public void OnValidateNetworkFunctions(int behaviourIndex)
+        public void ValidateBehaviour(int behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
         }
 
-        public void RegisterSyncField(ushort id, LiteNetLibSyncField syncField)
+        public void RegisterSyncField(string id, LiteNetLibSyncField syncField)
         {
-            syncField.OnRegister(this, id);
-            syncFields[id] = syncField;
-        }
-
-        public void RegisterNetFunction(ushort id, LiteNetLibFunction netFunction)
-        {
-            netFunction.OnRegister(this, id);
-            netFunctions[id] = netFunction;
-        }
-
-        public void CallNetFunction(ushort id, SendOptions sendOptions, params object[] parameters)
-        {
-            if (netFunctions.ContainsKey(id))
+            if (netFunctionIds.ContainsKey(id))
             {
-                var syncFunction = netFunctions[id];
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register sync field with existed id (" + id + ").");
+                return;
+            }
+            if (netFunctionIdCounter == ushort.MaxValue)
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register sync field it's exceeds limit.");
+                return;
+            }
+            var realId = ++syncFieldIdCounter;
+            syncField.OnRegister(this, realId);
+            syncFields[realId] = syncField;
+            syncFieldIds[id] = realId;
+        }
+
+        public void RegisterNetFunction(string id, LiteNetLibFunction netFunction)
+        {
+            if (netFunctionIds.ContainsKey(id))
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function with existed id [" + id + "].");
+                return;
+            }
+            if (netFunctionIdCounter == ushort.MaxValue)
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
+                return;
+            }
+            var realId = ++netFunctionIdCounter;
+            netFunction.OnRegister(this, realId);
+            netFunctions[realId] = netFunction;
+            netFunctionIds[id] = realId;
+        }
+
+        public void CallNetFunction(string id, SendOptions sendOptions, params object[] parameters)
+        {
+            ushort realId;
+            if (netFunctionIds.TryGetValue(id, out realId))
+            {
+                var syncFunction = netFunctions[realId];
                 syncFunction.Call(sendOptions, parameters);
+            }
+            else
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot call function, function [" + id + "] not found.");
             }
         }
 
@@ -95,6 +144,11 @@ namespace LiteNetLibHighLevel
                 var syncField = syncFields[info.fieldId];
                 syncField.Deserialize(reader);
             }
+            else
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + info.fieldId + "] not found.");
+            }
         }
 
         public void ProcessNetFunction(SyncFunctionInfo info, NetDataReader reader)
@@ -106,6 +160,11 @@ namespace LiteNetLibHighLevel
                 var syncFunction = netFunctions[info.functionId];
                 syncFunction.Deserialize(reader);
                 syncFunction.HookCallback();
+            }
+            else
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process net function, functionId [" + info.functionId + "] not found.");
             }
         }
     }

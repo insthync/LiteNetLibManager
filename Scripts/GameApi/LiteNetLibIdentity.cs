@@ -144,7 +144,7 @@ namespace LiteNetLibHighLevel
             var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
             foreach (var behaviour in behaviourComponents)
             {
-                behaviour.OnValidateNetworkFunctions(behaviours.Count);
+                behaviour.ValidateBehaviour(behaviours.Count);
                 behaviours.Add(behaviour);
             }
         }
