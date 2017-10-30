@@ -1,0 +1,17 @@
+﻿using LiteNetLib.Utils;
+
+namespace LiteNetLibHighLevel
+{
+    public class NetFieldBool : LiteNetLibNetField<bool>
+    {
+        public override void Deserialize(NetDataReader reader)
+        {
+            Value = reader.GetBool();
+        }
+
+        public override void Serialize(NetDataWriter writer)
+        {
+            writer.Put(Value);
+        }
+    }
+}

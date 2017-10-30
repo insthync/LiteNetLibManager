@@ -4,21 +4,11 @@ using LiteNetLib.Utils;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldFloat : LiteNetLibSyncField<float>
+    public class SyncFieldFloat : LiteNetLibSyncField<NetFieldFloat, float>
     {
         public override bool IsValueChanged(float newValue)
         {
-            return newValue != value;
-        }
-
-        public override void Deserialize(NetDataReader reader)
-        {
-            value = reader.GetFloat();
-        }
-
-        public override void Serialize(NetDataWriter writer)
-        {
-            writer.Put(value);
+            return newValue != Value;
         }
     }
 }

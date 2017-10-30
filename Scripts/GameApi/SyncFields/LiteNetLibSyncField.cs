@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using System;
 
 namespace LiteNetLibHighLevel
 {
@@ -16,7 +17,7 @@ namespace LiteNetLibHighLevel
             this.fieldId = fieldId;
         }
     }
-    
+
     public abstract class LiteNetLibSyncField
     {
         public SendOptions sendOptions;
@@ -51,17 +52,26 @@ namespace LiteNetLibHighLevel
             return new SyncFieldInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, FieldId);
         }
 
-        public virtual void Deserialize(NetDataReader reader) { }
-        public virtual void Serialize(NetDataWriter writer) { }
+        public abstract void Deserialize(NetDataReader reader);
+        public abstract void Serialize(NetDataWriter writer);
     }
 
-    public abstract class LiteNetLibSyncField<T> : LiteNetLibSyncField
+    public abstract class LiteNetLibSyncField<TField, TFieldType> : LiteNetLibSyncField 
+        where TField : LiteNetLibNetField<TFieldType>, new()
     {
-        [ReadOnly, SerializeField]
-        protected T value;
-        public T Value
+        protected TField field;
+        public TField Field
         {
-            get { return value; }
+            get
+            {
+                if (field == null)
+                    field = new TField();
+                return field;
+            }
+        }
+        public TFieldType Value
+        {
+            get { return Field.Value; }
             set
             {
                 if (Behaviour == null)
@@ -76,17 +86,27 @@ namespace LiteNetLibHighLevel
                 }
                 if (IsValueChanged(value))
                 {
-                    this.value = value;
+                    Field.Value = value;
                     Manager.SendServerUpdateSyncField(this);
                 }
             }
         }
 
-        public abstract bool IsValueChanged(T newValue);
+        public abstract bool IsValueChanged(TFieldType newValue);
 
-        public static implicit operator T(LiteNetLibSyncField<T> field)
+        public static implicit operator TFieldType(LiteNetLibSyncField<TField, TFieldType> field)
         {
             return field.Value;
+        }
+
+        public override sealed void Deserialize(NetDataReader reader)
+        {
+            Field.Deserialize(reader);
+        }
+
+        public override sealed void Serialize(NetDataWriter writer)
+        {
+            Field.Serialize(writer);
         }
     }
 }

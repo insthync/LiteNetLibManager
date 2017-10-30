@@ -44,8 +44,8 @@ namespace LiteNetLibHighLevel
         }
 
         [ReadOnly, SerializeField]
-        protected LiteNetLibFunctionParameter[] parameters;
-        public LiteNetLibFunctionParameter[] Parameters
+        protected LiteNetLibNetField[] parameters;
+        public LiteNetLibNetField[] Parameters
         {
             get { return parameters; }
         }
@@ -106,7 +106,7 @@ namespace LiteNetLibHighLevel
             {
                 for (var i = 0; i < parameterValues.Length; ++i)
                 {
-                    Parameters[i].Value = parameterValues[i];
+                    Parameters[i].SetValue(parameterValues[i]);
                     if (i + 1 >= Parameters.Length)
                         break;
                 }
@@ -120,7 +120,7 @@ namespace LiteNetLibHighLevel
             {
                 for (var i = 0; i < parameterValues.Length; ++i)
                 {
-                    Parameters[i].Value = parameterValues[i];
+                    Parameters[i].SetValue(parameterValues[i]);
                     if (i + 1 >= Parameters.Length)
                         break;
                 }
@@ -130,13 +130,13 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
         }
 
@@ -152,14 +152,14 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
         }
@@ -178,15 +178,15 @@ namespace LiteNetLibHighLevel
     }
     
     public class LiteNetLibFunction<T1, T2, T3> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -207,16 +207,16 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
-        where T4 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
+        where T4 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3, T4> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -239,17 +239,17 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
-        where T4 : LiteNetLibFunctionParameter, new()
-        where T5 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
+        where T4 : LiteNetLibNetField, new()
+        where T5 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -274,18 +274,18 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
-        where T4 : LiteNetLibFunctionParameter, new()
-        where T5 : LiteNetLibFunctionParameter, new()
-        where T6 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
+        where T4 : LiteNetLibNetField, new()
+        where T5 : LiteNetLibNetField, new()
+        where T6 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -312,19 +312,19 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
-        where T4 : LiteNetLibFunctionParameter, new()
-        where T5 : LiteNetLibFunctionParameter, new()
-        where T6 : LiteNetLibFunctionParameter, new()
-        where T7 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
+        where T4 : LiteNetLibNetField, new()
+        where T5 : LiteNetLibNetField, new()
+        where T6 : LiteNetLibNetField, new()
+        where T7 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -353,20 +353,20 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
-        where T4 : LiteNetLibFunctionParameter, new()
-        where T5 : LiteNetLibFunctionParameter, new()
-        where T6 : LiteNetLibFunctionParameter, new()
-        where T7 : LiteNetLibFunctionParameter, new()
-        where T8 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
+        where T4 : LiteNetLibNetField, new()
+        where T5 : LiteNetLibNetField, new()
+        where T6 : LiteNetLibNetField, new()
+        where T7 : LiteNetLibNetField, new()
+        where T8 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -397,21 +397,21 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
-        where T4 : LiteNetLibFunctionParameter, new()
-        where T5 : LiteNetLibFunctionParameter, new()
-        where T6 : LiteNetLibFunctionParameter, new()
-        where T7 : LiteNetLibFunctionParameter, new()
-        where T8 : LiteNetLibFunctionParameter, new()
-        where T9 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
+        where T4 : LiteNetLibNetField, new()
+        where T5 : LiteNetLibNetField, new()
+        where T6 : LiteNetLibNetField, new()
+        where T7 : LiteNetLibNetField, new()
+        where T8 : LiteNetLibNetField, new()
+        where T9 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -444,22 +444,22 @@ namespace LiteNetLibHighLevel
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : LiteNetLibFunction
-        where T1 : LiteNetLibFunctionParameter, new()
-        where T2 : LiteNetLibFunctionParameter, new()
-        where T3 : LiteNetLibFunctionParameter, new()
-        where T4 : LiteNetLibFunctionParameter, new()
-        where T5 : LiteNetLibFunctionParameter, new()
-        where T6 : LiteNetLibFunctionParameter, new()
-        where T7 : LiteNetLibFunctionParameter, new()
-        where T8 : LiteNetLibFunctionParameter, new()
-        where T9 : LiteNetLibFunctionParameter, new()
-        where T10 : LiteNetLibFunctionParameter, new()
+        where T1 : LiteNetLibNetField, new()
+        where T2 : LiteNetLibNetField, new()
+        where T3 : LiteNetLibNetField, new()
+        where T4 : LiteNetLibNetField, new()
+        where T5 : LiteNetLibNetField, new()
+        where T6 : LiteNetLibNetField, new()
+        where T7 : LiteNetLibNetField, new()
+        where T8 : LiteNetLibNetField, new()
+        where T9 : LiteNetLibNetField, new()
+        where T10 : LiteNetLibNetField, new()
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback;
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibFunctionParameter[1];
+            parameters = new LiteNetLibNetField[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();

@@ -1,17 +1,18 @@
 ﻿using LiteNetLib.Utils;
+using UnityEngine;
 
 namespace LiteNetLibHighLevel
 {
-    public class FunctionParameterInt : LiteNetLibFunctionParameter<int>
+    public class NetFieldUInt : LiteNetLibNetField<uint>
     {
         public override void Deserialize(NetDataReader reader)
         {
-            Value = reader.GetInt();
+            Value = reader.GetUInt();
         }
 
         public override void Serialize(NetDataWriter writer)
         {
-            writer.Put((int)Value);
+            writer.Put(Value);
         }
     }
 }

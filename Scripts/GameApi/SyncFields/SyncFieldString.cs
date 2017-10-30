@@ -4,21 +4,11 @@ using LiteNetLib.Utils;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldString : LiteNetLibSyncField<string>
+    public class SyncFieldString : LiteNetLibSyncField<NetFieldString, string>
     {
         public override bool IsValueChanged(string newValue)
         {
-            return value == null || (newValue != null && !newValue.Equals(value));
-        }
-
-        public override void Deserialize(NetDataReader reader)
-        {
-            value = reader.GetString();
-        }
-
-        public override void Serialize(NetDataWriter writer)
-        {
-            writer.Put(value);
+            return Value == null || (newValue != null && !newValue.Equals(Value));
         }
     }
 }

@@ -5,23 +5,11 @@ using UnityEngine;
 namespace LiteNetLibHighLevel
 {
     [Serializable]
-    public class SyncFieldVector3 : LiteNetLibSyncField<Vector3>
+    public class SyncFieldVector3 : LiteNetLibSyncField<NetFieldVector3, Vector3>
     {
         public override bool IsValueChanged(Vector3 newValue)
         {
-            return !newValue.Equals(value);
-        }
-
-        public override void Deserialize(NetDataReader reader)
-        {
-            value = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
-        }
-
-        public override void Serialize(NetDataWriter writer)
-        {
-            writer.Put(value.x);
-            writer.Put(value.y);
-            writer.Put(value.z);
+            return !newValue.Equals(Value);
         }
     }
 }
