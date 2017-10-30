@@ -71,6 +71,9 @@ namespace LiteNetLibHighLevel
                 return field;
             }
         }
+
+        [ReadOnly, SerializeField]
+        protected TFieldType value;
         public TFieldType Value
         {
             get { return Field.Value; }
@@ -88,7 +91,7 @@ namespace LiteNetLibHighLevel
                 }
                 if (IsValueChanged(value))
                 {
-                    Field.Value = value;
+                    Field.Value = this.value = value;
                     SendUpdate();
                 }
             }
