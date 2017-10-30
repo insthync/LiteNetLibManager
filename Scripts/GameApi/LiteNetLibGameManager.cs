@@ -259,6 +259,8 @@ namespace LiteNetLibHighLevel
 
         protected virtual void SpawnPlayer(NetPeer peer)
         {
+            if (Assets.PlayerPrefab == null)
+                return;
             var spawnedObject = Assets.NetworkSpawn(Assets.PlayerPrefab.AssetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
             spawnedObject.SendUpdateAllSyncFields(peer);
         }
