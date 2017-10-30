@@ -128,6 +128,22 @@ namespace LiteNetLibHighLevel
             return behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
         }
 
+        public void SendUpdateAllSyncFields()
+        {
+            foreach (var behaviour in behaviours)
+            {
+                behaviour.SendUpdateAllSyncFields();
+            }
+        }
+
+        public void SendUpdateAllSyncFields(NetPeer peer)
+        {
+            foreach (var behaviour in behaviours)
+            {
+                behaviour.SendUpdateAllSyncFields(peer);
+            }
+        }
+
         public bool IsSceneObjectExists(uint objectId)
         {
             LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();

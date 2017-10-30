@@ -257,19 +257,22 @@ namespace LiteNetLibHighLevel
             return new NetFunctionInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
         }
 
-        protected virtual void SpawnPlayer(long connectId)
+        protected virtual void SpawnPlayer(NetPeer peer)
         {
-            Assets.NetworkSpawn(Assets.PlayerPrefab.AssetId, Assets.GetPlayerSpawnPosition(), 0, connectId);
+            var spawnedObject = Assets.NetworkSpawn(Assets.PlayerPrefab.AssetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
+            spawnedObject.SendUpdateAllSyncFields(peer);
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
+            var peer = messageHandler.peer;
             var spawnedObjects = Assets.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
-                SendServerSpawnObject(messageHandler.peer, spawnedObject);
+                SendServerSpawnObject(peer, spawnedObject);
+                spawnedObject.SendUpdateAllSyncFields(peer);
             }
-            SpawnPlayer(messageHandler.peer.ConnectId);
+            SpawnPlayer(peer);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)

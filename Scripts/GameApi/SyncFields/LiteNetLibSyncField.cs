@@ -52,11 +52,13 @@ namespace LiteNetLibHighLevel
             return new SyncFieldInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, FieldId);
         }
 
+        public abstract void SendUpdate();
+        public abstract void SendUpdate(NetPeer peer);
         public abstract void Deserialize(NetDataReader reader);
         public abstract void Serialize(NetDataWriter writer);
     }
 
-    public abstract class LiteNetLibSyncField<TField, TFieldType> : LiteNetLibSyncField 
+    public abstract class LiteNetLibSyncField<TField, TFieldType> : LiteNetLibSyncField
         where TField : LiteNetLibNetField<TFieldType>, new()
     {
         protected TField field;
@@ -87,7 +89,7 @@ namespace LiteNetLibHighLevel
                 if (IsValueChanged(value))
                 {
                     Field.Value = value;
-                    Manager.SendServerUpdateSyncField(this);
+                    SendUpdate();
                 }
             }
         }
@@ -97,6 +99,20 @@ namespace LiteNetLibHighLevel
         public static implicit operator TFieldType(LiteNetLibSyncField<TField, TFieldType> field)
         {
             return field.Value;
+        }
+
+        public override sealed void SendUpdate()
+        {
+            if (!Behaviour.IsServer)
+                return;
+            Manager.SendServerUpdateSyncField(this);
+        }
+
+        public override sealed void SendUpdate(NetPeer peer)
+        {
+            if (!Behaviour.IsServer)
+                return;
+            Manager.SendServerUpdateSyncField(peer, this);
         }
 
         public override sealed void Deserialize(NetDataReader reader)

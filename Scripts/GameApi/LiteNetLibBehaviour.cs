@@ -187,5 +187,23 @@ namespace LiteNetLibHighLevel
             }
             return null;
         }
+
+        public void SendUpdateAllSyncFields()
+        {
+            var fields = syncFields.Values;
+            foreach (var field in fields)
+            {
+                field.SendUpdate();
+            }
+        }
+
+        public void SendUpdateAllSyncFields(NetPeer peer)
+        {
+            var fields = syncFields.Values;
+            foreach (var field in fields)
+            {
+                field.SendUpdate(peer);
+            }
+        }
     }
 }
