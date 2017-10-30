@@ -10,6 +10,9 @@ namespace LiteNetLibHighLevel
 {
     public class LiteNetLibAssets : MonoBehaviour
     {
+        private static int spawnPositionCounter = 0;
+        public bool playerSpawnRandomly;
+        public Vector3[] playerSpawnPositions;
         public LiteNetLibIdentity registeringPlayerPrefab;
         public LiteNetLibIdentity[] registeringPrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
@@ -180,6 +183,25 @@ namespace LiteNetLibHighLevel
             else if (Manager.LogWarn)
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Object Id: " + objectId + " is not spawned.");
             return false;
+        }
+
+        public Vector3 GetPlayerSpawnPosition()
+        {
+            if (playerSpawnPositions == null || playerSpawnPositions.Length == 0)
+                return Vector3.zero;
+            if (playerSpawnRandomly)
+                return playerSpawnPositions[Random.Range(0, playerSpawnPositions.Length)];
+            else
+            {
+                if (spawnPositionCounter >= playerSpawnPositions.Length)
+                    spawnPositionCounter = 0;
+                return playerSpawnPositions[spawnPositionCounter++];
+            }
+        }
+
+        public static void ResetSpawnPositionCounter()
+        {
+            spawnPositionCounter = 0;
         }
     }
 }

@@ -83,6 +83,7 @@ namespace LiteNetLibHighLevel
             base.OnStopServer();
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
+            LiteNetLibAssets.ResetSpawnPositionCounter();
         }
 
         public override void OnStopClient()
@@ -90,6 +91,7 @@ namespace LiteNetLibHighLevel
             base.OnStopClient();
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
+            LiteNetLibAssets.ResetSpawnPositionCounter();
         }
 
         #region Relates components functions
@@ -255,6 +257,11 @@ namespace LiteNetLibHighLevel
             return new NetFunctionInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
         }
 
+        protected virtual void SpawnPlayer(long connectId)
+        {
+            Assets.NetworkSpawn(Assets.PlayerPrefab.AssetId, Assets.GetPlayerSpawnPosition(), 0, connectId);
+        }
+
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
             var spawnedObjects = Assets.SpawnedObjects.Values;
@@ -262,6 +269,7 @@ namespace LiteNetLibHighLevel
             {
                 SendServerSpawnObject(messageHandler.peer, spawnedObject);
             }
+            SpawnPlayer(messageHandler.peer.ConnectId);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
