@@ -20,6 +20,7 @@ namespace LiteNetLibHighLevel
     public abstract class LiteNetLibSyncField
     {
         public SendOptions sendOptions;
+        public bool forOwnerOnly;
         [ReadOnly, SerializeField]
         protected LiteNetLibBehaviour behaviour;
         public LiteNetLibBehaviour Behaviour

@@ -4,6 +4,7 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using LiteNetLib;
 using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel

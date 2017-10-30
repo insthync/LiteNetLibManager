@@ -156,9 +156,18 @@ namespace LiteNetLibHighLevel
         {
             if (!IsServer)
                 return;
-            foreach (var peer in peers.Values)
+            if (syncField.forOwnerOnly)
             {
-                SendServerUpdateSyncField(peer, syncField);
+                var connectId = syncField.Behaviour.ConnectId;
+                if (peers.ContainsKey(connectId))
+                    SendServerUpdateSyncField(peers[connectId], syncField);
+            }
+            else
+            {
+                foreach (var peer in peers.Values)
+                {
+                    SendServerUpdateSyncField(peer, syncField);
+                }
             }
         }
 
@@ -171,7 +180,7 @@ namespace LiteNetLibHighLevel
 
         protected void ServerCallNetFunction(NetPeer peer, LiteNetLibFunction netFunction)
         {
-            SendPacket(netFunction.sendOptions, Client.Peer, GameMsgTypes.ServerCallFunction, (writer) => SerializeNetFunction(writer, netFunction));
+            SendPacket(netFunction.sendOptions, peer, GameMsgTypes.ServerCallFunction, (writer) => SerializeNetFunction(writer, netFunction));
         }
 
         protected void CallNetFunction(FunctionReceivers receivers, LiteNetLibFunction netFunction, long connectId)
@@ -194,7 +203,7 @@ namespace LiteNetLibHighLevel
                 }
             }
             else if (IsClientConnected)
-                SendPacket(netFunction.sendOptions, Client.Peer, GameMsgTypes.ClientCallFunction, (writer) => SerializeClientCallNetFunction(writer, receivers, netFunction, connectId));
+                SendPacket(netFunction.sendOptions, Client.Peer, GameMsgTypes.ClientCallFunction, (writer) => SerializeClientNetFunction(writer, receivers, netFunction, connectId));
         }
 
         public void CallNetFunction(FunctionReceivers receivers, LiteNetLibFunction netFunction)
@@ -221,7 +230,7 @@ namespace LiteNetLibHighLevel
             return new SyncFieldInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
         }
 
-        protected void SerializeClientCallNetFunction(NetDataWriter writer, FunctionReceivers receivers, LiteNetLibFunction netFunction, long connectId)
+        protected void SerializeClientNetFunction(NetDataWriter writer, FunctionReceivers receivers, LiteNetLibFunction netFunction, long connectId)
         {
             writer.Put((byte)receivers);
             if (receivers == FunctionReceivers.Target)

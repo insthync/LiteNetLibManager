@@ -52,7 +52,6 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            Debug.LogError("LiteNetLibFunction error - You're calling empty constructor.");
         }
 
         public LiteNetLibFunction(NetFunctionDelegate callback)
@@ -135,11 +134,15 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
             parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -154,12 +157,16 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[2];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -177,13 +184,17 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[3];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -203,14 +214,18 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3, T4> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[4];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
             parameters[3] = new T4();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -232,15 +247,19 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[5];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
             parameters[3] = new T4();
             parameters[4] = new T5();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -264,16 +283,20 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[6];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
             parameters[3] = new T4();
             parameters[4] = new T5();
             parameters[5] = new T6();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -299,10 +322,9 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[7];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -310,6 +332,11 @@ namespace LiteNetLibHighLevel
             parameters[4] = new T5();
             parameters[5] = new T6();
             parameters[6] = new T7();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -337,10 +364,9 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[8];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -349,6 +375,11 @@ namespace LiteNetLibHighLevel
             parameters[5] = new T6();
             parameters[6] = new T7();
             parameters[7] = new T8();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -378,10 +409,9 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[9];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -391,6 +421,11 @@ namespace LiteNetLibHighLevel
             parameters[6] = new T7();
             parameters[7] = new T8();
             parameters[8] = new T9();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
@@ -422,10 +457,9 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback;
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback)
+        public LiteNetLibFunction()
         {
-            this.callback = callback;
-            parameters = new LiteNetLibFunctionParameter[10];
+            parameters = new LiteNetLibFunctionParameter[1];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -436,6 +470,11 @@ namespace LiteNetLibHighLevel
             parameters[7] = new T8();
             parameters[8] = new T9();
             parameters[9] = new T10();
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback) : this()
+        {
+            this.callback = callback;
         }
 
         public override void HookCallback()
