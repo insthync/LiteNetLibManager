@@ -1,6 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
@@ -30,12 +30,32 @@ namespace LiteNetLibHighLevel
                 return assets;
             }
         }
+        public string LoadingSceneName { get; protected set; }
+        public AsyncOperation LoadSceneOperation { get; protected set; }
+        public event Action<string, float> onLoadSceneProgress;
+        public event Action<string> onLoadSceneComplete;
 
         protected override void Awake()
         {
             base.Awake();
             Assets.ClearRegisteredPrefabs();
             Assets.RegisterPrefabs();
+            LoadingSceneName = string.Empty;
+            LoadSceneOperation = null;
+        }
+        protected virtual void FixedUpdate()
+        {
+            if (LoadSceneOperation != null)
+            {
+                if (!LoadSceneOperation.isDone)
+                    onLoadSceneProgress(LoadingSceneName, LoadSceneOperation.progress);
+                else
+                {
+                    onLoadSceneComplete(LoadingSceneName);
+                    LoadingSceneName = string.Empty;
+                    LoadSceneOperation = null;
+                }
+            }
         }
 
         public override bool StartServer()
@@ -84,6 +104,8 @@ namespace LiteNetLibHighLevel
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
             LiteNetLibAssets.ResetSpawnPositionCounter();
+            // Reload scene, to reset network object states
+            LoadScene(SceneManager.GetActiveScene().name);
         }
 
         public override void OnStopClient()
@@ -92,6 +114,15 @@ namespace LiteNetLibHighLevel
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
             LiteNetLibAssets.ResetSpawnPositionCounter();
+            // Reload scene if not server, to reset network object states
+            if (!IsServer)
+                LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        public virtual void LoadScene(string name)
+        {
+            LoadingSceneName = name;
+            LoadSceneOperation = SceneManager.LoadSceneAsync(name);
         }
 
         #region Relates components functions

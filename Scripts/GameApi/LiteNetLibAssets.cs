@@ -77,8 +77,7 @@ namespace LiteNetLibHighLevel
             {
                 var objectId = objectIds[i];
                 LiteNetLibIdentity spawnedObject;
-                if (!SceneObjects.ContainsKey(objectId) && 
-                    SpawnedObjects.TryGetValue(objectId, out spawnedObject) && 
+                if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && 
                     SpawnedObjects.Remove(objectId))
                     Destroy(spawnedObject.gameObject);
             }
@@ -127,9 +126,11 @@ namespace LiteNetLibHighLevel
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Network is not active cannot spawn");
                 return null;
             }
+            
             // Scene objects cannot be spawned
             if (SceneObjects.ContainsKey(objectId))
                 return null;
+
             LiteNetLibIdentity spawningObject = null;
             if (GuidToPrefabs.TryGetValue(assetId, out spawningObject))
             {
@@ -169,9 +170,7 @@ namespace LiteNetLibHighLevel
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Network is not active cannot destroy");
                 return false;
             }
-            // Scene objects cannot be destroyed
-            if (SceneObjects.ContainsKey(objectId))
-                return false;
+
             LiteNetLibIdentity spawnedObject;
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && SpawnedObjects.Remove(objectId))
             {
