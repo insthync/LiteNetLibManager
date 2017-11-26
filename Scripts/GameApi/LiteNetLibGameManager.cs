@@ -111,7 +111,7 @@ namespace LiteNetLibHighLevel
         {
             if (!IsServer)
                 return;
-            foreach (var peer in peers.Values)
+            foreach (var peer in Peers.Values)
             {
                 SendServerSpawnSceneObject(peer, identity);
             }
@@ -131,7 +131,7 @@ namespace LiteNetLibHighLevel
         {
             if (!IsServer)
                 return;
-            foreach (var peer in peers.Values)
+            foreach (var peer in Peers.Values)
             {
                 SendServerSpawnObject(peer, identity);
             }
@@ -153,7 +153,7 @@ namespace LiteNetLibHighLevel
         {
             if (!IsServer)
                 return;
-            foreach (var peer in peers.Values)
+            foreach (var peer in Peers.Values)
             {
                 SendServerDestroyObject(peer, objectId);
             }
@@ -166,109 +166,6 @@ namespace LiteNetLibHighLevel
             var message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
-        }
-
-        public void SendServerUpdateSyncField<TField, TFieldType>(LiteNetLibSyncField<TField, TFieldType> syncField)
-            where TField : LiteNetLibNetField<TFieldType>, new()
-        {
-            if (!IsServer)
-                return;
-            if (syncField.forOwnerOnly)
-            {
-                var connectId = syncField.Behaviour.ConnectId;
-                if (peers.ContainsKey(connectId))
-                    SendServerUpdateSyncField(peers[connectId], syncField);
-            }
-            else
-            {
-                foreach (var peer in peers.Values)
-                {
-                    SendServerUpdateSyncField(peer, syncField);
-                }
-            }
-        }
-
-        public void SendServerUpdateSyncField<TField, TFieldType>(NetPeer peer, LiteNetLibSyncField<TField, TFieldType> syncField)
-            where TField : LiteNetLibNetField<TFieldType>, new()
-        {
-            if (!IsServer)
-                return;
-            SendPacket(syncField.sendOptions, peer, GameMsgTypes.ServerUpdateSyncField, (writer) => SerializeSyncField(writer, syncField));
-        }
-
-        protected void ServerCallNetFunction(NetPeer peer, LiteNetLibFunction netFunction)
-        {
-            SendPacket(netFunction.sendOptions, peer, GameMsgTypes.ServerCallFunction, (writer) => SerializeNetFunction(writer, netFunction));
-        }
-
-        protected void CallNetFunction(FunctionReceivers receivers, LiteNetLibFunction netFunction, long connectId)
-        {
-            if (IsServer)
-            {
-                switch (receivers)
-                {
-                    case FunctionReceivers.Target:
-                        NetPeer targetPeer;
-                        if (peers.TryGetValue(connectId, out targetPeer))
-                            ServerCallNetFunction(targetPeer, netFunction);
-                        break;
-                    case FunctionReceivers.All:
-                        foreach (var peer in peers.Values)
-                        {
-                            ServerCallNetFunction(peer, netFunction);
-                        }
-                        break;
-                }
-            }
-            else if (IsClientConnected)
-                SendPacket(netFunction.sendOptions, Client.Peer, GameMsgTypes.ClientCallFunction, (writer) => SerializeClientNetFunction(writer, receivers, netFunction, connectId));
-        }
-
-        public void CallNetFunction(FunctionReceivers receivers, LiteNetLibFunction netFunction)
-        {
-            CallNetFunction(receivers, netFunction, 0);
-        }
-
-        public void CallNetFunction(long connectId, LiteNetLibFunction netFunction)
-        {
-            CallNetFunction(FunctionReceivers.Target, netFunction, connectId);
-        }
-
-        protected void SerializeSyncField<TField, TFieldType>(NetDataWriter writer, LiteNetLibSyncField<TField, TFieldType> syncField)
-            where TField : LiteNetLibNetField<TFieldType>, new()
-        {
-            var syncFieldInfo = syncField.GetSyncFieldInfo();
-            writer.Put(syncFieldInfo.objectId);
-            writer.Put(syncFieldInfo.behaviourIndex);
-            writer.Put(syncFieldInfo.fieldId);
-            syncField.Serialize(writer);
-        }
-
-        protected SyncFieldInfo DeserializeSyncFieldInfo(NetDataReader reader)
-        {
-            return new SyncFieldInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
-        }
-
-        protected void SerializeClientNetFunction(NetDataWriter writer, FunctionReceivers receivers, LiteNetLibFunction netFunction, long connectId)
-        {
-            writer.Put((byte)receivers);
-            if (receivers == FunctionReceivers.Target)
-                writer.Put(connectId);
-            SerializeNetFunction(writer, netFunction);
-        }
-
-        protected void SerializeNetFunction(NetDataWriter writer, LiteNetLibFunction netFunction)
-        {
-            var netFunctionInfo = netFunction.GetNetFunctionInfo();
-            writer.Put(netFunctionInfo.objectId);
-            writer.Put(netFunctionInfo.behaviourIndex);
-            writer.Put(netFunctionInfo.functionId);
-            netFunction.Serialize(writer);
-        }
-
-        protected NetFunctionInfo DeserializeNetFunctionInfo(NetDataReader reader)
-        {
-            return new NetFunctionInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
         }
 
         protected virtual void SpawnPlayer(NetPeer peer)
@@ -301,7 +198,7 @@ namespace LiteNetLibHighLevel
             long connectId = 0;
             if (receivers == FunctionReceivers.Target)
                 connectId = reader.GetLong();
-            NetFunctionInfo info = DeserializeNetFunctionInfo(reader);
+            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
             {
@@ -351,7 +248,7 @@ namespace LiteNetLibHighLevel
             if (IsServer)
                 return;
             var reader = messageHandler.reader;
-            SyncFieldInfo info = DeserializeSyncFieldInfo(reader);
+            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
                 identity.ProcessSyncField(info, reader);
@@ -360,7 +257,7 @@ namespace LiteNetLibHighLevel
         protected virtual void HandleServerCallFunction(LiteNetLibMessageHandler messageHandler)
         {
             var reader = messageHandler.reader;
-            NetFunctionInfo info = DeserializeNetFunctionInfo(reader);
+            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
                 identity.ProcessNetFunction(info, reader, true);

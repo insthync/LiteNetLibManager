@@ -140,15 +140,15 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public LiteNetLibSyncField ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
+        public LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
-            var fieldId = info.fieldId;
+            var fieldId = info.elementId;
             if (fieldId >= 0 && fieldId < syncFields.Count)
             {
                 var syncField = syncFields[fieldId];
-                syncField.Deserialize(reader);
+                syncField.DeserializeValue(reader);
                 return syncField;
             }
             else
@@ -159,15 +159,15 @@ namespace LiteNetLibHighLevel
             return null;
         }
 
-        public LiteNetLibFunction ProcessNetFunction(NetFunctionInfo info, NetDataReader reader, bool hookCallback)
+        public LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
             if (info.objectId != ObjectId)
                 return null;
-            var functionId = info.functionId;
+            var functionId = info.elementId;
             if (functionId >= 0 && functionId < netFunctions.Count)
             {
                 var netFunction = netFunctions[functionId];
-                netFunction.Deserialize(reader);
+                netFunction.DeserializeParameters(reader);
                 if (hookCallback)
                     netFunction.HookCallback();
                 return netFunction;
@@ -175,7 +175,7 @@ namespace LiteNetLibHighLevel
             else
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process net function, functionId [" + info.functionId + "] not found.");
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process net function, functionId [" + info.elementId + "] not found.");
             }
             return null;
         }

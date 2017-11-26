@@ -4,57 +4,15 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
-    public struct SyncFieldInfo
-    {
-        public uint objectId;
-        public int behaviourIndex;
-        public ushort fieldId;
-        public SyncFieldInfo(uint objectId, int behaviourIndex, ushort fieldId)
-        {
-            this.objectId = objectId;
-            this.behaviourIndex = behaviourIndex;
-            this.fieldId = fieldId;
-        }
-    }
-
-    public abstract class LiteNetLibSyncField
+    public abstract class LiteNetLibSyncField : LiteNetLibElement
     {
         public SendOptions sendOptions;
         public bool forOwnerOnly;
-        [ReadOnly, SerializeField]
-        protected LiteNetLibBehaviour behaviour;
-        public LiteNetLibBehaviour Behaviour
-        {
-            get { return behaviour; }
-        }
-
-        [ReadOnly, SerializeField]
-        protected ushort fieldId;
-        public ushort FieldId
-        {
-            get { return fieldId; }
-        }
-
-        public LiteNetLibGameManager Manager
-        {
-            get { return behaviour.Manager; }
-        }
-
-        public virtual void Setup(LiteNetLibBehaviour behaviour, ushort fieldId)
-        {
-            this.behaviour = behaviour;
-            this.fieldId = fieldId;
-        }
-
-        public SyncFieldInfo GetSyncFieldInfo()
-        {
-            return new SyncFieldInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, FieldId);
-        }
 
         public abstract void SendUpdate();
         public abstract void SendUpdate(NetPeer peer);
-        public abstract void Deserialize(NetDataReader reader);
-        public abstract void Serialize(NetDataWriter writer);
+        public abstract void DeserializeValue(NetDataReader reader);
+        public abstract void SerializeValue(NetDataWriter writer);
     }
 
     public abstract class LiteNetLibSyncField<TField, TFieldType> : LiteNetLibSyncField
@@ -105,25 +63,51 @@ namespace LiteNetLibHighLevel
 
         public override sealed void SendUpdate()
         {
-            if (!Behaviour.IsServer)
+            var manager = Manager;
+            if (!manager.IsServer)
                 return;
-            Manager.SendServerUpdateSyncField(this);
+
+            var peers = manager.Peers;
+            if (forOwnerOnly)
+            {
+                var connectId = Behaviour.ConnectId;
+                if (peers.ContainsKey(connectId))
+                    SendUpdate(peers[connectId]);
+            }
+            else
+            {
+                foreach (var peer in peers.Values)
+                {
+                    SendUpdate(peer);
+                }
+            }
         }
 
         public override sealed void SendUpdate(NetPeer peer)
         {
-            if (!Behaviour.IsServer)
+            var manager = Manager;
+            if (!manager.IsServer)
                 return;
-            Manager.SendServerUpdateSyncField(peer, this);
+
+            manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
         }
 
-        public override sealed void Deserialize(NetDataReader reader)
+        protected void SerializeForSend(NetDataWriter writer)
+        {
+            var syncFieldInfo = GetInfo();
+            writer.Put(syncFieldInfo.objectId);
+            writer.Put(syncFieldInfo.behaviourIndex);
+            writer.Put(syncFieldInfo.elementId);
+            SerializeValue(writer);
+        }
+
+        public override sealed void DeserializeValue(NetDataReader reader)
         {
             Field.Deserialize(reader);
             value = Field.Value;
         }
 
-        public override sealed void Serialize(NetDataWriter writer)
+        public override sealed void SerializeValue(NetDataWriter writer)
         {
             Field.Value = value;
             Field.Serialize(writer);

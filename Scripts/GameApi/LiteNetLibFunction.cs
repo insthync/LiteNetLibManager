@@ -4,19 +4,6 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
-    public struct NetFunctionInfo
-    {
-        public uint objectId;
-        public int behaviourIndex;
-        public ushort functionId;
-        public NetFunctionInfo(uint objectId, int behaviourIndex, ushort functionId)
-        {
-            this.objectId = objectId;
-            this.behaviourIndex = behaviourIndex;
-            this.functionId = functionId;
-        }
-    }
-
     public enum FunctionReceivers : byte
     {
         Target,
@@ -24,24 +11,11 @@ namespace LiteNetLibHighLevel
         Server,
     }
 
-    public class LiteNetLibFunction
+    public class LiteNetLibFunction : LiteNetLibElement
     {
         private NetFunctionDelegate callback;
 
         public SendOptions sendOptions;
-        [ReadOnly, SerializeField]
-        protected LiteNetLibBehaviour behaviour;
-        public LiteNetLibBehaviour Behaviour
-        {
-            get { return behaviour; }
-        }
-
-        [ReadOnly, SerializeField]
-        protected ushort functionId;
-        public ushort FunctionId
-        {
-            get { return functionId; }
-        }
 
         [ReadOnly, SerializeField]
         protected LiteNetLibNetField[] parameters;
@@ -59,45 +33,47 @@ namespace LiteNetLibHighLevel
             this.callback = callback;
         }
 
-        public LiteNetLibGameManager Manager
-        {
-            get { return behaviour.Manager; }
-        }
-
-        public virtual void Setup(LiteNetLibBehaviour behaviour, ushort functionId)
-        {
-            this.behaviour = behaviour;
-            this.functionId = functionId;
-        }
-
-        public NetFunctionInfo GetNetFunctionInfo()
-        {
-            return new NetFunctionInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, FunctionId);
-        }
-
-        public void Deserialize(NetDataReader reader)
-        {
-            if (Parameters == null || Parameters.Length == 0)
-                return;
-            for (var i = 0; i < Parameters.Length; ++i)
-            {
-                Parameters[i].Deserialize(reader);
-            }
-        }
-
-        public void Serialize(NetDataWriter writer)
-        {
-            if (Parameters == null || Parameters.Length == 0)
-                return;
-            for (var i = 0; i < Parameters.Length; ++i)
-            {
-                Parameters[i].Serialize(writer);
-            }
-        }
-
         public virtual void HookCallback()
         {
             callback();
+        }
+
+        protected void SendCallForServer(NetPeer peer, FunctionReceivers receivers, long connectId)
+        {
+            var manager = Manager;
+            manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
+        }
+
+        protected void SendCallForClient(FunctionReceivers receivers, long connectId)
+        {
+            var manager = Manager;
+            manager.SendPacket(sendOptions, manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, connectId));
+        }
+
+        protected void SendCall(FunctionReceivers receivers, long connectId)
+        {
+            var manager = Manager;
+            var peers = manager.Peers;
+
+            if (manager.IsServer)
+            {
+                switch (receivers)
+                {
+                    case FunctionReceivers.Target:
+                        NetPeer targetPeer;
+                        if (peers.TryGetValue(connectId, out targetPeer))
+                            SendCallForServer(targetPeer, receivers, connectId);
+                        break;
+                    case FunctionReceivers.All:
+                        foreach (var peer in peers.Values)
+                        {
+                            SendCallForServer(peer, receivers, connectId);
+                        }
+                        break;
+                }
+            }
+            else if (manager.IsClientConnected)
+                SendCallForClient(receivers, connectId);
         }
 
         public void Call(FunctionReceivers receivers, params object[] parameterValues)
@@ -111,7 +87,7 @@ namespace LiteNetLibHighLevel
                         break;
                 }
             }
-            Manager.CallNetFunction(receivers, this);
+            SendCall(receivers, 0);
         }
 
         public void Call(long connectId, params object[] parameterValues)
@@ -125,10 +101,48 @@ namespace LiteNetLibHighLevel
                         break;
                 }
             }
-            Manager.CallNetFunction(connectId, this);
+            SendCall(FunctionReceivers.Target, connectId);
+        }
+        
+        protected void SerializeForClient(NetDataWriter writer, FunctionReceivers receivers, long connectId)
+        {
+            writer.Put((byte)receivers);
+            if (receivers == FunctionReceivers.Target)
+                writer.Put(connectId);
+            SerializeForSend(writer);
+        }
+
+        protected void SerializeForSend(NetDataWriter writer)
+        {
+            var netFunctionInfo = GetInfo();
+            writer.Put(netFunctionInfo.objectId);
+            writer.Put(netFunctionInfo.behaviourIndex);
+            writer.Put(netFunctionInfo.elementId);
+            SerializeParameters(writer);
+        }
+
+        public void DeserializeParameters(NetDataReader reader)
+        {
+            if (Parameters == null || Parameters.Length == 0)
+                return;
+            for (var i = 0; i < Parameters.Length; ++i)
+            {
+                Parameters[i].Deserialize(reader);
+            }
+        }
+
+        public void SerializeParameters(NetDataWriter writer)
+        {
+            if (Parameters == null || Parameters.Length == 0)
+                return;
+            for (var i = 0; i < Parameters.Length; ++i)
+            {
+                Parameters[i].Serialize(writer);
+            }
         }
     }
 
+    #region Implement for multiple parameter usages
     public class LiteNetLibFunction<T1> : LiteNetLibFunction
         where T1 : LiteNetLibNetField, new()
     {
@@ -492,4 +506,5 @@ namespace LiteNetLibHighLevel
                 Parameters[9] as T10);
         }
     }
+    #endregion
 }

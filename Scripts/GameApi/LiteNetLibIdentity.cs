@@ -107,7 +107,7 @@ namespace LiteNetLibHighLevel
         }
 #endif
 
-        public LiteNetLibSyncField ProcessSyncField(SyncFieldInfo info, NetDataReader reader)
+        public LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
@@ -116,7 +116,7 @@ namespace LiteNetLibHighLevel
             return behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
         }
 
-        public LiteNetLibFunction ProcessNetFunction(NetFunctionInfo info, NetDataReader reader, bool hookCallback)
+        public LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
             if (info.objectId != ObjectId)
                 return null;

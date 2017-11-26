@@ -79,7 +79,7 @@ namespace LiteNetLibHighLevel
         [SerializeField, Tooltip("maximum connection attempts before client stops and call disconnect event, default value: 10")]
         private int maxConnectAttempts = 10;
 
-        protected readonly Dictionary<long, NetPeer> peers = new Dictionary<long, NetPeer>();
+        public readonly Dictionary<long, NetPeer> Peers = new Dictionary<long, NetPeer>();
 
         private LiteNetLibMessageHandlers messageHandlers;
         public LiteNetLibMessageHandlers MessageHandlers
@@ -198,7 +198,7 @@ namespace LiteNetLibHighLevel
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
             Server.NetManager.Stop();
             Server = null;
-            peers.Clear();
+            Peers.Clear();
         }
 
         public void StopClient()
@@ -217,19 +217,19 @@ namespace LiteNetLibHighLevel
         {
             if (peer == null)
                 return;
-            peers.Add(peer.ConnectId, peer);
+            Peers.Add(peer.ConnectId, peer);
         }
 
         public bool RemovePeer(NetPeer peer)
         {
             if (peer == null)
                 return false;
-            return peers.Remove(peer.ConnectId);
+            return Peers.Remove(peer.ConnectId);
         }
 
         public bool TryGetPeer(long connectId, out NetPeer peer)
         {
-            return peers.TryGetValue(connectId, out peer);
+            return Peers.TryGetValue(connectId, out peer);
         }
 
         #region Relates components functions
