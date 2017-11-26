@@ -17,9 +17,8 @@ namespace LiteNetLibHighLevel
             get { return behaviourIndex; }
         }
         
-        public List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
-        
-        private readonly Dictionary<ushort, LiteNetLibFunction> netFunctions = new Dictionary<ushort, LiteNetLibFunction>();
+        private readonly List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
+        private readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
         private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
 
         private string typeName;
@@ -84,7 +83,8 @@ namespace LiteNetLibHighLevel
                 if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
                 {
                     var syncField = (LiteNetLibSyncField)field.GetValue(this);
-                    syncField.Setup(this, Convert.ToUInt16(syncFields.Count));
+                    var fieldId = Convert.ToUInt16(syncFields.Count);
+                    syncField.Setup(this, fieldId);
                     syncFields.Add(syncField);
                 }
             }
@@ -104,18 +104,18 @@ namespace LiteNetLibHighLevel
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
-            var realId = Convert.ToUInt16(netFunctions.Count);
-            netFunction.OnRegister(this, realId);
-            netFunctions[realId] = netFunction;
-            netFunctionIds[id] = realId;
+            var functionId = Convert.ToUInt16(netFunctions.Count);
+            netFunction.Setup(this, functionId);
+            netFunctions.Add(netFunction);
+            netFunctionIds[id] = functionId;
         }
 
         public void CallNetFunction(string id, FunctionReceivers receivers, params object[] parameters)
         {
-            ushort realId;
-            if (netFunctionIds.TryGetValue(id, out realId))
+            ushort functionId;
+            if (netFunctionIds.TryGetValue(id, out functionId))
             {
-                var syncFunction = netFunctions[realId];
+                var syncFunction = netFunctions[functionId];
                 syncFunction.Call(receivers, parameters);
             }
             else
@@ -127,10 +127,10 @@ namespace LiteNetLibHighLevel
 
         public void CallNetFunction(string id, long connectId, params object[] parameters)
         {
-            ushort realId;
-            if (netFunctionIds.TryGetValue(id, out realId))
+            ushort functionId;
+            if (netFunctionIds.TryGetValue(id, out functionId))
             {
-                var syncFunction = netFunctions[realId];
+                var syncFunction = netFunctions[functionId];
                 syncFunction.Call(connectId, parameters);
             }
             else
@@ -163,9 +163,10 @@ namespace LiteNetLibHighLevel
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (netFunctions.ContainsKey(info.functionId))
+            var functionId = info.functionId;
+            if (functionId >= 0 && functionId < netFunctions.Count)
             {
-                var netFunction = netFunctions[info.functionId];
+                var netFunction = netFunctions[functionId];
                 netFunction.Deserialize(reader);
                 if (hookCallback)
                     netFunction.HookCallback();

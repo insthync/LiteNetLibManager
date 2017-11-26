@@ -64,7 +64,7 @@ namespace LiteNetLibHighLevel
             get { return behaviour.Manager; }
         }
 
-        public virtual void OnRegister(LiteNetLibBehaviour behaviour, ushort functionId)
+        public virtual void Setup(LiteNetLibBehaviour behaviour, ushort functionId)
         {
             this.behaviour = behaviour;
             this.functionId = functionId;
