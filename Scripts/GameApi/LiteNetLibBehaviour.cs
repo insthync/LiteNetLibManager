@@ -20,8 +20,6 @@ namespace LiteNetLibHighLevel
         private readonly Dictionary<string, ushort> syncFieldIds = new Dictionary<string, ushort>();
         private readonly Dictionary<ushort, LiteNetLibFunction> netFunctions = new Dictionary<ushort, LiteNetLibFunction>();
         private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
-        private ushort syncFieldIdCounter = 0;
-        private ushort netFunctionIdCounter = 0;
 
         private string typeName;
         public string TypeName
@@ -82,19 +80,19 @@ namespace LiteNetLibHighLevel
 
         public void RegisterSyncField(string id, LiteNetLibSyncField syncField)
         {
-            if (netFunctionIds.ContainsKey(id))
+            if (syncFieldIds.ContainsKey(id))
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register sync field with existed id (" + id + ").");
                 return;
             }
-            if (netFunctionIdCounter == ushort.MaxValue)
+            if (syncFields.Count == ushort.MaxValue)
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register sync field it's exceeds limit.");
                 return;
             }
-            var realId = ++syncFieldIdCounter;
+            var realId = Convert.ToUInt16(syncFields.Count);
             syncField.OnRegister(this, realId);
             syncFields[realId] = syncField;
             syncFieldIds[id] = realId;
@@ -108,13 +106,13 @@ namespace LiteNetLibHighLevel
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function with existed id [" + id + "].");
                 return;
             }
-            if (netFunctionIdCounter == ushort.MaxValue)
+            if (netFunctions.Count == ushort.MaxValue)
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
-            var realId = ++netFunctionIdCounter;
+            var realId = Convert.ToUInt16(netFunctions.Count);
             netFunction.OnRegister(this, realId);
             netFunctions[realId] = netFunction;
             netFunctionIds[id] = realId;

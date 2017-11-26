@@ -204,7 +204,8 @@ namespace LiteNetLibHighLevel
             }
 
             LiteNetLibIdentity spawnedObject;
-            if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && SpawnedObjects.Remove(objectId))
+            if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && 
+                SpawnedObjects.Remove(objectId))
             {
                 if (SceneObjects.ContainsKey(objectId))
                 {
