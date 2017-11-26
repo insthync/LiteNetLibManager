@@ -91,12 +91,18 @@ namespace LiteNetLibHighLevel
 
         public void Call(FunctionReceivers receivers, params object[] parameterValues)
         {
+            if (!ValidateBeforeAccess())
+                return;
+
             SetParameters(parameterValues);
             SendCall(receivers, 0);
         }
 
         public void Call(long connectId, params object[] parameterValues)
         {
+            if (!ValidateBeforeAccess())
+                return;
+
             SetParameters(parameterValues);
             SendCall(FunctionReceivers.Target, connectId);
         }

@@ -37,16 +37,9 @@ namespace LiteNetLibHighLevel
             get { return value; }
             set
             {
-                if (Behaviour == null)
-                {
-                    Debug.LogError("Sync field error while set value, behaviour is empty");
+                if (!ValidateBeforeAccess())
                     return;
-                }
-                if (!Behaviour.IsServer)
-                {
-                    Debug.LogError("Sync field error while set value, not the server");
-                    return;
-                }
+
                 if (Field.IsValueChanged(value))
                 {
                     this.value = value;
@@ -62,6 +55,9 @@ namespace LiteNetLibHighLevel
 
         public override sealed void SendUpdate()
         {
+            if (!ValidateBeforeAccess())
+                return;
+
             var manager = Manager;
             if (!manager.IsServer)
                 return;
@@ -84,6 +80,9 @@ namespace LiteNetLibHighLevel
 
         public override sealed void SendUpdate(NetPeer peer)
         {
+            if (!ValidateBeforeAccess())
+                return;
+
             var manager = Manager;
             if (!manager.IsServer)
                 return;

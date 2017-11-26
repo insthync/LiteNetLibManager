@@ -36,7 +36,8 @@ namespace LiteNetLibHighLevel
             {
                 if (!ValidateBeforeAccess())
                     return;
-                if (IsValueChanged(value))
+
+                if (list[index].IsValueChanged(value.Value))
                 {
                     list[index] = value;
                     SendOperation(Operation.Set, index, value);
@@ -138,22 +139,6 @@ namespace LiteNetLibHighLevel
             SendOperation(Operation.Dirty, index, list[index]);
         }
 
-        private bool ValidateBeforeAccess()
-        {
-            if (Behaviour == null)
-            {
-                Debug.LogError("Sync list error while set value, behaviour is empty");
-                return false;
-            }
-            if (!Behaviour.IsServer)
-            {
-                Debug.LogError("Sync list error while set value, not the server");
-                return false;
-            }
-            return true;
-        }
-
-        public abstract bool IsValueChanged(TFieldType newValue);
         public void SendOperation(Operation operation, int index, TField item)
         {
 
@@ -163,5 +148,7 @@ namespace LiteNetLibHighLevel
         {
 
         }
+
+        public abstract bool IsValueChanged(TFieldType newValue);
     }
 }
