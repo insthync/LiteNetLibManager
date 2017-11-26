@@ -14,21 +14,22 @@ namespace LiteNetLibHighLevel
             Add,
             Clear,
             Insert,
-            Remove,
             RemoveAt,
             Set,
             Dirty,
         }
         public bool forOwnerOnly;
+        public OnChanged callback;
 
-        public abstract void Deserialize(NetDataReader reader);
-        public abstract void Serialize(NetDataWriter writer);
+        protected abstract void DeserializeOperation(NetDataReader reader);
+        protected abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
     }
 
-    public abstract class LiteNetLibSyncList<TField, TFieldType> : LiteNetLibSyncList, IList<TField>
+    public class LiteNetLibSyncList<TField, TFieldType> : LiteNetLibSyncList, IList<TField>
         where TField : LiteNetLibNetField<TFieldType>, new()
     {
-        protected readonly List<TField> list = new List<TField>();
+        [SerializeField]
+        protected List<TField> list = new List<TField>();
         public TField this[int index]
         {
             get { return list[index]; }
@@ -40,7 +41,7 @@ namespace LiteNetLibHighLevel
                 if (list[index].IsValueChanged(value.Value))
                 {
                     list[index] = value;
-                    SendOperation(Operation.Set, index, value);
+                    SendOperation(Operation.Set, index);
                 }
             }
         }
@@ -55,20 +56,45 @@ namespace LiteNetLibHighLevel
             get { return false; }
         }
 
+        public void Add(TFieldType value)
+        {
+            var item = new TField();
+            item.Value = value;
+            Add(item);
+        }
+
         public void Add(TField item)
         {
             if (!ValidateBeforeAccess())
                 return;
             list.Add(item);
-            SendOperation(Operation.Add, list.Count - 1, item);
+            SendOperation(Operation.Add, list.Count - 1);
         }
 
-        public void Clear()
+        public void Insert(int index, TFieldType value)
+        {
+            var item = new TField();
+            item.Value = value;
+            Insert(index, item);
+        }
+
+        public void Insert(int index, TField item)
         {
             if (!ValidateBeforeAccess())
                 return;
-            list.Clear();
-            SendOperation(Operation.Clear, 0, default(TField));
+            list.Insert(index, item);
+            SendOperation(Operation.Insert, index);
+        }
+
+        public bool Contains(TFieldType value)
+        {
+            for (var i = 0; i < list.Count; ++i)
+            {
+                var listItem = list[i];
+                if (listItem.Value.Equals(value))
+                    return true;
+            }
+            return false;
         }
 
         public bool Contains(TField item)
@@ -82,14 +108,15 @@ namespace LiteNetLibHighLevel
             return false;
         }
 
-        public void CopyTo(TField[] array, int arrayIndex)
+        public int IndexOf(TFieldType value)
         {
-            list.CopyTo(array, arrayIndex);
-        }
-
-        public IEnumerator<TField> GetEnumerator()
-        {
-            return list.GetEnumerator();
+            for (var i = 0; i < list.Count; ++i)
+            {
+                var listItem = list[i];
+                if (listItem.Value.Equals(value))
+                    return i;
+            }
+            return -1;
         }
 
         public int IndexOf(TField item)
@@ -103,22 +130,17 @@ namespace LiteNetLibHighLevel
             return -1;
         }
 
-        public void Insert(int index, TField item)
-        {
-            if (!ValidateBeforeAccess())
-                return;
-            list.Insert(index, item);
-            SendOperation(Operation.Insert, index, item);
-        }
-
         public bool Remove(TField item)
         {
             if (!ValidateBeforeAccess())
                 return false;
-            var result = list.Remove(item);
-            if (result)
-                SendOperation(Operation.Remove, 0, item);
-            return result;
+            var index = IndexOf(item);
+            if (index >= 0)
+            {
+                RemoveAt(index);
+                return true;
+            }
+            return false;
         }
 
         public void RemoveAt(int index)
@@ -126,7 +148,25 @@ namespace LiteNetLibHighLevel
             if (!ValidateBeforeAccess())
                 return;
             list.RemoveAt(index);
-            SendOperation(Operation.RemoveAt, index, default(TField));
+            SendOperation(Operation.RemoveAt, index);
+        }
+
+        public void Clear()
+        {
+            if (!ValidateBeforeAccess())
+                return;
+            list.Clear();
+            SendOperation(Operation.Clear, 0);
+        }
+
+        public void CopyTo(TField[] array, int arrayIndex)
+        {
+            list.CopyTo(array, arrayIndex);
+        }
+
+        public IEnumerator<TField> GetEnumerator()
+        {
+            return list.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -136,19 +176,112 @@ namespace LiteNetLibHighLevel
 
         public void Dirty(int index)
         {
-            SendOperation(Operation.Dirty, index, list[index]);
+            SendOperation(Operation.Dirty, index);
         }
 
-        public void SendOperation(Operation operation, int index, TField item)
+        public void SendOperation(Operation operation, int index)
         {
+            if (!ValidateBeforeAccess())
+                return;
 
+            var manager = Manager;
+            if (!manager.IsServer)
+                return;
+
+            var peers = manager.Peers;
+            if (forOwnerOnly)
+            {
+                var connectId = Behaviour.ConnectId;
+                if (peers.ContainsKey(connectId))
+                    SendOperation(peers[connectId], operation, index);
+            }
+            else
+            {
+                foreach (var peer in peers.Values)
+                {
+                    SendOperation(peer, operation, index);
+                }
+            }
         }
 
-        public void SendOperation(NetPeer peer, Operation operation, int index, TField item)
+        public void SendOperation(NetPeer peer, Operation operation, int index)
         {
+            if (!ValidateBeforeAccess())
+                return;
 
+            var manager = Manager;
+            if (!manager.IsServer)
+                return;
+
+            manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeOperation(writer, operation, index));
         }
 
-        public abstract bool IsValueChanged(TFieldType newValue);
+        protected void SerializeForSend(NetDataWriter writer, Operation operation, int index)
+        {
+            LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
+            SerializeOperation(writer, operation, index);
+        }
+
+        protected override sealed void DeserializeOperation(NetDataReader reader)
+        {
+            var operation = (Operation)reader.GetByte();
+            var index = -1;
+            var item = new TField();
+            switch (operation)
+            {
+                case Operation.Add:
+                    item.Deserialize(reader);
+                    list.Add(item);
+                    break;
+                case Operation.Clear:
+                    list.Clear();
+                    break;
+                case Operation.Insert:
+                    index = reader.GetInt();
+                    item.Deserialize(reader);
+                    list.Insert(index, item);
+                    break;
+                case Operation.RemoveAt:
+                    index = reader.GetInt();
+                    list.RemoveAt(index);
+                    break;
+                case Operation.Set:
+                case Operation.Dirty:
+                    index = reader.GetInt();
+                    item.Deserialize(reader);
+                    list[index] = item;
+                    break;
+            }
+            if (callback != null)
+                callback(operation, index);
+        }
+
+        protected override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
+        {
+            writer.Put((byte)operation);
+            switch (operation)
+            {
+                case Operation.Add:
+                    list[index].Serialize(writer);
+                    break;
+                case Operation.Clear:
+                    break;
+                case Operation.Insert:
+                    writer.Put(index);
+                    list[index].Serialize(writer);
+                    break;
+                case Operation.RemoveAt:
+                    writer.Put(index);
+                    break;
+                case Operation.Set:
+                    writer.Put(index);
+                    list[index].Serialize(writer);
+                    break;
+                case Operation.Dirty:
+                    writer.Put(index);
+                    list[index].Serialize(writer);
+                    break;
+            }
+        }
     }
 }
