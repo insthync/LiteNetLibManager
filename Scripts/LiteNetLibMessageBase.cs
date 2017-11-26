@@ -4,7 +4,7 @@ namespace LiteNetLibHighLevel
 {
     public abstract class LiteNetLibMessageBase
     {
-        public virtual void Deserialize(NetDataReader reader) { }
-        public virtual void Serialize(NetDataWriter writer) { }
+        public abstract void Deserialize(NetDataReader reader);
+        public abstract void Serialize(NetDataWriter writer);
     }
 }
