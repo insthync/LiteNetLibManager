@@ -21,8 +21,11 @@ namespace LiteNetLibHighLevel
         public bool forOwnerOnly;
         public OnChanged callback;
 
-        protected abstract void DeserializeOperation(NetDataReader reader);
-        protected abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
+        public abstract int Count { get; }
+        public abstract void SendOperation(Operation operation, int index);
+        public abstract void SendOperation(NetPeer peer, Operation operation, int index);
+        public abstract void DeserializeOperation(NetDataReader reader);
+        public abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
     }
 
     public class LiteNetLibSyncList<TField, TFieldType> : LiteNetLibSyncList, IList<TField>
@@ -46,7 +49,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public int Count
+        public override sealed int Count
         {
             get { return list.Count; }
         }
@@ -179,7 +182,7 @@ namespace LiteNetLibHighLevel
             SendOperation(Operation.Dirty, index);
         }
 
-        public void SendOperation(Operation operation, int index)
+        public override sealed void SendOperation(Operation operation, int index)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -204,7 +207,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendOperation(NetPeer peer, Operation operation, int index)
+        public override sealed void SendOperation(NetPeer peer, Operation operation, int index)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -216,13 +219,13 @@ namespace LiteNetLibHighLevel
             manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeOperation(writer, operation, index));
         }
 
-        protected void SerializeForSend(NetDataWriter writer, Operation operation, int index)
+        protected void SerializeForSendOperation(NetDataWriter writer, Operation operation, int index)
         {
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             SerializeOperation(writer, operation, index);
         }
 
-        protected override sealed void DeserializeOperation(NetDataReader reader)
+        public override sealed void DeserializeOperation(NetDataReader reader)
         {
             var operation = (Operation)reader.GetByte();
             var index = -1;
@@ -256,7 +259,7 @@ namespace LiteNetLibHighLevel
                 callback(operation, index);
         }
 
-        protected override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
+        public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
         {
             writer.Put((byte)operation);
             switch (operation)

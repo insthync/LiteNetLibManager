@@ -65,6 +65,7 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.ServerCallFunction, HandleServerCallFunction);
+            RegisterClientMessage(GameMsgTypes.ServerUpdateSyncList, HandleServerUpdateSyncList);
         }
 
         public override void OnClientConnected(NetPeer peer)
@@ -174,7 +175,7 @@ namespace LiteNetLibHighLevel
             if (Assets.PlayerPrefab == null)
                 return;
             var spawnedObject = Assets.NetworkSpawn(Assets.PlayerPrefab.AssetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
-            spawnedObject.SendUpdateAllSyncFields(peer);
+            spawnedObject.SendInitSyncFields(peer);
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
@@ -187,7 +188,7 @@ namespace LiteNetLibHighLevel
                     SendServerSpawnSceneObject(peer, spawnedObject);
                 else
                     SendServerSpawnObject(peer, spawnedObject);
-                spawnedObject.SendUpdateAllSyncFields(peer);
+                spawnedObject.SendInitSyncFields(peer);
             }
             SpawnPlayer(peer);
         }
@@ -262,6 +263,15 @@ namespace LiteNetLibHighLevel
             LiteNetLibIdentity identity;
             if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
                 identity.ProcessNetFunction(info, reader, true);
+        }
+
+        protected virtual void HandleServerUpdateSyncList(LiteNetLibMessageHandler messageHandler)
+        {
+            var reader = messageHandler.reader;
+            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibIdentity identity;
+            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
+                identity.ProcessSyncList(info, reader);
         }
     }
 }

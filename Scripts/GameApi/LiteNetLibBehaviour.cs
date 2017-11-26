@@ -20,6 +20,7 @@ namespace LiteNetLibHighLevel
         private readonly List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
         private readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
         private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
+        private readonly List<LiteNetLibSyncList> syncLists = new List<LiteNetLibSyncList>();
 
         private string typeName;
         public string TypeName
@@ -77,15 +78,23 @@ namespace LiteNetLibHighLevel
         {
             this.behaviourIndex = behaviourIndex;
             syncFields.Clear();
+            syncLists.Clear();
             FieldInfo[] fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (var field in fields)
             {
                 if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
                 {
                     var syncField = (LiteNetLibSyncField)field.GetValue(this);
-                    var fieldId = Convert.ToUInt16(syncFields.Count);
-                    syncField.Setup(this, fieldId);
+                    var elementId = Convert.ToUInt16(syncFields.Count);
+                    syncField.Setup(this, elementId);
                     syncFields.Add(syncField);
+                }
+                if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
+                {
+                    var syncList = (LiteNetLibSyncList)field.GetValue(this);
+                    var elementId = Convert.ToUInt16(syncLists.Count);
+                    syncList.Setup(this, elementId);
+                    syncLists.Add(syncList);
                 }
             }
         }
@@ -104,18 +113,18 @@ namespace LiteNetLibHighLevel
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
-            var functionId = Convert.ToUInt16(netFunctions.Count);
-            netFunction.Setup(this, functionId);
+            var elementId = Convert.ToUInt16(netFunctions.Count);
+            netFunction.Setup(this, elementId);
             netFunctions.Add(netFunction);
-            netFunctionIds[id] = functionId;
+            netFunctionIds[id] = elementId;
         }
 
         public void CallNetFunction(string id, FunctionReceivers receivers, params object[] parameters)
         {
-            ushort functionId;
-            if (netFunctionIds.TryGetValue(id, out functionId))
+            ushort elementId;
+            if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                var syncFunction = netFunctions[functionId];
+                var syncFunction = netFunctions[elementId];
                 syncFunction.Call(receivers, parameters);
             }
             else
@@ -127,10 +136,10 @@ namespace LiteNetLibHighLevel
 
         public void CallNetFunction(string id, long connectId, params object[] parameters)
         {
-            ushort functionId;
-            if (netFunctionIds.TryGetValue(id, out functionId))
+            ushort elementId;
+            if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                var syncFunction = netFunctions[functionId];
+                var syncFunction = netFunctions[elementId];
                 syncFunction.Call(connectId, parameters);
             }
             else
@@ -144,17 +153,17 @@ namespace LiteNetLibHighLevel
         {
             if (info.objectId != ObjectId)
                 return null;
-            var fieldId = info.elementId;
-            if (fieldId >= 0 && fieldId < syncFields.Count)
+            var elementId = info.elementId;
+            if (elementId >= 0 && elementId < syncFields.Count)
             {
-                var syncField = syncFields[fieldId];
+                var syncField = syncFields[elementId];
                 syncField.DeserializeValue(reader);
                 return syncField;
             }
             else
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + fieldId + "] not found.");
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + elementId + "] not found.");
             }
             return null;
         }
@@ -163,10 +172,10 @@ namespace LiteNetLibHighLevel
         {
             if (info.objectId != ObjectId)
                 return null;
-            var functionId = info.elementId;
-            if (functionId >= 0 && functionId < netFunctions.Count)
+            var elementId = info.elementId;
+            if (elementId >= 0 && elementId < netFunctions.Count)
             {
-                var netFunction = netFunctions[functionId];
+                var netFunction = netFunctions[elementId];
                 netFunction.DeserializeParameters(reader);
                 if (hookCallback)
                     netFunction.HookCallback();
@@ -180,7 +189,26 @@ namespace LiteNetLibHighLevel
             return null;
         }
 
-        public void SendUpdateAllSyncFields()
+        public LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
+        {
+            if (info.objectId != ObjectId)
+                return null;
+            var elementId = info.elementId;
+            if (elementId >= 0 && elementId < syncLists.Count)
+            {
+                var syncList = syncLists[elementId];
+                syncList.DeserializeOperation(reader);
+                return syncList;
+            }
+            else
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + elementId + "] not found.");
+            }
+            return null;
+        }
+
+        public void SendInitSyncFields()
         {
             var fields = syncFields;
             foreach (var field in fields)
@@ -189,12 +217,32 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendUpdateAllSyncFields(NetPeer peer)
+        public void SendInitSyncFields(NetPeer peer)
         {
             var fields = syncFields;
             foreach (var field in fields)
             {
                 field.SendUpdate(peer);
+            }
+        }
+
+        public void SendInitSyncLists()
+        {
+            var lists = syncLists;
+            foreach (var list in lists)
+            {
+                for (var i = 0; i < list.Count; ++i)
+                    list.SendOperation(LiteNetLibSyncList.Operation.Add, i);
+            }
+        }
+
+        public void SendInitSyncLists(NetPeer peer)
+        {
+            var lists = syncLists;
+            foreach (var list in lists)
+            {
+                for (var i = 0; i < list.Count; ++i)
+                    list.SendOperation(peer, LiteNetLibSyncList.Operation.Add, i);
             }
         }
     }

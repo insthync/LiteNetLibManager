@@ -125,19 +125,44 @@ namespace LiteNetLibHighLevel
             return behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
         }
 
-        public void SendUpdateAllSyncFields()
+        public LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
+        {
+            if (info.objectId != ObjectId)
+                return null;
+            if (info.behaviourIndex < 0 || info.behaviourIndex >= behaviours.Count)
+                return null;
+            return behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
+        }
+
+        public void SendInitSyncFields()
         {
             foreach (var behaviour in behaviours)
             {
-                behaviour.SendUpdateAllSyncFields();
+                behaviour.SendInitSyncFields();
             }
         }
 
-        public void SendUpdateAllSyncFields(NetPeer peer)
+        public void SendInitSyncFields(NetPeer peer)
         {
             foreach (var behaviour in behaviours)
             {
-                behaviour.SendUpdateAllSyncFields(peer);
+                behaviour.SendInitSyncFields(peer);
+            }
+        }
+
+        public void SendInitSyncLists()
+        {
+            foreach (var behaviour in behaviours)
+            {
+                behaviour.SendInitSyncLists();
+            }
+        }
+
+        public void SendInitSyncLists(NetPeer peer)
+        {
+            foreach (var behaviour in behaviours)
+            {
+                behaviour.SendInitSyncLists(peer);
             }
         }
 
