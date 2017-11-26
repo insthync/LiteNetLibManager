@@ -1,6 +1,5 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
@@ -13,11 +12,12 @@ namespace LiteNetLibHighLevel
         {
             public const short ClientReady = 1;
             public const short ClientCallFunction = 2;
-            public const short ServerSpawnObject = 3;
-            public const short ServerDestroyObject = 4;
-            public const short ServerUpdateSyncField = 5;
-            public const short ServerCallFunction = 6;
-            public const short Highest = 6;
+            public const short ServerSpawnSceneObject = 3;
+            public const short ServerSpawnObject = 4;
+            public const short ServerDestroyObject = 5;
+            public const short ServerUpdateSyncField = 6;
+            public const short ServerCallFunction = 7;
+            public const short Highest = 7;
         }
 
         private LiteNetLibAssets assets;
@@ -30,32 +30,12 @@ namespace LiteNetLibHighLevel
                 return assets;
             }
         }
-        public string LoadingSceneName { get; protected set; }
-        public AsyncOperation LoadSceneOperation { get; protected set; }
-        public event Action<string, float> onLoadSceneProgress;
-        public event Action<string> onLoadSceneComplete;
 
         protected override void Awake()
         {
             base.Awake();
             Assets.ClearRegisteredPrefabs();
             Assets.RegisterPrefabs();
-            LoadingSceneName = string.Empty;
-            LoadSceneOperation = null;
-        }
-        protected virtual void FixedUpdate()
-        {
-            if (LoadSceneOperation != null)
-            {
-                if (!LoadSceneOperation.isDone)
-                    onLoadSceneProgress(LoadingSceneName, LoadSceneOperation.progress);
-                else
-                {
-                    onLoadSceneComplete(LoadingSceneName);
-                    LoadingSceneName = string.Empty;
-                    LoadSceneOperation = null;
-                }
-            }
         }
 
         public override bool StartServer()
@@ -86,6 +66,7 @@ namespace LiteNetLibHighLevel
         protected override void RegisterClientMessages()
         {
             base.RegisterClientMessages();
+            RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncField, HandleServerUpdateSyncField);
@@ -104,8 +85,6 @@ namespace LiteNetLibHighLevel
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
             LiteNetLibAssets.ResetSpawnPositionCounter();
-            // Reload scene, to reset network object states
-            LoadScene(SceneManager.GetActiveScene().name);
         }
 
         public override void OnStopClient()
@@ -114,17 +93,8 @@ namespace LiteNetLibHighLevel
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
             LiteNetLibAssets.ResetSpawnPositionCounter();
-            // Reload scene if not server, to reset network object states
-            if (!IsServer)
-                LoadScene(SceneManager.GetActiveScene().name);
         }
-
-        public virtual void LoadScene(string name)
-        {
-            LoadingSceneName = name;
-            LoadSceneOperation = SceneManager.LoadSceneAsync(name);
-        }
-
+        
         #region Relates components functions
         public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
         {
@@ -142,6 +112,26 @@ namespace LiteNetLibHighLevel
             if (!IsClientConnected)
                 return;
             SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientReady);
+        }
+
+        public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
+        {
+            if (!IsServer)
+                return;
+            foreach (var peer in peers.Values)
+            {
+                SendServerSpawnSceneObject(peer, identity);
+            }
+        }
+
+        public void SendServerSpawnSceneObject(NetPeer peer, LiteNetLibIdentity identity)
+        {
+            if (!IsServer)
+                return;
+            var message = new ServerSpawnSceneObjectMessage();
+            message.objectId = identity.ObjectId;
+            message.position = identity.transform.position;
+            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnSceneObject, message);
         }
 
         public void SendServerSpawnObject(LiteNetLibIdentity identity)
@@ -302,7 +292,10 @@ namespace LiteNetLibHighLevel
             var spawnedObjects = Assets.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
-                SendServerSpawnObject(peer, spawnedObject);
+                if (Assets.SceneObjects.ContainsKey(spawnedObject.ObjectId))
+                    SendServerSpawnSceneObject(peer, spawnedObject);
+                else
+                    SendServerSpawnObject(peer, spawnedObject);
                 spawnedObject.SendUpdateAllSyncFields(peer);
             }
             SpawnPlayer(peer);
@@ -330,6 +323,15 @@ namespace LiteNetLibHighLevel
                         netFunction.Call(receivers);
                 }
             }
+        }
+
+        protected virtual void HandleServerSpawnSceneObject(LiteNetLibMessageHandler messageHandler)
+        {
+            // Object spawned at server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
+            var message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
+            Assets.NetworkSpawnScene(message.objectId, message.position);
         }
 
         protected virtual void HandleServerSpawnObject(LiteNetLibMessageHandler messageHandler)

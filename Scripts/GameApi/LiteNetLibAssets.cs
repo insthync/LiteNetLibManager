@@ -77,9 +77,17 @@ namespace LiteNetLibHighLevel
             {
                 var objectId = objectIds[i];
                 LiteNetLibIdentity spawnedObject;
-                if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && 
+                if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) &&
                     SpawnedObjects.Remove(objectId))
-                    Destroy(spawnedObject.gameObject);
+                {
+                    if (!SceneObjects.ContainsKey(objectId))
+                    {
+                        // If the object is scene object, don't destroy just hide it
+                        spawnedObject.gameObject.SetActive(false);
+                    }
+                    else
+                        Destroy(spawnedObject.gameObject);
+                }
             }
         }
 
@@ -93,9 +101,33 @@ namespace LiteNetLibHighLevel
                 {
                     sceneObject.Initial(Manager);
                     SceneObjects[sceneObject.ObjectId] = sceneObject;
-                    SpawnedObjects[sceneObject.ObjectId] = sceneObject;
+                    if (Manager.IsServer)
+                        NetworkSpawnScene(sceneObject.ObjectId, sceneObject.transform.position);
+                    else
+                        sceneObject.gameObject.SetActive(false);
                 }
             }
+        }
+
+        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, Vector3 position)
+        {
+            if (!Manager.IsNetworkActive)
+            {
+                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawnScene - Network is not active cannot spawn");
+                return null;
+            }
+
+            LiteNetLibIdentity sceneObject = null;
+            if (SceneObjects.TryGetValue(objectId, out sceneObject))
+            {
+                sceneObject.gameObject.SetActive(true);
+                sceneObject.transform.position = position;
+                SpawnedObjects[sceneObject.ObjectId] = sceneObject;
+                return sceneObject;
+            }
+            else if (Manager.LogWarn)
+                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawnScene - Object Id: " + objectId + " is not registered.");
+            return null;
         }
 
         public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectId = 0)
@@ -126,7 +158,7 @@ namespace LiteNetLibHighLevel
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Network is not active cannot spawn");
                 return null;
             }
-            
+
             // Scene objects cannot be spawned
             if (SceneObjects.ContainsKey(objectId))
                 return null;
@@ -174,7 +206,14 @@ namespace LiteNetLibHighLevel
             LiteNetLibIdentity spawnedObject;
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && SpawnedObjects.Remove(objectId))
             {
-                Destroy(spawnedObject.gameObject);
+                if (SceneObjects.ContainsKey(objectId))
+                {
+                    // If the object is scene object, don't destroy just hide it
+                    spawnedObject.gameObject.SetActive(false);
+                }
+                else
+                    Destroy(spawnedObject.gameObject);
+
                 if (Manager.IsServer)
                     Manager.SendServerDestroyObject(objectId);
                 return true;
