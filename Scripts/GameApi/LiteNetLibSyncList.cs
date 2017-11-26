@@ -228,7 +228,7 @@ namespace LiteNetLibHighLevel
             if (!manager.IsServer)
                 return;
 
-            manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeOperation(writer, operation, index));
+            manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }
 
         protected void SerializeForSendOperation(NetDataWriter writer, Operation operation, int index)

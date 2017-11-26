@@ -269,6 +269,9 @@ namespace LiteNetLibHighLevel
 
         protected virtual void HandleServerUpdateSyncList(LiteNetLibMessageHandler messageHandler)
         {
+            // List updated at server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
             var reader = messageHandler.reader;
             var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
