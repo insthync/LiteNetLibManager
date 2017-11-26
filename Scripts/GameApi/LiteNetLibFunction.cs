@@ -76,7 +76,7 @@ namespace LiteNetLibHighLevel
                 SendCallForClient(receivers, connectId);
         }
 
-        public void Call(FunctionReceivers receivers, params object[] parameterValues)
+        public void SetParameters(params object[] parameterValues)
         {
             if (Parameters != null)
             {
@@ -87,20 +87,17 @@ namespace LiteNetLibHighLevel
                         break;
                 }
             }
+        }
+
+        public void Call(FunctionReceivers receivers, params object[] parameterValues)
+        {
+            SetParameters(parameterValues);
             SendCall(receivers, 0);
         }
 
         public void Call(long connectId, params object[] parameterValues)
         {
-            if (Parameters != null)
-            {
-                for (var i = 0; i < parameterValues.Length; ++i)
-                {
-                    Parameters[i].SetValue(parameterValues[i]);
-                    if (i + 1 >= Parameters.Length)
-                        break;
-                }
-            }
+            SetParameters(parameterValues);
             SendCall(FunctionReceivers.Target, connectId);
         }
         

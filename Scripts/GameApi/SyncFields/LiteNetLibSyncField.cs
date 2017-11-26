@@ -54,8 +54,6 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public abstract bool IsValueChanged(TFieldType newValue);
-
         public static implicit operator TFieldType(LiteNetLibSyncField<TField, TFieldType> field)
         {
             return field.Value;
@@ -112,5 +110,7 @@ namespace LiteNetLibHighLevel
             Field.Value = value;
             Field.Serialize(writer);
         }
+
+        public abstract bool IsValueChanged(TFieldType newValue);
     }
 }
