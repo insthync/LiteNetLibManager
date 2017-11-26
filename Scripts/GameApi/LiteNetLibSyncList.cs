@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
@@ -31,8 +32,7 @@ namespace LiteNetLibHighLevel
     public class LiteNetLibSyncList<TField, TFieldType> : LiteNetLibSyncList, IList<TField>
         where TField : LiteNetLibNetField<TFieldType>, new()
     {
-        [SerializeField]
-        protected List<TField> list = new List<TField>();
+        protected readonly List<TField> list = new List<TField>();
         public TField this[int index]
         {
             get { return list[index]; }
@@ -281,4 +281,106 @@ namespace LiteNetLibHighLevel
             }
         }
     }
+
+    #region Implement for general usages and serializable
+    [Serializable]
+    public class SyncListBool : LiteNetLibSyncList<NetFieldBool, bool>
+    {
+    }
+
+    [Serializable]
+    public class SyncListByte : LiteNetLibSyncList<NetFieldByte, byte>
+    {
+    }
+
+    [Serializable]
+    public class SyncListChar : LiteNetLibSyncList<NetFieldChar, char>
+    {
+    }
+
+    [Serializable]
+    public class SyncListColor : LiteNetLibSyncList<NetFieldColor, Color>
+    {
+    }
+
+    [Serializable]
+    public class SyncListDouble : LiteNetLibSyncList<NetFieldDouble, double>
+    {
+    }
+
+    [Serializable]
+    public class SyncListFloat : LiteNetLibSyncList<NetFieldFloat, float>
+    {
+    }
+
+    [Serializable]
+    public class SyncListInt : LiteNetLibSyncList<NetFieldInt, int>
+    {
+    }
+
+    [Serializable]
+    public class SyncListLong : LiteNetLibSyncList<NetFieldLong, long>
+    {
+    }
+
+    [Serializable]
+    public class SyncListQuaternion : LiteNetLibSyncList<NetFieldQuaternion, Quaternion>
+    {
+    }
+
+    [Serializable]
+    public class SyncListSByte : LiteNetLibSyncList<NetFieldSByte, sbyte>
+    {
+    }
+
+    [Serializable]
+    public class SyncListShort : LiteNetLibSyncList<NetFieldShort, short>
+    {
+    }
+
+    [Serializable]
+    public class SyncListString : LiteNetLibSyncList<NetFieldString, string>
+    {
+    }
+
+    [Serializable]
+    public class SyncListUInt : LiteNetLibSyncList<NetFieldUInt, uint>
+    {
+    }
+
+    [Serializable]
+    public class SyncListULong : LiteNetLibSyncList<NetFieldULong, ulong>
+    {
+    }
+
+    [Serializable]
+    public class SyncListUShort : LiteNetLibSyncList<NetFieldUShort, ushort>
+    {
+    }
+
+    [Serializable]
+    public class SyncListVector2 : LiteNetLibSyncList<NetFieldVector2, Vector2>
+    {
+    }
+
+    [Serializable]
+    public class SyncListVector2Int : LiteNetLibSyncList<NetFieldVector2Int, Vector2Int>
+    {
+    }
+
+    [Serializable]
+    public class SyncListVector3 : LiteNetLibSyncList<NetFieldVector3, Vector3>
+    {
+    }
+
+    [Serializable]
+    public class SyncListVector3Int : LiteNetLibSyncList<NetFieldVector3Int, Vector3Int>
+    {
+    }
+
+    [Serializable]
+    public class SyncListVector4 : LiteNetLibSyncList<NetFieldVector4, Vector4>
+    {
+    }
+    #endregion
 }
