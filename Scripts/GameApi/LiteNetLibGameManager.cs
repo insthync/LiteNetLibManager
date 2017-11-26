@@ -176,6 +176,7 @@ namespace LiteNetLibHighLevel
                 return;
             var spawnedObject = Assets.NetworkSpawn(Assets.PlayerPrefab.AssetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
             spawnedObject.SendInitSyncFields(peer);
+            spawnedObject.SendInitSyncLists(peer);
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
@@ -189,6 +190,7 @@ namespace LiteNetLibHighLevel
                 else
                     SendServerSpawnObject(peer, spawnedObject);
                 spawnedObject.SendInitSyncFields(peer);
+                spawnedObject.SendInitSyncLists(peer);
             }
             SpawnPlayer(peer);
         }
