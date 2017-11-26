@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-#if UNITY_EDITOR
-using System.Reflection;
-using UnityEditor;
-#endif
 
 namespace LiteNetLibHighLevel
 {
@@ -19,9 +16,8 @@ namespace LiteNetLibHighLevel
         {
             get { return behaviourIndex; }
         }
-
-        [ReadOnly, SerializeField]
-        private List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
+        
+        public List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
         
         private readonly Dictionary<ushort, LiteNetLibFunction> netFunctions = new Dictionary<ushort, LiteNetLibFunction>();
         private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
@@ -81,6 +77,17 @@ namespace LiteNetLibHighLevel
         public void ValidateBehaviour(int behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
+            syncFields.Clear();
+            FieldInfo[] fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (var field in fields)
+            {
+                if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
+                {
+                    var syncField = (LiteNetLibSyncField)field.GetValue(this);
+                    syncField.Setup(this, Convert.ToUInt16(syncFields.Count));
+                    syncFields.Add(syncField);
+                }
+            }
         }
 
         public void RegisterNetFunction(string id, LiteNetLibFunction netFunction)
@@ -189,23 +196,5 @@ namespace LiteNetLibHighLevel
                 field.SendUpdate(peer);
             }
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            syncFields.Clear();
-            FieldInfo[] fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var field in fields)
-            {
-                if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
-                {
-                    var syncField = (LiteNetLibSyncField)field.GetValue(this);
-                    syncField.OnRegister(this, Convert.ToUInt16(syncFields.Count));
-                    syncFields.Add(syncField);
-                }
-            }
-            EditorUtility.SetDirty(this);
-        }
-#endif
     }
 }

@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using System;
 
 namespace LiteNetLibHighLevel
 {
@@ -41,7 +40,7 @@ namespace LiteNetLibHighLevel
             get { return behaviour.Manager; }
         }
 
-        public virtual void OnRegister(LiteNetLibBehaviour behaviour, ushort fieldId)
+        public virtual void Setup(LiteNetLibBehaviour behaviour, ushort fieldId)
         {
             this.behaviour = behaviour;
             this.fieldId = fieldId;
