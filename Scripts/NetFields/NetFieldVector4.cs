@@ -17,5 +17,10 @@ namespace LiteNetLibHighLevel
             writer.Put(Value.z);
             writer.Put(Value.w);
         }
+
+        public override bool IsValueChanged(Vector4 newValue)
+        {
+            return !newValue.Equals(Value);
+        }
     }
 }

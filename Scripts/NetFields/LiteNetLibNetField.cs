@@ -22,5 +22,7 @@ namespace LiteNetLibHighLevel
         {
             Value = (T)value;
         }
+
+        public abstract bool IsValueChanged(T newValue);
     }
 }

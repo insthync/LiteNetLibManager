@@ -14,5 +14,10 @@ namespace LiteNetLibHighLevel
         {
             writer.Put(Value);
         }
+
+        public override bool IsValueChanged(ulong newValue)
+        {
+            return newValue != Value;
+        }
     }
 }

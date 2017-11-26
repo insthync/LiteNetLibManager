@@ -17,5 +17,10 @@ namespace LiteNetLibHighLevel
             writer.Put(Value.b);
             writer.Put(Value.a);
         }
+
+        public override bool IsValueChanged(Color newValue)
+        {
+            return !newValue.Equals(Value);
+        }
     }
 }

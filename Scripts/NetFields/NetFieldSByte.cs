@@ -14,5 +14,10 @@ namespace LiteNetLibHighLevel
         {
             writer.Put(Value);
         }
+
+        public override bool IsValueChanged(sbyte newValue)
+        {
+            return newValue != Value;
+        }
     }
 }
