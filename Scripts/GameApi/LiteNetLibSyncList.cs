@@ -59,6 +59,18 @@ namespace LiteNetLibHighLevel
             get { return false; }
         }
 
+        public TFieldType Get(int index)
+        {
+            return this[index].Value;
+        }
+
+        public void Set(int index, TFieldType value)
+        {
+            var item = new TField();
+            item.Value = value;
+            this[index] = item;
+        }
+
         public void Add(TFieldType value)
         {
             var item = new TField();
