@@ -22,10 +22,6 @@ namespace LiteNetLibHighLevel
         [ReadOnly, SerializeField]
         private LiteNetLibGameManager manager;
         private readonly List<LiteNetLibBehaviour> behaviours = new List<LiteNetLibBehaviour>();
-#if UNITY_EDITOR
-        [Header("Helpers")]
-        public bool reorderSceneObjectId;
-#endif
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
@@ -50,11 +46,12 @@ namespace LiteNetLibHighLevel
         private void OnValidate()
         {
             SetupIDs();
-            if (reorderSceneObjectId)
-            {
-                reorderSceneObjectId = false;
-                ReorderSceneObjectId();
-            }
+        }
+
+        [ContextMenu("Reorder Scene Object Id")]
+        public void ContextMenuReorderSceneObjectId()
+        {
+            ReorderSceneObjectId();
         }
 
         private void AssignAssetID(GameObject prefab)
