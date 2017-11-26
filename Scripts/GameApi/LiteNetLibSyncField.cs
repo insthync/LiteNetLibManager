@@ -92,10 +92,7 @@ namespace LiteNetLibHighLevel
 
         protected void SerializeForSend(NetDataWriter writer)
         {
-            var syncFieldInfo = GetInfo();
-            writer.Put(syncFieldInfo.objectId);
-            writer.Put(syncFieldInfo.behaviourIndex);
-            writer.Put(syncFieldInfo.elementId);
+            LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             SerializeValue(writer);
         }
 

@@ -117,10 +117,7 @@ namespace LiteNetLibHighLevel
 
         protected void SerializeForSend(NetDataWriter writer)
         {
-            var netFunctionInfo = GetInfo();
-            writer.Put(netFunctionInfo.objectId);
-            writer.Put(netFunctionInfo.behaviourIndex);
-            writer.Put(netFunctionInfo.elementId);
+            LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             SerializeParameters(writer);
         }
 

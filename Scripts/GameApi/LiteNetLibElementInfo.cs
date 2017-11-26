@@ -17,6 +17,13 @@ namespace LiteNetLibHighLevel
             this.elementId = elementId;
         }
 
+        public static void SerializeInfo(LiteNetLibElementInfo info, NetDataWriter writer)
+        {
+            writer.Put(info.objectId);
+            writer.Put(info.behaviourIndex);
+            writer.Put(info.elementId);
+        }
+
         public static LiteNetLibElementInfo DeserializeInfo(NetDataReader reader)
         {
             return new LiteNetLibElementInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
