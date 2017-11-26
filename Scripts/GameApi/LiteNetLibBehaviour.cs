@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+#if UNITY_EDITOR
+using System.Reflection;
+using UnityEditor;
+#endif
 
 namespace LiteNetLibHighLevel
 {
@@ -16,8 +20,9 @@ namespace LiteNetLibHighLevel
             get { return behaviourIndex; }
         }
 
-        private readonly Dictionary<ushort, LiteNetLibSyncField> syncFields = new Dictionary<ushort, LiteNetLibSyncField>();
-        private readonly Dictionary<string, ushort> syncFieldIds = new Dictionary<string, ushort>();
+        [ReadOnly, SerializeField]
+        private List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
+        
         private readonly Dictionary<ushort, LiteNetLibFunction> netFunctions = new Dictionary<ushort, LiteNetLibFunction>();
         private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
 
@@ -78,26 +83,6 @@ namespace LiteNetLibHighLevel
             this.behaviourIndex = behaviourIndex;
         }
 
-        public void RegisterSyncField(string id, LiteNetLibSyncField syncField)
-        {
-            if (syncFieldIds.ContainsKey(id))
-            {
-                if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register sync field with existed id (" + id + ").");
-                return;
-            }
-            if (syncFields.Count == ushort.MaxValue)
-            {
-                if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register sync field it's exceeds limit.");
-                return;
-            }
-            var realId = Convert.ToUInt16(syncFields.Count);
-            syncField.OnRegister(this, realId);
-            syncFields[realId] = syncField;
-            syncFieldIds[id] = realId;
-        }
-
         public void RegisterNetFunction(string id, LiteNetLibFunction netFunction)
         {
             if (netFunctionIds.ContainsKey(id))
@@ -152,16 +137,17 @@ namespace LiteNetLibHighLevel
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (syncFields.ContainsKey(info.fieldId))
+            var fieldId = info.fieldId;
+            if (fieldId >= 0 && fieldId < syncFields.Count)
             {
-                var syncField = syncFields[info.fieldId];
+                var syncField = syncFields[fieldId];
                 syncField.Deserialize(reader);
                 return syncField;
             }
             else
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + info.fieldId + "] not found.");
+                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + fieldId + "] not found.");
             }
             return null;
         }
@@ -188,7 +174,7 @@ namespace LiteNetLibHighLevel
 
         public void SendUpdateAllSyncFields()
         {
-            var fields = syncFields.Values;
+            var fields = syncFields;
             foreach (var field in fields)
             {
                 field.SendUpdate();
@@ -197,11 +183,29 @@ namespace LiteNetLibHighLevel
 
         public void SendUpdateAllSyncFields(NetPeer peer)
         {
-            var fields = syncFields.Values;
+            var fields = syncFields;
             foreach (var field in fields)
             {
                 field.SendUpdate(peer);
             }
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            syncFields.Clear();
+            FieldInfo[] fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (var field in fields)
+            {
+                if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
+                {
+                    var syncField = (LiteNetLibSyncField)field.GetValue(this);
+                    syncField.OnRegister(this, Convert.ToUInt16(syncFields.Count));
+                    syncFields.Add(syncField);
+                }
+            }
+            EditorUtility.SetDirty(this);
+        }
+#endif
     }
 }
