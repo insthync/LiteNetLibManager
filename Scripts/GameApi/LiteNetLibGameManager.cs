@@ -17,7 +17,8 @@ namespace LiteNetLibHighLevel
             public const short ServerDestroyObject = 5;
             public const short ServerUpdateSyncField = 6;
             public const short ServerCallFunction = 7;
-            public const short Highest = 7;
+            public const short ServerSendSyncList = 8;
+            public const short Highest = 8;
         }
 
         private LiteNetLibAssets assets;
