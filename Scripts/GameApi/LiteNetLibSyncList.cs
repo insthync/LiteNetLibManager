@@ -236,23 +236,23 @@ namespace LiteNetLibHighLevel
                     item.Deserialize(reader);
                     list.Add(item);
                     break;
-                case Operation.Clear:
-                    list.Clear();
-                    break;
                 case Operation.Insert:
                     index = reader.GetInt();
                     item.Deserialize(reader);
                     list.Insert(index, item);
-                    break;
-                case Operation.RemoveAt:
-                    index = reader.GetInt();
-                    list.RemoveAt(index);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
                     item.Deserialize(reader);
                     list[index] = item;
+                    break;
+                case Operation.RemoveAt:
+                    index = reader.GetInt();
+                    list.RemoveAt(index);
+                    break;
+                case Operation.Clear:
+                    list.Clear();
                     break;
             }
             if (callback != null)
@@ -267,22 +267,16 @@ namespace LiteNetLibHighLevel
                 case Operation.Add:
                     list[index].Serialize(writer);
                     break;
-                case Operation.Clear:
-                    break;
                 case Operation.Insert:
+                case Operation.Set:
+                case Operation.Dirty:
                     writer.Put(index);
                     list[index].Serialize(writer);
                     break;
                 case Operation.RemoveAt:
                     writer.Put(index);
                     break;
-                case Operation.Set:
-                    writer.Put(index);
-                    list[index].Serialize(writer);
-                    break;
-                case Operation.Dirty:
-                    writer.Put(index);
-                    list[index].Serialize(writer);
+                case Operation.Clear:
                     break;
             }
         }

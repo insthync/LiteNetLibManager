@@ -232,7 +232,7 @@ namespace LiteNetLibHighLevel
             foreach (var list in lists)
             {
                 for (var i = 0; i < list.Count; ++i)
-                    list.SendOperation(LiteNetLibSyncList.Operation.Add, i);
+                    list.SendOperation(LiteNetLibSyncList.Operation.Insert, i);
             }
         }
 
@@ -242,7 +242,7 @@ namespace LiteNetLibHighLevel
             foreach (var list in lists)
             {
                 for (var i = 0; i < list.Count; ++i)
-                    list.SendOperation(peer, LiteNetLibSyncList.Operation.Add, i);
+                    list.SendOperation(peer, LiteNetLibSyncList.Operation.Insert, i);
             }
         }
     }
