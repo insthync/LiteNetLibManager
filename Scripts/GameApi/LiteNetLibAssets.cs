@@ -80,7 +80,7 @@ namespace LiteNetLibHighLevel
                 if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) &&
                     SpawnedObjects.Remove(objectId))
                 {
-                    if (!SceneObjects.ContainsKey(objectId))
+                    if (SceneObjects.ContainsKey(objectId))
                     {
                         // If the object is scene object, don't destroy just hide it
                         spawnedObject.gameObject.SetActive(false);
@@ -100,7 +100,6 @@ namespace LiteNetLibHighLevel
                 if (sceneObject.ObjectId > 0)
                 {
                     sceneObject.gameObject.SetActive(false);
-                    sceneObject.Initial(Manager);
                     SceneObjects[sceneObject.ObjectId] = sceneObject;
                 }
             }
@@ -129,6 +128,7 @@ namespace LiteNetLibHighLevel
             {
                 sceneObject.gameObject.SetActive(true);
                 sceneObject.transform.position = position;
+                sceneObject.Initial(Manager);
                 SpawnedObjects[sceneObject.ObjectId] = sceneObject;
                 return sceneObject;
             }
