@@ -99,13 +99,20 @@ namespace LiteNetLibHighLevel
                 var sceneObject = sceneObjects[i];
                 if (sceneObject.ObjectId > 0)
                 {
+                    sceneObject.gameObject.SetActive(false);
                     sceneObject.Initial(Manager);
                     SceneObjects[sceneObject.ObjectId] = sceneObject;
-                    if (Manager.IsServer)
-                        NetworkSpawnScene(sceneObject.ObjectId, sceneObject.transform.position);
-                    else
-                        sceneObject.gameObject.SetActive(false);
                 }
+            }
+        }
+
+        public void SpawnSceneObjects()
+        {
+            var sceneObjects = new List<LiteNetLibIdentity>(SceneObjects.Values);
+            for (var i = 0; i < sceneObjects.Count; ++i)
+            {
+                var sceneObject = sceneObjects[i];
+                NetworkSpawnScene(sceneObject.ObjectId, sceneObject.transform.position);
             }
         }
 

@@ -76,7 +76,7 @@ namespace LiteNetLibHighLevel
         protected TFieldType value;
         public TFieldType Value
         {
-            get { return Field.Value; }
+            get { return value; }
             set
             {
                 if (Behaviour == null)
@@ -91,7 +91,7 @@ namespace LiteNetLibHighLevel
                 }
                 if (IsValueChanged(value))
                 {
-                    Field.Value = this.value = value;
+                    this.value = value;
                     SendUpdate();
                 }
             }
@@ -121,10 +121,12 @@ namespace LiteNetLibHighLevel
         public override sealed void Deserialize(NetDataReader reader)
         {
             Field.Deserialize(reader);
+            value = Field.Value;
         }
 
         public override sealed void Serialize(NetDataWriter writer)
         {
+            Field.Value = value;
             Field.Serialize(writer);
         }
     }

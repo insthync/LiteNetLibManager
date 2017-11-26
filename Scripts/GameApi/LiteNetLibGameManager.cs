@@ -36,24 +36,17 @@ namespace LiteNetLibHighLevel
             base.Awake();
             Assets.ClearRegisteredPrefabs();
             Assets.RegisterPrefabs();
+            Assets.RegisterSceneObjects();
         }
 
         public override bool StartServer()
         {
             if (base.StartServer())
             {
-                Assets.RegisterSceneObjects();
+                Assets.SpawnSceneObjects();
                 return true;
             }
             return false;
-        }
-
-        public override LiteNetLibClient StartClient()
-        {
-            var client = base.StartClient();
-            if (client != null && !IsServer)
-                Assets.RegisterSceneObjects();
-            return client;
         }
 
         protected override void RegisterServerMessages()
