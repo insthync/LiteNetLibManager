@@ -15,8 +15,6 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate callback;
 
-        public SendOptions sendOptions;
-
         [ReadOnly, SerializeField]
         protected LiteNetLibNetField[] parameters;
         public LiteNetLibNetField[] Parameters
@@ -41,13 +39,13 @@ namespace LiteNetLibHighLevel
         protected void SendCallForServer(NetPeer peer, FunctionReceivers receivers, long connectId)
         {
             var manager = Manager;
-            manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
+            manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
         }
 
         protected void SendCallForClient(FunctionReceivers receivers, long connectId)
         {
             var manager = Manager;
-            manager.SendPacket(sendOptions, manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, connectId));
+            manager.SendPacket(SendOptions.ReliableOrdered, manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, connectId));
         }
 
         protected void SendCall(FunctionReceivers receivers, long connectId)

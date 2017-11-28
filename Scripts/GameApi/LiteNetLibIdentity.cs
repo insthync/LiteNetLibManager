@@ -33,13 +33,23 @@ namespace LiteNetLibHighLevel
                     Debug.LogError("Manager is empty");
                 return Manager != null && Manager.IsServer; }
         }
+
         public bool IsClient
         {
             get { return Manager != null && Manager.IsClient; }
         }
+
         public bool IsLocalClient
         {
             get { return Manager != null && ConnectId == Manager.Client.Peer.ConnectId; }
+        }
+
+        internal void NetworkUpdate()
+        {
+            foreach (var behaviour in behaviours)
+            {
+                behaviour.NetworkUpdate();
+            }
         }
 
 #if UNITY_EDITOR

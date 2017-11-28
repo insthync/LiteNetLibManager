@@ -56,7 +56,7 @@ namespace LiteNetLibHighLevel
             return new LiteNetLibElementInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, ElementId);
         }
 
-        public virtual void Setup(LiteNetLibBehaviour behaviour, ushort elementId)
+        internal virtual void Setup(LiteNetLibBehaviour behaviour, ushort elementId)
         {
             this.behaviour = behaviour;
             this.elementId = elementId;

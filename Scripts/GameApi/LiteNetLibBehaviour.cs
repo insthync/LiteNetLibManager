@@ -74,6 +74,17 @@ namespace LiteNetLibHighLevel
             get { return Identity.IsLocalClient; }
         }
 
+        internal void NetworkUpdate()
+        {
+            if (!IsServer)
+                return;
+
+            foreach (var syncField in syncFields)
+            {
+                syncField.NetworkUpdate();
+            }
+        }
+
         public void ValidateBehaviour(int behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;

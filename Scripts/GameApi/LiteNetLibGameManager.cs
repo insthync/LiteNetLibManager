@@ -40,6 +40,16 @@ namespace LiteNetLibHighLevel
             Assets.RegisterSceneObjects();
         }
 
+        protected override void Update()
+        {
+            var spawnedObjects = Assets.SpawnedObjects.Values;
+            foreach (var spawnedObject in spawnedObjects)
+            {
+                spawnedObject.NetworkUpdate();
+            }
+            base.Update();
+        }
+
         public override bool StartServer()
         {
             if (base.StartServer())

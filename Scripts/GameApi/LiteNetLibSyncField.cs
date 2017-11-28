@@ -8,7 +8,35 @@ namespace LiteNetLibHighLevel
     public abstract class LiteNetLibSyncField : LiteNetLibElement
     {
         public SendOptions sendOptions;
+        [Tooltip("How many time of network updates per second, 0 => updates every frames")]
+        [Range(0, 30)]
+        public int sendRate = 5;
+        [Tooltip("If this is TRUE, this will update for owner object only")]
         public bool forOwnerOnly;
+        public bool hasUpdate { get; protected set; }
+        protected float lastSentTime;
+
+        public float SendInterval
+        {
+            get
+            {
+                if (sendRate == 0)
+                    return 0;
+                return 1f / sendRate;
+            }
+        }
+
+        internal void NetworkUpdate()
+        {
+            if (!ValidateBeforeAccess())
+                return;
+
+            if (Time.realtimeSinceStartup - lastSentTime < SendInterval)
+                return;
+
+            lastSentTime = Time.realtimeSinceStartup;
+            SendUpdate();
+        }
 
         public abstract void SendUpdate();
         public abstract void SendUpdate(NetPeer peer);
@@ -43,7 +71,7 @@ namespace LiteNetLibHighLevel
                 if (Field.IsValueChanged(value))
                 {
                     this.value = value;
-                    SendUpdate();
+                    hasUpdate = true;
                 }
             }
         }
@@ -55,6 +83,9 @@ namespace LiteNetLibHighLevel
 
         public override sealed void SendUpdate()
         {
+            if (!hasUpdate)
+                return;
+
             if (!ValidateBeforeAccess())
                 return;
 
@@ -62,6 +93,7 @@ namespace LiteNetLibHighLevel
             if (!manager.IsServer)
                 return;
 
+            hasUpdate = false;
             var peers = manager.Peers;
             if (forOwnerOnly)
             {
