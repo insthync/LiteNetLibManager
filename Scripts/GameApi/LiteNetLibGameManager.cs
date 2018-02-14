@@ -18,7 +18,19 @@ namespace LiteNetLibHighLevel
             public const short ServerUpdateSyncField = 6;
             public const short ServerCallFunction = 7;
             public const short ServerUpdateSyncList = 8;
-            public const short Highest = 8;
+            public const short ServerUpdateTime = 9;
+            public const short Highest = 9;
+        }
+        
+        public float ServerTimeOffset { get; protected set; }
+        public float ServerTime
+        {
+            get
+            {
+                if (IsServer)
+                    return Time.unscaledTime;
+                return Time.unscaledTime + ServerTimeOffset;
+            }
         }
 
         private LiteNetLibAssets assets;
@@ -76,6 +88,13 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.ServerCallFunction, HandleServerCallFunction);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncList, HandleServerUpdateSyncList);
+            RegisterClientMessage(GameMsgTypes.ServerUpdateTime, HandleServerUpdateTime);
+        }
+
+        public override void OnServerConnected(NetPeer peer)
+        {
+            base.OnServerConnected(peer);
+            SendServerUpdateTime(peer);
         }
 
         public override void OnClientConnected(NetPeer peer)
@@ -117,6 +136,24 @@ namespace LiteNetLibHighLevel
             if (!IsClientConnected)
                 return;
             SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientReady);
+        }
+
+        public void SendServerUpdateTime()
+        {
+            if (!IsServer)
+                return;
+            foreach (var peer in Peers.Values)
+            {
+                SendServerUpdateTime(peer);
+            }
+        }
+
+        public void SendServerUpdateTime(NetPeer peer)
+        {
+            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerUpdateTime, (writer) =>
+            {
+                writer.Put(ServerTime);
+            });
         }
 
         public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
@@ -287,6 +324,15 @@ namespace LiteNetLibHighLevel
             LiteNetLibIdentity identity;
             if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
                 identity.ProcessSyncList(info, reader);
+        }
+
+        protected virtual void HandleServerUpdateTime(LiteNetLibMessageHandler messageHandler)
+        {
+            // Server updated at server, if this is hot (client and server) then skip it.
+            if (IsServer)
+                return;
+            float time = messageHandler.reader.GetFloat();
+            ServerTimeOffset = time - Time.unscaledTime;
         }
     }
 }
