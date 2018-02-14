@@ -280,20 +280,57 @@ namespace LiteNetLibHighLevel
         #endregion
 
         #region Network Events Callbacks
+        /// <summary>
+        /// This event will be called at server when there are any network error
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="socketErrorCode"></param>
         public virtual void OnServerNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
 
+        /// <summary>
+        /// This event will be called at server when any client connected
+        /// </summary>
+        /// <param name="peer"></param>
         public virtual void OnServerConnected(NetPeer peer) { }
 
+        /// <summary>
+        /// This event will be called at server when any client disconnected
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="disconnectInfo"></param>
         public virtual void OnServerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
 
+        /// <summary>
+        /// This event will be called at server when received discovery request from client
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="data"></param>
         public virtual void OnServerReceivedDiscoveryRequest(NetEndPoint endPoint, string data) { }
 
+        /// <summary>
+        /// This event will be called at client when there are any network error
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="socketErrorCode"></param>
         public virtual void OnClientNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
 
+        /// <summary>
+        /// This event will be called at client when connected to server
+        /// </summary>
+        /// <param name="peer"></param>
         public virtual void OnClientConnected(NetPeer peer) { }
 
+        /// <summary>
+        /// This event will be called at client when disconnected from server
+        /// </summary>
+        /// <param name="peer"></param>
         public virtual void OnClientDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
 
+        /// <summary>
+        /// This event will be called at server when received discovery response from server
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="data"></param>
         public virtual void OnClientReceivedDiscoveryResponse(NetEndPoint endPoint, string data) { }
         #endregion
 
