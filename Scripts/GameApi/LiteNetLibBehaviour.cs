@@ -4,6 +4,9 @@ using System.Reflection;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace LiteNetLibHighLevel
 {
@@ -17,10 +20,29 @@ namespace LiteNetLibHighLevel
             get { return behaviourIndex; }
         }
         
+        [ReadOnly, SerializeField]
+        private List<string> syncFieldNames = new List<string>();
+        [ReadOnly, SerializeField]
+        private List<string> syncListNames = new List<string>();
+
+        private static Dictionary<string, FieldInfo> CacheSyncFieldInfos = new Dictionary<string, FieldInfo>();
+        private static Dictionary<string, FieldInfo> CacheSyncListInfos = new Dictionary<string, FieldInfo>();
+
         private readonly List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
         private readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
         private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
         private readonly List<LiteNetLibSyncList> syncLists = new List<LiteNetLibSyncList>();
+
+        private Type classType;
+        public Type ClassType
+        {
+            get
+            {
+                if (classType == null)
+                    classType = GetType();
+                return classType;
+            }
+        }
 
         private string typeName;
         public string TypeName
@@ -28,7 +50,7 @@ namespace LiteNetLibHighLevel
             get
             {
                 if (string.IsNullOrEmpty(typeName))
-                    typeName = GetType().Name;
+                    typeName = ClassType.Name;
                 return typeName;
             }
         }
@@ -85,29 +107,52 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void ValidateBehaviour(int behaviourIndex)
+#if UNITY_EDITOR
+        private void OnValidate()
         {
-            this.behaviourIndex = behaviourIndex;
-            syncFields.Clear();
-            syncLists.Clear();
-            var fields = new List<FieldInfo>(GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+            syncFieldNames.Clear();
+            syncListNames.Clear();
+            var fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
             fields.Sort((a, b) => a.Name.CompareTo(b.Name));
             foreach (var field in fields)
             {
                 if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
-                {
-                    var syncField = (LiteNetLibSyncField)field.GetValue(this);
-                    var elementId = Convert.ToUInt16(syncFields.Count);
-                    syncField.Setup(this, elementId);
-                    syncFields.Add(syncField);
-                }
+                    syncFieldNames.Add(field.Name);
                 if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
+                    syncListNames.Add(field.Name);
+            }
+            EditorUtility.SetDirty(this);
+        }
+#endif
+
+        public void ValidateBehaviour(int behaviourIndex)
+        {
+            this.behaviourIndex = behaviourIndex;
+            SetupSyncElements(syncFieldNames, CacheSyncFieldInfos, syncFields);
+            SetupSyncElements(syncListNames, CacheSyncListInfos, syncLists);
+        }
+
+        private void SetupSyncElements<T>(List<string> fieldNames, Dictionary<string, FieldInfo> cache, List<T> elementList) where T : LiteNetLibElement
+        {
+            elementList.Clear();
+            foreach (var fieldName in fieldNames)
+            {
+                var key = TypeName + "_" + fieldName;
+                FieldInfo field;
+                if (!cache.TryGetValue(key, out field))
                 {
-                    var syncList = (LiteNetLibSyncList)field.GetValue(this);
-                    var elementId = Convert.ToUInt16(syncLists.Count);
-                    syncList.Setup(this, elementId);
-                    syncLists.Add(syncList);
+                    field = ClassType.GetField(fieldName);
+                    cache[key] = field;
                 }
+                if (field == null)
+                {
+                    Debug.LogWarning("Element named " + fieldName + " was not found");
+                    continue;
+                }
+                var syncList = (T)field.GetValue(this);
+                var elementId = Convert.ToUInt16(elementList.Count);
+                syncList.Setup(this, elementId);
+                elementList.Add(syncList);
             }
         }
 
