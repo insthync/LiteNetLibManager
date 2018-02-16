@@ -174,6 +174,7 @@ namespace LiteNetLibHighLevel
             if (GuidToPrefabs.TryGetValue(assetId, out spawningObject))
             {
                 var spawnedObject = Instantiate(spawningObject);
+                spawnedObject.gameObject.SetActive(true);
                 spawnedObject.transform.position = position;
                 spawnedObject.Initial(Manager, objectId, connectId);
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
