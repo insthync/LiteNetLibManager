@@ -125,7 +125,7 @@ namespace LiteNetLibHighLevel
         }
 #endif
 
-        public void ValidateBehaviour(int behaviourIndex)
+        public void Setup(int behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
             SetupSyncElements(syncFieldNames, CacheSyncFieldInfos, syncFields);

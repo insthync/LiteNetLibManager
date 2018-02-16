@@ -52,6 +52,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
+#region IDs generate in Editor
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -116,6 +117,7 @@ namespace LiteNetLibHighLevel
             }
         }
 #endif
+#endregion
 
         public LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
@@ -189,6 +191,12 @@ namespace LiteNetLibHighLevel
             return false;
         }
 
+        /// <summary>
+        /// Initial Identity, will be called when spawned. If object id == 0, it will generate new object id
+        /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="objectId"></param>
+        /// <param name="connectId"></param>
         public void Initial(LiteNetLibGameManager manager, uint objectId = 0, long connectId = 0)
         {
             this.objectId = objectId;
@@ -197,12 +205,13 @@ namespace LiteNetLibHighLevel
             if (objectId > HighestObjectId)
                 HighestObjectId = objectId;
             ValidateObjectId();
+
             // Setup behaviours index, we will use this as reference for network functions
             behaviours.Clear();
             var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
             foreach (var behaviour in behaviourComponents)
             {
-                behaviour.ValidateBehaviour(behaviours.Count);
+                behaviour.Setup(behaviours.Count);
                 behaviours.Add(behaviour);
             }
         }
