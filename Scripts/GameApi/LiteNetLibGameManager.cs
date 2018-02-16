@@ -150,7 +150,7 @@ namespace LiteNetLibHighLevel
 
         public void SendServerUpdateTime(NetPeer peer)
         {
-            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerUpdateTime, (writer) =>
+            SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerUpdateTime, (writer) =>
             {
                 writer.Put(ServerTime);
             });
