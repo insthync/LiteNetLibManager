@@ -90,7 +90,8 @@ namespace LiteNetLibHighLevel
             this.behaviourIndex = behaviourIndex;
             syncFields.Clear();
             syncLists.Clear();
-            FieldInfo[] fields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var fields = new List<FieldInfo>(GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+            fields.Sort((a, b) => a.Name.CompareTo(b.Name));
             foreach (var field in fields)
             {
                 if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
