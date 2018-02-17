@@ -62,16 +62,11 @@ namespace LiteNetLibHighLevel
             this.elementId = elementId;
         }
 
-        protected bool ValidateBeforeAccess()
+        protected virtual bool ValidateBeforeAccess()
         {
             if (Behaviour == null)
             {
-                Debug.LogError("Sync list error while set value, behaviour is empty");
-                return false;
-            }
-            if (!Behaviour.IsServer)
-            {
-                Debug.LogError("Sync list error while set value, not the server");
+                Debug.LogError("[LiteNetLibElement] Error while set value, behaviour is empty");
                 return false;
             }
             return true;

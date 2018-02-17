@@ -47,7 +47,7 @@ namespace LiteNetLibHighLevel
     public class LiteNetLibSyncField<TField, TFieldType> : LiteNetLibSyncField
         where TField : LiteNetLibNetField<TFieldType>, new()
     {
-        public event Action<TFieldType> onChange;
+        public Action<TFieldType> onChange;
 
         protected TField field;
         public TField Field
@@ -83,6 +83,21 @@ namespace LiteNetLibHighLevel
         public static implicit operator TFieldType(LiteNetLibSyncField<TField, TFieldType> field)
         {
             return field.Value;
+        }
+
+        protected override bool ValidateBeforeAccess()
+        {
+            if (Behaviour == null)
+            {
+                Debug.LogError("[LiteNetLibElement] Error while set value, behaviour is empty");
+                return false;
+            }
+            if (!Behaviour.IsServer)
+            {
+                Debug.LogError("[LiteNetLibElement] Error while set value, not the server");
+                return false;
+            }
+            return true;
         }
 
         internal override sealed void SendUpdate()
