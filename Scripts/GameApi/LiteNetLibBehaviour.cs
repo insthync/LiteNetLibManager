@@ -214,7 +214,7 @@ namespace LiteNetLibHighLevel
             if (elementId >= 0 && elementId < syncFields.Count)
             {
                 var syncField = syncFields[elementId];
-                syncField.DeserializeValue(reader);
+                syncField.Deserialize(reader);
                 return syncField;
             }
             else

@@ -38,15 +38,17 @@ namespace LiteNetLibHighLevel
             SendUpdate();
         }
 
-        public abstract void SendUpdate();
-        public abstract void SendUpdate(NetPeer peer);
-        public abstract void DeserializeValue(NetDataReader reader);
-        public abstract void SerializeValue(NetDataWriter writer);
+        internal abstract void SendUpdate();
+        internal abstract void SendUpdate(NetPeer peer);
+        internal abstract void Deserialize(NetDataReader reader);
+        internal abstract void Serialize(NetDataWriter writer);
     }
     
     public class LiteNetLibSyncField<TField, TFieldType> : LiteNetLibSyncField
         where TField : LiteNetLibNetField<TFieldType>, new()
     {
+        public event Action<TFieldType> onChange;
+
         protected TField field;
         public TField Field
         {
@@ -72,6 +74,8 @@ namespace LiteNetLibHighLevel
                 {
                     this.value = value;
                     hasUpdate = true;
+                    if (onChange != null)
+                        onChange(value);
                 }
             }
         }
@@ -81,7 +85,7 @@ namespace LiteNetLibHighLevel
             return field.Value;
         }
 
-        public override sealed void SendUpdate()
+        internal override sealed void SendUpdate()
         {
             if (!hasUpdate)
                 return;
@@ -110,7 +114,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public override sealed void SendUpdate(NetPeer peer)
+        internal override sealed void SendUpdate(NetPeer peer)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -125,16 +129,18 @@ namespace LiteNetLibHighLevel
         protected void SerializeForSend(NetDataWriter writer)
         {
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
-            SerializeValue(writer);
+            Serialize(writer);
         }
 
-        public override sealed void DeserializeValue(NetDataReader reader)
+        internal override sealed void Deserialize(NetDataReader reader)
         {
             Field.Deserialize(reader);
             value = Field.Value;
+            if (onChange != null)
+                onChange(value);
         }
 
-        public override sealed void SerializeValue(NetDataWriter writer)
+        internal override sealed void Serialize(NetDataWriter writer)
         {
             Field.Value = value;
             Field.Serialize(writer);
