@@ -130,6 +130,7 @@ namespace LiteNetLibHighLevel
             this.behaviourIndex = behaviourIndex;
             SetupSyncElements(syncFieldNames, CacheSyncFieldInfos, syncFields);
             SetupSyncElements(syncListNames, CacheSyncListInfos, syncLists);
+            OnSetup();
         }
 
         private void SetupSyncElements<T>(List<string> fieldNames, Dictionary<string, FieldInfo> cache, List<T> elementList) where T : LiteNetLibElement
@@ -302,5 +303,7 @@ namespace LiteNetLibHighLevel
                     list.SendOperation(peer, LiteNetLibSyncList.Operation.Insert, i);
             }
         }
+
+        public virtual void OnSetup() { }
     }
 }
