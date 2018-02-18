@@ -16,9 +16,9 @@ namespace LiteNetLibHighLevel
         public LiteNetLibIdentity registeringPlayerPrefab;
         public LiteNetLibIdentity[] registeringPrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
-        public readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
-        public readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        public readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
+        internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
         private LiteNetLibGameManager manager;
         public LiteNetLibGameManager Manager

@@ -21,7 +21,7 @@ namespace LiteNetLibHighLevel
             public const short Highest = 9;
         }
 
-        public readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
+        internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
