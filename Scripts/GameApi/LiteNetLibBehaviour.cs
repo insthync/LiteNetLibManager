@@ -142,7 +142,7 @@ namespace LiteNetLibHighLevel
                 FieldInfo field;
                 if (!cache.TryGetValue(key, out field))
                 {
-                    field = ClassType.GetField(fieldName);
+                    field = ClassType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     cache[key] = field;
                 }
                 if (field == null)
