@@ -1,7 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
-using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
@@ -21,7 +20,9 @@ namespace LiteNetLibHighLevel
             public const short ServerUpdateTime = 9;
             public const short Highest = 9;
         }
-        
+
+        public readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
+
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
         {
@@ -47,6 +48,7 @@ namespace LiteNetLibHighLevel
         protected override void Awake()
         {
             base.Awake();
+            Players.Clear();
             Assets.ClearRegisteredPrefabs();
             Assets.RegisterPrefabs();
             Assets.RegisterSceneObjects();
@@ -91,10 +93,18 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerUpdateTime, HandleServerUpdateTime);
         }
 
-        public override void OnServerConnected(NetPeer peer)
+        public override void OnPeerConnected(NetPeer peer)
         {
-            base.OnServerConnected(peer);
+            base.OnPeerConnected(peer);
             SendServerUpdateTime(peer);
+            Players[peer.ConnectId] = new LiteNetLibPlayer(this, peer);
+        }
+
+        public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+        {
+            base.OnPeerDisconnected(peer, disconnectInfo);
+            Players[peer.ConnectId].DestoryAllObjects();
+            Players.Remove(peer.ConnectId);
         }
 
         public override void OnClientConnected(NetPeer peer)

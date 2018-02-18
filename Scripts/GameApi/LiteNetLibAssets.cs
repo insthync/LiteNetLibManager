@@ -77,14 +77,13 @@ namespace LiteNetLibHighLevel
             {
                 var objectId = objectIds[i];
                 LiteNetLibIdentity spawnedObject;
-                if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) &&
-                    SpawnedObjects.Remove(objectId))
+                if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
                 {
+                    // Remove from asset spawned objects dictionary
+                    SpawnedObjects.Remove(objectId);
+                    // If the object is scene object, don't destroy just hide it, else destroy
                     if (SceneObjects.ContainsKey(objectId))
-                    {
-                        // If the object is scene object, don't destroy just hide it
                         spawnedObject.gameObject.SetActive(false);
-                    }
                     else
                         Destroy(spawnedObject.gameObject);
                 }
@@ -178,6 +177,11 @@ namespace LiteNetLibHighLevel
                 spawnedObject.transform.position = position;
                 spawnedObject.Initial(Manager, objectId, connectId);
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
+                // Add to player spawned objects dictionary
+                LiteNetLibPlayer player;
+                if (Manager.Players.TryGetValue(connectId, out player))
+                    player.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
+                // If this is server, send message to clients to spawn object
                 if (Manager.IsServer)
                     Manager.SendServerSpawnObject(spawnedObject);
                 return spawnedObject;
@@ -212,17 +216,20 @@ namespace LiteNetLibHighLevel
             }
 
             LiteNetLibIdentity spawnedObject;
-            if (SpawnedObjects.TryGetValue(objectId, out spawnedObject) && 
-                SpawnedObjects.Remove(objectId))
+            if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
             {
+                // Remove from player spawned objects dictionary
+                LiteNetLibPlayer player;
+                if (Manager.Players.TryGetValue(spawnedObject.ConnectId, out player))
+                    player.SpawnedObjects.Remove(objectId);
+                // Remove from asset spawned objects dictionary
+                SpawnedObjects.Remove(objectId);
+                // If the object is scene object, don't destroy just hide it, else destroy
                 if (SceneObjects.ContainsKey(objectId))
-                {
-                    // If the object is scene object, don't destroy just hide it
                     spawnedObject.gameObject.SetActive(false);
-                }
                 else
                     Destroy(spawnedObject.gameObject);
-
+                // If this is server, send message to clients to destroy object
                 if (Manager.IsServer)
                     Manager.SendServerDestroyObject(objectId);
                 return true;

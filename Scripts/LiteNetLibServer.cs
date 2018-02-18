@@ -21,7 +21,7 @@ namespace LiteNetLibHighLevel
         public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
         {
             if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
-            Manager.OnServerNetworkError(endPoint, socketErrorCode);
+            Manager.OnPeerNetworkError(endPoint, socketErrorCode);
         }
 
         public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
@@ -43,14 +43,14 @@ namespace LiteNetLibHighLevel
         {
             if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
             Manager.AddPeer(peer);
-            Manager.OnServerConnected(peer);
+            Manager.OnPeerConnected(peer);
         }
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
             Manager.RemovePeer(peer);
-            Manager.OnServerDisconnected(peer, disconnectInfo);
+            Manager.OnPeerDisconnected(peer, disconnectInfo);
         }
     }
 }

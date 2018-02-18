@@ -285,20 +285,20 @@ namespace LiteNetLibHighLevel
         /// </summary>
         /// <param name="endPoint"></param>
         /// <param name="socketErrorCode"></param>
-        public virtual void OnServerNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
+        public virtual void OnPeerNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
 
         /// <summary>
         /// This event will be called at server when any client connected
         /// </summary>
         /// <param name="peer"></param>
-        public virtual void OnServerConnected(NetPeer peer) { }
+        public virtual void OnPeerConnected(NetPeer peer) { }
 
         /// <summary>
         /// This event will be called at server when any client disconnected
         /// </summary>
         /// <param name="peer"></param>
         /// <param name="disconnectInfo"></param>
-        public virtual void OnServerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
+        public virtual void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
 
         /// <summary>
         /// This event will be called at server when received discovery request from client
