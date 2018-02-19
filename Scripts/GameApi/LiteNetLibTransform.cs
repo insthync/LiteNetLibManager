@@ -10,7 +10,6 @@ namespace LiteNetLibHighLevel
     {
         private struct TransformResult
         {
-            public Vector3 velocity;
             public Vector3 position;
             public Quaternion rotation;
             public float timestamp;
@@ -21,9 +20,8 @@ namespace LiteNetLibHighLevel
             public override void Deserialize(NetDataReader reader)
             {
                 var result = new TransformResult();
-                result.velocity = new Vector3((float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f);
                 result.position = new Vector3((float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f);
-                result.rotation = new Quaternion((float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f);
+                result.rotation = Quaternion.Euler((float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f);
                 result.timestamp = (float)reader.GetShort() * 0.01f;
                 Value = result;
             }
@@ -35,16 +33,12 @@ namespace LiteNetLibHighLevel
 
             public override void Serialize(NetDataWriter writer)
             {
-                writer.Put((short)(Value.velocity.x * 100));
-                writer.Put((short)(Value.velocity.y * 100));
-                writer.Put((short)(Value.velocity.z * 100));
                 writer.Put((short)(Value.position.x * 100));
                 writer.Put((short)(Value.position.y * 100));
                 writer.Put((short)(Value.position.z * 100));
-                writer.Put((short)(Value.rotation.x * 100));
-                writer.Put((short)(Value.rotation.y * 100));
-                writer.Put((short)(Value.rotation.z * 100));
-                writer.Put((short)(Value.rotation.w * 100));
+                writer.Put((short)(Value.rotation.eulerAngles.x * 100));
+                writer.Put((short)(Value.rotation.eulerAngles.y * 100));
+                writer.Put((short)(Value.rotation.eulerAngles.z * 100));
                 writer.Put((short)(Value.timestamp * 100));
             }
         }
@@ -58,15 +52,15 @@ namespace LiteNetLibHighLevel
         public Rigidbody2D TempRigidbody2D { get; private set; }
         public CharacterController TempCharacterController { get; private set; }
         // This list stores results of transform. Needed for non-owner client interpolation
-        private readonly List<TransformResult> interpolatingResults = new List<TransformResult>();
+        private readonly List<TransformResult> interpResults = new List<TransformResult>();
         // Interpolation related variables
         private bool isInterpolating = false;
         private float syncElapsed = 0;
-        private float interpElapsed = 0;
+        private float interpStep = 0;
         private float lastClientTimestamp = 0;
         private float lastServerTimestamp = 0;
-        private TransformResult startInterpolateTransformResult;
-        private TransformResult lastTransformResult;
+        private TransformResult startInterpResult;
+        private TransformResult lastResult;
 
         private void Awake()
         {
@@ -77,13 +71,15 @@ namespace LiteNetLibHighLevel
 
             RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
             RegisterNetFunction("ServerSendResult", new LiteNetLibFunction<TransformResultNetField>(ServerSendResultCallback));
+        }
 
-            startInterpolateTransformResult = new TransformResult();
-            startInterpolateTransformResult.position = TempTransform.position;
-            startInterpolateTransformResult.rotation = TempTransform.rotation;
-            startInterpolateTransformResult.velocity = Vector3.zero;
-            startInterpolateTransformResult.timestamp = 0;
-            lastTransformResult = startInterpolateTransformResult;
+        private void Start()
+        {
+            lastResult = new TransformResult();
+            lastResult.position = TempTransform.position;
+            lastResult.rotation = TempTransform.rotation;
+            lastResult.timestamp = Time.time;
+            interpResults.Add(lastResult);
         }
 
         private void ClientSendResult(TransformResult result)
@@ -111,7 +107,7 @@ namespace LiteNetLibHighLevel
             lastClientTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
             result.timestamp = Time.time;
-            interpolatingResults.Add(result);
+            interpResults.Add(result);
         }
 
         private void ServerSendResultCallback(TransformResultNetField resultParam)
@@ -126,7 +122,7 @@ namespace LiteNetLibHighLevel
             lastServerTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
             result.timestamp = Time.time;
-            interpolatingResults.Add(result);
+            interpResults.Add(result);
         }
 
         private void FixedUpdate()
@@ -136,33 +132,29 @@ namespace LiteNetLibHighLevel
             {
                 if (syncElapsed >= sendInterval)
                 {
-                    lastTransformResult.timestamp = Time.time;
-                    lastTransformResult.position = TempTransform.position;
-                    lastTransformResult.rotation = TempTransform.rotation;
-                    lastTransformResult.velocity = Vector3.zero;
-                    ServerSendResult(lastTransformResult);
+                    lastResult.position = TempTransform.position;
+                    lastResult.rotation = TempTransform.rotation;
+                    lastResult.timestamp = Time.time;
+                    ServerSendResult(lastResult);
                     syncElapsed = 0;
                 }
                 syncElapsed += Time.fixedDeltaTime;
                 // Interpolate transform that receives from clients
                 if (canClientSendResult && !IsLocalClient)
-                {
-                    InterpolateTransform();
-                }
+                    Interpolate();
             }
             // Sending client transform result to server
             else if (canClientSendResult && IsLocalClient)
             {
                 if (syncElapsed >= sendInterval)
                 {
-                    lastTransformResult.timestamp = Time.time;
+                    lastResult.timestamp = Time.time;
                     // Send transform to server only when there are changes on transform
-                    if (lastTransformResult.position != TempTransform.position || lastTransformResult.rotation != TempTransform.rotation)
+                    if (lastResult.position != TempTransform.position || lastResult.rotation != TempTransform.rotation)
                     {
-                        lastTransformResult.position = TempTransform.position;
-                        lastTransformResult.rotation = TempTransform.rotation;
-                        lastTransformResult.velocity = Vector3.zero;
-                        ClientSendResult(lastTransformResult);
+                        lastResult.position = TempTransform.position;
+                        lastResult.rotation = TempTransform.rotation;
+                        ClientSendResult(lastResult);
                     }
                     syncElapsed = 0;
                 }
@@ -170,37 +162,117 @@ namespace LiteNetLibHighLevel
             }
             // Interpolating results for non-owner client objects on clients
             else if (!canClientSendResult || !IsLocalClient)
-            {
-                InterpolateTransform();
-            }
+                Interpolate();
         }
 
-        private void InterpolateTransform()
+        private void Interpolate()
         {
             // There should be at least two records in the results list to interpolate between them
             // And continue interpolating when there is one record left
-            if (interpolatingResults.Count == 0)
+            if (interpResults.Count == 0)
                 isInterpolating = false;
 
-            if (interpolatingResults.Count >= 2)
+            if (interpResults.Count >= 2)
                 isInterpolating = true;
 
             if (isInterpolating)
             {
-                if (interpElapsed == 0)
-                    startInterpolateTransformResult = lastTransformResult;
-                float step = 1f / sendInterval;
-                lastTransformResult.position = Vector3.Lerp(startInterpolateTransformResult.position, interpolatingResults[0].position, interpElapsed);
-                lastTransformResult.rotation = Quaternion.Slerp(startInterpolateTransformResult.rotation, interpolatingResults[0].rotation, interpElapsed);
-                interpElapsed += step * Time.fixedDeltaTime;
-                if (interpElapsed >= 1)
+                var lastInterpResult = interpResults[interpResults.Count - 1];
+                if (!ShouldSnap(lastInterpResult.position))
                 {
-                    interpElapsed = 0;
-                    interpolatingResults.RemoveAt(0);
+                    if (interpStep == 0)
+                        startInterpResult = lastResult;
+
+                    float step = 1f / sendInterval;
+
+                    lastResult.position = Vector3.Lerp(startInterpResult.position, interpResults[0].position, interpStep);
+                    lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, interpResults[0].rotation, interpStep);
+
+                    if (TempRigidbody3D != null)
+                        InterpolateRigibody3D();
+                    else if (TempRigidbody2D != null)
+                        InterpolateRigibody2D();
+                    else if (TempCharacterController != null)
+                        InterpolateCharacterController();
+                    else
+                        InterpolateTransform();
+
+                    interpStep += step * Time.fixedDeltaTime;
+                    if (interpStep >= 1)
+                    {
+                        interpStep = 0;
+                        interpResults.RemoveAt(0);
+                    }
+                }
+                else
+                {
+                    lastResult.position = lastInterpResult.position;
+                    lastResult.rotation = lastInterpResult.rotation;
+                    Snap();
+                    interpResults.Clear();
+                    interpStep = 0;
                 }
             }
-            TempTransform.position = lastTransformResult.position;
-            TempTransform.rotation = lastTransformResult.rotation;
+        }
+
+        private bool ShouldSnap(Vector3 targetPosition)
+        {
+            var dist = 0f;
+            if (TempRigidbody3D != null)
+                dist = (TempRigidbody3D.position - targetPosition).magnitude;
+            else if (TempRigidbody2D != null)
+                dist = (TempRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
+            else if (TempCharacterController != null)
+                dist = (TempTransform.position - targetPosition).magnitude;
+            return dist > snapThreshold;
+        }
+
+        private void Snap()
+        {
+            if (TempRigidbody3D != null)
+            {
+                TempRigidbody3D.position = lastResult.position;
+                TempRigidbody3D.rotation = lastResult.rotation;
+            }
+            else if (TempRigidbody2D != null)
+            {
+                TempRigidbody2D.position = lastResult.position;
+                TempRigidbody2D.rotation = lastResult.rotation.eulerAngles.z;
+            }
+            else if (TempCharacterController != null)
+            {
+                TempTransform.position = lastResult.position;
+                TempTransform.rotation = lastResult.rotation;
+            }
+            else
+            {
+                TempTransform.position = lastResult.position;
+                TempTransform.rotation = lastResult.rotation;
+            }
+        }
+
+        private void InterpolateRigibody3D()
+        {
+            TempRigidbody3D.MovePosition(lastResult.position);
+            TempRigidbody3D.MoveRotation(lastResult.rotation);
+        }
+
+        private void InterpolateRigibody2D()
+        {
+            TempRigidbody2D.MovePosition(lastResult.position);
+            TempRigidbody2D.MoveRotation(lastResult.rotation.eulerAngles.z);
+        }
+
+        private void InterpolateCharacterController()
+        {
+            TempCharacterController.Move(lastResult.position - TempTransform.position);
+            TempTransform.rotation = lastResult.rotation;
+        }
+
+        private void InterpolateTransform()
+        {
+            TempTransform.position = lastResult.position;
+            TempTransform.rotation = lastResult.rotation;
         }
     }
 }
