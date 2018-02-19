@@ -111,6 +111,11 @@ namespace LiteNetLibHighLevel
             StopHost();
         }
 
+        protected virtual void OnApplicationQuit()
+        {
+            StopHost();
+        }
+
         protected void SetConfigs(NetManager netManager)
         {
             netManager.UnconnectedMessagesEnabled = unconnectedMessagesEnabled;
