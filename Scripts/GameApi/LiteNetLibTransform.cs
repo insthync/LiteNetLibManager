@@ -61,6 +61,7 @@ namespace LiteNetLibHighLevel
         private float lastServerTimestamp = 0;
         private TransformResult startInterpResult;
         private TransformResult lastResult;
+        private TransformResult syncResult;
 
         private void Awake()
         {
@@ -79,6 +80,7 @@ namespace LiteNetLibHighLevel
             lastResult.position = TempTransform.position;
             lastResult.rotation = TempTransform.rotation;
             lastResult.timestamp = Time.time;
+            syncResult = lastResult;
             interpResults.Add(lastResult);
         }
 
@@ -132,10 +134,9 @@ namespace LiteNetLibHighLevel
             {
                 if (syncElapsed >= sendInterval)
                 {
-                    lastResult.position = TempTransform.position;
-                    lastResult.rotation = TempTransform.rotation;
-                    lastResult.timestamp = Time.time;
-                    ServerSendResult(lastResult);
+                    // Send transform to clients only when there are changes on transform
+                    if (ShouldSyncResult())
+                        ServerSendResult(syncResult);
                     syncElapsed = 0;
                 }
                 syncElapsed += Time.fixedDeltaTime;
@@ -148,14 +149,9 @@ namespace LiteNetLibHighLevel
             {
                 if (syncElapsed >= sendInterval)
                 {
-                    lastResult.timestamp = Time.time;
                     // Send transform to server only when there are changes on transform
-                    if (lastResult.position != TempTransform.position || lastResult.rotation != TempTransform.rotation)
-                    {
-                        lastResult.position = TempTransform.position;
-                        lastResult.rotation = TempTransform.rotation;
-                        ClientSendResult(lastResult);
-                    }
+                    if (ShouldSyncResult())
+                        ClientSendResult(syncResult);
                     syncElapsed = 0;
                 }
                 syncElapsed += Time.fixedDeltaTime;
@@ -213,6 +209,18 @@ namespace LiteNetLibHighLevel
                     interpStep = 0;
                 }
             }
+        }
+
+        private bool ShouldSyncResult()
+        {
+            if (syncResult.position != TempTransform.position || syncResult.rotation != TempTransform.rotation)
+            {
+                syncResult.position = TempTransform.position;
+                syncResult.rotation = TempTransform.rotation;
+                syncResult.timestamp = Time.time;
+                return true;
+            }
+            return false;
         }
 
         private bool ShouldSnap(Vector3 targetPosition)
