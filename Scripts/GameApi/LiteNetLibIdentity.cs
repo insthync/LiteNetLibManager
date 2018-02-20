@@ -291,20 +291,20 @@ namespace LiteNetLibHighLevel
         {
             bool changed = false;
             bool shouldRebuild = false;
-            HashSet<LiteNetLibPlayer> newObservers = new HashSet<LiteNetLibPlayer>();
-            HashSet<LiteNetLibPlayer> oldObservers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
+            HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
+            HashSet<LiteNetLibPlayer> oldSubscribers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
 
             var count = Behaviours.Count;
             for (int i = 0; i < count; ++i)
             {
                 var behaviour = Behaviours[i];
-                shouldRebuild |= behaviour.OnRebuildSubscribers(newObservers, initialize);
+                shouldRebuild |= behaviour.OnRebuildSubscribers(newSubscribers, initialize);
             }
 
             // If shouldRebuild is FALSE, it's means it does not have to rebuild subscribers
             if (!shouldRebuild)
             {
-                // none of the behaviours rebuilt our observers, use built-in rebuild method
+                // None of the behaviours rebuilt our subscribers, use built-in rebuild method
                 if (initialize)
                 {
                     var players = Manager.Players.Values;
@@ -319,7 +319,7 @@ namespace LiteNetLibHighLevel
             }
 
             // Apply changes from rebuild
-            foreach (var subscriber in newObservers)
+            foreach (var subscriber in newSubscribers)
             {
                 if (subscriber == null)
                     continue;
@@ -331,7 +331,7 @@ namespace LiteNetLibHighLevel
                     continue;
                 }
 
-                if (initialize || !oldObservers.Contains(subscriber))
+                if (initialize || !oldSubscribers.Contains(subscriber))
                 {
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)
@@ -340,9 +340,9 @@ namespace LiteNetLibHighLevel
                 }
             }
 
-            foreach (var subscriber in oldObservers)
+            foreach (var subscriber in oldSubscribers)
             {
-                if (!newObservers.Contains(subscriber))
+                if (!newSubscribers.Contains(subscriber))
                 {
                     subscriber.RemoveSubscribing(this, false);
                     if (Manager.LogDebug)
@@ -355,7 +355,7 @@ namespace LiteNetLibHighLevel
                 return;
 
             Subscribers.Clear();
-            foreach (var subscriber in newObservers)
+            foreach (var subscriber in newSubscribers)
                 Subscribers.Add(subscriber.ConnectId, subscriber);
         }
     }
