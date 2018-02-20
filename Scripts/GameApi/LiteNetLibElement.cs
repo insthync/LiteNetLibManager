@@ -71,5 +71,10 @@ namespace LiteNetLibHighLevel
             }
             return true;
         }
+
+        protected bool IsSubscribedOrOwning(long connectId)
+        {
+            return Behaviour.Identity.Subscribers.ContainsKey(connectId) || connectId == Behaviour.ConnectId;
+        }
     }
 }

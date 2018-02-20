@@ -59,13 +59,13 @@ namespace LiteNetLibHighLevel
                 {
                     case FunctionReceivers.Target:
                         NetPeer targetPeer;
-                        if (peers.TryGetValue(connectId, out targetPeer))
+                        if (IsSubscribedOrOwning(connectId) && peers.TryGetValue(connectId, out targetPeer))
                             SendCallForServer(targetPeer, receivers, connectId);
                         break;
                     case FunctionReceivers.All:
                         foreach (var peer in peers.Values)
                         {
-                            if (Behaviour.Identity.Subscribers.ContainsKey(peer.ConnectId))
+                            if (IsSubscribedOrOwning(peer.ConnectId))
                                 SendCallForServer(peer, receivers, connectId);
                         }
                         break;
