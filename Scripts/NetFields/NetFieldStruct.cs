@@ -13,7 +13,7 @@ namespace LiteNetLibHighLevel
         {
             using (MemoryStream memoryStream = new MemoryStream(reader.GetBytesWithLength()))
             {
-                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                var binaryFormatter = new BinaryFormatter();
                 // Setup Unity's structs serialization surrogates
                 var surrogateSelector = new SurrogateSelector();
                 surrogateSelector.AddAllUnitySurrogate();
