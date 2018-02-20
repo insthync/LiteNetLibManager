@@ -8,6 +8,7 @@ namespace LiteNetLibHighLevel
     [DisallowMultipleComponent]
     public class LiteNetLibTransform : LiteNetLibBehaviour
     {
+        [System.Serializable]
         private struct TransformResult
         {
             public Vector3 position;
@@ -15,33 +16,7 @@ namespace LiteNetLibHighLevel
             public float timestamp;
         }
 
-        private class TransformResultNetField : LiteNetLibNetField<TransformResult>
-        {
-            public override void Deserialize(NetDataReader reader)
-            {
-                var result = new TransformResult();
-                result.position = new Vector3((float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f);
-                result.rotation = Quaternion.Euler((float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f, (float)reader.GetShort() * 0.01f);
-                result.timestamp = (float)reader.GetShort() * 0.01f;
-                Value = result;
-            }
-
-            public override bool IsValueChanged(TransformResult newValue)
-            {
-                return !newValue.Equals(Value);
-            }
-
-            public override void Serialize(NetDataWriter writer)
-            {
-                writer.Put((short)(Value.position.x * 100));
-                writer.Put((short)(Value.position.y * 100));
-                writer.Put((short)(Value.position.z * 100));
-                writer.Put((short)(Value.rotation.eulerAngles.x * 100));
-                writer.Put((short)(Value.rotation.eulerAngles.y * 100));
-                writer.Put((short)(Value.rotation.eulerAngles.z * 100));
-                writer.Put((short)(Value.timestamp * 100));
-            }
-        }
+        private class TransformResultNetField : NetFieldStruct<TransformResult> { }
 
         [Range(0, 1)]
         public float sendInterval = 0.1f;
