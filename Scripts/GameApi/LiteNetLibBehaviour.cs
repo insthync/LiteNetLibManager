@@ -304,6 +304,23 @@ namespace LiteNetLibHighLevel
             }
         }
 
+        /// <summary>
+        /// This function will be called when this behaviour have benn setup by identity
+        /// You may do some initialize things within this function
+        /// </summary>
         public virtual void OnSetup() { }
+
+        /// <summary>
+        /// This will be called by Identity when rebuild subscribers
+        /// will return TRUE if subscribers have to rebuild
+        /// you can override this functino to create your own interest management
+        /// </summary>
+        /// <param name="subscribers"></param>
+        /// <param name="initialize"></param>
+        /// <returns></returns>
+        public virtual bool OnRebuildSubscribers(HashSet<LiteNetLibPlayer> subscribers, bool initialize)
+        {
+            return false;
+        }
     }
 }

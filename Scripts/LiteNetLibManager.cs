@@ -218,21 +218,21 @@ namespace LiteNetLibHighLevel
             Client = null;
         }
 
-        public void AddPeer(NetPeer peer)
+        internal void AddPeer(NetPeer peer)
         {
             if (peer == null)
                 return;
             Peers.Add(peer.ConnectId, peer);
         }
 
-        public bool RemovePeer(NetPeer peer)
+        internal bool RemovePeer(NetPeer peer)
         {
             if (peer == null)
                 return false;
             return Peers.Remove(peer.ConnectId);
         }
 
-        public bool TryGetPeer(long connectId, out NetPeer peer)
+        internal bool TryGetPeer(long connectId, out NetPeer peer)
         {
             return Peers.TryGetValue(connectId, out peer);
         }

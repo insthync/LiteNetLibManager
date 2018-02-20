@@ -22,6 +22,7 @@ namespace LiteNetLibHighLevel
         [ReadOnly, SerializeField]
         private LiteNetLibGameManager manager;
         private readonly List<LiteNetLibBehaviour> behaviours = new List<LiteNetLibBehaviour>();
+        private readonly Dictionary<long, LiteNetLibPlayer> subscribers = new Dictionary<long, LiteNetLibPlayer>();
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
@@ -214,6 +215,8 @@ namespace LiteNetLibHighLevel
                 behaviour.Setup(behaviours.Count);
                 behaviours.Add(behaviour);
             }
+
+            RebuildSubscribers(true);
         }
 
         private void ValidateObjectId()
@@ -252,6 +255,108 @@ namespace LiteNetLibHighLevel
             {
                 netObject.objectId = ++HighestObjectId;
             }
+        }
+
+        internal void ClearSubscribers()
+        {
+            var values = subscribers.Values;
+            foreach (var subscriber in values)
+            {
+                subscriber.RemoveSubscribing(this, true);
+            }
+            subscribers.Clear();
+        }
+
+        internal void AddSubscriber(LiteNetLibPlayer subscriber)
+        {
+            if (subscribers.ContainsKey(subscriber.ConnectId))
+            {
+                if (Manager.LogDebug)
+                    Debug.Log("Subscriber [" + subscriber.ConnectId + "] already added to [" + gameObject + "]");
+                return;
+            }
+
+            subscribers[subscriber.ConnectId] = subscriber;
+            subscriber.AddSubscribing(this);
+        }
+
+        internal void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing = true)
+        {
+            subscribers.Remove(subscriber.ConnectId);
+            if (removePlayerSubscribing)
+                subscriber.RemoveSubscribing(this, false);
+        }
+
+        public void RebuildSubscribers(bool initialize)
+        {
+            bool changed = false;
+            bool shouldRebuild = false;
+            HashSet<LiteNetLibPlayer> newObservers = new HashSet<LiteNetLibPlayer>();
+            HashSet<LiteNetLibPlayer> oldObservers = new HashSet<LiteNetLibPlayer>(subscribers.Values);
+
+            var count = behaviours.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var behaviour = behaviours[i];
+                shouldRebuild |= behaviour.OnRebuildSubscribers(newObservers, initialize);
+            }
+
+            // If shouldRebuild is FALSE, it's means it does not have to rebuild subscribers
+            if (!shouldRebuild)
+            {
+                // none of the behaviours rebuilt our observers, use built-in rebuild method
+                if (initialize)
+                {
+                    var players = Manager.Players.Values;
+                    foreach (var player in players)
+                    {
+                        if (player == null)
+                            continue;
+                        AddSubscriber(player);
+                    }
+                }
+                return;
+            }
+
+            // Apply changes from rebuild
+            foreach (var subscriber in newObservers)
+            {
+                if (subscriber == null)
+                    continue;
+
+                if (!subscriber.IsReady)
+                {
+                    if (Manager.LogWarn)
+                        Debug.Log("Subscriber [" + subscriber.ConnectId + "] is not ready");
+                    continue;
+                }
+
+                if (initialize || !oldObservers.Contains(subscriber))
+                {
+                    subscriber.AddSubscribing(this);
+                    if (Manager.LogDebug)
+                        Debug.Log("Add subscriber [" + subscriber.ConnectId + "] to [" + gameObject + "]");
+                    changed = true;
+                }
+            }
+
+            foreach (var subscriber in oldObservers)
+            {
+                if (!newObservers.Contains(subscriber))
+                {
+                    subscriber.RemoveSubscribing(this, false);
+                    if (Manager.LogDebug)
+                        Debug.Log("Remove subscriber [" + subscriber.ConnectId + "] from [" + gameObject +"]");
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+                return;
+
+            subscribers.Clear();
+            foreach (var subscriber in newObservers)
+                subscribers.Add(subscriber.ConnectId, subscriber);
         }
     }
 }

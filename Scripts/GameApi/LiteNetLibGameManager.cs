@@ -128,27 +128,16 @@ namespace LiteNetLibHighLevel
             LiteNetLibIdentity.ResetObjectId();
             LiteNetLibAssets.ResetSpawnPositionCounter();
         }
-        
-        #region Relates components functions
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject)
-        {
-            return Assets.NetworkSpawn(gameObject);
-        }
 
-        public bool NetworkDestroy(GameObject gameObject)
-        {
-            return Assets.NetworkDestroy(gameObject);
-        }
-        #endregion
-
-        public void SendClientReady()
+#region Send messages functions
+        internal void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
             SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientReady);
         }
 
-        public void SendServerUpdateTime()
+        internal void SendServerUpdateTime()
         {
             if (!IsServer)
                 return;
@@ -158,7 +147,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendServerUpdateTime(NetPeer peer)
+        internal void SendServerUpdateTime(NetPeer peer)
         {
             SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerUpdateTime, (writer) =>
             {
@@ -166,7 +155,7 @@ namespace LiteNetLibHighLevel
             });
         }
 
-        public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
+        internal void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -176,7 +165,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendServerSpawnSceneObject(NetPeer peer, LiteNetLibIdentity identity)
+        internal void SendServerSpawnSceneObject(NetPeer peer, LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -186,7 +175,7 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnSceneObject, message);
         }
 
-        public void SendServerSpawnObject(LiteNetLibIdentity identity)
+        internal void SendServerSpawnObject(LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -196,7 +185,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendServerSpawnObject(NetPeer peer, LiteNetLibIdentity identity)
+        internal void SendServerSpawnObject(NetPeer peer, LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -208,7 +197,20 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnObject, message);
         }
 
-        public void SendServerDestroyObject(uint objectId)
+        internal void SendServerSpawnObjectWithData(NetPeer peer, LiteNetLibIdentity identity)
+        {
+            if (identity == null)
+                return;
+
+            if (Assets.SceneObjects.ContainsKey(identity.ObjectId))
+                SendServerSpawnSceneObject(peer, identity);
+            else
+                SendServerSpawnObject(peer, identity);
+            identity.SendInitSyncFields(peer);
+            identity.SendInitSyncLists(peer);
+        }
+
+        internal void SendServerDestroyObject(uint objectId)
         {
             if (!IsServer)
                 return;
@@ -218,7 +220,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendServerDestroyObject(NetPeer peer, uint objectId)
+        internal void SendServerDestroyObject(NetPeer peer, uint objectId)
         {
             if (!IsServer)
                 return;
@@ -226,6 +228,7 @@ namespace LiteNetLibHighLevel
             message.objectId = objectId;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
+#endregion
 
         protected virtual void SpawnPlayer(NetPeer peer)
         {
@@ -239,15 +242,12 @@ namespace LiteNetLibHighLevel
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
+            var player = Players[peer.ConnectId];
+            player.IsReady = true;
             var spawnedObjects = Assets.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
-                if (Assets.SceneObjects.ContainsKey(spawnedObject.ObjectId))
-                    SendServerSpawnSceneObject(peer, spawnedObject);
-                else
-                    SendServerSpawnObject(peer, spawnedObject);
-                spawnedObject.SendInitSyncFields(peer);
-                spawnedObject.SendInitSyncLists(peer);
+                spawnedObject.RebuildSubscribers(true);
             }
             SpawnPlayer(peer);
         }
