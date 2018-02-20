@@ -262,5 +262,11 @@ namespace LiteNetLibHighLevel
     public class SyncFieldVector4 : LiteNetLibSyncField<NetFieldVector4, Vector4>
     {
     }
+
+    [Serializable]
+    public class SyncFieldStruct<T> : LiteNetLibSyncField<NetFieldStruct<T>, T>
+        where T : struct
+    {
+    }
     #endregion
 }
