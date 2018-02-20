@@ -214,7 +214,8 @@ namespace LiteNetLibHighLevel
             {
                 foreach (var peer in peers.Values)
                 {
-                    SendOperation(peer, operation, index);
+                    if (Behaviour.Identity.Subscribers.ContainsKey(peer.ConnectId))
+                        SendOperation(peer, operation, index);
                 }
             }
         }

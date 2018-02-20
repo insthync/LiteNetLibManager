@@ -21,8 +21,8 @@ namespace LiteNetLibHighLevel
         private long connectId;
         [ReadOnly, SerializeField]
         private LiteNetLibGameManager manager;
-        private readonly List<LiteNetLibBehaviour> behaviours = new List<LiteNetLibBehaviour>();
-        private readonly Dictionary<long, LiteNetLibPlayer> subscribers = new Dictionary<long, LiteNetLibPlayer>();
+        internal readonly List<LiteNetLibBehaviour> Behaviours = new List<LiteNetLibBehaviour>();
+        internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
@@ -47,7 +47,7 @@ namespace LiteNetLibHighLevel
 
         internal void NetworkUpdate()
         {
-            foreach (var behaviour in behaviours)
+            foreach (var behaviour in Behaviours)
             {
                 behaviour.NetworkUpdate();
             }
@@ -124,32 +124,32 @@ namespace LiteNetLibHighLevel
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex < 0 || info.behaviourIndex >= behaviours.Count)
+            if (info.behaviourIndex < 0 || info.behaviourIndex >= Behaviours.Count)
                 return null;
-            return behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
+            return Behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
         }
 
         public LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex < 0 || info.behaviourIndex >= behaviours.Count)
+            if (info.behaviourIndex < 0 || info.behaviourIndex >= Behaviours.Count)
                 return null;
-            return behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
+            return Behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
         }
 
         public LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex < 0 || info.behaviourIndex >= behaviours.Count)
+            if (info.behaviourIndex < 0 || info.behaviourIndex >= Behaviours.Count)
                 return null;
-            return behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
+            return Behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
         }
 
         public void SendInitSyncFields()
         {
-            foreach (var behaviour in behaviours)
+            foreach (var behaviour in Behaviours)
             {
                 behaviour.SendInitSyncFields();
             }
@@ -157,7 +157,7 @@ namespace LiteNetLibHighLevel
 
         public void SendInitSyncFields(NetPeer peer)
         {
-            foreach (var behaviour in behaviours)
+            foreach (var behaviour in Behaviours)
             {
                 behaviour.SendInitSyncFields(peer);
             }
@@ -165,7 +165,7 @@ namespace LiteNetLibHighLevel
 
         public void SendInitSyncLists()
         {
-            foreach (var behaviour in behaviours)
+            foreach (var behaviour in Behaviours)
             {
                 behaviour.SendInitSyncLists();
             }
@@ -173,7 +173,7 @@ namespace LiteNetLibHighLevel
 
         public void SendInitSyncLists(NetPeer peer)
         {
-            foreach (var behaviour in behaviours)
+            foreach (var behaviour in Behaviours)
             {
                 behaviour.SendInitSyncLists(peer);
             }
@@ -208,12 +208,12 @@ namespace LiteNetLibHighLevel
             ValidateObjectId();
 
             // Setup behaviours index, we will use this as reference for network functions
-            behaviours.Clear();
+            Behaviours.Clear();
             var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
             foreach (var behaviour in behaviourComponents)
             {
-                behaviour.Setup(behaviours.Count);
-                behaviours.Add(behaviour);
+                behaviour.Setup(Behaviours.Count);
+                Behaviours.Add(behaviour);
             }
 
             RebuildSubscribers(true);
@@ -259,30 +259,30 @@ namespace LiteNetLibHighLevel
 
         internal void ClearSubscribers()
         {
-            var values = subscribers.Values;
+            var values = Subscribers.Values;
             foreach (var subscriber in values)
             {
                 subscriber.RemoveSubscribing(this, true);
             }
-            subscribers.Clear();
+            Subscribers.Clear();
         }
 
         internal void AddSubscriber(LiteNetLibPlayer subscriber)
         {
-            if (subscribers.ContainsKey(subscriber.ConnectId))
+            if (Subscribers.ContainsKey(subscriber.ConnectId))
             {
                 if (Manager.LogDebug)
                     Debug.Log("Subscriber [" + subscriber.ConnectId + "] already added to [" + gameObject + "]");
                 return;
             }
 
-            subscribers[subscriber.ConnectId] = subscriber;
+            Subscribers[subscriber.ConnectId] = subscriber;
             subscriber.AddSubscribing(this);
         }
 
         internal void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing = true)
         {
-            subscribers.Remove(subscriber.ConnectId);
+            Subscribers.Remove(subscriber.ConnectId);
             if (removePlayerSubscribing)
                 subscriber.RemoveSubscribing(this, false);
         }
@@ -292,12 +292,12 @@ namespace LiteNetLibHighLevel
             bool changed = false;
             bool shouldRebuild = false;
             HashSet<LiteNetLibPlayer> newObservers = new HashSet<LiteNetLibPlayer>();
-            HashSet<LiteNetLibPlayer> oldObservers = new HashSet<LiteNetLibPlayer>(subscribers.Values);
+            HashSet<LiteNetLibPlayer> oldObservers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
 
-            var count = behaviours.Count;
+            var count = Behaviours.Count;
             for (int i = 0; i < count; ++i)
             {
-                var behaviour = behaviours[i];
+                var behaviour = Behaviours[i];
                 shouldRebuild |= behaviour.OnRebuildSubscribers(newObservers, initialize);
             }
 
@@ -354,9 +354,9 @@ namespace LiteNetLibHighLevel
             if (!changed)
                 return;
 
-            subscribers.Clear();
+            Subscribers.Clear();
             foreach (var subscriber in newObservers)
-                subscribers.Add(subscriber.ConnectId, subscriber);
+                Subscribers.Add(subscriber.ConnectId, subscriber);
         }
     }
 }
