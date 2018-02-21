@@ -182,15 +182,7 @@ namespace LiteNetLibHighLevel
 
         public bool IsSceneObjectExists(uint objectId)
         {
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
-            foreach (LiteNetLibIdentity netObject in netObjects)
-            {
-                if (netObject == this)
-                    continue;
-                if (netObject.objectId == objectId)
-                    return true;
-            }
-            return false;
+            return Manager.Assets.SceneObjects.ContainsKey(objectId);
         }
 
         /// <summary>
@@ -199,7 +191,7 @@ namespace LiteNetLibHighLevel
         /// <param name="manager"></param>
         /// <param name="objectId"></param>
         /// <param name="connectId"></param>
-        public void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectId = 0)
+        internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectId = 0)
         {
             this.objectId = objectId;
             this.connectId = connectId;
@@ -225,18 +217,18 @@ namespace LiteNetLibHighLevel
             RebuildSubscribers(true);
         }
 
-        private void ValidateObjectId()
+        internal void ValidateObjectId()
         {
             if (objectId == 0 || IsSceneObjectExists(objectId))
                 objectId = GetNewObjectId();
         }
 
-        public static void ResetObjectId()
+        internal static void ResetObjectId()
         {
             HighestObjectId = 0;
         }
 
-        public static uint GetNewObjectId()
+        internal static uint GetNewObjectId()
         {
             LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
             if (HighestObjectId == 0)
