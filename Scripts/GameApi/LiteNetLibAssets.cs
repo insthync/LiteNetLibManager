@@ -165,8 +165,12 @@ namespace LiteNetLibHighLevel
                 return null;
             }
 
-            // Scene and spawned objects cannot spawning again
-            if (SceneObjects.ContainsKey(objectId) || SpawnedObjects.ContainsKey(objectId))
+            // If it's scene object use network spawn scene function to spawn it
+            if (SceneObjects.ContainsKey(objectId))
+                return NetworkSpawnScene(objectId, position);
+
+            // Spawned objects cannot spawning again
+            if (SpawnedObjects.ContainsKey(objectId))
                 return null;
 
             LiteNetLibIdentity spawningObject = null;
