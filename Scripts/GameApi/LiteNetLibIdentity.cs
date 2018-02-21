@@ -21,6 +21,7 @@ namespace LiteNetLibHighLevel
         private long connectId;
         [ReadOnly, SerializeField]
         private LiteNetLibGameManager manager;
+        private bool hasSetupBehaviours;
         internal readonly List<LiteNetLibBehaviour> Behaviours = new List<LiteNetLibBehaviour>();
         internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
         public string AssetId { get { return assetId; } }
@@ -198,22 +199,27 @@ namespace LiteNetLibHighLevel
         /// <param name="manager"></param>
         /// <param name="objectId"></param>
         /// <param name="connectId"></param>
-        public void Initial(LiteNetLibGameManager manager, uint objectId = 0, long connectId = 0)
+        public void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectId = 0)
         {
             this.objectId = objectId;
             this.connectId = connectId;
             this.manager = manager;
             if (objectId > HighestObjectId)
                 HighestObjectId = objectId;
-            ValidateObjectId();
+            if (!isSceneObject)
+                ValidateObjectId();
 
-            // Setup behaviours index, we will use this as reference for network functions
-            Behaviours.Clear();
-            var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
-            foreach (var behaviour in behaviourComponents)
+            if (!hasSetupBehaviours)
             {
-                behaviour.Setup(Behaviours.Count);
-                Behaviours.Add(behaviour);
+                // Setup behaviours index, we will use this as reference for network functions
+                Behaviours.Clear();
+                var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
+                foreach (var behaviour in behaviourComponents)
+                {
+                    behaviour.Setup(Behaviours.Count);
+                    Behaviours.Add(behaviour);
+                }
+                hasSetupBehaviours = true;
             }
 
             RebuildSubscribers(true);

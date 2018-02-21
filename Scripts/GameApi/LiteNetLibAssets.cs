@@ -127,7 +127,7 @@ namespace LiteNetLibHighLevel
             {
                 sceneObject.gameObject.SetActive(true);
                 sceneObject.transform.position = position;
-                sceneObject.Initial(Manager);
+                sceneObject.Initial(Manager, true);
                 SpawnedObjects[sceneObject.ObjectId] = sceneObject;
                 return sceneObject;
             }
@@ -179,7 +179,7 @@ namespace LiteNetLibHighLevel
                 var spawnedObject = Instantiate(spawningObject);
                 spawnedObject.gameObject.SetActive(true);
                 spawnedObject.transform.position = position;
-                spawnedObject.Initial(Manager, objectId, connectId);
+                spawnedObject.Initial(Manager, false, objectId, connectId);
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 // Add to player spawned objects dictionary
                 LiteNetLibPlayer player;
