@@ -165,8 +165,8 @@ namespace LiteNetLibHighLevel
                 return null;
             }
 
-            // Scene objects cannot be spawned
-            if (SceneObjects.ContainsKey(objectId))
+            // Scene and spawned objects cannot spawning again
+            if (SceneObjects.ContainsKey(objectId) || SpawnedObjects.ContainsKey(objectId))
                 return null;
 
             LiteNetLibIdentity spawningObject = null;
@@ -181,9 +181,6 @@ namespace LiteNetLibHighLevel
                 LiteNetLibPlayer player;
                 if (Manager.Players.TryGetValue(connectId, out player))
                     player.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
-                // If this is server, send message to clients to spawn object
-                if (Manager.IsServer)
-                    Manager.SendServerSpawnObject(spawnedObject);
                 return spawnedObject;
             }
             else if (Manager.LogWarn)
