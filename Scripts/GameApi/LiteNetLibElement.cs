@@ -74,7 +74,7 @@ namespace LiteNetLibHighLevel
 
         protected bool IsSubscribedOrOwning(long connectId)
         {
-            return Behaviour.Identity.Subscribers.ContainsKey(connectId) || connectId == Behaviour.ConnectId;
+            return Behaviour.Identity.ContainsSubscriber(connectId) || connectId == Behaviour.ConnectId;
         }
     }
 }
