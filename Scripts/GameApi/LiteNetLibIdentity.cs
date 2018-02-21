@@ -259,6 +259,10 @@ namespace LiteNetLibHighLevel
 
         internal void ClearSubscribers()
         {
+            // Only server can manage subscribers
+            if (!IsServer)
+                return;
+
             var values = Subscribers.Values;
             foreach (var subscriber in values)
             {
@@ -269,6 +273,10 @@ namespace LiteNetLibHighLevel
 
         internal void AddSubscriber(LiteNetLibPlayer subscriber)
         {
+            // Only server can manage subscribers
+            if (!IsServer)
+                return;
+
             if (Subscribers.ContainsKey(subscriber.ConnectId))
             {
                 if (Manager.LogDebug)
@@ -282,13 +290,26 @@ namespace LiteNetLibHighLevel
 
         internal void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing = true)
         {
+            // Only server can manage subscribers
+            if (!IsServer)
+                return;
+
             Subscribers.Remove(subscriber.ConnectId);
             if (removePlayerSubscribing)
                 subscriber.RemoveSubscribing(this, false);
         }
 
+        internal bool ContainsSubscriber(long connectId)
+        {
+            return Subscribers.ContainsKey(connectId);
+        }
+
         public void RebuildSubscribers(bool initialize)
         {
+            // Only server can manage subscribers
+            if (!IsServer)
+                return;
+
             bool changed = false;
             bool shouldRebuild = false;
             HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
@@ -340,6 +361,7 @@ namespace LiteNetLibHighLevel
                 }
             }
 
+            // Remove subscribers that is not in new subscribers list
             foreach (var subscriber in oldSubscribers)
             {
                 if (!newSubscribers.Contains(subscriber))
