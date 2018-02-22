@@ -87,6 +87,12 @@
             or Debug.Log if compiled with UNITY flag
             </summary>
         </member>
+        <member name="M:LiteNetLib.Utils.NetDataReader.Clone">
+            <summary>
+            Clone NetDataReader without data copy (usable for OnReceive)
+            </summary>
+            <returns>new NetDataReader instance</returns>
+        </member>
         <member name="M:LiteNetLib.Utils.NetSerializer.RegisterCustomType``1">
             <summary>
             Register custom property type
@@ -329,6 +335,11 @@
             Enables socket option "ReuseAddress" for specific purposes
             </summary>
         </member>
+        <member name="F:LiteNetLib.NetManager.Statistics">
+            <summary>
+            Statistics of all connections
+            </summary>
+        </member>
         <member name="F:LiteNetLib.NetManager.NatPunchModule">
             <summary>
             NatPunchModule for NAT hole punching operations
@@ -472,6 +483,7 @@
             Connect to remote host
             </summary>
             <param name="target">Server end point (ip and port)</param>
+            <returns>peer awatinig connection or already connected peer</returns>
         </member>
         <member name="M:LiteNetLib.NetManager.Stop">
             <summary>
@@ -573,6 +585,11 @@
         <member name="F:LiteNetLib.NetPeer.Tag">
             <summary>
             Application defined object containing data about the connection
+            </summary>
+        </member>
+        <member name="F:LiteNetLib.NetPeer.Statistics">
+            <summary>
+            Statistics of peer connection
             </summary>
         </member>
         <member name="M:LiteNetLib.NetPeer.GetMaxSinglePacketSize(LiteNetLib.SendOptions)">
