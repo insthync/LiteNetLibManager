@@ -14,8 +14,8 @@ namespace LiteNetLibHighLevel
     public class LiteNetLibBehaviour : MonoBehaviour
     {
         [ReadOnly, SerializeField]
-        private int behaviourIndex;
-        public int BehaviourIndex
+        private ushort behaviourIndex;
+        public ushort BehaviourIndex
         {
             get { return behaviourIndex; }
         }
@@ -125,7 +125,7 @@ namespace LiteNetLibHighLevel
         }
 #endif
 
-        public void Setup(int behaviourIndex)
+        public void Setup(ushort behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
             SetupSyncElements(syncFieldNames, CacheSyncFieldInfos, syncFields);
@@ -313,7 +313,7 @@ namespace LiteNetLibHighLevel
         /// <summary>
         /// This will be called by Identity when rebuild subscribers
         /// will return TRUE if subscribers have to rebuild
-        /// you can override this functino to create your own interest management
+        /// you can override this function to create your own interest management
         /// </summary>
         /// <param name="subscribers"></param>
         /// <param name="initialize"></param>

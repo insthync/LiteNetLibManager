@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -121,34 +121,34 @@ namespace LiteNetLibHighLevel
 #endif
 #endregion
 
-        public LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
+        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex < 0 || info.behaviourIndex >= Behaviours.Count)
+            if (info.behaviourIndex >= Behaviours.Count)
                 return null;
             return Behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
         }
 
-        public LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
+        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex < 0 || info.behaviourIndex >= Behaviours.Count)
+            if (info.behaviourIndex >= Behaviours.Count)
                 return null;
             return Behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
         }
 
-        public LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
+        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex < 0 || info.behaviourIndex >= Behaviours.Count)
+            if (info.behaviourIndex >= Behaviours.Count)
                 return null;
             return Behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
         }
 
-        public void SendInitSyncFields()
+        internal void SendInitSyncFields()
         {
             foreach (var behaviour in Behaviours)
             {
@@ -156,7 +156,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendInitSyncFields(NetPeer peer)
+        internal void SendInitSyncFields(NetPeer peer)
         {
             foreach (var behaviour in Behaviours)
             {
@@ -164,7 +164,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendInitSyncLists()
+        internal void SendInitSyncLists()
         {
             foreach (var behaviour in Behaviours)
             {
@@ -172,7 +172,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        public void SendInitSyncLists(NetPeer peer)
+        internal void SendInitSyncLists(NetPeer peer)
         {
             foreach (var behaviour in Behaviours)
             {
@@ -208,7 +208,7 @@ namespace LiteNetLibHighLevel
                 var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
                 foreach (var behaviour in behaviourComponents)
                 {
-                    behaviour.Setup(Behaviours.Count);
+                    behaviour.Setup(Convert.ToUInt16(Behaviours.Count));
                     Behaviours.Add(behaviour);
                 }
                 hasSetupBehaviours = true;

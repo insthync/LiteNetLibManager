@@ -8,9 +8,9 @@ namespace LiteNetLibHighLevel
     public struct LiteNetLibElementInfo
     {
         public uint objectId;
-        public int behaviourIndex;
+        public ushort behaviourIndex;
         public ushort elementId;
-        public LiteNetLibElementInfo(uint objectId, int behaviourIndex, ushort elementId)
+        public LiteNetLibElementInfo(uint objectId, ushort behaviourIndex, ushort elementId)
         {
             this.objectId = objectId;
             this.behaviourIndex = behaviourIndex;
@@ -26,7 +26,7 @@ namespace LiteNetLibHighLevel
 
         public static LiteNetLibElementInfo DeserializeInfo(NetDataReader reader)
         {
-            return new LiteNetLibElementInfo(reader.GetUInt(), reader.GetInt(), reader.GetUShort());
+            return new LiteNetLibElementInfo(reader.GetUInt(), reader.GetUShort(), reader.GetUShort());
         }
     }
 
