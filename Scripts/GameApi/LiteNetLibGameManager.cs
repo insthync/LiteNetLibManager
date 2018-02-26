@@ -18,7 +18,8 @@ namespace LiteNetLibHighLevel
             public const short ServerCallFunction = 7;
             public const short ServerUpdateSyncList = 8;
             public const short ServerUpdateTime = 9;
-            public const short Highest = 9;
+            public const short ServerSyncBehaviour = 10;
+            public const short Highest = 10;
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
@@ -91,6 +92,7 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerCallFunction, HandleServerCallFunction);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncList, HandleServerUpdateSyncList);
             RegisterClientMessage(GameMsgTypes.ServerUpdateTime, HandleServerUpdateTime);
+            RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
         }
 
         public override void OnPeerConnected(NetPeer peer)
@@ -338,11 +340,23 @@ namespace LiteNetLibHighLevel
 
         protected virtual void HandleServerUpdateTime(LiteNetLibMessageHandler messageHandler)
         {
-            // Server updated at server, if this is hot (client and server) then skip it.
+            // Server time updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
             float time = messageHandler.reader.GetFloat();
             ServerTimeOffset = time - Time.unscaledTime;
+        }
+
+        protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
+        {
+            // Behaviour sync from server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
+            var reader = messageHandler.reader;
+            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibIdentity identity;
+            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
+                identity.ProcessSyncField(info, reader);
         }
     }
 }

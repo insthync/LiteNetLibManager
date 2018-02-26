@@ -11,7 +11,7 @@ using UnityEditor;
 namespace LiteNetLibHighLevel
 {
     [RequireComponent(typeof(LiteNetLibIdentity))]
-    public class LiteNetLibBehaviour : MonoBehaviour
+    public class LiteNetLibBehaviour : MonoBehaviour, ILiteNetLibMessage
     {
         [ReadOnly, SerializeField]
         private ushort behaviourIndex;
@@ -19,11 +19,27 @@ namespace LiteNetLibHighLevel
         {
             get { return behaviourIndex; }
         }
-        
+
         [ReadOnly, SerializeField]
         private List<string> syncFieldNames = new List<string>();
         [ReadOnly, SerializeField]
         private List<string> syncListNames = new List<string>();
+        [Header("Behaviour sync options")]
+        public SendOptions sendOptions;
+        [Tooltip("How many time of network updates per second, 0 => updates every frames")]
+        [Range(0, 30)]
+        public int sendRate = 5;
+
+        protected float lastSentTime;
+        public float SendInterval
+        {
+            get
+            {
+                if (sendRate == 0)
+                    return 0;
+                return 1f / sendRate;
+            }
+        }
 
         private static Dictionary<string, FieldInfo> CacheSyncFieldInfos = new Dictionary<string, FieldInfo>();
         private static Dictionary<string, FieldInfo> CacheSyncListInfos = new Dictionary<string, FieldInfo>();
@@ -105,6 +121,15 @@ namespace LiteNetLibHighLevel
             {
                 syncField.NetworkUpdate();
             }
+
+            // Sync behaviour
+            if (Time.realtimeSinceStartup - lastSentTime < SendInterval)
+                return;
+
+            lastSentTime = Time.realtimeSinceStartup;
+
+            if (ShouldSyncBehaviour())
+                Manager.SendPacket(sendOptions, Identity.Peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
         }
 
 #if UNITY_EDITOR
@@ -304,6 +329,21 @@ namespace LiteNetLibHighLevel
             }
         }
 
+        public void Serialize(NetDataWriter writer)
+        {
+            if (!IsServer)
+                return;
+
+            writer.Put(Identity.ObjectId);
+            writer.Put(BehaviourIndex);
+            OnSerialize(writer);
+        }
+
+        public void Deserialize(NetDataReader reader)
+        {
+            OnDeserialize(reader);
+        }
+
         /// <summary>
         /// This function will be called when this behaviour have benn setup by identity
         /// You may do some initialize things within this function
@@ -322,5 +362,24 @@ namespace LiteNetLibHighLevel
         {
             return false;
         }
+
+        /// <summary>
+        /// Override this function to make condition to write custom to client
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool ShouldSyncBehaviour()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Override this function to write custom data to send from server to client
+        /// </summary>
+        public virtual void OnSerialize(NetDataWriter writer) { }
+
+        /// <summary>
+        /// Override this function to read data from server at client
+        /// </summary>
+        public virtual void OnDeserialize(NetDataReader reader) { }
     }
 }
