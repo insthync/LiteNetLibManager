@@ -253,7 +253,7 @@ namespace LiteNetLibHighLevel
             MessageHandlers.SendPacket(options, peer, msgType, serializer);
         }
 
-        public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : ILiteNetLibMessage
         {
             MessageHandlers.SendPacket(options, peer, msgType, messageData);
         }
