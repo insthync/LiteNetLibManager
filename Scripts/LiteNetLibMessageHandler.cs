@@ -16,14 +16,14 @@ namespace LiteNetLibHighLevel
             this.reader = reader;
         }
 
-        public T ReadMessage<T>() where T : LiteNetLibMessageBase, new()
+        public T ReadMessage<T>() where T : ILiteNetLibMessage, new()
         {
             var msg = new T();
             msg.Deserialize(reader);
             return msg;
         }
 
-        public void ReadMessage<T>(T msg) where T : LiteNetLibMessageBase
+        public void ReadMessage<T>(T msg) where T : ILiteNetLibMessage
         {
             msg.Deserialize(reader);
         }

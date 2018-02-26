@@ -47,12 +47,12 @@ namespace LiteNetLibHighLevel
             SendPacket(Writer, options, peer, msgType, serializer);
         }
 
-        public void SendPacket<T>(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        public void SendPacket<T>(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType, T messageData) where T : ILiteNetLibMessage
         {
             SendPacket(writer, options, peer, msgType, messageData.Serialize);
         }
 
-        public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : LiteNetLibMessageBase
+        public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : ILiteNetLibMessage
         {
             SendPacket(Writer, options, peer, msgType, messageData);
         }

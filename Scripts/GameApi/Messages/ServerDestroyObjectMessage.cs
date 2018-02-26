@@ -5,16 +5,16 @@ using UnityEngine;
 
 namespace LiteNetLibHighLevel
 {
-    public class ServerDestroyObjectMessage : LiteNetLibMessageBase
+    public class ServerDestroyObjectMessage : ILiteNetLibMessage
     {
         public uint objectId;
 
-        public override void Deserialize(NetDataReader reader)
+        public void Deserialize(NetDataReader reader)
         {
             objectId = reader.GetUInt();
         }
 
-        public override void Serialize(NetDataWriter writer)
+        public void Serialize(NetDataWriter writer)
         {
             writer.Put(objectId);
         }
