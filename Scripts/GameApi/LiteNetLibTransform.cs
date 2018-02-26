@@ -15,11 +15,8 @@ namespace LiteNetLibHighLevel
             public Quaternion rotation;
             public float timestamp;
         }
-
         private class TransformResultNetField : NetFieldStruct<TransformResult> { }
 
-        [Range(0, 1)]
-        public float sendInterval = 0.1f;
         public bool canClientSendResult;
         public float snapThreshold = 5.0f;
         public Transform TempTransform { get; private set; }
@@ -46,7 +43,6 @@ namespace LiteNetLibHighLevel
             TempCharacterController = GetComponent<CharacterController>();
 
             RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
-            RegisterNetFunction("ServerSendResult", new LiteNetLibFunction<TransformResultNetField>(ServerSendResultCallback));
         }
 
         private void Start()
@@ -67,11 +63,6 @@ namespace LiteNetLibHighLevel
             CallNetFunction("ClientSendResult", FunctionReceivers.Server, result);
         }
 
-        private void ServerSendResult(TransformResult result)
-        {
-            CallNetFunction("ServerSendResult", FunctionReceivers.All, result);
-        }
-
         private void ClientSendResultCallback(TransformResultNetField resultParam)
         {
             // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
@@ -87,12 +78,39 @@ namespace LiteNetLibHighLevel
             interpResults.Add(result);
         }
 
-        private void ServerSendResultCallback(TransformResultNetField resultParam)
+        public override bool ShouldSyncBehaviour()
+        {
+            if (syncResult.position != TempTransform.position || syncResult.rotation != TempTransform.rotation)
+            {
+                syncResult.position = TempTransform.position;
+                syncResult.rotation = TempTransform.rotation;
+                syncResult.timestamp = Time.time;
+                return true;
+            }
+            return false;
+        }
+
+        public override void OnSerialize(NetDataWriter writer)
+        {
+            writer.Put(TempTransform.position.x);
+            writer.Put(TempTransform.position.y);
+            writer.Put(TempTransform.position.z);
+            writer.Put(TempTransform.rotation.x);
+            writer.Put(TempTransform.rotation.y);
+            writer.Put(TempTransform.rotation.z);
+            writer.Put(TempTransform.rotation.w);
+            writer.Put(Time.time);
+        }
+
+        public override void OnDeserialize(NetDataReader reader)
         {
             // Update transform only non-owner client
             if (IsLocalClient || IsServer)
                 return;
-            var result = resultParam.Value;
+            var result = new TransformResult();
+            result.position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            result.rotation = new Quaternion(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            result.timestamp = reader.GetFloat();
             // Discard out of order results
             if (result.timestamp <= lastServerTimestamp)
                 return;
@@ -107,14 +125,6 @@ namespace LiteNetLibHighLevel
             // Sending transform to all clients
             if (IsServer)
             {
-                if (syncElapsed >= sendInterval)
-                {
-                    // Send transform to clients only when there are changes on transform
-                    if (ShouldSyncResult())
-                        ServerSendResult(syncResult);
-                    syncElapsed = 0;
-                }
-                syncElapsed += Time.fixedDeltaTime;
                 // Interpolate transform that receives from clients
                 if (canClientSendResult && !IsLocalClient)
                     Interpolate();
@@ -122,10 +132,10 @@ namespace LiteNetLibHighLevel
             // Sending client transform result to server
             else if (canClientSendResult && IsLocalClient)
             {
-                if (syncElapsed >= sendInterval)
+                if (syncElapsed >= SendInterval)
                 {
                     // Send transform to server only when there are changes on transform
-                    if (ShouldSyncResult())
+                    if (ShouldSyncBehaviour())
                         ClientSendResult(syncResult);
                     syncElapsed = 0;
                 }
@@ -154,7 +164,7 @@ namespace LiteNetLibHighLevel
                     if (interpStep == 0)
                         startInterpResult = lastResult;
 
-                    float step = 1f / sendInterval;
+                    float step = 1f / SendInterval;
 
                     lastResult.position = Vector3.Lerp(startInterpResult.position, interpResults[0].position, interpStep);
                     lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, interpResults[0].rotation, interpStep);
@@ -184,18 +194,6 @@ namespace LiteNetLibHighLevel
                     interpStep = 0;
                 }
             }
-        }
-
-        private bool ShouldSyncResult()
-        {
-            if (syncResult.position != TempTransform.position || syncResult.rotation != TempTransform.rotation)
-            {
-                syncResult.position = TempTransform.position;
-                syncResult.rotation = TempTransform.rotation;
-                syncResult.timestamp = Time.time;
-                return true;
-            }
-            return false;
         }
 
         private bool ShouldSnap(Vector3 targetPosition)
