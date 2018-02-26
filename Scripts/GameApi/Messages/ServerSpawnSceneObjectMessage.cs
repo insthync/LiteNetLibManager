@@ -5,18 +5,18 @@ using UnityEngine;
 
 namespace LiteNetLibHighLevel
 {
-    public class ServerSpawnSceneObjectMessage : LiteNetLibMessageBase
+    public class ServerSpawnSceneObjectMessage : ILiteNetLibMessage
     {
         public uint objectId;
         public Vector3 position;
 
-        public override void Deserialize(NetDataReader reader)
+        public void Deserialize(NetDataReader reader)
         {
             objectId = reader.GetUInt();
             position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
 
-        public override void Serialize(NetDataWriter writer)
+        public void Serialize(NetDataWriter writer)
         {
             writer.Put(objectId);
             writer.Put(position.x);
