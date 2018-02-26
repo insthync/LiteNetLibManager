@@ -129,7 +129,14 @@ namespace LiteNetLibHighLevel
             lastSentTime = Time.realtimeSinceStartup;
 
             if (ShouldSyncBehaviour())
-                Manager.SendPacket(sendOptions, Identity.Peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
+            {
+                var peers = Manager.Peers.Values;
+                foreach (var peer in peers)
+                {
+                    if (Identity.ContainsSubscriber(peer.ConnectId) || peer.ConnectId == ConnectId)
+                        Manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
+                }
+            }
         }
 
 #if UNITY_EDITOR
