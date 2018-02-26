@@ -353,10 +353,11 @@ namespace LiteNetLibHighLevel
             if (IsServer)
                 return;
             var reader = messageHandler.reader;
-            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            var objectId = reader.GetUInt();
+            var behaviourIndex = reader.GetUShort();
             LiteNetLibIdentity identity;
-            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
-                identity.ProcessSyncField(info, reader);
+            if (Assets.SpawnedObjects.TryGetValue(objectId, out identity))
+                identity.ProcessSyncBehaviour(behaviourIndex, reader);
         }
     }
 }

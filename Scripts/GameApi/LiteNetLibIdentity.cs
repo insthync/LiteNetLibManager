@@ -27,7 +27,6 @@ namespace LiteNetLibHighLevel
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
-        public NetPeer Peer { get { return manager.Peers[ConnectId]; } }
         public LiteNetLibGameManager Manager { get { return manager; } }
         public bool IsServer
         {
@@ -149,12 +148,8 @@ namespace LiteNetLibHighLevel
             return Behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
         }
 
-        internal LiteNetLibBehaviour ProcessSyncBehaviour(NetDataReader reader)
+        internal LiteNetLibBehaviour ProcessSyncBehaviour(ushort behaviourIndex, NetDataReader reader)
         {
-            var objectId = reader.GetUInt();
-            var behaviourIndex = reader.GetUShort();
-            if (objectId != ObjectId)
-                return null;
             if (behaviourIndex >= Behaviours.Count)
                 return null;
             var behaviour = Behaviours[behaviourIndex];
