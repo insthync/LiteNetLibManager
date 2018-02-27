@@ -123,9 +123,9 @@ namespace LiteNetLibHighLevel
                 Manager.SendPacketToAllPeers(sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
         }
 
-#if UNITY_EDITOR
-        private void OnValidate()
+        protected virtual void OnValidate()
         {
+#if UNITY_EDITOR
             syncFieldNames.Clear();
             syncListNames.Clear();
             var fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
@@ -138,8 +138,8 @@ namespace LiteNetLibHighLevel
                     syncListNames.Add(field.Name);
             }
             EditorUtility.SetDirty(this);
-        }
 #endif
+        }
 
         public void Setup(ushort behaviourIndex)
         {
