@@ -26,6 +26,8 @@ namespace LiteNetLibHighLevel
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
+        public bool clientReadyOnConnect;
+
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
         {
@@ -115,7 +117,8 @@ namespace LiteNetLibHighLevel
         public override void OnClientConnected(NetPeer peer)
         {
             base.OnClientConnected(peer);
-            SendClientReady();
+            if (clientReadyOnConnect)
+                SendClientReady();
         }
 
         public override void OnStopServer()
