@@ -123,9 +123,9 @@ namespace LiteNetLibHighLevel
                 Manager.SendPacketToAllPeers(sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
         }
 
-        protected virtual void OnValidate()
-        {
 #if UNITY_EDITOR
+        private void OnValidate()
+        {
             syncFieldNames.Clear();
             syncListNames.Clear();
             var fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
@@ -138,8 +138,9 @@ namespace LiteNetLibHighLevel
                     syncListNames.Add(field.Name);
             }
             EditorUtility.SetDirty(this);
-#endif
+            OnBehaviourValidate();
         }
+#endif
 
         public void Setup(ushort behaviourIndex)
         {
@@ -336,7 +337,12 @@ namespace LiteNetLibHighLevel
         }
 
         /// <summary>
-        /// This function will be called when this behaviour have benn setup by identity
+        /// This function will be called when function OnValidate() have been called in edior
+        /// </summary>
+        public virtual void OnBehaviourValidate() { }
+
+        /// <summary>
+        /// This function will be called when this behaviour have been setup by identity
         /// You may do some initialize things within this function
         /// </summary>
         public virtual void OnSetup() { }
