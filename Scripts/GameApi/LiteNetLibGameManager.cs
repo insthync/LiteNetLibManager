@@ -135,7 +135,7 @@ namespace LiteNetLibHighLevel
         #region Send messages functions
         public virtual void SerializeClientReadyExtra(NetDataWriter writer) { }
 
-        public virtual void DeserializeClientReadyExtra(NetDataReader reader) { }
+        public virtual void DeserializeClientReadyExtra(NetPeer peer, NetDataReader reader) { }
 
         internal void SendClientReady()
         {
@@ -252,7 +252,7 @@ namespace LiteNetLibHighLevel
             }
             if (Assets.spawnPlayerOnReady)
                 SpawnPlayer(peer);
-            DeserializeClientReadyExtra(messageHandler.reader);
+            DeserializeClientReadyExtra(messageHandler.peer, messageHandler.reader);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
