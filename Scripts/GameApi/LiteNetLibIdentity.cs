@@ -311,6 +311,11 @@ namespace LiteNetLibHighLevel
             return Subscribers.ContainsKey(connectId);
         }
 
+        public bool IsSubscribedOrOwning(long connectId)
+        {
+            return ContainsSubscriber(connectId) || connectId == ConnectId;
+        }
+
         public void RebuildSubscribers(bool initialize)
         {
             // Only server can manage subscribers

@@ -26,20 +26,11 @@ namespace LiteNetLibHighLevel
         private List<string> syncListNames = new List<string>();
         [Header("Behaviour sync options")]
         public SendOptions sendOptions;
-        [Tooltip("How many time of network updates per second, 0 => updates every frames")]
-        [Range(0, 30)]
-        public int sendRate = 5;
+        [Tooltip("Interval to send network data")]
+        [Range(0f, 2f)]
+        public float sendInterval = 0.1f;
 
-        protected float lastSentTime;
-        public float SendInterval
-        {
-            get
-            {
-                if (sendRate == 0)
-                    return 0;
-                return 1f / sendRate;
-            }
-        }
+        private float lastSentTime;
 
         private static Dictionary<string, FieldInfo> CacheSyncFieldInfos = new Dictionary<string, FieldInfo>();
         private static Dictionary<string, FieldInfo> CacheSyncListInfos = new Dictionary<string, FieldInfo>();
@@ -123,20 +114,13 @@ namespace LiteNetLibHighLevel
             }
 
             // Sync behaviour
-            if (Time.realtimeSinceStartup - lastSentTime < SendInterval)
+            if (Time.realtimeSinceStartup - lastSentTime < sendInterval)
                 return;
 
             lastSentTime = Time.realtimeSinceStartup;
 
             if (ShouldSyncBehaviour())
-            {
-                var peers = Manager.Peers.Values;
-                foreach (var peer in peers)
-                {
-                    if (Identity.ContainsSubscriber(peer.ConnectId) || peer.ConnectId == ConnectId)
-                        Manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
-                }
-            }
+                Manager.SendPacketToAllPeers(sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
         }
 
 #if UNITY_EDITOR

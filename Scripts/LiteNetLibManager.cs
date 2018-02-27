@@ -247,6 +247,33 @@ namespace LiteNetLibHighLevel
         {
             MessageHandlers.ClientReadPacket(peer, reader);
         }
+        
+        public void SendPacketToAllPeers(SendOptions options, short msgType, System.Action<NetDataWriter> serializer)
+        {
+            var peers = Peers.Values;
+            foreach (var peer in peers)
+            {
+                SendPacket(options, peer, msgType, serializer);
+            }
+        }
+
+        public void SendPacketToAllPeers<T>(SendOptions options, short msgType, T messageData) where T : ILiteNetLibMessage
+        {
+            var peers = Peers.Values;
+            foreach (var peer in peers)
+            {
+                SendPacket(options, peer, msgType, messageData);
+            }
+        }
+
+        public void SendPacketToAllPeers(SendOptions options, short msgType)
+        {
+            var peers = Peers.Values;
+            foreach (var peer in peers)
+            {
+                SendPacket(options, peer, msgType);
+            }
+        }
 
         public void SendPacket(SendOptions options, NetPeer peer, short msgType, System.Action<NetDataWriter> serializer)
         {
