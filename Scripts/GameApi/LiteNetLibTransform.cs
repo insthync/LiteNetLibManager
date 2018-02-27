@@ -32,6 +32,7 @@ namespace LiteNetLibHighLevel
         private float lastClientTimestamp = 0;
         private float lastServerTimestamp = 0;
         private TransformResult startInterpResult;
+        private TransformResult endInterpResult;
         private TransformResult lastResult;
         private TransformResult syncResult;
 
@@ -50,7 +51,7 @@ namespace LiteNetLibHighLevel
             lastResult = new TransformResult();
             lastResult.position = TempTransform.position;
             lastResult.rotation = TempTransform.rotation;
-            lastResult.timestamp = Time.time;
+            lastResult.timestamp = Time.realtimeSinceStartup;
             syncResult = lastResult;
             interpResults.Add(lastResult);
         }
@@ -74,7 +75,7 @@ namespace LiteNetLibHighLevel
                 return;
             lastClientTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.time;
+            result.timestamp = Time.realtimeSinceStartup;
             interpResults.Add(result);
         }
 
@@ -84,7 +85,7 @@ namespace LiteNetLibHighLevel
             {
                 syncResult.position = TempTransform.position;
                 syncResult.rotation = TempTransform.rotation;
-                syncResult.timestamp = Time.time;
+                syncResult.timestamp = Time.realtimeSinceStartup;
                 return true;
             }
             return false;
@@ -99,7 +100,7 @@ namespace LiteNetLibHighLevel
             writer.Put(TempTransform.rotation.y);
             writer.Put(TempTransform.rotation.z);
             writer.Put(TempTransform.rotation.w);
-            writer.Put(Time.time);
+            writer.Put(Time.realtimeSinceStartup);
         }
 
         public override void OnDeserialize(NetDataReader reader)
@@ -116,7 +117,7 @@ namespace LiteNetLibHighLevel
                 return;
             lastServerTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.time;
+            result.timestamp = Time.realtimeSinceStartup;
             interpResults.Add(result);
         }
 
@@ -132,7 +133,7 @@ namespace LiteNetLibHighLevel
             // Sending client transform result to server
             else if (canClientSendResult && IsLocalClient)
             {
-                if (syncElapsed >= SendInterval)
+                if (syncElapsed >= sendInterval)
                 {
                     // Send transform to server only when there are changes on transform
                     if (ShouldSyncBehaviour())
@@ -153,7 +154,7 @@ namespace LiteNetLibHighLevel
             if (interpResults.Count == 0)
                 isInterpolating = false;
 
-            if (interpResults.Count >= 2)
+            if (interpResults.Count > 0)
                 isInterpolating = true;
 
             if (isInterpolating)
@@ -162,12 +163,14 @@ namespace LiteNetLibHighLevel
                 if (!ShouldSnap(lastInterpResult.position))
                 {
                     if (interpStep == 0)
+                    {
                         startInterpResult = lastResult;
+                        endInterpResult = interpResults[0];
+                    }
 
-                    float step = 1f / SendInterval;
-
-                    lastResult.position = Vector3.Lerp(startInterpResult.position, interpResults[0].position, interpStep);
-                    lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, interpResults[0].rotation, interpStep);
+                    float step = 1f / sendInterval;
+                    lastResult.position = Vector3.Lerp(startInterpResult.position, endInterpResult.position, interpStep);
+                    lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, endInterpResult.rotation, interpStep);
 
                     if (TempRigidbody3D != null)
                         InterpolateRigibody3D();
@@ -181,7 +184,7 @@ namespace LiteNetLibHighLevel
                     interpStep += step * Time.fixedDeltaTime;
                     if (interpStep >= 1)
                     {
-                        interpStep = 0;
+                        interpStep = 0f;
                         interpResults.RemoveAt(0);
                     }
                 }
