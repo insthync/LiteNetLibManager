@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
+using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
@@ -131,12 +132,16 @@ namespace LiteNetLibHighLevel
             LiteNetLibAssets.ResetSpawnPositionCounter();
         }
 
-#region Send messages functions
+        #region Send messages functions
+        public virtual void SerializeClientReadyExtra(NetDataWriter writer) { }
+
+        public virtual void DeserializeClientReadyExtra(NetDataReader reader) { }
+
         internal void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientReady);
+            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
         }
 
         internal void SendServerUpdateTime()
@@ -230,28 +235,24 @@ namespace LiteNetLibHighLevel
             message.objectId = objectId;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
-#endregion
+        #endregion
 
-        protected virtual void SpawnPlayer(NetPeer peer)
-        {
-            if (Assets.PlayerPrefab == null)
-                return;
-            var spawnedObject = Assets.NetworkSpawn(Assets.PlayerPrefab.AssetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
-            spawnedObject.SendInitSyncFields(peer);
-            spawnedObject.SendInitSyncLists(peer);
-        }
-
+        #region Message Handlers
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
             var player = Players[peer.ConnectId];
+            if (player.IsReady)
+                return;
             player.IsReady = true;
             var spawnedObjects = Assets.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
                 spawnedObject.RebuildSubscribers(true);
             }
-            SpawnPlayer(peer);
+            if (Assets.spawnPlayerOnReady)
+                SpawnPlayer(peer);
+            DeserializeClientReadyExtra(messageHandler.reader);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
@@ -358,6 +359,33 @@ namespace LiteNetLibHighLevel
             LiteNetLibIdentity identity;
             if (Assets.SpawnedObjects.TryGetValue(objectId, out identity))
                 identity.ProcessSyncBehaviour(behaviourIndex, reader);
+        }
+        #endregion
+
+        protected virtual LiteNetLibIdentity SpawnPlayer(NetPeer peer)
+        {
+            if (Assets.PlayerPrefab == null)
+                return null;
+            return SpawnPlayer(peer, assets.PlayerPrefab);
+        }
+
+        protected virtual LiteNetLibIdentity SpawnPlayer(NetPeer peer, LiteNetLibIdentity prefab)
+        {
+            if (prefab == null)
+                return null;
+            return SpawnPlayer(peer, prefab.AssetId);
+        }
+
+        protected virtual LiteNetLibIdentity SpawnPlayer(NetPeer peer, string assetId)
+        {
+            var spawnedObject = Assets.NetworkSpawn(assetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
+            if (spawnedObject != null)
+            {
+                spawnedObject.SendInitSyncFields(peer);
+                spawnedObject.SendInitSyncLists(peer);
+                return spawnedObject;
+            }
+            return null;
         }
     }
 }

@@ -14,6 +14,7 @@ namespace LiteNetLibHighLevel
         public bool playerSpawnRandomly;
         public Vector3[] playerSpawnPositions;
         public LiteNetLibIdentity registeringPlayerPrefab;
+        public bool spawnPlayerOnReady;
         public LiteNetLibIdentity[] registeringPrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         internal readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
