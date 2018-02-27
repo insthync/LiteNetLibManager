@@ -191,6 +191,8 @@ namespace LiteNetLibHighLevel
 
         public bool IsSceneObjectExists(uint objectId)
         {
+            if (Manager == null)
+                return false;
             return Manager.Assets.SceneObjects.ContainsKey(objectId);
         }
 
