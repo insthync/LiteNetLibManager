@@ -135,10 +135,6 @@ namespace LiteNetLibHighLevel
         }
 
         #region Send messages functions
-        public virtual void SerializeClientReadyExtra(NetDataWriter writer) { }
-
-        public virtual void DeserializeClientReadyExtra(NetPeer peer, NetDataReader reader) { }
-
         internal void SendClientReady()
         {
             if (!IsClientConnected)
@@ -395,12 +391,25 @@ namespace LiteNetLibHighLevel
         #endregion
 
         /// <summary>
+        /// Overrride this function to send custom data when send client ready message
+        /// </summary>
+        /// <param name="writer"></param>
+        public virtual void SerializeClientReadyExtra(NetDataWriter writer) { }
+
+        /// <summary>
+        /// Override this function to read custom data that come with send client ready message
+        /// </summary>
+        /// <param name="peer"></param>
+        /// <param name="reader"></param>
+        public virtual void DeserializeClientReadyExtra(NetPeer peer, NetDataReader reader) { }
+
+        /// <summary>
         /// Override this function to show error message / disconnect
         /// </summary>
         /// <param name="message"></param>
         public virtual void OnServerError(ServerErrorMessage message)
         {
-            if (message.shouldDisconnect)
+            if (message.shouldDisconnect && !IsServer)
                 StopClient();
         }
 
