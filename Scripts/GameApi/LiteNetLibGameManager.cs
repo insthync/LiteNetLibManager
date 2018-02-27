@@ -115,8 +115,7 @@ namespace LiteNetLibHighLevel
         public override void OnClientConnected(NetPeer peer)
         {
             base.OnClientConnected(peer);
-            if (IsClient)
-                SendClientReady();
+            SendClientReady();
         }
 
         public override void OnStopServer()
