@@ -30,8 +30,8 @@ namespace LiteNetLibHighLevel
             get
             {
                 if (IsServer)
-                    return Time.unscaledTime;
-                return Time.unscaledTime + ServerTimeOffset;
+                    return Time.realtimeSinceStartup;
+                return Time.realtimeSinceStartup + ServerTimeOffset;
             }
         }
 
@@ -344,7 +344,7 @@ namespace LiteNetLibHighLevel
             if (IsServer)
                 return;
             float time = messageHandler.reader.GetFloat();
-            ServerTimeOffset = time - Time.unscaledTime;
+            ServerTimeOffset = time - Time.realtimeSinceStartup;
         }
 
         protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
