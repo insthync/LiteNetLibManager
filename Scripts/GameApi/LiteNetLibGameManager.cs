@@ -115,7 +115,8 @@ namespace LiteNetLibHighLevel
         public override void OnClientConnected(NetPeer peer)
         {
             base.OnClientConnected(peer);
-            SendClientReady();
+            if (IsClient)
+                SendClientReady();
         }
 
         public override void OnStopServer()
@@ -382,9 +383,7 @@ namespace LiteNetLibHighLevel
 
         protected virtual void HandleServerError(LiteNetLibMessageHandler messageHandler)
         {
-            // Error send from server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
+            // Error sent from server
             var message = messageHandler.ReadMessage<ServerErrorMessage>();
             OnServerError(message);
         }
