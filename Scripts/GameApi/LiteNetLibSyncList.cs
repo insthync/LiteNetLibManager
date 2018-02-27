@@ -29,11 +29,12 @@ namespace LiteNetLibHighLevel
         public abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
     }
 
-    public class LiteNetLibSyncList<TField, TFieldType> : LiteNetLibSyncList, IList<TField>
+    public class LiteNetLibSyncList<TField, TFieldType> : LiteNetLibSyncList, IList<TFieldType>
         where TField : LiteNetLibNetField<TFieldType>, new()
     {
         protected readonly List<TField> list = new List<TField>();
-        public TField this[int index]
+        protected readonly List<TFieldType> valueList = new List<TFieldType>();
+        public TFieldType this[int index]
         {
             get { return list[index]; }
             set
@@ -41,9 +42,10 @@ namespace LiteNetLibHighLevel
                 if (!ValidateBeforeAccess())
                     return;
 
-                if (list[index].IsValueChanged(value.Value))
+                if (list[index].IsValueChanged(value))
                 {
-                    list[index] = value;
+                    list[index].Value = value;
+                    valueList[index] = value;
                     SendOperation(Operation.Set, index);
                 }
             }
@@ -61,14 +63,12 @@ namespace LiteNetLibHighLevel
 
         public TFieldType Get(int index)
         {
-            return this[index].Value;
+            return this[index];
         }
 
         public void Set(int index, TFieldType value)
         {
-            var item = new TField();
-            item.Value = value;
-            this[index] = item;
+            this[index] = value;
         }
 
         public void Add(TFieldType value)
@@ -83,6 +83,7 @@ namespace LiteNetLibHighLevel
             if (!ValidateBeforeAccess())
                 return;
             list.Add(item);
+            valueList.Add(item);
             SendOperation(Operation.Add, list.Count - 1);
         }
 
@@ -98,51 +99,41 @@ namespace LiteNetLibHighLevel
             if (!ValidateBeforeAccess())
                 return;
             list.Insert(index, item);
+            valueList.Insert(index, item);
             SendOperation(Operation.Insert, index);
         }
 
         public bool Contains(TFieldType value)
         {
-            for (var i = 0; i < list.Count; ++i)
-            {
-                var listItem = list[i];
-                if (listItem.Value.Equals(value))
-                    return true;
-            }
-            return false;
+            return valueList.Contains(value);
         }
 
         public bool Contains(TField item)
         {
-            for (var i = 0; i < list.Count; ++i)
-            {
-                var listItem = list[i];
-                if (listItem.Value.Equals(item.Value))
-                    return true;
-            }
-            return false;
+            return Contains(item.Value);
         }
 
         public int IndexOf(TFieldType value)
         {
-            for (var i = 0; i < list.Count; ++i)
-            {
-                var listItem = list[i];
-                if (listItem.Value.Equals(value))
-                    return i;
-            }
-            return -1;
+            return valueList.IndexOf(value);
         }
 
         public int IndexOf(TField item)
         {
-            for (var i = 0; i < list.Count; ++i)
+            return IndexOf(item.Value);
+        }
+
+        public bool Remove(TFieldType value)
+        {
+            if (!ValidateBeforeAccess())
+                return false;
+            var index = IndexOf(value);
+            if (index >= 0)
             {
-                var listItem = list[i];
-                if (listItem.Value.Equals(item.Value))
-                    return i;
+                RemoveAt(index);
+                return true;
             }
-            return -1;
+            return false;
         }
 
         public bool Remove(TField item)
@@ -163,6 +154,7 @@ namespace LiteNetLibHighLevel
             if (!ValidateBeforeAccess())
                 return;
             list.RemoveAt(index);
+            valueList.RemoveAt(index);
             SendOperation(Operation.RemoveAt, index);
         }
 
@@ -171,17 +163,18 @@ namespace LiteNetLibHighLevel
             if (!ValidateBeforeAccess())
                 return;
             list.Clear();
+            valueList.Clear();
             SendOperation(Operation.Clear, 0);
         }
 
-        public void CopyTo(TField[] array, int arrayIndex)
+        public void CopyTo(TFieldType[] array, int arrayIndex)
         {
-            list.CopyTo(array, arrayIndex);
+            valueList.CopyTo(array, arrayIndex);
         }
 
-        public IEnumerator<TField> GetEnumerator()
+        public IEnumerator<TFieldType> GetEnumerator()
         {
-            return list.GetEnumerator();
+            return valueList.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
