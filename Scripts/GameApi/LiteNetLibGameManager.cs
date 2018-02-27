@@ -20,7 +20,8 @@ namespace LiteNetLibHighLevel
             public const short ServerUpdateSyncList = 8;
             public const short ServerUpdateTime = 9;
             public const short ServerSyncBehaviour = 10;
-            public const short Highest = 10;
+            public const short ServerError = 11;
+            public const short Highest = 11;
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
@@ -94,6 +95,7 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncList, HandleServerUpdateSyncList);
             RegisterClientMessage(GameMsgTypes.ServerUpdateTime, HandleServerUpdateTime);
             RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
+            RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
         }
 
         public override void OnPeerConnected(NetPeer peer)
@@ -156,10 +158,11 @@ namespace LiteNetLibHighLevel
 
         internal void SendServerUpdateTime(NetPeer peer)
         {
-            SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerUpdateTime, (writer) =>
-            {
-                writer.Put(ServerTime);
-            });
+            if (!IsServer)
+                return;
+            var message = new ServerTimeMessage();
+            message.serverTime = ServerTime;
+            SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerUpdateTime, message);
         }
 
         internal void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
@@ -233,6 +236,26 @@ namespace LiteNetLibHighLevel
                 return;
             var message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
+            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
+        }
+
+        internal void SendServerError(bool shouldDisconnect, string errorMessage)
+        {
+            if (!IsServer)
+                return;
+            foreach (var peer in Peers.Values)
+            {
+                SendServerError(peer, shouldDisconnect, errorMessage);
+            }
+        }
+
+        internal void SendServerError(NetPeer peer, bool shouldDisconnect, string errorMessage)
+        {
+            if (!IsServer)
+                return;
+            var message = new ServerErrorMessage();
+            message.shouldDisconnect = shouldDisconnect;
+            message.errorMessage = errorMessage;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
         #endregion
@@ -344,8 +367,8 @@ namespace LiteNetLibHighLevel
             // Server time updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            float time = messageHandler.reader.GetFloat();
-            ServerTimeOffset = time - Time.realtimeSinceStartup;
+            var message = messageHandler.ReadMessage<ServerTimeMessage>();
+            ServerTimeOffset = message.serverTime - Time.realtimeSinceStartup;
         }
 
         protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
@@ -360,7 +383,26 @@ namespace LiteNetLibHighLevel
             if (Assets.SpawnedObjects.TryGetValue(objectId, out identity))
                 identity.ProcessSyncBehaviour(behaviourIndex, reader);
         }
+
+        protected virtual void HandleServerError(LiteNetLibMessageHandler messageHandler)
+        {
+            // Error send from server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
+            var message = messageHandler.ReadMessage<ServerErrorMessage>();
+            OnServerError(message);
+        }
         #endregion
+
+        /// <summary>
+        /// Override this function to show error message / disconnect
+        /// </summary>
+        /// <param name="message"></param>
+        public virtual void OnServerError(ServerErrorMessage message)
+        {
+            if (message.shouldDisconnect)
+                StopClient();
+        }
 
         protected virtual LiteNetLibIdentity SpawnPlayer(NetPeer peer)
         {

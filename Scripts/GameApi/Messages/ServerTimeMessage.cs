@@ -4,18 +4,18 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibHighLevel
 {
-    public class ServerDestroyObjectMessage : ILiteNetLibMessage
+    public class ServerTimeMessage : ILiteNetLibMessage
     {
-        public uint objectId;
+        public float serverTime;
 
         public void Deserialize(NetDataReader reader)
         {
-            objectId = reader.GetUInt();
+            serverTime = reader.GetFloat();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(objectId);
+            writer.Put(serverTime);
         }
     }
 }
