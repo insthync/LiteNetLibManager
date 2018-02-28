@@ -292,11 +292,8 @@ namespace LiteNetLibHighLevel
             if (!player.IsReady)
                 return;
             player.IsReady = false;
-            var spawnedObjects = Assets.SpawnedObjects.Values;
-            foreach (var spawnedObject in spawnedObjects)
-            {
-                spawnedObject.RemoveSubscriber(player);
-            }
+            player.DestoryAllObjects();
+            player.ClearSubscribing();
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
