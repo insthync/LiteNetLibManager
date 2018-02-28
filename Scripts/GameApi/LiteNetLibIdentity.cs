@@ -313,6 +313,18 @@ namespace LiteNetLibHighLevel
             return Subscribers.ContainsKey(connectId);
         }
 
+        internal bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
+        {
+            var count = Behaviours.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var behaviour = Behaviours[i];
+                if (!behaviour.ShouldAddSubscriber(subscriber))
+                    return false;
+            }
+            return true;
+        }
+
         public bool IsSubscribedOrOwning(long connectId)
         {
             return ContainsSubscriber(connectId) || connectId == ConnectId;
@@ -324,7 +336,7 @@ namespace LiteNetLibHighLevel
             if (!IsServer)
                 return;
 
-            bool changed = false;
+            bool hasChanges = false;
             bool shouldRebuild = false;
             HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
             HashSet<LiteNetLibPlayer> oldSubscribers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
@@ -371,7 +383,7 @@ namespace LiteNetLibHighLevel
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)
                         Debug.Log("Add subscriber [" + subscriber.ConnectId + "] to [" + gameObject + "]");
-                    changed = true;
+                    hasChanges = true;
                 }
             }
 
@@ -383,13 +395,14 @@ namespace LiteNetLibHighLevel
                     subscriber.RemoveSubscribing(this, true);
                     if (Manager.LogDebug)
                         Debug.Log("Remove subscriber [" + subscriber.ConnectId + "] from [" + gameObject +"]");
-                    changed = true;
+                    hasChanges = true;
                 }
             }
 
-            if (!changed)
+            if (!hasChanges)
                 return;
 
+            // Rebuild subscribers
             Subscribers.Clear();
             foreach (var subscriber in newSubscribers)
                 Subscribers.Add(subscriber.ConnectId, subscriber);

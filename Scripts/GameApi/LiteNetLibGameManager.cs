@@ -279,7 +279,8 @@ namespace LiteNetLibHighLevel
             var spawnedObjects = Assets.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
-                spawnedObject.RebuildSubscribers(true);
+                if (spawnedObject.ShouldAddSubscriber(player))
+                    spawnedObject.AddSubscriber(player);
             }
             var playerIdentity = SpawnPlayer(peer);
             DeserializeClientReadyExtra(playerIdentity, messageHandler.reader);

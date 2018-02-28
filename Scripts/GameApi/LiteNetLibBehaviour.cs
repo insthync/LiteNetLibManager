@@ -348,6 +348,15 @@ namespace LiteNetLibHighLevel
         public virtual void OnSetup() { }
 
         /// <summary>
+        /// Override this function to decides that old object should add new object as subscriber or not
+        /// </summary>
+        /// <param name="subscriber"></param>
+        public virtual bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
+        {
+            return true;
+        }
+
+        /// <summary>
         /// This will be called by Identity when rebuild subscribers
         /// will return TRUE if subscribers have to rebuild
         /// you can override this function to create your own interest management
