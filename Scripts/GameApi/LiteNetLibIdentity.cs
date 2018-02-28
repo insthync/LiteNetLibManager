@@ -27,6 +27,15 @@ namespace LiteNetLibHighLevel
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
+        public LiteNetLibPlayer Player
+        {
+            get
+            {
+                if (Manager == null || !Manager.Players.ContainsKey(ConnectId))
+                    return null;
+                return Manager.Players[ConnectId];
+            }
+        }
         public LiteNetLibGameManager Manager { get { return manager; } }
         public bool IsServer
         {
