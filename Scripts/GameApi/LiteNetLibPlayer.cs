@@ -34,7 +34,7 @@ namespace LiteNetLibHighLevel
                 Manager.SendServerDestroyObject(Peer, identity.ObjectId);
         }
 
-        internal void ClearSubscribing(bool destroyObjectsOnPeer)
+        internal void ClearSubscribing()
         {
             // Remove this from identities subscriber list
             foreach (var identity in SubscribingObjects)
@@ -42,8 +42,6 @@ namespace LiteNetLibHighLevel
                 // Don't call for remove subscribing 
                 // because it's going to clear in this function
                 identity.RemoveSubscriber(this, false);
-                if (destroyObjectsOnPeer)
-                    Manager.SendServerDestroyObject(Peer, identity.ObjectId);
             }
             SubscribingObjects.Clear();
         }
