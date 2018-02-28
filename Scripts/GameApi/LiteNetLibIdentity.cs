@@ -275,7 +275,7 @@ namespace LiteNetLibHighLevel
             var values = Subscribers.Values;
             foreach (var subscriber in values)
             {
-                subscriber.RemoveSubscribing(this, true);
+                subscriber.RemoveSubscribing(this, false);
             }
             Subscribers.Clear();
         }
@@ -381,7 +381,7 @@ namespace LiteNetLibHighLevel
             {
                 if (!newSubscribers.Contains(subscriber))
                 {
-                    subscriber.RemoveSubscribing(this, false);
+                    subscriber.RemoveSubscribing(this, true);
                     if (Manager.LogDebug)
                         Debug.Log("Remove subscriber [" + subscriber.ConnectId + "] from [" + gameObject +"]");
                     changed = true;

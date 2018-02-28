@@ -26,11 +26,11 @@ namespace LiteNetLibHighLevel
             Manager.SendServerSpawnObjectWithData(Peer, identity);
         }
 
-        internal void RemoveSubscribing(LiteNetLibIdentity identity, bool removedFromSubscriber)
+        internal void RemoveSubscribing(LiteNetLibIdentity identity, bool sendDestroyObjectMessage)
         {
             SubscribingObjects.Remove(identity);
 
-            if (!removedFromSubscriber)
+            if (sendDestroyObjectMessage)
                 Manager.SendServerDestroyObject(Peer, identity.ObjectId);
         }
 
