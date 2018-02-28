@@ -140,21 +140,21 @@ namespace LiteNetLibHighLevel
         }
 
         #region Send messages functions
-        internal void SendClientReady()
+        public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
             SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
         }
 
-        internal void SendClientNotReady()
+        public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
             SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientNotReady);
         }
 
-        internal void SendServerUpdateTime()
+        public void SendServerUpdateTime()
         {
             if (!IsServer)
                 return;
@@ -164,7 +164,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        internal void SendServerUpdateTime(NetPeer peer)
+        public void SendServerUpdateTime(NetPeer peer)
         {
             if (!IsServer)
                 return;
@@ -173,7 +173,7 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerUpdateTime, message);
         }
 
-        internal void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
+        public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -183,7 +183,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        internal void SendServerSpawnSceneObject(NetPeer peer, LiteNetLibIdentity identity)
+        public void SendServerSpawnSceneObject(NetPeer peer, LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -193,7 +193,7 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnSceneObject, message);
         }
 
-        internal void SendServerSpawnObject(LiteNetLibIdentity identity)
+        public void SendServerSpawnObject(LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -203,7 +203,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        internal void SendServerSpawnObject(NetPeer peer, LiteNetLibIdentity identity)
+        public void SendServerSpawnObject(NetPeer peer, LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
@@ -215,7 +215,7 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnObject, message);
         }
 
-        internal void SendServerSpawnObjectWithData(NetPeer peer, LiteNetLibIdentity identity)
+        public void SendServerSpawnObjectWithData(NetPeer peer, LiteNetLibIdentity identity)
         {
             if (identity == null)
                 return;
@@ -228,7 +228,7 @@ namespace LiteNetLibHighLevel
             identity.SendInitSyncLists(peer);
         }
 
-        internal void SendServerDestroyObject(uint objectId)
+        public void SendServerDestroyObject(uint objectId)
         {
             if (!IsServer)
                 return;
@@ -238,7 +238,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        internal void SendServerDestroyObject(NetPeer peer, uint objectId)
+        public void SendServerDestroyObject(NetPeer peer, uint objectId)
         {
             if (!IsServer)
                 return;
@@ -247,7 +247,7 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
 
-        internal void SendServerError(bool shouldDisconnect, string errorMessage)
+        public void SendServerError(bool shouldDisconnect, string errorMessage)
         {
             if (!IsServer)
                 return;
@@ -257,7 +257,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        internal void SendServerError(NetPeer peer, bool shouldDisconnect, string errorMessage)
+        public void SendServerError(NetPeer peer, bool shouldDisconnect, string errorMessage)
         {
             if (!IsServer)
                 return;
