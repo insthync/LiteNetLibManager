@@ -272,9 +272,8 @@ namespace LiteNetLibHighLevel
             {
                 spawnedObject.RebuildSubscribers(true);
             }
-            if (Assets.spawnPlayerOnReady)
-                SpawnPlayer(peer);
-            DeserializeClientReadyExtra(messageHandler.peer, messageHandler.reader);
+            var playerIdentity = SpawnPlayer(peer);
+            DeserializeClientReadyExtra(playerIdentity, messageHandler.reader);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
@@ -400,9 +399,9 @@ namespace LiteNetLibHighLevel
         /// <summary>
         /// Override this function to read custom data that come with send client ready message
         /// </summary>
-        /// <param name="peer"></param>
+        /// <param name="playerIdentity"></param>
         /// <param name="reader"></param>
-        public virtual void DeserializeClientReadyExtra(NetPeer peer, NetDataReader reader) { }
+        public virtual void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, NetDataReader reader) { }
 
         /// <summary>
         /// Override this function to show error message / disconnect
@@ -414,21 +413,21 @@ namespace LiteNetLibHighLevel
                 StopClient();
         }
 
-        protected virtual LiteNetLibIdentity SpawnPlayer(NetPeer peer)
+        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer)
         {
             if (Assets.PlayerPrefab == null)
                 return null;
             return SpawnPlayer(peer, assets.PlayerPrefab);
         }
 
-        protected virtual LiteNetLibIdentity SpawnPlayer(NetPeer peer, LiteNetLibIdentity prefab)
+        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer, LiteNetLibIdentity prefab)
         {
             if (prefab == null)
                 return null;
             return SpawnPlayer(peer, prefab.AssetId);
         }
 
-        protected virtual LiteNetLibIdentity SpawnPlayer(NetPeer peer, string assetId)
+        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer, string assetId)
         {
             var spawnedObject = Assets.NetworkSpawn(assetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
             if (spawnedObject != null)

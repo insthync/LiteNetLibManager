@@ -12,10 +12,9 @@ namespace LiteNetLibHighLevel
     {
         private static int spawnPositionCounter = 0;
         public bool playerSpawnRandomly;
-        public Vector3[] playerSpawnPositions;
-        public LiteNetLibIdentity registeringPlayerPrefab;
-        public bool spawnPlayerOnReady;
-        public LiteNetLibIdentity[] registeringPrefabs;
+        public Transform[] playerSpawnPositions;
+        public LiteNetLibIdentity playerPrefab;
+        public LiteNetLibIdentity[] spawnablePrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         internal readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
@@ -39,15 +38,15 @@ namespace LiteNetLibHighLevel
 
         public void RegisterPrefabs()
         {
-            for (var i = 0; i < registeringPrefabs.Length; ++i)
+            for (var i = 0; i < spawnablePrefabs.Length; ++i)
             {
-                var registeringPrefab = registeringPrefabs[i];
+                var registeringPrefab = spawnablePrefabs[i];
                 RegisterPrefab(registeringPrefab);
             }
-            if (registeringPlayerPrefab != null)
+            if (playerPrefab != null)
             {
-                PlayerPrefab = registeringPlayerPrefab;
-                RegisterPrefab(registeringPlayerPrefab);
+                PlayerPrefab = playerPrefab;
+                RegisterPrefab(playerPrefab);
             }
         }
 
@@ -246,12 +245,12 @@ namespace LiteNetLibHighLevel
             if (playerSpawnPositions == null || playerSpawnPositions.Length == 0)
                 return Vector3.zero;
             if (playerSpawnRandomly)
-                return playerSpawnPositions[Random.Range(0, playerSpawnPositions.Length)];
+                return playerSpawnPositions[Random.Range(0, playerSpawnPositions.Length)].position;
             else
             {
                 if (spawnPositionCounter >= playerSpawnPositions.Length)
                     spawnPositionCounter = 0;
-                return playerSpawnPositions[spawnPositionCounter++];
+                return playerSpawnPositions[spawnPositionCounter++].position;
             }
         }
 
