@@ -113,7 +113,7 @@ namespace LiteNetLibHighLevel
         {
             base.OnPeerDisconnected(peer, disconnectInfo);
             var player = Players[peer.ConnectId];
-            player.ClearSubscribing();
+            player.ClearSubscribing(false);
             player.DestroyAllObjects();
             Players.Remove(peer.ConnectId);
         }
@@ -295,7 +295,7 @@ namespace LiteNetLibHighLevel
             if (!player.IsReady)
                 return;
             player.IsReady = false;
-            player.ClearSubscribing();
+            player.ClearSubscribing(true);
             player.DestroyAllObjects();
         }
 
