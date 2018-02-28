@@ -21,6 +21,10 @@ namespace LiteNetLibHighLevel
         private long connectId;
         [ReadOnly, SerializeField]
         private LiteNetLibGameManager manager;
+#if UNITY_EDITOR
+        [ReadOnly, SerializeField]
+        private List<long> subscriberIds = new List<long>();
+#endif
         private bool hasSetupBehaviours;
         internal readonly List<LiteNetLibBehaviour> Behaviours = new List<LiteNetLibBehaviour>();
         internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
@@ -370,6 +374,11 @@ namespace LiteNetLibHighLevel
                             continue;
                         AddSubscriber(player);
                     }
+#if UNITY_EDITOR
+                    subscriberIds.Clear();
+                    foreach (var player in players)
+                        subscriberIds.Add(player.ConnectId);
+#endif
                 }
                 return;
             }
@@ -415,6 +424,12 @@ namespace LiteNetLibHighLevel
             Subscribers.Clear();
             foreach (var subscriber in newSubscribers)
                 Subscribers.Add(subscriber.ConnectId, subscriber);
+
+#if UNITY_EDITOR
+            subscriberIds.Clear();
+            foreach (var subscriber in newSubscribers)
+                subscriberIds.Add(subscriber.ConnectId);
+#endif
         }
     }
 }
