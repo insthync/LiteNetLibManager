@@ -280,7 +280,7 @@ namespace LiteNetLibHighLevel
             Subscribers.Clear();
         }
 
-        internal void AddSubscriber(LiteNetLibPlayer subscriber, bool addPlayerSubscribing = true)
+        internal void AddSubscriber(LiteNetLibPlayer subscriber)
         {
             // Only server can manage subscribers
             if (!IsServer)
@@ -294,11 +294,10 @@ namespace LiteNetLibHighLevel
             }
 
             Subscribers[subscriber.ConnectId] = subscriber;
-            if (addPlayerSubscribing)
-                subscriber.AddSubscribing(this);
+            subscriber.AddSubscribing(this);
         }
 
-        internal void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing = true)
+        internal void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing)
         {
             // Only server can manage subscribers
             if (!IsServer)

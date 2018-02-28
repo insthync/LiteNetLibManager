@@ -112,7 +112,7 @@ namespace LiteNetLibHighLevel
         public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             base.OnPeerDisconnected(peer, disconnectInfo);
-            Players[peer.ConnectId].DestoryAllObjects();
+            Players[peer.ConnectId].DestroyAllObjects();
             Players.Remove(peer.ConnectId);
         }
 
@@ -279,7 +279,7 @@ namespace LiteNetLibHighLevel
             var spawnedObjects = Assets.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
-                spawnedObject.AddSubscriber(player);
+                spawnedObject.RebuildSubscribers(true);
             }
             var playerIdentity = SpawnPlayer(peer);
             DeserializeClientReadyExtra(playerIdentity, messageHandler.reader);
@@ -292,8 +292,8 @@ namespace LiteNetLibHighLevel
             if (!player.IsReady)
                 return;
             player.IsReady = false;
-            player.DestoryAllObjects();
-            player.ClearSubscribing();
+            player.DestroyAllObjects();
+            player.ClearSubscribing(true);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)

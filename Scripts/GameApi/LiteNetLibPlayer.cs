@@ -26,24 +26,32 @@ namespace LiteNetLibHighLevel
             Manager.SendServerSpawnObjectWithData(Peer, identity);
         }
 
-        internal void RemoveSubscribing(LiteNetLibIdentity identity, bool sendDestroyObjectMessage)
+        internal void RemoveSubscribing(LiteNetLibIdentity identity, bool destroyObjectsOnPeer)
         {
             SubscribingObjects.Remove(identity);
 
-            if (sendDestroyObjectMessage)
+            if (destroyObjectsOnPeer)
                 Manager.SendServerDestroyObject(Peer, identity.ObjectId);
         }
 
-        internal void ClearSubscribing()
+        internal void ClearSubscribing(bool destroyObjectsOnPeer)
         {
+            // Remove this from identities subscriber list
             foreach (var identity in SubscribingObjects)
             {
+                // Don't call for remove subscribing 
+                // because it's going to clear in this function
                 identity.RemoveSubscriber(this, false);
+                if (destroyObjectsOnPeer)
+                    Manager.SendServerDestroyObject(Peer, identity.ObjectId);
             }
             SubscribingObjects.Clear();
         }
 
-        internal void DestoryAllObjects()
+        /// <summary>
+        /// Call this function to destroy all objects that spawned by this player
+        /// </summary>
+        internal void DestroyAllObjects()
         {
             var objectIds = new List<uint>(SpawnedObjects.Keys);
             foreach (var objectId in objectIds)
