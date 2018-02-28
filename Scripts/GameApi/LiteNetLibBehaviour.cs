@@ -120,7 +120,14 @@ namespace LiteNetLibHighLevel
             lastSentTime = Time.realtimeSinceStartup;
 
             if (ShouldSyncBehaviour())
-                Manager.SendPacketToAllPeers(sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
+            {
+                var peerValues = Manager.Peers.Values;
+                foreach (var peer in peerValues)
+                {
+                    if (Identity.IsSubscribedOrOwning(peer.ConnectId))
+                        Manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
+                }
+            }
         }
 
 #if UNITY_EDITOR
@@ -370,12 +377,12 @@ namespace LiteNetLibHighLevel
         }
 
         /// <summary>
-        /// Override this function to make condition to write custom to client
+        /// Override this function to make condition to write custom data to client
         /// </summary>
         /// <returns></returns>
         public virtual bool ShouldSyncBehaviour()
         {
-            return false;
+            return true;
         }
 
         /// <summary>
