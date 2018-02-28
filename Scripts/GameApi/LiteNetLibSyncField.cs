@@ -112,7 +112,8 @@ namespace LiteNetLibHighLevel
             }
             else
             {
-                foreach (var peer in peers.Values)
+                var peerValues = peers.Values;
+                foreach (var peer in peerValues)
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
                         SendUpdate(peer);

@@ -63,7 +63,8 @@ namespace LiteNetLibHighLevel
                             SendCallForServer(targetPeer, receivers, connectId);
                         break;
                     case FunctionReceivers.All:
-                        foreach (var peer in peers.Values)
+                        var peerValues = peers.Values;
+                        foreach (var peer in peerValues)
                         {
                             if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
                                 SendCallForServer(peer, receivers, connectId);
