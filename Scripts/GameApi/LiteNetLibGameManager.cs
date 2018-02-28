@@ -11,17 +11,18 @@ namespace LiteNetLibHighLevel
         public class GameMsgTypes
         {
             public const short ClientReady = 1;
-            public const short ClientCallFunction = 2;
-            public const short ServerSpawnSceneObject = 3;
-            public const short ServerSpawnObject = 4;
-            public const short ServerDestroyObject = 5;
-            public const short ServerUpdateSyncField = 6;
-            public const short ServerCallFunction = 7;
-            public const short ServerUpdateSyncList = 8;
-            public const short ServerUpdateTime = 9;
-            public const short ServerSyncBehaviour = 10;
-            public const short ServerError = 11;
-            public const short Highest = 11;
+            public const short ClientNotReady = 2;
+            public const short ClientCallFunction = 3;
+            public const short ServerSpawnSceneObject = 4;
+            public const short ServerSpawnObject = 5;
+            public const short ServerDestroyObject = 6;
+            public const short ServerUpdateSyncField = 7;
+            public const short ServerCallFunction = 8;
+            public const short ServerUpdateSyncList = 9;
+            public const short ServerUpdateTime = 10;
+            public const short ServerSyncBehaviour = 11;
+            public const short ServerError = 12;
+            public const short Highest = 12;
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
@@ -83,6 +84,7 @@ namespace LiteNetLibHighLevel
         {
             base.RegisterServerMessages();
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
+            RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.ClientCallFunction, HandleClientCallFunction);
         }
 
@@ -143,6 +145,13 @@ namespace LiteNetLibHighLevel
             if (!IsClientConnected)
                 return;
             SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
+        }
+
+        internal void SendClientNotReady()
+        {
+            if (!IsClientConnected)
+                return;
+            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientNotReady);
         }
 
         internal void SendServerUpdateTime()
@@ -270,10 +279,24 @@ namespace LiteNetLibHighLevel
             var spawnedObjects = Assets.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
-                spawnedObject.RebuildSubscribers(true);
+                spawnedObject.AddSubscriber(player);
             }
             var playerIdentity = SpawnPlayer(peer);
             DeserializeClientReadyExtra(playerIdentity, messageHandler.reader);
+        }
+
+        protected virtual void HandleClientNotReady(LiteNetLibMessageHandler messageHandler)
+        {
+            var peer = messageHandler.peer;
+            var player = Players[peer.ConnectId];
+            if (!player.IsReady)
+                return;
+            player.IsReady = false;
+            var spawnedObjects = Assets.SpawnedObjects.Values;
+            foreach (var spawnedObject in spawnedObjects)
+            {
+                spawnedObject.RemoveSubscriber(player);
+            }
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
