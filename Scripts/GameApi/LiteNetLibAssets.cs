@@ -149,6 +149,11 @@ namespace LiteNetLibHighLevel
                 return null;
             }
             var identity = gameObject.GetComponent<LiteNetLibIdentity>();
+            return NetworkSpawn(identity, position, objectId, connectId);
+        }
+
+        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, Vector3 position, uint objectId = 0, long connectId = 0)
+        {
             if (identity == null)
             {
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
