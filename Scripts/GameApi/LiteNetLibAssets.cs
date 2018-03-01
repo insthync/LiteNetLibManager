@@ -127,7 +127,7 @@ namespace LiteNetLibHighLevel
             {
                 sceneObject.gameObject.SetActive(true);
                 sceneObject.transform.position = position;
-                sceneObject.Initial(Manager, true);
+                sceneObject.Initial(Manager, true, objectId);
                 SpawnedObjects[sceneObject.ObjectId] = sceneObject;
                 return sceneObject;
             }
@@ -164,15 +164,15 @@ namespace LiteNetLibHighLevel
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Network is not active cannot spawn");
                 return null;
             }
-
+            
             // If it's scene object use network spawn scene function to spawn it
             if (SceneObjects.ContainsKey(objectId))
                 return NetworkSpawnScene(objectId, position);
-
+            
             // Spawned objects cannot spawning again
             if (SpawnedObjects.ContainsKey(objectId))
                 return null;
-
+            
             LiteNetLibIdentity spawningObject = null;
             if (GuidToPrefabs.TryGetValue(assetId, out spawningObject))
             {
