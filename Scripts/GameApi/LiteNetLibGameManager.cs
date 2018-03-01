@@ -274,29 +274,15 @@ namespace LiteNetLibHighLevel
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
-            var player = Players[peer.ConnectId];
-            if (player.IsReady)
-                return;
-            player.IsReady = true;
-            var spawnedObjects = Assets.SpawnedObjects.Values;
-            foreach (var spawnedObject in spawnedObjects)
-            {
-                if (spawnedObject.ShouldAddSubscriber(player))
-                    spawnedObject.AddSubscriber(player);
-            }
             var playerIdentity = SpawnPlayer(peer);
             DeserializeClientReadyExtra(playerIdentity, messageHandler.reader);
+            SetPlayerReady(peer, true);
         }
 
         protected virtual void HandleClientNotReady(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
-            var player = Players[peer.ConnectId];
-            if (!player.IsReady)
-                return;
-            player.IsReady = false;
-            player.ClearSubscribing(true);
-            player.DestroyAllObjects();
+            SetPlayerReady(peer, false);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
@@ -434,6 +420,34 @@ namespace LiteNetLibHighLevel
         {
             if (message.shouldDisconnect && !IsServer)
                 StopClient();
+        }
+
+        public void SetPlayerReady(NetPeer peer, bool isReady)
+        {
+            if (!IsServer)
+                return;
+
+            var player = Players[peer.ConnectId];
+            if (isReady)
+            {
+                if (player.IsReady)
+                    return;
+                player.IsReady = true;
+                var spawnedObjects = Assets.SpawnedObjects.Values;
+                foreach (var spawnedObject in spawnedObjects)
+                {
+                    if (spawnedObject.ShouldAddSubscriber(player))
+                        spawnedObject.AddSubscriber(player);
+                }
+            }
+            else
+            {
+                if (!player.IsReady)
+                    return;
+                player.IsReady = false;
+                player.ClearSubscribing(true);
+                player.DestroyAllObjects();
+            }
         }
 
         protected LiteNetLibIdentity SpawnPlayer(NetPeer peer)
