@@ -394,5 +394,15 @@ namespace LiteNetLibHighLevel
         /// Override this function to read data from server at client
         /// </summary>
         public virtual void OnDeserialize(NetDataReader reader) { }
+
+        /// <summary>
+        /// Override this function to change object visibility when this added to player as subcribing 
+        /// </summary>
+        public virtual void OnServerSubscribingAdded() { }
+
+        /// <summary>
+        /// Override this function to change object visibility when this removed from player as subcribing 
+        /// </summary>
+        public virtual void OnServerSubscribingRemoved() { }
     }
 }

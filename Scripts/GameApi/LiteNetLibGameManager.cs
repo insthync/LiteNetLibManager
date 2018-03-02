@@ -274,15 +274,15 @@ namespace LiteNetLibHighLevel
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
-            var playerIdentity = SpawnPlayer(peer);
-            DeserializeClientReadyExtra(playerIdentity, messageHandler.reader);
-            SetPlayerReady(peer, true);
+            var reader = messageHandler.reader;
+            SetPlayerReady(peer, reader);
         }
 
         protected virtual void HandleClientNotReady(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
-            SetPlayerReady(peer, false);
+            var reader = messageHandler.reader;
+            SetPlayerNotReady(peer, reader);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
@@ -422,32 +422,41 @@ namespace LiteNetLibHighLevel
                 StopClient();
         }
 
-        public void SetPlayerReady(NetPeer peer, bool isReady)
+        public virtual void SetPlayerReady(NetPeer peer, NetDataReader reader)
         {
             if (!IsServer)
                 return;
 
             var player = Players[peer.ConnectId];
-            if (isReady)
+            if (player.IsReady)
+                return;
+
+            player.IsReady = true;
+            var playerIdentity = SpawnPlayer(peer);
+            DeserializeClientReadyExtra(playerIdentity, reader);
+            var spawnedObjects = Assets.SpawnedObjects.Values;
+            foreach (var spawnedObject in spawnedObjects)
             {
-                if (player.IsReady)
-                    return;
-                player.IsReady = true;
-                var spawnedObjects = Assets.SpawnedObjects.Values;
-                foreach (var spawnedObject in spawnedObjects)
-                {
-                    if (spawnedObject.ShouldAddSubscriber(player))
-                        spawnedObject.AddSubscriber(player);
-                }
+                if (spawnedObject.ConnectId == player.ConnectId)
+                    continue;
+
+                if (spawnedObject.ShouldAddSubscriber(player))
+                    spawnedObject.AddSubscriber(player);
             }
-            else
-            {
-                if (!player.IsReady)
-                    return;
-                player.IsReady = false;
-                player.ClearSubscribing(true);
-                player.DestroyAllObjects();
-            }
+        }
+
+        public virtual void SetPlayerNotReady(NetPeer peer, NetDataReader reader)
+        {
+            if (!IsServer)
+                return;
+
+            var player = Players[peer.ConnectId];
+            if (!player.IsReady)
+                return;
+
+            player.IsReady = false;
+            player.ClearSubscribing(true);
+            player.DestroyAllObjects();
         }
 
         protected LiteNetLibIdentity SpawnPlayer(NetPeer peer)

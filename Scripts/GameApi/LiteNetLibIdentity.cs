@@ -31,6 +31,8 @@ namespace LiteNetLibHighLevel
         public string AssetId { get { return assetId; } }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
+        public LiteNetLibGameManager Manager { get { return manager; } }
+
         public LiteNetLibPlayer Player
         {
             get
@@ -40,23 +42,20 @@ namespace LiteNetLibHighLevel
                 return Manager.Players[ConnectId];
             }
         }
-        public LiteNetLibGameManager Manager { get { return manager; } }
+
         public bool IsServer
         {
-            get {
-                if (Manager == null)
-                    Debug.LogError("Manager is empty");
-                return Manager != null && Manager.IsServer; }
+            get { return Manager.IsServer; }
         }
 
         public bool IsClient
         {
-            get { return Manager != null && Manager.IsClient; }
+            get { return Manager.IsClient; }
         }
 
         public bool IsLocalClient
         {
-            get { return Manager != null && ConnectId == Manager.Client.Peer.ConnectId; }
+            get { return ConnectId == Manager.Client.Peer.ConnectId; }
         }
 
         internal void NetworkUpdate()
@@ -67,7 +66,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-#region IDs generate in Editor
+        #region IDs generate in Editor
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -132,7 +131,7 @@ namespace LiteNetLibHighLevel
             }
         }
 #endif
-#endregion
+        #endregion
 
         internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
@@ -238,6 +237,10 @@ namespace LiteNetLibHighLevel
                 hasSetupBehaviours = true;
             }
 
+            // If this is not local host client object, hide it
+            if (IsServer && IsClient && !IsLocalClient)
+                OnServerSubscribingRemoved();
+
             RebuildSubscribers(true);
         }
 
@@ -291,6 +294,9 @@ namespace LiteNetLibHighLevel
                 subscriber.RemoveSubscribing(this, false);
             }
             Subscribers.Clear();
+#if UNITY_EDITOR
+            subscriberIds.Clear();
+#endif
         }
 
         internal void AddSubscriber(LiteNetLibPlayer subscriber)
@@ -307,6 +313,10 @@ namespace LiteNetLibHighLevel
             }
 
             Subscribers[subscriber.ConnectId] = subscriber;
+#if UNITY_EDITOR
+            if (!subscriberIds.Contains(subscriber.ConnectId))
+                subscriberIds.Add(subscriber.ConnectId);
+#endif
             subscriber.AddSubscribing(this);
         }
 
@@ -317,6 +327,9 @@ namespace LiteNetLibHighLevel
                 return;
 
             Subscribers.Remove(subscriber.ConnectId);
+#if UNITY_EDITOR
+            subscriberIds.Remove(subscriber.ConnectId);
+#endif
             if (removePlayerSubscribing)
                 subscriber.RemoveSubscribing(this, false);
         }
@@ -329,7 +342,7 @@ namespace LiteNetLibHighLevel
         internal bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
         {
             var count = Behaviours.Count;
-            for (int i = 0; i < count; ++i)
+            for (var i = 0; i < count; ++i)
             {
                 var behaviour = Behaviours[i];
                 if (!behaviour.ShouldAddSubscriber(subscriber))
@@ -349,13 +362,17 @@ namespace LiteNetLibHighLevel
             if (!IsServer)
                 return;
 
+            var ownerPlayer = Player;
+            if (initialize)
+                AddSubscriber(ownerPlayer);
+
             bool hasChanges = false;
             bool shouldRebuild = false;
             HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
             HashSet<LiteNetLibPlayer> oldSubscribers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
 
             var count = Behaviours.Count;
-            for (int i = 0; i < count; ++i)
+            for (var i = 0; i < count; ++i)
             {
                 var behaviour = Behaviours[i];
                 shouldRebuild |= behaviour.OnRebuildSubscribers(newSubscribers, initialize);
@@ -370,15 +387,12 @@ namespace LiteNetLibHighLevel
                     var players = Manager.Players.Values;
                     foreach (var player in players)
                     {
-                        if (player == null)
+                        if (ConnectId == player.ConnectId)
                             continue;
-                        AddSubscriber(player);
+
+                        if (ShouldAddSubscriber(player))
+                            AddSubscriber(player);
                     }
-#if UNITY_EDITOR
-                    subscriberIds.Clear();
-                    foreach (var player in players)
-                        subscriberIds.Add(player.ConnectId);
-#endif
                 }
                 return;
             }
@@ -396,7 +410,7 @@ namespace LiteNetLibHighLevel
                     continue;
                 }
 
-                if (initialize || !oldSubscribers.Contains(subscriber))
+                if (subscriber.ConnectId != ownerPlayer.ConnectId && (initialize || !oldSubscribers.Contains(subscriber)))
                 {
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)
@@ -412,7 +426,7 @@ namespace LiteNetLibHighLevel
                 {
                     subscriber.RemoveSubscribing(this, true);
                     if (Manager.LogDebug)
-                        Debug.Log("Remove subscriber [" + subscriber.ConnectId + "] from [" + gameObject +"]");
+                        Debug.Log("Remove subscriber [" + subscriber.ConnectId + "] from [" + gameObject + "]");
                     hasChanges = true;
                 }
             }
@@ -430,6 +444,26 @@ namespace LiteNetLibHighLevel
             foreach (var subscriber in newSubscribers)
                 subscriberIds.Add(subscriber.ConnectId);
 #endif
+        }
+
+        public void OnServerSubscribingAdded()
+        {
+            var count = Behaviours.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var behaviour = Behaviours[i];
+                behaviour.OnServerSubscribingAdded();
+            }
+        }
+
+        public void OnServerSubscribingRemoved()
+        {
+            var count = Behaviours.Count;
+            for (var i = 0; i < count; ++i)
+            {
+                var behaviour = Behaviours[i];
+                behaviour.OnServerSubscribingRemoved();
+            }
         }
     }
 }

@@ -31,6 +31,12 @@ namespace LiteNetLibHighLevel
 
         public override bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
         {
+            if (subscriber == null)
+                return false;
+
+            if (subscriber.ConnectId == ConnectId)
+                return true;
+
             var spawnedObjects = subscriber.SpawnedObjects.Values;
             foreach (var spawnedObject in spawnedObjects)
             {
@@ -71,6 +77,26 @@ namespace LiteNetLibHighLevel
                     }
             }
             return false;
+        }
+
+        public override void OnServerSubscribingAdded()
+        {
+            base.OnServerSubscribingAdded();
+            var renderers = GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                renderer.enabled = true;
+            }
+        }
+
+        public override void OnServerSubscribingRemoved()
+        {
+            base.OnServerSubscribingRemoved();
+            var renderers = GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                renderer.enabled = false;
+            }
         }
     }
 }
