@@ -173,7 +173,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[2];
             parameters[0] = new T1();
             parameters[1] = new T2();
         }
@@ -200,7 +200,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[3];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -230,7 +230,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[4];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -263,7 +263,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[5];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -299,7 +299,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[6];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -338,7 +338,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[7];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -380,7 +380,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[8];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -425,7 +425,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[9];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
@@ -473,7 +473,7 @@ namespace LiteNetLibHighLevel
 
         public LiteNetLibFunction()
         {
-            parameters = new LiteNetLibNetField[1];
+            parameters = new LiteNetLibNetField[10];
             parameters[0] = new T1();
             parameters[1] = new T2();
             parameters[2] = new T3();
