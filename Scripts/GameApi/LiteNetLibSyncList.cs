@@ -20,7 +20,7 @@ namespace LiteNetLibHighLevel
             Dirty,
         }
         public bool forOwnerOnly;
-        public OnChanged callback;
+        public OnChanged onOperation;
 
         public abstract int Count { get; }
         public abstract void SendOperation(Operation operation, int index);
@@ -262,8 +262,8 @@ namespace LiteNetLibHighLevel
                     list.Clear();
                     break;
             }
-            if (callback != null)
-                callback(operation, index);
+            if (onOperation != null)
+                onOperation(operation, index);
         }
 
         public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
