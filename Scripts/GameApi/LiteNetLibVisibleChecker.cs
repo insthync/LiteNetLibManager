@@ -14,6 +14,7 @@ namespace LiteNetLibHighLevel
         public int range = 10;
         public float updateInterval = 1.0f;
         public CheckMethod checkMethod = CheckMethod.Physics3D;
+        public LayerMask layerMask = -1;
 
         private float lastUpdateTime;
 
@@ -54,7 +55,7 @@ namespace LiteNetLibHighLevel
             {
                 case CheckMethod.Physics3D:
                     {
-                        var hits = Physics.OverlapSphere(transform.position, range);
+                        var hits = Physics.OverlapSphere(transform.position, range, layerMask.value);
                         foreach (var hit in hits)
                         {
                             var identity = hit.GetComponent<LiteNetLibIdentity>();
@@ -66,7 +67,7 @@ namespace LiteNetLibHighLevel
 
                 case CheckMethod.Physics2D:
                     {
-                        var hits = Physics2D.OverlapCircleAll(transform.position, range);
+                        var hits = Physics2D.OverlapCircleAll(transform.position, range, layerMask.value);
                         foreach (var hit in hits)
                         {
                             var identity = hit.GetComponent<LiteNetLibIdentity>();
