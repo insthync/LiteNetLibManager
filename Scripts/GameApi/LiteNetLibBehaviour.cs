@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -341,6 +342,28 @@ namespace LiteNetLibHighLevel
         public void Deserialize(NetDataReader reader)
         {
             OnDeserialize(reader);
+        }
+
+        public void NetworkDestroy()
+        {
+            if (!IsServer)
+                return;
+
+            Manager.Assets.NetworkDestroy(ObjectId);
+        }
+
+        public void NetworkDestroy(float delay)
+        {
+            if (!IsServer)
+                return;
+
+            StartCoroutine(NetworkDestroyRoutine(delay));
+        }
+
+        IEnumerator NetworkDestroyRoutine(float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            NetworkDestroy();
         }
 
         /// <summary>
