@@ -107,8 +107,9 @@ namespace LiteNetLibHighLevel
             if (forOwnerOnly)
             {
                 var connectId = Behaviour.ConnectId;
-                if (peers.ContainsKey(connectId))
-                    SendUpdate(peers[connectId]);
+                NetPeer foundPeer;
+                if (peers.TryGetValue(connectId, out foundPeer))
+                    SendUpdate(foundPeer);
             }
             else
             {

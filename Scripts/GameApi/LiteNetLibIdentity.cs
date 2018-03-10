@@ -37,9 +37,10 @@ namespace LiteNetLibHighLevel
         {
             get
             {
-                if (Manager == null || !Manager.Players.ContainsKey(ConnectId))
+                LiteNetLibPlayer foundPlayer;
+                if (Manager == null || !Manager.Players.TryGetValue(ConnectId, out foundPlayer))
                     return null;
-                return Manager.Players[ConnectId];
+                return foundPlayer;
             }
         }
 
@@ -304,7 +305,7 @@ namespace LiteNetLibHighLevel
             // Only server can manage subscribers
             if (!IsServer)
                 return;
-
+            
             if (Subscribers.ContainsKey(subscriber.ConnectId))
             {
                 if (Manager.LogDebug)
