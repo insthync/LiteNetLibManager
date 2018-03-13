@@ -19,7 +19,7 @@ namespace LiteNetLibHighLevel
             public const short ServerUpdateSyncField = 7;
             public const short ServerCallFunction = 8;
             public const short ServerUpdateSyncList = 9;
-            public const short ServerUpdateTime = 10;
+            public const short ServerTime = 10;
             public const short ServerSyncBehaviour = 11;
             public const short ServerError = 12;
             public const short Highest = 12;
@@ -28,6 +28,7 @@ namespace LiteNetLibHighLevel
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         public bool clientReadyOnConnect;
+        private float lastSendServerTime;
 
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
@@ -62,10 +63,18 @@ namespace LiteNetLibHighLevel
 
         protected override void Update()
         {
-            var spawnedObjects = Assets.SpawnedObjects.Values;
-            foreach (var spawnedObject in spawnedObjects)
+            if (IsServer)
             {
-                spawnedObject.NetworkUpdate();
+                var spawnedObjects = Assets.SpawnedObjects.Values;
+                foreach (var spawnedObject in spawnedObjects)
+                {
+                    spawnedObject.NetworkUpdate();
+                }
+                if (Time.realtimeSinceStartup - lastSendServerTime > updateTime)
+                {
+                    SendServerUpdateTime();
+                    lastSendServerTime = Time.realtimeSinceStartup;
+                }
             }
             base.Update();
         }
@@ -97,7 +106,7 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.ServerCallFunction, HandleServerCallFunction);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncList, HandleServerUpdateSyncList);
-            RegisterClientMessage(GameMsgTypes.ServerUpdateTime, HandleServerUpdateTime);
+            RegisterClientMessage(GameMsgTypes.ServerTime, HandleServerTime);
             RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
         }
@@ -105,7 +114,7 @@ namespace LiteNetLibHighLevel
         public override void OnPeerConnected(NetPeer peer)
         {
             base.OnPeerConnected(peer);
-            SendServerUpdateTime(peer);
+            SendServerTime(peer);
             Players[peer.ConnectId] = new LiteNetLibPlayer(this, peer);
         }
 
@@ -162,17 +171,17 @@ namespace LiteNetLibHighLevel
                 return;
             foreach (var peer in Peers.Values)
             {
-                SendServerUpdateTime(peer);
+                SendServerTime(peer);
             }
         }
 
-        public void SendServerUpdateTime(NetPeer peer)
+        public void SendServerTime(NetPeer peer)
         {
             if (!IsServer)
                 return;
             var message = new ServerTimeMessage();
             message.serverTime = ServerTime;
-            SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerUpdateTime, message);
+            SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerTime, message);
         }
 
         public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
@@ -369,7 +378,7 @@ namespace LiteNetLibHighLevel
                 identity.ProcessSyncList(info, reader);
         }
 
-        protected virtual void HandleServerUpdateTime(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerTime(LiteNetLibMessageHandler messageHandler)
         {
             // Server time updated at server, if this is host (client and server) then skip it.
             if (IsServer)
