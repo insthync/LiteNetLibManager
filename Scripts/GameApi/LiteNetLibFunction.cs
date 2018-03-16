@@ -36,13 +36,13 @@ namespace LiteNetLibHighLevel
             callback();
         }
 
-        protected void SendCallForServer(NetPeer peer, FunctionReceivers receivers, long connectId)
+        protected void ServerSendCall(NetPeer peer, FunctionReceivers receivers, long connectId)
         {
             var manager = Manager;
             manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
         }
 
-        protected void SendCallForClient(FunctionReceivers receivers, long connectId)
+        protected void ClientSendCall(FunctionReceivers receivers, long connectId)
         {
             var manager = Manager;
             manager.SendPacket(SendOptions.ReliableOrdered, manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, connectId));
@@ -60,20 +60,24 @@ namespace LiteNetLibHighLevel
                     case FunctionReceivers.Target:
                         NetPeer targetPeer;
                         if (Behaviour.Identity.IsSubscribedOrOwning(connectId) && peers.TryGetValue(connectId, out targetPeer))
-                            SendCallForServer(targetPeer, receivers, connectId);
+                            ServerSendCall(targetPeer, receivers, connectId);
                         break;
                     case FunctionReceivers.All:
                         var peerValues = peers.Values;
                         foreach (var peer in peerValues)
                         {
                             if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
-                                SendCallForServer(peer, receivers, connectId);
+                                ServerSendCall(peer, receivers, connectId);
                         }
+                        break;
+                    case FunctionReceivers.Server:
+                        if (Behaviour.Identity.IsSubscribedOrOwning(connectId))
+                            HookCallback();
                         break;
                 }
             }
             else if (manager.IsClientConnected)
-                SendCallForClient(receivers, connectId);
+                ClientSendCall(receivers, connectId);
         }
 
         public void SetParameters(params object[] parameterValues)
@@ -95,7 +99,7 @@ namespace LiteNetLibHighLevel
                 return;
 
             SetParameters(parameterValues);
-            SendCall(receivers, 0);
+            SendCall(receivers, Behaviour.ConnectId);
         }
 
         public void Call(long connectId, params object[] parameterValues)
