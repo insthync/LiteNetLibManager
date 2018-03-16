@@ -164,7 +164,7 @@ namespace LiteNetLibHighLevel
                 return;
             list.Clear();
             valueList.Clear();
-            SendOperation(Operation.Clear, 0);
+            SendOperation(Operation.Clear, -1);
         }
 
         public void CopyTo(TFieldType[] array, int arrayIndex)
@@ -195,6 +195,9 @@ namespace LiteNetLibHighLevel
             var manager = Manager;
             if (!manager.IsServer)
                 return;
+
+            if (onOperation != null)
+                onOperation(operation, index);
 
             var peers = manager.Peers;
             if (forOwnerOnly)
