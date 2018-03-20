@@ -19,6 +19,14 @@ namespace LiteNetLibHighLevel
 
         public bool canClientSendResult;
         public float snapThreshold = 5.0f;
+        [Header("Sync Position Settings")]
+        public bool notSyncPositionX;
+        public bool notSyncPositionY;
+        public bool notSyncPositionZ;
+        [Header("Sync Rotation Settings")]
+        public bool notSyncRotationX;
+        public bool notSyncRotationY;
+        public bool notSyncRotationZ;
         public Transform TempTransform { get; private set; }
         public Rigidbody TempRigidbody3D { get; private set; }
         public Rigidbody2D TempRigidbody2D { get; private set; }
@@ -93,12 +101,18 @@ namespace LiteNetLibHighLevel
 
         public override void OnSerialize(NetDataWriter writer)
         {
-            writer.Put(TempTransform.position.x);
-            writer.Put(TempTransform.position.y);
-            writer.Put(TempTransform.position.z);
-            writer.Put(TempTransform.rotation.eulerAngles.x);
-            writer.Put(TempTransform.rotation.eulerAngles.y);
-            writer.Put(TempTransform.rotation.eulerAngles.z);
+            if (!notSyncPositionX)
+                writer.Put(TempTransform.position.x);
+            if (!notSyncPositionY)
+                writer.Put(TempTransform.position.y);
+            if (!notSyncPositionZ)
+                writer.Put(TempTransform.position.z);
+            if (!notSyncRotationX)
+                writer.Put(TempTransform.rotation.eulerAngles.x);
+            if (!notSyncRotationY)
+                writer.Put(TempTransform.rotation.eulerAngles.y);
+            if (!notSyncRotationZ)
+                writer.Put(TempTransform.rotation.eulerAngles.z);
             writer.Put(Time.realtimeSinceStartup);
         }
 
@@ -108,8 +122,14 @@ namespace LiteNetLibHighLevel
             if (IsLocalClient || IsServer)
                 return;
             var result = new TransformResult();
-            result.position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
-            result.rotation = Quaternion.Euler(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            result.position = new Vector3(
+                !notSyncPositionX ? reader.GetFloat() : 0f,
+                !notSyncPositionY ? reader.GetFloat() : 0f,
+                !notSyncPositionZ ? reader.GetFloat() : 0f);
+            result.rotation = Quaternion.Euler(
+                !notSyncRotationX ? reader.GetFloat() : 0f,
+                !notSyncRotationY ? reader.GetFloat() : 0f,
+                !notSyncRotationZ ? reader.GetFloat() : 0f);
             result.timestamp = reader.GetFloat();
             // Discard out of order results
             if (result.timestamp <= lastServerTimestamp)
