@@ -7,15 +7,15 @@ namespace LiteNetLibHighLevel
     {
         public override void Deserialize(NetDataReader reader)
         {
-            Value = new Quaternion(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            Value = Quaternion.Euler(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
 
         public override void Serialize(NetDataWriter writer)
         {
-            writer.Put(Value.x);
-            writer.Put(Value.y);
-            writer.Put(Value.z);
-            writer.Put(Value.w);
+            var euler = Value.eulerAngles;
+            writer.Put(euler.x);
+            writer.Put(euler.y);
+            writer.Put(euler.z);
         }
 
         public override bool IsValueChanged(Quaternion newValue)
