@@ -96,10 +96,9 @@ namespace LiteNetLibHighLevel
             writer.Put(TempTransform.position.x);
             writer.Put(TempTransform.position.y);
             writer.Put(TempTransform.position.z);
-            writer.Put(TempTransform.rotation.x);
-            writer.Put(TempTransform.rotation.y);
-            writer.Put(TempTransform.rotation.z);
-            writer.Put(TempTransform.rotation.w);
+            writer.Put(TempTransform.rotation.eulerAngles.x);
+            writer.Put(TempTransform.rotation.eulerAngles.y);
+            writer.Put(TempTransform.rotation.eulerAngles.z);
             writer.Put(Time.realtimeSinceStartup);
         }
 
@@ -110,7 +109,7 @@ namespace LiteNetLibHighLevel
                 return;
             var result = new TransformResult();
             result.position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
-            result.rotation = new Quaternion(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            result.rotation = Quaternion.Euler(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
             result.timestamp = reader.GetFloat();
             // Discard out of order results
             if (result.timestamp <= lastServerTimestamp)
