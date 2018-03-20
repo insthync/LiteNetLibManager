@@ -27,10 +27,14 @@ namespace LiteNetLibHighLevel
         public bool notSyncRotationX;
         public bool notSyncRotationY;
         public bool notSyncRotationZ;
-        public Transform TempTransform { get; private set; }
-        public Rigidbody TempRigidbody3D { get; private set; }
-        public Rigidbody2D TempRigidbody2D { get; private set; }
-        public CharacterController TempCharacterController { get; private set; }
+
+        #region Cache components
+        public Transform CacheTransform { get; private set; }
+        public Rigidbody CacheRigidbody3D { get; private set; }
+        public Rigidbody2D CacheRigidbody2D { get; private set; }
+        public CharacterController CacheCharacterController { get; private set; }
+        #endregion
+
         // This list stores results of transform. Needed for non-owner client interpolation
         private readonly List<TransformResult> interpResults = new List<TransformResult>();
         // Interpolation related variables
@@ -46,10 +50,10 @@ namespace LiteNetLibHighLevel
 
         private void Awake()
         {
-            TempTransform = GetComponent<Transform>();
-            TempRigidbody3D = GetComponent<Rigidbody>();
-            TempRigidbody2D = GetComponent<Rigidbody2D>();
-            TempCharacterController = GetComponent<CharacterController>();
+            CacheTransform = GetComponent<Transform>();
+            CacheRigidbody3D = GetComponent<Rigidbody>();
+            CacheRigidbody2D = GetComponent<Rigidbody2D>();
+            CacheCharacterController = GetComponent<CharacterController>();
 
             RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
         }
@@ -57,8 +61,8 @@ namespace LiteNetLibHighLevel
         private void Start()
         {
             lastResult = new TransformResult();
-            lastResult.position = TempTransform.position;
-            lastResult.rotation = TempTransform.rotation;
+            lastResult.position = CacheTransform.position;
+            lastResult.rotation = CacheTransform.rotation;
             lastResult.timestamp = Time.realtimeSinceStartup;
             syncResult = lastResult;
             interpResults.Add(lastResult);
@@ -89,10 +93,10 @@ namespace LiteNetLibHighLevel
 
         public override bool ShouldSyncBehaviour()
         {
-            if (syncResult.position != TempTransform.position || syncResult.rotation != TempTransform.rotation)
+            if (syncResult.position != CacheTransform.position || syncResult.rotation != CacheTransform.rotation)
             {
-                syncResult.position = TempTransform.position;
-                syncResult.rotation = TempTransform.rotation;
+                syncResult.position = CacheTransform.position;
+                syncResult.rotation = CacheTransform.rotation;
                 syncResult.timestamp = Time.realtimeSinceStartup;
                 return true;
             }
@@ -102,17 +106,17 @@ namespace LiteNetLibHighLevel
         public override void OnSerialize(NetDataWriter writer)
         {
             if (!notSyncPositionX)
-                writer.Put(TempTransform.position.x);
+                writer.Put(CacheTransform.position.x);
             if (!notSyncPositionY)
-                writer.Put(TempTransform.position.y);
+                writer.Put(CacheTransform.position.y);
             if (!notSyncPositionZ)
-                writer.Put(TempTransform.position.z);
+                writer.Put(CacheTransform.position.z);
             if (!notSyncRotationX)
-                writer.Put(TempTransform.rotation.eulerAngles.x);
+                writer.Put(CacheTransform.rotation.eulerAngles.x);
             if (!notSyncRotationY)
-                writer.Put(TempTransform.rotation.eulerAngles.y);
+                writer.Put(CacheTransform.rotation.eulerAngles.y);
             if (!notSyncRotationZ)
-                writer.Put(TempTransform.rotation.eulerAngles.z);
+                writer.Put(CacheTransform.rotation.eulerAngles.z);
             writer.Put(Time.realtimeSinceStartup);
         }
 
@@ -191,11 +195,11 @@ namespace LiteNetLibHighLevel
                     lastResult.position = Vector3.Lerp(startInterpResult.position, endInterpResult.position, interpStep);
                     lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, endInterpResult.rotation, interpStep);
 
-                    if (TempRigidbody3D != null)
+                    if (CacheRigidbody3D != null)
                         InterpolateRigibody3D();
-                    else if (TempRigidbody2D != null)
+                    else if (CacheRigidbody2D != null)
                         InterpolateRigibody2D();
-                    else if (TempCharacterController != null)
+                    else if (CacheCharacterController != null)
                         InterpolateCharacterController();
                     else
                         InterpolateTransform();
@@ -221,61 +225,61 @@ namespace LiteNetLibHighLevel
         private bool ShouldSnap(Vector3 targetPosition)
         {
             var dist = 0f;
-            if (TempRigidbody3D != null)
-                dist = (TempRigidbody3D.position - targetPosition).magnitude;
-            else if (TempRigidbody2D != null)
-                dist = (TempRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
-            else if (TempCharacterController != null)
-                dist = (TempTransform.position - targetPosition).magnitude;
+            if (CacheRigidbody3D != null)
+                dist = (CacheRigidbody3D.position - targetPosition).magnitude;
+            else if (CacheRigidbody2D != null)
+                dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
+            else if (CacheCharacterController != null)
+                dist = (CacheTransform.position - targetPosition).magnitude;
             return dist > snapThreshold;
         }
 
         private void Snap()
         {
-            if (TempRigidbody3D != null)
+            if (CacheRigidbody3D != null)
             {
-                TempRigidbody3D.position = lastResult.position;
-                TempRigidbody3D.rotation = lastResult.rotation;
+                CacheRigidbody3D.position = lastResult.position;
+                CacheRigidbody3D.rotation = lastResult.rotation;
             }
-            else if (TempRigidbody2D != null)
+            else if (CacheRigidbody2D != null)
             {
-                TempRigidbody2D.position = lastResult.position;
-                TempRigidbody2D.rotation = lastResult.rotation.eulerAngles.z;
+                CacheRigidbody2D.position = lastResult.position;
+                CacheRigidbody2D.rotation = lastResult.rotation.eulerAngles.z;
             }
-            else if (TempCharacterController != null)
+            else if (CacheCharacterController != null)
             {
-                TempTransform.position = lastResult.position;
-                TempTransform.rotation = lastResult.rotation;
+                CacheTransform.position = lastResult.position;
+                CacheTransform.rotation = lastResult.rotation;
             }
             else
             {
-                TempTransform.position = lastResult.position;
-                TempTransform.rotation = lastResult.rotation;
+                CacheTransform.position = lastResult.position;
+                CacheTransform.rotation = lastResult.rotation;
             }
         }
 
         private void InterpolateRigibody3D()
         {
-            TempRigidbody3D.MovePosition(lastResult.position);
-            TempRigidbody3D.MoveRotation(lastResult.rotation);
+            CacheRigidbody3D.MovePosition(lastResult.position);
+            CacheRigidbody3D.MoveRotation(lastResult.rotation);
         }
 
         private void InterpolateRigibody2D()
         {
-            TempRigidbody2D.MovePosition(lastResult.position);
-            TempRigidbody2D.MoveRotation(lastResult.rotation.eulerAngles.z);
+            CacheRigidbody2D.MovePosition(lastResult.position);
+            CacheRigidbody2D.MoveRotation(lastResult.rotation.eulerAngles.z);
         }
 
         private void InterpolateCharacterController()
         {
-            TempCharacterController.Move(lastResult.position - TempTransform.position);
-            TempTransform.rotation = lastResult.rotation;
+            CacheCharacterController.Move(lastResult.position - CacheTransform.position);
+            CacheTransform.rotation = lastResult.rotation;
         }
 
         private void InterpolateTransform()
         {
-            TempTransform.position = lastResult.position;
-            TempTransform.rotation = lastResult.rotation;
+            CacheTransform.position = lastResult.position;
+            CacheTransform.rotation = lastResult.rotation;
         }
     }
 }
