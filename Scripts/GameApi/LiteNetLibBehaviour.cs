@@ -15,8 +15,8 @@ namespace LiteNetLibHighLevel
     public class LiteNetLibBehaviour : MonoBehaviour, ILiteNetLibMessage
     {
         [ReadOnly, SerializeField]
-        private ushort behaviourIndex;
-        public ushort BehaviourIndex
+        private byte behaviourIndex;
+        public byte BehaviourIndex
         {
             get { return behaviourIndex; }
         }
@@ -150,7 +150,7 @@ namespace LiteNetLibHighLevel
         }
 #endif
 
-        public void Setup(ushort behaviourIndex)
+        public void Setup(byte behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
             SetupSyncElements(syncFieldNames, CacheSyncFieldInfos, syncFields);
@@ -176,7 +176,7 @@ namespace LiteNetLibHighLevel
                     continue;
                 }
                 var syncList = (T)field.GetValue(this);
-                var elementId = Convert.ToUInt16(elementList.Count);
+                var elementId = Convert.ToByte(elementList.Count);
                 syncList.Setup(this, elementId);
                 elementList.Add(syncList);
             }
@@ -196,7 +196,7 @@ namespace LiteNetLibHighLevel
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
-            var elementId = Convert.ToUInt16(netFunctions.Count);
+            var elementId = Convert.ToByte(netFunctions.Count);
             netFunction.Setup(this, elementId);
             netFunctions.Add(netFunction);
             netFunctionIds[id] = elementId;

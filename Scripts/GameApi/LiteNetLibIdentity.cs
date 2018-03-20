@@ -232,7 +232,7 @@ namespace LiteNetLibHighLevel
                 var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
                 foreach (var behaviour in behaviourComponents)
                 {
-                    behaviour.Setup(Convert.ToUInt16(Behaviours.Count));
+                    behaviour.Setup(Convert.ToByte(Behaviours.Count));
                     Behaviours.Add(behaviour);
                 }
                 hasSetupBehaviours = true;

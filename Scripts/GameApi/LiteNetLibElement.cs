@@ -8,9 +8,9 @@ namespace LiteNetLibHighLevel
     public struct LiteNetLibElementInfo
     {
         public uint objectId;
-        public ushort behaviourIndex;
-        public ushort elementId;
-        public LiteNetLibElementInfo(uint objectId, ushort behaviourIndex, ushort elementId)
+        public byte behaviourIndex;
+        public byte elementId;
+        public LiteNetLibElementInfo(uint objectId, byte behaviourIndex, byte elementId)
         {
             this.objectId = objectId;
             this.behaviourIndex = behaviourIndex;
@@ -26,7 +26,7 @@ namespace LiteNetLibHighLevel
 
         public static LiteNetLibElementInfo DeserializeInfo(NetDataReader reader)
         {
-            return new LiteNetLibElementInfo(reader.GetUInt(), reader.GetUShort(), reader.GetUShort());
+            return new LiteNetLibElementInfo(reader.GetUInt(), reader.GetByte(), reader.GetByte());
         }
     }
 
@@ -40,8 +40,8 @@ namespace LiteNetLibHighLevel
         }
 
         [ReadOnly, SerializeField]
-        protected ushort elementId;
-        public ushort ElementId
+        protected byte elementId;
+        public byte ElementId
         {
             get { return elementId; }
         }
@@ -56,7 +56,7 @@ namespace LiteNetLibHighLevel
             return new LiteNetLibElementInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, ElementId);
         }
 
-        internal virtual void Setup(LiteNetLibBehaviour behaviour, ushort elementId)
+        internal virtual void Setup(LiteNetLibBehaviour behaviour, byte elementId)
         {
             this.behaviour = behaviour;
             this.elementId = elementId;
