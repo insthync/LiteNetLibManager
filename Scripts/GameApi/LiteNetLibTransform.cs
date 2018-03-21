@@ -18,23 +18,29 @@ namespace LiteNetLibHighLevel
         }
         private class TransformResultNetField : NetFieldStruct<TransformResult> { }
 
+        public enum SyncOptions
+        {
+            Sync,
+            NotSync,
+        }
+
         public bool canClientSendResult;
         public float snapThreshold = 5.0f;
         [Header("Sync Position Settings")]
-        public bool notSyncPositionX;
-        public bool notSyncPositionY;
-        public bool notSyncPositionZ;
+        public SyncOptions syncPositionX;
+        public SyncOptions syncPositionY;
+        public SyncOptions syncPositionZ;
         [Header("Sync Rotation Settings")]
-        public bool notSyncRotationX;
-        public bool notSyncRotationY;
-        public bool notSyncRotationZ;
+        public SyncOptions syncRotationX;
+        public SyncOptions syncRotationY;
+        public SyncOptions syncRotationZ;
 
         #region Cache components
         public Transform CacheTransform { get; private set; }
+        public NavMeshAgent CacheNavMeshAgent { get; private set; }
         public Rigidbody CacheRigidbody3D { get; private set; }
         public Rigidbody2D CacheRigidbody2D { get; private set; }
         public CharacterController CacheCharacterController { get; private set; }
-        public NavMeshAgent CacheNavMeshAgent { get; private set; }
         #endregion
 
         // This list stores results of transform. Needed for non-owner client interpolation
@@ -53,10 +59,18 @@ namespace LiteNetLibHighLevel
         private void Awake()
         {
             CacheTransform = GetComponent<Transform>();
-            CacheRigidbody3D = GetComponent<Rigidbody>();
-            CacheRigidbody2D = GetComponent<Rigidbody2D>();
-            CacheCharacterController = GetComponent<CharacterController>();
+            // Nav mesh agent is highest priority, then character controller
+            // Then Rigidbodies, that both 3d/2d are same priority
             CacheNavMeshAgent = GetComponent<NavMeshAgent>();
+            if (CacheNavMeshAgent == null)
+            {
+                CacheCharacterController = GetComponent<CharacterController>();
+                if (CacheCharacterController == null)
+                {
+                    CacheRigidbody3D = GetComponent<Rigidbody>();
+                    CacheRigidbody2D = GetComponent<Rigidbody2D>();
+                }
+            }
 
             RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
         }
@@ -108,18 +122,12 @@ namespace LiteNetLibHighLevel
 
         public override void OnSerialize(NetDataWriter writer)
         {
-            if (!notSyncPositionX)
-                writer.Put(CacheTransform.position.x);
-            if (!notSyncPositionY)
-                writer.Put(CacheTransform.position.y);
-            if (!notSyncPositionZ)
-                writer.Put(CacheTransform.position.z);
-            if (!notSyncRotationX)
-                writer.Put(CacheTransform.rotation.eulerAngles.x);
-            if (!notSyncRotationY)
-                writer.Put(CacheTransform.rotation.eulerAngles.y);
-            if (!notSyncRotationZ)
-                writer.Put(CacheTransform.rotation.eulerAngles.z);
+            SerializeFloat(writer, CacheTransform.position.x, syncPositionX);
+            SerializeFloat(writer, CacheTransform.position.y, syncPositionX);
+            SerializeFloat(writer, CacheTransform.position.z, syncPositionX);
+            SerializeFloat(writer, CacheTransform.rotation.eulerAngles.x, syncRotationX);
+            SerializeFloat(writer, CacheTransform.rotation.eulerAngles.y, syncRotationY);
+            SerializeFloat(writer, CacheTransform.rotation.eulerAngles.z, syncRotationZ);
             writer.Put(Time.realtimeSinceStartup);
         }
 
@@ -130,13 +138,13 @@ namespace LiteNetLibHighLevel
                 return;
             var result = new TransformResult();
             result.position = new Vector3(
-                !notSyncPositionX ? reader.GetFloat() : 0f,
-                !notSyncPositionY ? reader.GetFloat() : 0f,
-                !notSyncPositionZ ? reader.GetFloat() : 0f);
+                DeserializeFloat(reader, syncPositionX),
+                DeserializeFloat(reader, syncPositionY),
+                DeserializeFloat(reader, syncPositionZ));
             result.rotation = Quaternion.Euler(
-                !notSyncRotationX ? reader.GetFloat() : 0f,
-                !notSyncRotationY ? reader.GetFloat() : 0f,
-                !notSyncRotationZ ? reader.GetFloat() : 0f);
+                DeserializeFloat(reader, syncRotationX),
+                DeserializeFloat(reader, syncRotationY),
+                DeserializeFloat(reader, syncRotationZ));
             result.timestamp = reader.GetFloat();
             // Discard out of order results
             if (result.timestamp <= lastServerTimestamp)
@@ -147,7 +155,33 @@ namespace LiteNetLibHighLevel
             interpResults.Add(result);
         }
 
-        private void FixedUpdate()
+        private void SerializeFloat(NetDataWriter writer, float data, SyncOptions syncOptions)
+        {
+            switch (syncOptions)
+            {
+                case SyncOptions.Sync:
+                    writer.Put(data);
+                    break;
+                default:
+                case SyncOptions.NotSync:
+                    break;
+            }
+        }
+
+        private float DeserializeFloat(NetDataReader reader, SyncOptions syncOptions)
+        {
+            switch (syncOptions)
+            {
+                case SyncOptions.Sync:
+                    return reader.GetFloat();
+                default:
+                case SyncOptions.NotSync:
+                    break;
+            }
+            return 0f;
+        }
+
+        private void Update()
         {
             // Sending transform to all clients
             if (IsServer)
@@ -166,7 +200,7 @@ namespace LiteNetLibHighLevel
                         ClientSendResult(syncResult);
                     syncElapsed = 0;
                 }
-                syncElapsed += Time.fixedDeltaTime;
+                syncElapsed += Time.deltaTime;
             }
             // Interpolating results for non-owner client objects on clients
             else if (!canClientSendResult || !IsLocalClient)
@@ -198,18 +232,18 @@ namespace LiteNetLibHighLevel
                     lastResult.position = Vector3.Lerp(startInterpResult.position, endInterpResult.position, interpStep);
                     lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, endInterpResult.rotation, interpStep);
 
-                    if (CacheRigidbody3D != null)
+                    if (CacheNavMeshAgent != null)
+                        InterpolateNavMeshAgent();
+                    else if (CacheCharacterController != null)
+                        InterpolateCharacterController();
+                    else if (CacheRigidbody3D != null)
                         InterpolateRigibody3D();
                     else if (CacheRigidbody2D != null)
                         InterpolateRigibody2D();
-                    else if (CacheCharacterController != null)
-                        InterpolateCharacterController();
-                    else if (CacheNavMeshAgent != null)
-                        InterpolateNavMeshAgent();
                     else
                         InterpolateTransform();
 
-                    interpStep += step * Time.fixedDeltaTime;
+                    interpStep += step * Time.deltaTime;
                     if (interpStep >= 1)
                     {
                         interpStep = 0f;
@@ -251,6 +285,11 @@ namespace LiteNetLibHighLevel
                 CacheRigidbody2D.position = lastResult.position;
                 CacheRigidbody2D.rotation = lastResult.rotation.eulerAngles.z;
             }
+            else if (CacheNavMeshAgent != null)
+            {
+                CacheNavMeshAgent.Warp(lastResult.position);
+                CacheTransform.rotation = lastResult.rotation;
+            }
             else
             {
                 CacheTransform.position = lastResult.position;
@@ -279,6 +318,7 @@ namespace LiteNetLibHighLevel
         private void InterpolateNavMeshAgent()
         {
             CacheNavMeshAgent.Move(lastResult.position - CacheTransform.position);
+            CacheTransform.rotation = lastResult.rotation;
         }
 
         private void InterpolateTransform()
