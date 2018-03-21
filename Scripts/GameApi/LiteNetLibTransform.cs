@@ -224,8 +224,14 @@ namespace LiteNetLibHighLevel
         {
             // There should be at least two records in the results list to interpolate between them
             // And continue interpolating when there is one record left
-            if (interpResults.Count == 0)
+            if (interpResults.Count == 0 && isInterpolating)
+            {
                 isInterpolating = false;
+                if (CacheRigidbody3D != null)
+                    CacheRigidbody3D.velocity = Vector3.zero;
+                if (CacheRigidbody2D != null)
+                    CacheRigidbody2D.velocity = Vector2.zero;
+            }
 
             if (interpResults.Count > 0)
                 isInterpolating = true;
