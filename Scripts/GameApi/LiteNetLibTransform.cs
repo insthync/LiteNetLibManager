@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using LiteNetLib.Utils;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace LiteNetLibHighLevel
 {
@@ -33,6 +34,7 @@ namespace LiteNetLibHighLevel
         public Rigidbody CacheRigidbody3D { get; private set; }
         public Rigidbody2D CacheRigidbody2D { get; private set; }
         public CharacterController CacheCharacterController { get; private set; }
+        public NavMeshAgent CacheNavMeshAgent { get; private set; }
         #endregion
 
         // This list stores results of transform. Needed for non-owner client interpolation
@@ -54,6 +56,7 @@ namespace LiteNetLibHighLevel
             CacheRigidbody3D = GetComponent<Rigidbody>();
             CacheRigidbody2D = GetComponent<Rigidbody2D>();
             CacheCharacterController = GetComponent<CharacterController>();
+            CacheNavMeshAgent = GetComponent<NavMeshAgent>();
 
             RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
         }
@@ -201,6 +204,8 @@ namespace LiteNetLibHighLevel
                         InterpolateRigibody2D();
                     else if (CacheCharacterController != null)
                         InterpolateCharacterController();
+                    else if (CacheNavMeshAgent != null)
+                        InterpolateNavMeshAgent();
                     else
                         InterpolateTransform();
 
@@ -229,7 +234,7 @@ namespace LiteNetLibHighLevel
                 dist = (CacheRigidbody3D.position - targetPosition).magnitude;
             else if (CacheRigidbody2D != null)
                 dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
-            else if (CacheCharacterController != null)
+            else
                 dist = (CacheTransform.position - targetPosition).magnitude;
             return dist > snapThreshold;
         }
@@ -245,11 +250,6 @@ namespace LiteNetLibHighLevel
             {
                 CacheRigidbody2D.position = lastResult.position;
                 CacheRigidbody2D.rotation = lastResult.rotation.eulerAngles.z;
-            }
-            else if (CacheCharacterController != null)
-            {
-                CacheTransform.position = lastResult.position;
-                CacheTransform.rotation = lastResult.rotation;
             }
             else
             {
@@ -274,6 +274,11 @@ namespace LiteNetLibHighLevel
         {
             CacheCharacterController.Move(lastResult.position - CacheTransform.position);
             CacheTransform.rotation = lastResult.rotation;
+        }
+
+        private void InterpolateNavMeshAgent()
+        {
+            CacheNavMeshAgent.Move(lastResult.position - CacheTransform.position);
         }
 
         private void InterpolateTransform()
