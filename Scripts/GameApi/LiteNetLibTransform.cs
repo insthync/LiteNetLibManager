@@ -48,7 +48,7 @@ namespace LiteNetLibHighLevel
         // Interpolation related variables
         private bool isInterpolating = false;
         private float syncElapsed = 0;
-        private float interpStep = 0;
+        private float interpClamping = 0;
         private float lastClientTimestamp = 0;
         private float lastServerTimestamp = 0;
         private TransformResult startInterpResult;
@@ -220,6 +220,11 @@ namespace LiteNetLibHighLevel
                 Interpolate(isFixedUpdate);
         }
 
+        private float GetInterpStep()
+        {
+            return 1f / sendInterval;
+        }
+
         private void Interpolate(bool isFixedUpdate)
         {
             // There should be at least two records in the results list to interpolate between them
@@ -241,15 +246,14 @@ namespace LiteNetLibHighLevel
                 var lastInterpResult = interpResults[interpResults.Count - 1];
                 if (!ShouldSnap(lastInterpResult.position))
                 {
-                    if (interpStep == 0)
+                    if (interpClamping == 0)
                     {
                         startInterpResult = lastResult;
                         endInterpResult = interpResults[0];
                     }
-
-                    float step = 1f / sendInterval;
-                    lastResult.position = Vector3.Lerp(startInterpResult.position, endInterpResult.position, interpStep);
-                    lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, endInterpResult.rotation, interpStep);
+                    
+                    lastResult.position = Vector3.Lerp(startInterpResult.position, endInterpResult.position, interpClamping);
+                    lastResult.rotation = Quaternion.Slerp(startInterpResult.rotation, endInterpResult.rotation, interpClamping);
 
                     if (CacheNavMeshAgent != null)
                         InterpolateNavMeshAgent();
@@ -262,10 +266,10 @@ namespace LiteNetLibHighLevel
                     else
                         InterpolateTransform();
 
-                    interpStep += step * (isFixedUpdate ? Time.fixedDeltaTime : Time.deltaTime);
-                    if (interpStep >= 1)
+                    interpClamping += GetInterpStep() * (isFixedUpdate ? Time.fixedDeltaTime : Time.deltaTime);
+                    if (interpClamping >= 1)
                     {
-                        interpStep = 0f;
+                        interpClamping = 0f;
                         interpResults.RemoveAt(0);
                     }
                 }
@@ -275,7 +279,7 @@ namespace LiteNetLibHighLevel
                     lastResult.rotation = lastInterpResult.rotation;
                     Snap();
                     interpResults.Clear();
-                    interpStep = 0;
+                    interpClamping = 0;
                 }
             }
         }
@@ -316,13 +320,13 @@ namespace LiteNetLibHighLevel
 
         private void InterpolateRigibody3D()
         {
-            CacheRigidbody3D.velocity = (lastResult.position - CacheRigidbody3D.position) / sendInterval;
+            CacheRigidbody3D.velocity = (lastResult.position - CacheRigidbody3D.position) * GetInterpStep();
             CacheRigidbody3D.MoveRotation(lastResult.rotation);
         }
 
         private void InterpolateRigibody2D()
         {
-            CacheRigidbody2D.velocity = ((Vector2)lastResult.position - CacheRigidbody2D.position) / sendInterval;
+            CacheRigidbody2D.velocity = ((Vector2)lastResult.position - CacheRigidbody2D.position) * GetInterpStep();
             CacheRigidbody2D.MoveRotation(lastResult.rotation.eulerAngles.z);
         }
 
