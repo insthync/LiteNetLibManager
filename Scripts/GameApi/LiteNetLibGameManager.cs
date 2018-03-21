@@ -394,7 +394,7 @@ namespace LiteNetLibHighLevel
                 return;
             var reader = messageHandler.reader;
             var objectId = reader.GetUInt();
-            var behaviourIndex = reader.GetUShort();
+            var behaviourIndex = reader.GetByte();
             LiteNetLibIdentity identity;
             if (Assets.SpawnedObjects.TryGetValue(objectId, out identity))
                 identity.ProcessSyncBehaviour(behaviourIndex, reader);

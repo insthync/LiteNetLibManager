@@ -161,7 +161,7 @@ namespace LiteNetLibHighLevel
             return Behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
         }
 
-        internal LiteNetLibBehaviour ProcessSyncBehaviour(ushort behaviourIndex, NetDataReader reader)
+        internal LiteNetLibBehaviour ProcessSyncBehaviour(byte behaviourIndex, NetDataReader reader)
         {
             if (behaviourIndex >= Behaviours.Count)
                 return null;
