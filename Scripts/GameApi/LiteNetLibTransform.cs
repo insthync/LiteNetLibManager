@@ -134,7 +134,7 @@ namespace LiteNetLibHighLevel
         public override void OnDeserialize(NetDataReader reader)
         {
             // Update transform only non-owner client
-            if (IsLocalClient || IsServer)
+            if ((canClientSendResult && IsLocalClient) || IsServer)
                 return;
             var result = new TransformResult();
             result.position = new Vector3(
@@ -183,15 +183,8 @@ namespace LiteNetLibHighLevel
 
         private void Update()
         {
-            // Sending transform to all clients
-            if (IsServer)
-            {
-                // Interpolate transform that receives from clients
-                if (canClientSendResult && !IsLocalClient)
-                    Interpolate();
-            }
             // Sending client transform result to server
-            else if (canClientSendResult && IsLocalClient)
+            if (canClientSendResult && IsLocalClient)
             {
                 if (syncElapsed >= sendInterval)
                 {
@@ -202,12 +195,32 @@ namespace LiteNetLibHighLevel
                 }
                 syncElapsed += Time.deltaTime;
             }
-            // Interpolating results for non-owner client objects on clients
-            else if (!canClientSendResult || !IsLocalClient)
-                Interpolate();
+
+            if (CacheRigidbody3D == null && CacheRigidbody2D == null)
+                UpdateSync(false);
         }
 
-        private void Interpolate()
+        private void FixedUpdate()
+        {
+            if (CacheRigidbody3D != null || CacheRigidbody2D != null)
+                UpdateSync(false);
+        }
+
+        private void UpdateSync(bool isFixedUpdate)
+        {
+            // Sending transform to all clients
+            if (IsServer)
+            {
+                // Interpolate transform that receives from clients
+                if (canClientSendResult && !IsLocalClient)
+                    Interpolate(isFixedUpdate);
+            }
+            // Interpolating results for non-owner client objects on clients
+            else if (!canClientSendResult || !IsLocalClient)
+                Interpolate(isFixedUpdate);
+        }
+
+        private void Interpolate(bool isFixedUpdate)
         {
             // There should be at least two records in the results list to interpolate between them
             // And continue interpolating when there is one record left
@@ -243,7 +256,7 @@ namespace LiteNetLibHighLevel
                     else
                         InterpolateTransform();
 
-                    interpStep += step * Time.deltaTime;
+                    interpStep += step * (isFixedUpdate ? Time.fixedDeltaTime : Time.deltaTime);
                     if (interpStep >= 1)
                     {
                         interpStep = 0f;
@@ -264,9 +277,7 @@ namespace LiteNetLibHighLevel
         private bool ShouldSnap(Vector3 targetPosition)
         {
             var dist = 0f;
-            if (CacheRigidbody3D != null)
-                dist = (CacheRigidbody3D.position - targetPosition).magnitude;
-            else if (CacheRigidbody2D != null)
+            if (CacheRigidbody2D != null)
                 dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
             else
                 dist = (CacheTransform.position - targetPosition).magnitude;
@@ -299,13 +310,13 @@ namespace LiteNetLibHighLevel
 
         private void InterpolateRigibody3D()
         {
-            CacheRigidbody3D.MovePosition(lastResult.position);
+            CacheRigidbody3D.velocity = (lastResult.position - CacheRigidbody3D.position) / sendInterval;
             CacheRigidbody3D.MoveRotation(lastResult.rotation);
         }
 
         private void InterpolateRigibody2D()
         {
-            CacheRigidbody2D.MovePosition(lastResult.position);
+            CacheRigidbody2D.velocity = ((Vector2)lastResult.position - CacheRigidbody2D.position) / sendInterval;
             CacheRigidbody2D.MoveRotation(lastResult.rotation.eulerAngles.z);
         }
 
