@@ -24,7 +24,10 @@ namespace LiteNetLibHighLevel
             NotSync,
         }
 
-        public bool canClientSendResult;
+        [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
+        public bool ownerClientCanSendTransform;
+        [Tooltip("If this is TRUE, it will not interpolate transform at owner client, but it's still snapping")]
+        public bool ownerClientNotInterpolate;
         public float snapThreshold = 5.0f;
         [Header("Sync Position Settings")]
         public SyncOptions syncPositionX;
@@ -88,7 +91,7 @@ namespace LiteNetLibHighLevel
         private void ClientSendResult(TransformResult result)
         {
             // Don't request to set transform if not set "canClientSendResult" to TRUE
-            if (!canClientSendResult || !IsLocalClient || IsServer)
+            if (!ownerClientCanSendTransform || !IsLocalClient || IsServer)
                 return;
             CallNetFunction("ClientSendResult", FunctionReceivers.Server, result);
         }
@@ -96,7 +99,7 @@ namespace LiteNetLibHighLevel
         private void ClientSendResultCallback(TransformResultNetField resultParam)
         {
             // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
-            if (!canClientSendResult || IsLocalClient)
+            if (!ownerClientCanSendTransform || IsLocalClient)
                 return;
             var result = resultParam.Value;
             // Discard out of order results
@@ -134,7 +137,7 @@ namespace LiteNetLibHighLevel
         public override void OnDeserialize(NetDataReader reader)
         {
             // Update transform only non-owner client
-            if ((canClientSendResult && IsLocalClient) || IsServer)
+            if ((ownerClientCanSendTransform && IsLocalClient) || IsServer)
                 return;
             var result = new TransformResult();
             result.position = new Vector3(
@@ -184,7 +187,7 @@ namespace LiteNetLibHighLevel
         private void Update()
         {
             // Sending client transform result to server
-            if (canClientSendResult && IsLocalClient)
+            if (ownerClientCanSendTransform && IsLocalClient)
             {
                 if (syncElapsed >= sendInterval)
                 {
@@ -212,11 +215,11 @@ namespace LiteNetLibHighLevel
             if (IsServer)
             {
                 // Interpolate transform that receives from clients
-                if (canClientSendResult && !IsLocalClient)
+                if (ownerClientCanSendTransform && !IsLocalClient)
                     Interpolate(isFixedUpdate);
             }
             // Interpolating results for non-owner client objects on clients
-            else if (!canClientSendResult || !IsLocalClient)
+            else if (!ownerClientCanSendTransform || !IsLocalClient)
                 Interpolate(isFixedUpdate);
         }
 
@@ -244,7 +247,15 @@ namespace LiteNetLibHighLevel
             if (isInterpolating)
             {
                 var lastInterpResult = interpResults[interpResults.Count - 1];
-                if (!ShouldSnap(lastInterpResult.position))
+                if (ShouldSnap(lastInterpResult.position))
+                {
+                    lastResult.position = lastInterpResult.position;
+                    lastResult.rotation = lastInterpResult.rotation;
+                    Snap();
+                    interpResults.Clear();
+                    interpClamping = 0;
+                }
+                else if (!IsLocalClient || !ownerClientNotInterpolate)
                 {
                     if (interpClamping == 0)
                     {
@@ -272,14 +283,6 @@ namespace LiteNetLibHighLevel
                         interpClamping = 0f;
                         interpResults.RemoveAt(0);
                     }
-                }
-                else
-                {
-                    lastResult.position = lastInterpResult.position;
-                    lastResult.rotation = lastInterpResult.rotation;
-                    Snap();
-                    interpResults.Clear();
-                    interpClamping = 0;
                 }
             }
         }
