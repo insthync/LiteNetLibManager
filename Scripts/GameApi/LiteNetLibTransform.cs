@@ -91,7 +91,7 @@ namespace LiteNetLibHighLevel
         private void ClientSendResult(TransformResult result)
         {
             // Don't request to set transform if not set "canClientSendResult" to TRUE
-            if (!ownerClientCanSendTransform || !IsLocalClient || IsServer)
+            if (!ownerClientCanSendTransform || !IsOwnerClient || IsServer)
                 return;
             CallNetFunction("ClientSendResult", FunctionReceivers.Server, result);
         }
@@ -99,7 +99,7 @@ namespace LiteNetLibHighLevel
         private void ClientSendResultCallback(TransformResultNetField resultParam)
         {
             // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
-            if (!ownerClientCanSendTransform || IsLocalClient)
+            if (!ownerClientCanSendTransform || IsOwnerClient)
                 return;
             var result = resultParam.Value;
             // Discard out of order results
@@ -137,7 +137,7 @@ namespace LiteNetLibHighLevel
         public override void OnDeserialize(NetDataReader reader)
         {
             // Update transform only non-owner client
-            if ((ownerClientCanSendTransform && IsLocalClient) || IsServer)
+            if ((ownerClientCanSendTransform && IsOwnerClient) || IsServer)
                 return;
             var result = new TransformResult();
             result.position = new Vector3(
@@ -187,7 +187,7 @@ namespace LiteNetLibHighLevel
         private void Update()
         {
             // Sending client transform result to server
-            if (ownerClientCanSendTransform && IsLocalClient)
+            if (ownerClientCanSendTransform && IsOwnerClient)
             {
                 if (syncElapsed >= sendInterval)
                 {
@@ -215,11 +215,11 @@ namespace LiteNetLibHighLevel
             if (IsServer)
             {
                 // Interpolate transform that receives from clients
-                if (ownerClientCanSendTransform && !IsLocalClient)
+                if (ownerClientCanSendTransform && !IsOwnerClient)
                     Interpolate(isFixedUpdate);
             }
             // Interpolating results for non-owner client objects on clients
-            else if (!ownerClientCanSendTransform || !IsLocalClient)
+            else if (!ownerClientCanSendTransform || !IsOwnerClient)
                 Interpolate(isFixedUpdate);
         }
 
@@ -255,7 +255,7 @@ namespace LiteNetLibHighLevel
                     interpResults.Clear();
                     interpClamping = 0;
                 }
-                else if (!IsLocalClient || !ownerClientNotInterpolate)
+                else if (!IsOwnerClient || !ownerClientNotInterpolate)
                 {
                     if (interpClamping == 0)
                     {

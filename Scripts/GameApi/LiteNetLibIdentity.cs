@@ -54,7 +54,7 @@ namespace LiteNetLibHighLevel
             get { return Manager.IsClient; }
         }
 
-        public bool IsLocalClient
+        public bool IsOwnerClient
         {
             get { return ConnectId == Manager.Client.Peer.ConnectId; }
         }
@@ -239,7 +239,7 @@ namespace LiteNetLibHighLevel
             }
 
             // If this is not local host client object, hide it
-            if (IsServer && IsClient && !IsLocalClient)
+            if (IsServer && IsClient && !IsOwnerClient)
                 OnServerSubscribingRemoved();
 
             RebuildSubscribers(true);

@@ -99,9 +99,9 @@ namespace LiteNetLibHighLevel
             get { return Identity.IsClient; }
         }
 
-        public bool IsLocalClient
+        public bool IsOwnerClient
         {
-            get { return Identity.IsLocalClient; }
+            get { return Identity.IsOwnerClient; }
         }
 
         internal void NetworkUpdate()
