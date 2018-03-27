@@ -195,7 +195,14 @@ namespace LiteNetLibHighLevel
                 syncElapsed += Time.deltaTime;
             }
 
-            UpdateInterpolate();
+            if (CacheRigidbody2D == null && CacheRigidbody3D == null)
+                UpdateInterpolate();
+        }
+
+        private void FixedUpdate()
+        {
+            if (CacheRigidbody2D != null || CacheRigidbody3D != null)
+                UpdateInterpolate();
         }
 
         private void UpdateInterpolate()
