@@ -46,7 +46,7 @@ namespace LiteNetLibHighLevel
         public Rigidbody2D CacheRigidbody2D { get; private set; }
         public CharacterController CacheCharacterController { get; private set; }
         #endregion
-        
+
         // Interpolation related variables
         private float syncElapsed = 0;
         private float lastClientTimestamp = 0;
@@ -289,7 +289,12 @@ namespace LiteNetLibHighLevel
                 CacheRigidbody3D.MoveRotation(rotation);
                 var velocity = (position - CacheRigidbody3D.position) * GetPositionInterpStep();
                 if (Vector3.Distance(position, CacheRigidbody3D.position) >= movementTheshold)
-                    CacheRigidbody3D.velocity = velocity;
+                {
+                    if (!CacheRigidbody3D.isKinematic)
+                        CacheRigidbody3D.velocity = velocity;
+                    else
+                        CacheRigidbody3D.MovePosition(position);
+                }
                 else
                 {
                     CacheRigidbody3D.velocity = Vector3.zero;
@@ -301,7 +306,12 @@ namespace LiteNetLibHighLevel
                 CacheRigidbody2D.MoveRotation(rotation.eulerAngles.z);
                 var velocity = ((Vector2)position - CacheRigidbody2D.position) * GetPositionInterpStep();
                 if (Vector2.Distance(position, CacheRigidbody2D.position) >= movementTheshold)
-                    CacheRigidbody2D.velocity = velocity;
+                {
+                    if (!CacheRigidbody2D.isKinematic)
+                        CacheRigidbody2D.velocity = velocity;
+                    else
+                        CacheRigidbody2D.MovePosition(position);
+                }
                 else
                 {
                     CacheRigidbody2D.velocity = Vector2.zero;
