@@ -143,7 +143,6 @@ namespace LiteNetLibHighLevel
             if (Server != null)
                 return true;
 
-            OnStartServer();
             Server = new LiteNetLibServer(this, maxConnections, connectKey);
             RegisterServerMessages();
             SetConfigs(Server.NetManager);
@@ -153,6 +152,7 @@ namespace LiteNetLibHighLevel
                 Server = null;
                 return false;
             }
+            OnStartServer();
             return true;
         }
 
