@@ -201,6 +201,7 @@ namespace LiteNetLibHighLevel
             var message = new ServerSpawnSceneObjectMessage();
             message.objectId = identity.ObjectId;
             message.position = identity.transform.position;
+            message.rotation = identity.transform.rotation;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnSceneObject, message);
         }
 
@@ -223,6 +224,7 @@ namespace LiteNetLibHighLevel
             message.objectId = identity.ObjectId;
             message.connectId = identity.ConnectId;
             message.position = identity.transform.position;
+            message.rotation = identity.transform.rotation;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnObject, message);
         }
 
@@ -324,7 +326,7 @@ namespace LiteNetLibHighLevel
             if (IsServer)
                 return;
             var message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
-            Assets.NetworkSpawnScene(message.objectId, message.position);
+            Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation);
         }
 
         protected virtual void HandleServerSpawnObject(LiteNetLibMessageHandler messageHandler)
@@ -333,7 +335,7 @@ namespace LiteNetLibHighLevel
             if (IsServer)
                 return;
             var message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
-            Assets.NetworkSpawn(message.assetId, message.position, message.objectId, message.connectId);
+            Assets.NetworkSpawn(message.assetId, message.position, message.rotation, message.objectId, message.connectId);
         }
 
         protected virtual void HandleServerDestroyObject(LiteNetLibMessageHandler messageHandler)
@@ -484,7 +486,7 @@ namespace LiteNetLibHighLevel
 
         protected LiteNetLibIdentity SpawnPlayer(NetPeer peer, string assetId)
         {
-            var spawnedObject = Assets.NetworkSpawn(assetId, Assets.GetPlayerSpawnPosition(), 0, peer.ConnectId);
+            var spawnedObject = Assets.NetworkSpawn(assetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, peer.ConnectId);
             if (spawnedObject != null)
             {
                 spawnedObject.SendInitSyncFields(peer);

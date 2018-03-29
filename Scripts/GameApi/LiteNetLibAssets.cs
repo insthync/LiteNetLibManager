@@ -112,11 +112,11 @@ namespace LiteNetLibHighLevel
             for (var i = 0; i < sceneObjects.Count; ++i)
             {
                 var sceneObject = sceneObjects[i];
-                NetworkSpawnScene(sceneObject.ObjectId, sceneObject.transform.position);
+                NetworkSpawnScene(sceneObject.ObjectId, sceneObject.transform.position, sceneObject.transform.rotation);
             }
         }
 
-        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, Vector3 position)
+        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, Vector3 position, Quaternion rotation)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -129,6 +129,7 @@ namespace LiteNetLibHighLevel
             {
                 sceneObject.gameObject.SetActive(true);
                 sceneObject.transform.position = position;
+                sceneObject.transform.rotation = rotation;
                 sceneObject.Initial(Manager, true, objectId);
                 SpawnedObjects[sceneObject.ObjectId] = sceneObject;
                 return sceneObject;
@@ -138,12 +139,7 @@ namespace LiteNetLibHighLevel
             return null;
         }
 
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectId = 0)
-        {
-            return NetworkSpawn(gameObject, Vector3.zero, objectId, connectId);
-        }
-
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, Vector3 position, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
         {
             if (gameObject == null)
             {
@@ -151,20 +147,20 @@ namespace LiteNetLibHighLevel
                 return null;
             }
             var identity = gameObject.GetComponent<LiteNetLibIdentity>();
-            return NetworkSpawn(identity, position, objectId, connectId);
+            return NetworkSpawn(identity, position, rotation, objectId, connectId);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, Vector3 position, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
         {
             if (identity == null)
             {
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
                 return null;
             }
-            return NetworkSpawn(identity.AssetId, position, objectId, connectId);
+            return NetworkSpawn(identity.AssetId, position, rotation, objectId, connectId);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(string assetId, Vector3 position, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(string assetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -174,7 +170,7 @@ namespace LiteNetLibHighLevel
             
             // If it's scene object use network spawn scene function to spawn it
             if (SceneObjects.ContainsKey(objectId))
-                return NetworkSpawnScene(objectId, position);
+                return NetworkSpawnScene(objectId, position, rotation);
             
             // Spawned objects cannot spawning again
             if (SpawnedObjects.ContainsKey(objectId))
@@ -186,6 +182,7 @@ namespace LiteNetLibHighLevel
                 var spawnedObject = Instantiate(spawningObject);
                 spawnedObject.gameObject.SetActive(true);
                 spawnedObject.transform.position = position;
+                spawnedObject.transform.rotation = rotation;
                 spawnedObject.Initial(Manager, false, objectId, connectId);
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 // Add to player spawned objects dictionary
