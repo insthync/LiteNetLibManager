@@ -303,7 +303,7 @@ namespace LiteNetLibHighLevel
         internal void AddSubscriber(LiteNetLibPlayer subscriber)
         {
             // Only server can manage subscribers
-            if (!IsServer)
+            if (!IsServer || subscriber == null)
                 return;
             
             if (Subscribers.ContainsKey(subscriber.ConnectId))
