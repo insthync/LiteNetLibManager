@@ -62,7 +62,7 @@ namespace LiteNetLibHighLevel
 
                 if (Field.IsValueChanged(value))
                 {
-                    this.value = value;
+                    Field.Value = this.value = value;
                     hasUpdate = true;
                     if (onChange != null)
                         onChange(value);
