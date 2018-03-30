@@ -364,7 +364,7 @@ namespace LiteNetLibHighLevel
             var reader = messageHandler.reader;
             var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
-            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity) && identity.ConnectId == messageHandler.peer.ConnectId)
+            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
                 identity.ProcessNetFunction(info, reader, true);
         }
 
