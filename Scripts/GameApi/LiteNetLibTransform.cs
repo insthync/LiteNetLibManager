@@ -39,6 +39,8 @@ namespace LiteNetLibHighLevel
         public SyncOptions syncRotationY;
         public SyncOptions syncRotationZ;
 
+        private LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion> netFuncTeleport;
+
         #region Cache components
         public Transform CacheTransform { get; private set; }
         public NavMeshAgent CacheNavMeshAgent { get; private set; }
@@ -82,6 +84,27 @@ namespace LiteNetLibHighLevel
             currentInterpResult.timestamp = Time.realtimeSinceStartup;
             syncResult = currentInterpResult;
             endInterpResult = currentInterpResult;
+        }
+
+        public override void OnSetup()
+        {
+            base.OnSetup();
+            netFuncTeleport = new LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion>(NetFuncTeleportCallback);
+            RegisterNetFunction("Teleport", netFuncTeleport);
+        }
+
+        private void NetFuncTeleportCallback(NetFieldVector3 position, NetFieldQuaternion rotation)
+        {
+            if (IsServer || (ownerClientCanSendTransform && IsOwnerClient))
+            {
+                currentInterpResult = new TransformResult();
+                currentInterpResult.position = position;
+                currentInterpResult.rotation = rotation;
+                currentInterpResult.timestamp = Time.realtimeSinceStartup;
+                syncResult = currentInterpResult;
+                endInterpResult = currentInterpResult;
+                Snap(position, rotation);
+            }
         }
 
         private void ClientSendResult(TransformResult result)
@@ -330,6 +353,12 @@ namespace LiteNetLibHighLevel
                 CacheTransform.position = position;
                 CacheTransform.rotation = rotation;
             }
+        }
+
+        public void Teleport(Vector3 position, Quaternion rotation)
+        {
+            if (IsServer || (ownerClientCanSendTransform && IsOwnerClient))
+                CallNetFunction("Teleport", FunctionReceivers.All, position, rotation);
         }
     }
 }
