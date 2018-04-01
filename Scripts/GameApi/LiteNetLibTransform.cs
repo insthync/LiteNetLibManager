@@ -95,16 +95,13 @@ namespace LiteNetLibHighLevel
 
         private void NetFuncTeleportCallback(NetFieldVector3 position, NetFieldQuaternion rotation)
         {
-            if (IsServer || (ownerClientCanSendTransform && IsOwnerClient))
-            {
-                currentInterpResult = new TransformResult();
-                currentInterpResult.position = position;
-                currentInterpResult.rotation = rotation;
-                currentInterpResult.timestamp = Time.realtimeSinceStartup;
-                syncResult = currentInterpResult;
-                endInterpResult = currentInterpResult;
-                Snap(position, rotation);
-            }
+            currentInterpResult = new TransformResult();
+            currentInterpResult.position = position;
+            currentInterpResult.rotation = rotation;
+            currentInterpResult.timestamp = Time.realtimeSinceStartup;
+            syncResult = currentInterpResult;
+            endInterpResult = currentInterpResult;
+            Snap(position, rotation);
         }
 
         private void ClientSendResult(TransformResult result)
