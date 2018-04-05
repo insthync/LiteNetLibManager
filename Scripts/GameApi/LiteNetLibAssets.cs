@@ -196,7 +196,7 @@ namespace LiteNetLibHighLevel
             return null;
         }
 
-        public bool NetworkDestroy(GameObject gameObject)
+        public bool NetworkDestroy(GameObject gameObject, DestroyObjectReasons reasons)
         {
             if (gameObject == null)
             {
@@ -209,10 +209,10 @@ namespace LiteNetLibHighLevel
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
                 return false;
             }
-            return NetworkDestroy(identity.ObjectId);
+            return NetworkDestroy(identity.ObjectId, reasons);
         }
 
-        public bool NetworkDestroy(uint objectId)
+        public bool NetworkDestroy(uint objectId, DestroyObjectReasons reasons)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -229,6 +229,7 @@ namespace LiteNetLibHighLevel
                     player.SpawnedObjects.Remove(objectId);
                 // Remove from asset spawned objects dictionary
                 SpawnedObjects.Remove(objectId);
+                spawnedObject.OnNetworkDestroy(reasons);
                 // If the object is scene object, don't destroy just hide it, else destroy
                 if (SceneObjects.ContainsKey(objectId))
                     spawnedObject.gameObject.SetActive(false);
@@ -236,7 +237,7 @@ namespace LiteNetLibHighLevel
                     Destroy(spawnedObject.gameObject);
                 // If this is server, send message to clients to destroy object
                 if (Manager.IsServer)
-                    Manager.SendServerDestroyObject(objectId);
+                    Manager.SendServerDestroyObject(objectId, reasons);
                 return true;
             }
             else if (Manager.LogWarn)

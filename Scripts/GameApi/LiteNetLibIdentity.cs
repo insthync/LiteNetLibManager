@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -464,6 +465,38 @@ namespace LiteNetLibHighLevel
             {
                 var behaviour = Behaviours[i];
                 behaviour.OnServerSubscribingRemoved();
+            }
+        }
+
+        public void NetworkDestroy()
+        {
+            if (!IsServer)
+                return;
+
+            Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
+        }
+
+        public void NetworkDestroy(float delay)
+        {
+            if (!IsServer)
+                return;
+
+            StartCoroutine(NetworkDestroyRoutine(delay));
+        }
+
+        IEnumerator NetworkDestroyRoutine(float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            NetworkDestroy();
+        }
+
+        public void OnNetworkDestroy(DestroyObjectReasons reasons)
+        {
+            var count = Behaviours.Count;
+            for (var i = 0; i < count; ++i)
+            {
+                var behaviour = Behaviours[i];
+                behaviour.OnNetworkDestroy(reasons);
             }
         }
     }

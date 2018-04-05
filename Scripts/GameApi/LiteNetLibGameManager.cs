@@ -241,17 +241,17 @@ namespace LiteNetLibHighLevel
             identity.SendInitSyncLists(peer);
         }
 
-        public void SendServerDestroyObject(uint objectId)
+        public void SendServerDestroyObject(uint objectId, DestroyObjectReasons reasons)
         {
             if (!IsServer)
                 return;
             foreach (var peer in Peers.Values)
             {
-                SendServerDestroyObject(peer, objectId);
+                SendServerDestroyObject(peer, objectId, reasons);
             }
         }
 
-        public void SendServerDestroyObject(NetPeer peer, uint objectId)
+        public void SendServerDestroyObject(NetPeer peer, uint objectId, DestroyObjectReasons reasons)
         {
             if (!IsServer)
                 return;
@@ -344,7 +344,7 @@ namespace LiteNetLibHighLevel
             if (IsServer)
                 return;
             var message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
-            Assets.NetworkDestroy(message.objectId);
+            Assets.NetworkDestroy(message.objectId, message.reasons);
         }
 
         protected virtual void HandleServerUpdateSyncField(LiteNetLibMessageHandler messageHandler)

@@ -346,25 +346,19 @@ namespace LiteNetLibHighLevel
 
         public void NetworkDestroy()
         {
-            if (!IsServer)
-                return;
-
-            Manager.Assets.NetworkDestroy(ObjectId);
+            Identity.NetworkDestroy();
         }
 
         public void NetworkDestroy(float delay)
         {
-            if (!IsServer)
-                return;
-
-            StartCoroutine(NetworkDestroyRoutine(delay));
+            Identity.NetworkDestroy(delay);
         }
 
-        IEnumerator NetworkDestroyRoutine(float delay)
-        {
-            yield return new WaitForSecondsRealtime(delay);
-            NetworkDestroy();
-        }
+        /// <summary>
+        /// This function will be called when object destroy from server
+        /// </summary>
+        /// <param name="reasons"></param>
+        public virtual void OnNetworkDestroy(DestroyObjectReasons reasons) { }
 
         /// <summary>
         /// This function will be called when function OnValidate() have been called in edior

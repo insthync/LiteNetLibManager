@@ -54,7 +54,7 @@ namespace LiteNetLibHighLevel
 
             if (destroyObjectsOnPeer)
             {
-                Manager.SendServerDestroyObject(Peer, identity.ObjectId);
+                Manager.SendServerDestroyObject(Peer, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
                 // If this is player for local host client, hide object
                 if (IsServer && IsClient && IsLocalClient)
                     identity.OnServerSubscribingRemoved();
@@ -70,7 +70,7 @@ namespace LiteNetLibHighLevel
                 // because it's going to clear in this function
                 identity.RemoveSubscriber(this, false);
                 if (destroyObjectsOnPeer)
-                    Manager.SendServerDestroyObject(Peer, identity.ObjectId);
+                    Manager.SendServerDestroyObject(Peer, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
             }
             SubscribingObjects.Clear();
         }
@@ -82,7 +82,7 @@ namespace LiteNetLibHighLevel
         {
             var objectIds = new List<uint>(SpawnedObjects.Keys);
             foreach (var objectId in objectIds)
-                Manager.Assets.NetworkDestroy(objectId);
+                Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
         }
     }
 }
