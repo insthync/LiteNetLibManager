@@ -79,9 +79,9 @@ namespace LiteNetLibHighLevel
             base.Update();
         }
 
-        public override bool StartServer()
+        public override bool StartServer(bool isOffline = false)
         {
-            if (base.StartServer())
+            if (base.StartServer(isOffline))
             {
                 Assets.SpawnSceneObjects();
                 return true;

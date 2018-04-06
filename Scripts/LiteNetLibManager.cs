@@ -138,15 +138,17 @@ namespace LiteNetLibHighLevel
 
         protected virtual void RegisterClientMessages() { }
 
-        public virtual bool StartServer()
+        public virtual bool StartServer(bool isOffline = false)
         {
             if (Server != null)
                 return true;
 
+            var maxConnections = !isOffline ? this.maxConnections : 1;
             Server = new LiteNetLibServer(this, maxConnections, connectKey);
             RegisterServerMessages();
             SetConfigs(Server.NetManager);
-            if (!Server.NetManager.Start(networkPort))
+            var canStartServer = !isOffline ? Server.NetManager.Start(networkPort) : Server.NetManager.Start();
+            if (!canStartServer)
             {
                 if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
                 Server = null;
@@ -158,9 +160,15 @@ namespace LiteNetLibHighLevel
 
         public virtual LiteNetLibClient StartClient()
         {
+            return StartClient(networkAddress, networkPort);
+        }
+
+        public virtual LiteNetLibClient StartClient(string networkAddress, int networkPort)
+        {
             if (Client != null)
                 return Client;
 
+            if (LogDev) Debug.Log("Client connecting to " + networkAddress + ":" + networkPort);
             Client = new LiteNetLibClient(this, connectKey);
             RegisterClientMessages();
             SetConfigs(Client.NetManager);
@@ -170,18 +178,18 @@ namespace LiteNetLibHighLevel
             return Client;
         }
 
-        public virtual LiteNetLibClient StartHost()
+        public virtual LiteNetLibClient StartHost(bool isOffline = false)
         {
             OnStartHost();
-            if (StartServer())
+            if (StartServer(isOffline))
                 return ConnectLocalClient();
             return null;
         }
 
         protected virtual LiteNetLibClient ConnectLocalClient()
         {
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StartHost port: " + networkPort);
             networkAddress = "localhost";
+            networkPort = Server.NetManager.LocalPort;
             return StartClient();
         }
 
