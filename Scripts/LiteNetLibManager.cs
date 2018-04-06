@@ -138,7 +138,12 @@ namespace LiteNetLibHighLevel
 
         protected virtual void RegisterClientMessages() { }
 
-        public virtual bool StartServer(bool isOffline = false)
+        public virtual bool StartServer()
+        {
+            return StartServer(true);
+        }
+
+        protected virtual bool StartServer(bool isOffline)
         {
             if (Server != null)
                 return true;
@@ -188,9 +193,7 @@ namespace LiteNetLibHighLevel
 
         protected virtual LiteNetLibClient ConnectLocalClient()
         {
-            networkAddress = "localhost";
-            networkPort = Server.NetManager.LocalPort;
-            return StartClient();
+            return StartClient("localhost", Server.NetManager.LocalPort);
         }
 
         public void StopHost()

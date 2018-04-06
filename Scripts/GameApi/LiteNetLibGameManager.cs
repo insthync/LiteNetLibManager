@@ -79,7 +79,7 @@ namespace LiteNetLibHighLevel
             base.Update();
         }
 
-        public override bool StartServer(bool isOffline = false)
+        protected override bool StartServer(bool isOffline = false)
         {
             if (base.StartServer(isOffline))
             {
