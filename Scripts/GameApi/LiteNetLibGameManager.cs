@@ -65,7 +65,7 @@ namespace LiteNetLibHighLevel
         {
             if (IsServer)
             {
-                var spawnedObjects = Assets.SpawnedObjects.Values;
+                var spawnedObjects = Assets.GetSpawnedObjects();
                 foreach (var spawnedObject in spawnedObjects)
                 {
                     spawnedObject.NetworkUpdate();
@@ -233,7 +233,7 @@ namespace LiteNetLibHighLevel
             if (identity == null)
                 return;
 
-            if (Assets.SceneObjects.ContainsKey(identity.ObjectId))
+            if (Assets.ContainsSceneObject(identity.ObjectId))
                 SendServerSpawnSceneObject(peer, identity);
             else
                 SendServerSpawnObject(peer, identity);
@@ -305,7 +305,7 @@ namespace LiteNetLibHighLevel
                 connectId = reader.GetLong();
             var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
-            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
                 if (receivers == FunctionReceivers.Server)
                     identity.ProcessNetFunction(info, reader, true);
@@ -355,7 +355,7 @@ namespace LiteNetLibHighLevel
             var reader = messageHandler.reader;
             var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
-            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncField(info, reader);
         }
 
@@ -364,7 +364,7 @@ namespace LiteNetLibHighLevel
             var reader = messageHandler.reader;
             var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
-            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessNetFunction(info, reader, true);
         }
 
@@ -376,7 +376,7 @@ namespace LiteNetLibHighLevel
             var reader = messageHandler.reader;
             var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
-            if (Assets.SpawnedObjects.TryGetValue(info.objectId, out identity))
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncList(info, reader);
         }
 
@@ -398,7 +398,7 @@ namespace LiteNetLibHighLevel
             var objectId = reader.GetUInt();
             var behaviourIndex = reader.GetByte();
             LiteNetLibIdentity identity;
-            if (Assets.SpawnedObjects.TryGetValue(objectId, out identity))
+            if (Assets.TryGetSpawnedObject(objectId, out identity))
                 identity.ProcessSyncBehaviour(behaviourIndex, reader);
         }
 
@@ -445,7 +445,7 @@ namespace LiteNetLibHighLevel
             player.IsReady = true;
             var playerIdentity = SpawnPlayer(peer);
             DeserializeClientReadyExtra(playerIdentity, reader);
-            var spawnedObjects = Assets.SpawnedObjects.Values;
+            var spawnedObjects = Assets.GetSpawnedObjects();
             foreach (var spawnedObject in spawnedObjects)
             {
                 if (spawnedObject.ConnectId == player.ConnectId)

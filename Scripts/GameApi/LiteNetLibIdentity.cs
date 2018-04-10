@@ -207,7 +207,7 @@ namespace LiteNetLibHighLevel
         {
             if (Manager == null)
                 return false;
-            return Manager.Assets.SceneObjects.ContainsKey(objectId);
+            return Manager.Assets.ContainsSceneObject(objectId);
         }
 
         /// <summary>

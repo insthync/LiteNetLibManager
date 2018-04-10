@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -16,9 +15,9 @@ namespace LiteNetLibHighLevel
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
-        internal readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
-        internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        private readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
+        private readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        private readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
         private LiteNetLibGameManager manager;
         public LiteNetLibGameManager Manager
@@ -74,8 +73,8 @@ namespace LiteNetLibHighLevel
 
         public void ClearSpawnedObjects()
         {
-            var objectIds = SpawnedObjects.Keys.ToArray();
-            for (var i = objectIds.Length - 1; i >= 0; --i)
+            var objectIds = new List<uint>(SpawnedObjects.Keys);
+            for (var i = objectIds.Count - 1; i >= 0; --i)
             {
                 var objectId = objectIds[i];
                 LiteNetLibIdentity spawnedObject;
@@ -257,6 +256,60 @@ namespace LiteNetLibHighLevel
                     spawnPositionCounter = 0;
                 return playerSpawnPositions[spawnPositionCounter++].position;
             }
+        }
+
+        public List<LiteNetLibIdentity> GetSceneObjects()
+        {
+            return new List<LiteNetLibIdentity>(SceneObjects.Values);
+        }
+
+        public List<LiteNetLibIdentity> GetSpawnedObjects()
+        {
+            return new List<LiteNetLibIdentity>(SpawnedObjects.Values);
+        }
+
+        public bool ContainsSceneObject(uint objectId)
+        {
+            return SceneObjects.ContainsKey(objectId);
+        }
+
+        public bool ContainsSpawnedObject(uint objectId)
+        {
+            return SpawnedObjects.ContainsKey(objectId);
+        }
+
+        public bool TryGetSceneObject(uint objectId, out LiteNetLibIdentity identity)
+        {
+            return SceneObjects.TryGetValue(objectId, out identity);
+        }
+
+        public bool TryGetSceneObject<T>(uint objectId, out T result) where T : LiteNetLibBehaviour
+        {
+            result = null;
+            LiteNetLibIdentity identity;
+            if (SceneObjects.TryGetValue(objectId, out identity))
+            {
+                result = identity.GetComponent<T>();
+                return result != null;
+            }
+            return false;
+        }
+
+        public bool TryGetSpawnedObject(uint objectId, out LiteNetLibIdentity identity)
+        {
+            return SpawnedObjects.TryGetValue(objectId, out identity);
+        }
+
+        public bool TryGetSpawnedObject<T>(uint objectId, out T result) where T : LiteNetLibBehaviour
+        {
+            result = null;
+            LiteNetLibIdentity identity;
+            if (SpawnedObjects.TryGetValue(objectId, out identity))
+            {
+                result = identity.GetComponent<T>();
+                return result != null;
+            }
+            return false;
         }
 
         public static void ResetSpawnPositionCounter()
