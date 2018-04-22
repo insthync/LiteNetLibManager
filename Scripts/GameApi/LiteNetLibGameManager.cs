@@ -56,9 +56,7 @@ namespace LiteNetLibHighLevel
         {
             base.Awake();
             Players.Clear();
-            Assets.ClearRegisteredPrefabs();
-            Assets.RegisterPrefabs();
-            Assets.RegisterSceneObjects();
+            Assets.Initialize();
         }
 
         protected override void Update()

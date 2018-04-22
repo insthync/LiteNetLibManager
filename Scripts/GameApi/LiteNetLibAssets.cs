@@ -11,10 +11,10 @@ namespace LiteNetLibHighLevel
     {
         private static int spawnPositionCounter = 0;
         public bool playerSpawnRandomly;
-        public Transform[] playerSpawnPositions;
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
+        private readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
         private readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
         private readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         private readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
@@ -28,6 +28,15 @@ namespace LiteNetLibHighLevel
                     manager = GetComponent<LiteNetLibGameManager>();
                 return manager;
             }
+        }
+
+        public void Initialize()
+        {
+            CacheSpawnPoints.Clear();
+            CacheSpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
+            ClearRegisteredPrefabs();
+            RegisterPrefabs();
+            RegisterSceneObjects();
         }
 
         public void ClearRegisteredPrefabs()
@@ -246,15 +255,15 @@ namespace LiteNetLibHighLevel
 
         public Vector3 GetPlayerSpawnPosition()
         {
-            if (playerSpawnPositions == null || playerSpawnPositions.Length == 0)
+            if (CacheSpawnPoints.Count == 0)
                 return Vector3.zero;
             if (playerSpawnRandomly)
-                return playerSpawnPositions[Random.Range(0, playerSpawnPositions.Length)].position;
+                return CacheSpawnPoints[Random.Range(0, CacheSpawnPoints.Count)].Position;
             else
             {
-                if (spawnPositionCounter >= playerSpawnPositions.Length)
+                if (spawnPositionCounter >= CacheSpawnPoints.Count)
                     spawnPositionCounter = 0;
-                return playerSpawnPositions[spawnPositionCounter++].position;
+                return CacheSpawnPoints[spawnPositionCounter++].Position;
             }
         }
 
