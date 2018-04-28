@@ -57,7 +57,7 @@ namespace LiteNetLibHighLevel
 
         public bool IsOwnerClient
         {
-            get { return ConnectId == Manager.Client.Peer.ConnectId; }
+            get { return Manager.Client != null && Manager.Client.Peer != null && ConnectId == Manager.Client.Peer.ConnectId; }
         }
 
         internal void NetworkUpdate()
