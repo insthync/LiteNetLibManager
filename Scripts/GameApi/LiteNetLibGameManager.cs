@@ -119,6 +119,7 @@ namespace LiteNetLibHighLevel
                     {
                         Assets.SpawnSceneObjects();
                         serverSceneName = sceneName;
+                        SendServerSceneChange(sceneName);
                     }
                     else
                         SendClientReady();
