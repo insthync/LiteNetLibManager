@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,6 +15,12 @@ namespace LiteNetLibHighLevel
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
+        public LiteNetLibScene offlineScene;
+        public LiteNetLibScene onlineScene;
+        public LiteNetLibLoadSceneEvent onLoadSceneStart;
+        public LiteNetLibLoadSceneEvent onLoadSceneProgress;
+        public LiteNetLibLoadSceneEvent onLoadSceneFinish;
+
         private readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
         private readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
         private readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();

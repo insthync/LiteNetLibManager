@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
@@ -10,6 +12,7 @@ namespace LiteNetLibHighLevel
     {
         public class GameMsgTypes
         {
+            public const short ClientConnected = 0;
             public const short ClientReady = 1;
             public const short ClientNotReady = 2;
             public const short ClientCallFunction = 3;
@@ -22,13 +25,17 @@ namespace LiteNetLibHighLevel
             public const short ServerTime = 10;
             public const short ServerSyncBehaviour = 11;
             public const short ServerError = 12;
-            public const short Highest = 12;
+            public const short ServerSceneResult = 13;
+            public const short ServerSceneChange = 14;
+            public const short Highest = 14;
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         public bool clientReadyOnConnect;
         private float lastSendServerTime;
+        private string serverSceneName;
+        private AsyncOperation loadSceneAsyncOperation;
 
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
@@ -38,6 +45,16 @@ namespace LiteNetLibHighLevel
                 if (IsServer)
                     return Time.realtimeSinceStartup;
                 return Time.realtimeSinceStartup + ServerTimeOffset;
+            }
+        }
+
+        public string ServerSceneName
+        {
+            get
+            {
+                if (IsServer)
+                    return serverSceneName;
+                return string.Empty;
             }
         }
 
@@ -57,6 +74,7 @@ namespace LiteNetLibHighLevel
             base.Awake();
             Players.Clear();
             Assets.Initialize();
+            serverSceneName = string.Empty;
         }
 
         protected override void Update()
@@ -77,19 +95,42 @@ namespace LiteNetLibHighLevel
             base.Update();
         }
 
-        protected override bool StartServer(bool isOffline = false)
+        private IEnumerator LoadSceneRoutine(string sceneName, bool online)
         {
-            if (base.StartServer(isOffline))
+            if (loadSceneAsyncOperation == null)
             {
-                Assets.SpawnSceneObjects();
-                return true;
+                if (Assets.onLoadSceneStart != null)
+                    Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
+                yield return null;
+                loadSceneAsyncOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+                while (!loadSceneAsyncOperation.isDone)
+                {
+                    if (Assets.onLoadSceneProgress != null)
+                        Assets.onLoadSceneProgress.Invoke(sceneName, online, loadSceneAsyncOperation.progress);
+                    yield return null;
+                }
+                loadSceneAsyncOperation = null;
+                yield return null;
+                if (Assets.onLoadSceneFinish != null)
+                    Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
+
+                if (online)
+                {
+                    if (IsServer)
+                    {
+                        Assets.SpawnSceneObjects();
+                        serverSceneName = sceneName;
+                    }
+                    else if (clientReadyOnConnect)
+                        SendClientReady();
+                }
             }
-            return false;
         }
 
         protected override void RegisterServerMessages()
         {
             base.RegisterServerMessages();
+            RegisterClientMessage(GameMsgTypes.ClientConnected, HandleClientConnected);
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
             RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.ClientCallFunction, HandleClientCallFunction);
@@ -107,6 +148,7 @@ namespace LiteNetLibHighLevel
             RegisterClientMessage(GameMsgTypes.ServerTime, HandleServerTime);
             RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
+            RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
         }
 
         public override void OnPeerConnected(NetPeer peer)
@@ -132,12 +174,31 @@ namespace LiteNetLibHighLevel
                 SendClientReady();
         }
 
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+            serverSceneName = string.Empty;
+            if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
+                Assets.SpawnSceneObjects();
+            else
+                StartCoroutine(LoadSceneRoutine(Assets.onlineScene.SceneName, true));
+        }
+
+        public override void OnStartClient(LiteNetLibClient client)
+        {
+            base.OnStartClient(client);
+            serverSceneName = string.Empty;
+        }
+
         public override void OnStopServer()
         {
             base.OnStopServer();
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
             LiteNetLibAssets.ResetSpawnPositionCounter();
+            if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
+                StartCoroutine(LoadSceneRoutine(Assets.offlineScene.SceneName, false));
+            serverSceneName = string.Empty;
         }
 
         public override void OnStopClient()
@@ -146,9 +207,19 @@ namespace LiteNetLibHighLevel
             Assets.ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
             LiteNetLibAssets.ResetSpawnPositionCounter();
+            if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
+                StartCoroutine(LoadSceneRoutine(Assets.offlineScene.SceneName, false));
+            serverSceneName = string.Empty;
         }
 
         #region Send messages functions
+        public void SendClientConnected()
+        {
+            if (!IsClientConnected)
+                return;
+            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientConnected);
+        }
+
         public void SendClientReady()
         {
             if (!IsClientConnected)
@@ -277,9 +348,34 @@ namespace LiteNetLibHighLevel
             message.errorMessage = errorMessage;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
+
+        public void SendServerSceneChange(string sceneName)
+        {
+            if (!IsServer)
+                return;
+            foreach (var peer in Peers.Values)
+            {
+                SendServerSceneChange(peer, sceneName);
+            }
+        }
+
+        public void SendServerSceneChange(NetPeer peer, string sceneName)
+        {
+            if (!IsServer)
+                return;
+            var message = new ServerSceneChangeMessage();
+            message.serverSceneName = sceneName;
+            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSceneChange, message);
+        }
         #endregion
 
         #region Message Handlers
+        protected virtual void HandleClientConnected(LiteNetLibMessageHandler messageHandler)
+        {
+            var peer = messageHandler.peer;
+            SendServerSceneChange(peer, ServerSceneName);
+        }
+
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
@@ -405,6 +501,25 @@ namespace LiteNetLibHighLevel
             // Error sent from server
             var message = messageHandler.ReadMessage<ServerErrorMessage>();
             OnServerError(message);
+        }
+
+        protected virtual void HandleServerSceneChange(LiteNetLibMessageHandler messageHandler)
+        {
+            // Scene name sent from server
+            var message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
+            var serverSceneName = message.serverSceneName;
+            if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
+            {
+                if (clientReadyOnConnect)
+                    SendClientReady();
+            }
+            else
+            {
+                if (IsServer && clientReadyOnConnect)
+                    SendClientReady();
+                else if (IsClient)
+                    StartCoroutine(LoadSceneRoutine(serverSceneName, true));
+            }
         }
         #endregion
 
