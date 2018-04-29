@@ -31,8 +31,7 @@ namespace LiteNetLibHighLevel
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
-
-        public bool clientReadyOnConnect;
+        
         private float lastSendServerTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
@@ -121,7 +120,7 @@ namespace LiteNetLibHighLevel
                         Assets.SpawnSceneObjects();
                         serverSceneName = sceneName;
                     }
-                    else if (clientReadyOnConnect)
+                    else
                         SendClientReady();
                 }
             }
@@ -170,8 +169,7 @@ namespace LiteNetLibHighLevel
         public override void OnClientConnected(NetPeer peer)
         {
             base.OnClientConnected(peer);
-            if (clientReadyOnConnect)
-                SendClientReady();
+            SendClientConnected();
         }
 
         public override void OnStartServer()
@@ -509,13 +507,10 @@ namespace LiteNetLibHighLevel
             var message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             var serverSceneName = message.serverSceneName;
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
-            {
-                if (clientReadyOnConnect)
-                    SendClientReady();
-            }
+                SendClientReady();
             else
             {
-                if (IsServer && clientReadyOnConnect)
+                if (IsServer)
                     SendClientReady();
                 else if (IsClient)
                     StartCoroutine(LoadSceneRoutine(serverSceneName, true));
