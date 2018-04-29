@@ -25,9 +25,8 @@ namespace LiteNetLibHighLevel
             public const short ServerTime = 10;
             public const short ServerSyncBehaviour = 11;
             public const short ServerError = 12;
-            public const short ServerSceneResult = 13;
-            public const short ServerSceneChange = 14;
-            public const short Highest = 14;
+            public const short ServerSceneChange = 13;
+            public const short Highest = 13;
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
@@ -130,7 +129,7 @@ namespace LiteNetLibHighLevel
         protected override void RegisterServerMessages()
         {
             base.RegisterServerMessages();
-            RegisterClientMessage(GameMsgTypes.ClientConnected, HandleClientConnected);
+            RegisterServerMessage(GameMsgTypes.ClientConnected, HandleClientConnected);
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
             RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.ClientCallFunction, HandleClientCallFunction);
@@ -176,17 +175,16 @@ namespace LiteNetLibHighLevel
         public override void OnStartServer()
         {
             base.OnStartServer();
-            serverSceneName = string.Empty;
             if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
+            {
+                serverSceneName = SceneManager.GetActiveScene().name;
                 Assets.SpawnSceneObjects();
+            }
             else
+            {
+                serverSceneName = Assets.onlineScene.SceneName;
                 StartCoroutine(LoadSceneRoutine(Assets.onlineScene.SceneName, true));
-        }
-
-        public override void OnStartClient(LiteNetLibClient client)
-        {
-            base.OnStartClient(client);
-            serverSceneName = string.Empty;
+            }
         }
 
         public override void OnStopServer()
