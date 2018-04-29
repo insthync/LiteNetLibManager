@@ -50,7 +50,7 @@ namespace LiteNetLibHighLevel
             }
         }
 
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         protected TFieldType value;
         public TFieldType Value
         {

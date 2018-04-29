@@ -32,14 +32,14 @@ namespace LiteNetLibHighLevel
 
     public abstract class LiteNetLibElement
     {
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         protected LiteNetLibBehaviour behaviour;
         public LiteNetLibBehaviour Behaviour
         {
             get { return behaviour; }
         }
 
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         protected byte elementId;
         public byte ElementId
         {

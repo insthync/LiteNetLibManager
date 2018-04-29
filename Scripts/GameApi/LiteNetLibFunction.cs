@@ -15,7 +15,7 @@ namespace LiteNetLibHighLevel
     {
         private NetFunctionDelegate callback;
 
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         protected LiteNetLibNetField[] parameters;
         public LiteNetLibNetField[] Parameters
         {

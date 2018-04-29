@@ -14,16 +14,16 @@ namespace LiteNetLibHighLevel
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private string assetId;
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private uint objectId;
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private long connectId;
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private LiteNetLibGameManager manager;
 #if UNITY_EDITOR
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private List<long> subscriberIds = new List<long>();
 #endif
         private bool hasSetupBehaviours;

@@ -14,16 +14,16 @@ namespace LiteNetLibHighLevel
     [RequireComponent(typeof(LiteNetLibIdentity))]
     public class LiteNetLibBehaviour : MonoBehaviour, ILiteNetLibMessage
     {
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private byte behaviourIndex;
         public byte BehaviourIndex
         {
             get { return behaviourIndex; }
         }
 
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private List<string> syncFieldNames = new List<string>();
-        [ReadOnly, SerializeField]
+        [LiteNetLibReadOnlyAttribute, SerializeField]
         private List<string> syncListNames = new List<string>();
         [Header("Behaviour sync options")]
         public SendOptions sendOptions;
