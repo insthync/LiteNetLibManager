@@ -12,7 +12,7 @@ namespace LiteNetLibHighLevel
     {
         public class GameMsgTypes
         {
-            public const short ClientConnected = 0;
+            public const short ClientEnterGame = 0;
             public const short ClientReady = 1;
             public const short ClientNotReady = 2;
             public const short ClientCallFunction = 3;
@@ -67,6 +67,8 @@ namespace LiteNetLibHighLevel
             }
         }
 
+        public bool doNotEnterGameOnConnect;
+
         protected override void Awake()
         {
             base.Awake();
@@ -91,6 +93,10 @@ namespace LiteNetLibHighLevel
             base.Update();
         }
 
+        /// <summary>
+        /// Call this function to change gameplay scene at server, then the server will tell clients to change scene
+        /// </summary>
+        /// <param name="sceneName"></param>
         public void ServerSceneChange(string sceneName)
         {
             if (!IsServer)
@@ -98,6 +104,12 @@ namespace LiteNetLibHighLevel
             StartCoroutine(LoadSceneRoutine(sceneName, true));
         }
 
+        /// <summary>
+        /// This function will be called to load scene async
+        /// </summary>
+        /// <param name="sceneName"></param>
+        /// <param name="online"></param>
+        /// <returns></returns>
         private IEnumerator LoadSceneRoutine(string sceneName, bool online)
         {
             if (loadSceneAsyncOperation == null)
@@ -152,7 +164,7 @@ namespace LiteNetLibHighLevel
         protected override void RegisterServerMessages()
         {
             base.RegisterServerMessages();
-            RegisterServerMessage(GameMsgTypes.ClientConnected, HandleClientConnected);
+            RegisterServerMessage(GameMsgTypes.ClientEnterGame, HandleClientEnterGame);
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
             RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.ClientCallFunction, HandleClientCallFunction);
@@ -192,7 +204,8 @@ namespace LiteNetLibHighLevel
         public override void OnClientConnected(NetPeer peer)
         {
             base.OnClientConnected(peer);
-            SendClientConnected();
+            if (!doNotEnterGameOnConnect)
+                SendClientEnterGame();
         }
 
         public override void OnStartServer()
@@ -233,11 +246,11 @@ namespace LiteNetLibHighLevel
         }
 
         #region Send messages functions
-        public void SendClientConnected()
+        public void SendClientEnterGame()
         {
             if (!IsClientConnected)
                 return;
-            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientConnected);
+            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientEnterGame);
         }
 
         public void SendClientReady()
@@ -402,7 +415,7 @@ namespace LiteNetLibHighLevel
         #endregion
 
         #region Message Handlers
-        protected virtual void HandleClientConnected(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleClientEnterGame(LiteNetLibMessageHandler messageHandler)
         {
             var peer = messageHandler.peer;
             SendServerSceneChange(peer, ServerSceneName);
