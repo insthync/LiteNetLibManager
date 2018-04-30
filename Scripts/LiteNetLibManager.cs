@@ -134,8 +134,14 @@ namespace LiteNetLibHighLevel
             netManager.MaxConnectAttempts = maxConnectAttempts;
         }
 
+        /// <summary>
+        /// Override this function to register messages that calling from clients to do anything at server
+        /// </summary>
         protected virtual void RegisterServerMessages() { }
 
+        /// <summary>
+        /// Override this function to register messages that calling from server to do anything at clients
+        /// </summary>
         protected virtual void RegisterClientMessages() { }
 
         public virtual bool StartServer()
