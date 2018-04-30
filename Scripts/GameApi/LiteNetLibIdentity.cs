@@ -47,17 +47,17 @@ namespace LiteNetLibHighLevel
 
         public bool IsServer
         {
-            get { return Manager.IsServer; }
+            get { return Manager != null && Manager.IsServer; }
         }
 
         public bool IsClient
         {
-            get { return Manager.IsClient; }
+            get { return Manager != null && Manager.IsClient; }
         }
 
         public bool IsOwnerClient
         {
-            get { return Manager.Client != null && Manager.Client.Peer != null && ConnectId == Manager.Client.Peer.ConnectId; }
+            get { return Manager != null && Manager.Client != null && Manager.Client.Peer != null && ConnectId == Manager.Client.Peer.ConnectId; }
         }
 
         internal void NetworkUpdate()
