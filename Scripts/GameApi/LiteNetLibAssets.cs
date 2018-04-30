@@ -39,20 +39,30 @@ namespace LiteNetLibHighLevel
 
         public void Initialize()
         {
-            CacheSpawnPoints.Clear();
-            CacheSpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
-            ClearRegisteredPrefabs();
             RegisterPrefabs();
+            RegisterSpawnPoints();
             RegisterSceneObjects();
         }
 
-        public void ClearRegisteredPrefabs()
+        public void Clear()
         {
+            CacheSpawnPoints.Clear();
             GuidToPrefabs.Clear();
+            SceneObjects.Clear();
+            ClearSpawnedObjects();
+            LiteNetLibIdentity.ResetObjectId();
+            ResetSpawnPositionCounter();
+        }
+
+        public void RegisterSpawnPoints()
+        {
+            CacheSpawnPoints.Clear();
+            CacheSpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
         }
 
         public void RegisterPrefabs()
         {
+            GuidToPrefabs.Clear();
             for (var i = 0; i < spawnablePrefabs.Length; ++i)
             {
                 var registeringPrefab = spawnablePrefabs[i];
@@ -105,10 +115,12 @@ namespace LiteNetLibHighLevel
                         Destroy(spawnedObject.gameObject);
                 }
             }
+            SpawnedObjects.Clear();
         }
 
         public void RegisterSceneObjects()
         {
+            SceneObjects.Clear();
             var sceneObjects = FindObjectsOfType<LiteNetLibIdentity>();
             for (var i = 0; i < sceneObjects.Length; ++i)
             {

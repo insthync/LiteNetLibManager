@@ -200,8 +200,8 @@ namespace LiteNetLibHighLevel
         {
             OnStopHost();
 
-            StopServer();
             StopClient();
+            StopServer();
         }
 
         public void StopServer()
@@ -209,12 +209,12 @@ namespace LiteNetLibHighLevel
             if (Server == null)
                 return;
 
-            OnStopServer();
-
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
             Server.NetManager.Stop();
             Server = null;
             Peers.Clear();
+
+            OnStopServer();
         }
 
         public void StopClient()
@@ -222,11 +222,11 @@ namespace LiteNetLibHighLevel
             if (Client == null)
                 return;
 
-            OnStopClient();
-
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
             Client.NetManager.Stop();
             Client = null;
+
+            OnStopClient();
         }
 
         internal void AddPeer(NetPeer peer)

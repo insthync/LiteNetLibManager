@@ -83,6 +83,7 @@ namespace LiteNetLibHighLevel
             var objectIds = new List<uint>(SpawnedObjects.Keys);
             foreach (var objectId in objectIds)
                 Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
+            SpawnedObjects.Clear();
         }
     }
 }
