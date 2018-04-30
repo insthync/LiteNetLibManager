@@ -84,7 +84,7 @@ namespace LiteNetLibHighLevel
                 }
                 if (Time.realtimeSinceStartup - lastSendServerTime > updateTime)
                 {
-                    SendServerUpdateTime();
+                    SendServerTime();
                     lastSendServerTime = Time.realtimeSinceStartup;
                 }
             }
@@ -254,7 +254,7 @@ namespace LiteNetLibHighLevel
             SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientNotReady);
         }
 
-        public void SendServerUpdateTime()
+        public void SendServerTime()
         {
             if (!IsServer)
                 return;
@@ -267,9 +267,6 @@ namespace LiteNetLibHighLevel
         public void SendServerTime(NetPeer peer)
         {
             if (!IsServer)
-                return;
-            LiteNetLibPlayer player = null;
-            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
                 return;
             var message = new ServerTimeMessage();
             message.serverTime = ServerTime;

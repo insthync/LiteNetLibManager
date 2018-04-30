@@ -389,7 +389,7 @@ namespace LiteNetLibHighLevel
                     var players = Manager.Players.Values;
                     foreach (var player in players)
                     {
-                        if (ConnectId == player.ConnectId)
+                        if (ConnectId == player.ConnectId || !player.IsReady)
                             continue;
 
                         if (ShouldAddSubscriber(player))
