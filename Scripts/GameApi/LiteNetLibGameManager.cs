@@ -70,14 +70,12 @@ namespace LiteNetLibHighLevel
         protected override void Awake()
         {
             base.Awake();
-            Players.Clear();
-            Assets.Initialize();
             serverSceneName = string.Empty;
         }
 
         protected override void Update()
         {
-            if (IsServer)
+            if (IsServer && loadSceneAsyncOperation == null)
             {
                 var spawnedObjects = Assets.GetSpawnedObjects();
                 foreach (var spawnedObject in spawnedObjects)
@@ -93,15 +91,36 @@ namespace LiteNetLibHighLevel
             base.Update();
         }
 
+        public void ServerSceneChange(string sceneName)
+        {
+            if (!IsServer)
+                return;
+            StartCoroutine(LoadSceneRoutine(sceneName, true));
+        }
+
         private IEnumerator LoadSceneRoutine(string sceneName, bool online)
         {
             if (loadSceneAsyncOperation == null)
             {
+                DontDestroyOnLoad(gameObject);
+
+                if (online)
+                {
+                    foreach (var player in Players.Values)
+                    {
+                        player.IsReady = false;
+                        player.SubscribingObjects.Clear();
+                        player.SpawnedObjects.Clear();
+                    }
+                    Assets.Clear();
+                }
+
                 if (Assets.onLoadSceneStart != null)
                     Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
+
                 yield return null;
                 loadSceneAsyncOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-                while (!loadSceneAsyncOperation.isDone)
+                while (loadSceneAsyncOperation != null && !loadSceneAsyncOperation.isDone)
                 {
                     if (Assets.onLoadSceneProgress != null)
                         Assets.onLoadSceneProgress.Invoke(sceneName, online, loadSceneAsyncOperation.progress);
@@ -109,20 +128,24 @@ namespace LiteNetLibHighLevel
                 }
                 loadSceneAsyncOperation = null;
                 yield return null;
+
                 if (Assets.onLoadSceneFinish != null)
                     Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
 
                 if (online)
                 {
+                    Assets.Initialize();
                     if (IsServer)
                     {
                         serverSceneName = sceneName;
                         SendServerSceneChange(sceneName);
                         Assets.SpawnSceneObjects();
                     }
-                    else if (IsClient)
+                    if (IsClient)
                         SendClientReady();
                 }
+                else
+                    Destroy(gameObject);
             }
         }
 
@@ -178,6 +201,7 @@ namespace LiteNetLibHighLevel
             if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
             {
                 serverSceneName = SceneManager.GetActiveScene().name;
+                Assets.Initialize();
                 Assets.SpawnSceneObjects();
             }
             else
@@ -190,23 +214,22 @@ namespace LiteNetLibHighLevel
         public override void OnStopServer()
         {
             base.OnStopServer();
-            Assets.ClearSpawnedObjects();
-            LiteNetLibIdentity.ResetObjectId();
-            LiteNetLibAssets.ResetSpawnPositionCounter();
+            Players.Clear();
+            Assets.Clear();
             if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
                 StartCoroutine(LoadSceneRoutine(Assets.offlineScene.SceneName, false));
-            serverSceneName = string.Empty;
         }
 
         public override void OnStopClient()
         {
             base.OnStopClient();
-            Assets.ClearSpawnedObjects();
-            LiteNetLibIdentity.ResetObjectId();
-            LiteNetLibAssets.ResetSpawnPositionCounter();
-            if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
-                StartCoroutine(LoadSceneRoutine(Assets.offlineScene.SceneName, false));
-            serverSceneName = string.Empty;
+            if (!IsServer)
+            {
+                Players.Clear();
+                Assets.Clear();
+                if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
+                    StartCoroutine(LoadSceneRoutine(Assets.offlineScene.SceneName, false));
+            }
         }
 
         #region Send messages functions
@@ -245,6 +268,9 @@ namespace LiteNetLibHighLevel
         {
             if (!IsServer)
                 return;
+            LiteNetLibPlayer player = null;
+            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
+                return;
             var message = new ServerTimeMessage();
             message.serverTime = ServerTime;
             SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerTime, message);
@@ -263,6 +289,9 @@ namespace LiteNetLibHighLevel
         public void SendServerSpawnSceneObject(NetPeer peer, LiteNetLibIdentity identity)
         {
             if (!IsServer)
+                return;
+            LiteNetLibPlayer player = null;
+            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
                 return;
             var message = new ServerSpawnSceneObjectMessage();
             message.objectId = identity.ObjectId;
@@ -284,6 +313,9 @@ namespace LiteNetLibHighLevel
         public void SendServerSpawnObject(NetPeer peer, LiteNetLibIdentity identity)
         {
             if (!IsServer)
+                return;
+            LiteNetLibPlayer player = null;
+            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
                 return;
             var message = new ServerSpawnObjectMessage();
             message.assetId = identity.AssetId;
@@ -321,6 +353,9 @@ namespace LiteNetLibHighLevel
         {
             if (!IsServer)
                 return;
+            LiteNetLibPlayer player = null;
+            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
+                return;
             var message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
             SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
@@ -339,6 +374,9 @@ namespace LiteNetLibHighLevel
         public void SendServerError(NetPeer peer, bool shouldDisconnect, string errorMessage)
         {
             if (!IsServer)
+                return;
+            LiteNetLibPlayer player = null;
+            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
                 return;
             var message = new ServerErrorMessage();
             message.shouldDisconnect = shouldDisconnect;
@@ -502,18 +540,19 @@ namespace LiteNetLibHighLevel
 
         protected virtual void HandleServerSceneChange(LiteNetLibMessageHandler messageHandler)
         {
+            // Scene name sent from server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
             // Scene name sent from server
             var message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             var serverSceneName = message.serverSceneName;
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
-                SendClientReady();
-            else
             {
-                if (IsServer)
-                    SendClientReady();
-                else if (IsClient)
-                    StartCoroutine(LoadSceneRoutine(serverSceneName, true));
+                Assets.Initialize();
+                SendClientReady();
             }
+            else
+                StartCoroutine(LoadSceneRoutine(serverSceneName, true));
         }
         #endregion
 
