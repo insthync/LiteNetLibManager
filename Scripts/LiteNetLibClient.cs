@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using LiteNetLibHighLevel.Utils;
+using LiteNetLibManager.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public class LiteNetLibClient : INetEventListener
     {

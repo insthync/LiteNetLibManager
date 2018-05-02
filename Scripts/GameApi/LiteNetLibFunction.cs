@@ -2,7 +2,7 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public enum FunctionReceivers : byte
     {

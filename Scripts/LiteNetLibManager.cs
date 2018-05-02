@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using LiteNetLibHighLevel.Utils;
+using LiteNetLibManager.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     [RequireComponent(typeof(LiteNetLibMessageHandlers))]
     public class LiteNetLibManager : MonoBehaviour

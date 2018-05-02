@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public struct LiteNetLibElementInfo
     {

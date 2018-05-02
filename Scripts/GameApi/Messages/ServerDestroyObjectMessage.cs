@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using LiteNetLib.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public class ServerDestroyObjectMessage : ILiteNetLibMessage
     {

@@ -8,7 +8,7 @@ using UnityEditor;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     [DisallowMultipleComponent]
     public sealed class LiteNetLibIdentity : MonoBehaviour

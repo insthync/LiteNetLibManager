@@ -1,4 +1,4 @@
-﻿namespace LiteNetLibHighLevel
+﻿namespace LiteNetLibManager
 {
     public delegate void MessageHandlerDelegate(LiteNetLibMessageHandler messageHandler);
     public delegate void NetFunctionDelegate();

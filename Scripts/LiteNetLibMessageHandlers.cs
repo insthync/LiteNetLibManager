@@ -4,7 +4,7 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public class LiteNetLibMessageHandlers : MonoBehaviour
     {

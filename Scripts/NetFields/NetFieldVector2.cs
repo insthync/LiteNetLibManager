@@ -1,7 +1,7 @@
 ﻿using LiteNetLib.Utils;
 using UnityEngine;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public class NetFieldVector2 : LiteNetLibNetField<Vector2>
     {

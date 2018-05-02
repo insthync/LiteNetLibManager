@@ -1,4 +1,4 @@
-﻿namespace LiteNetLibHighLevel
+﻿namespace LiteNetLibManager
 {
     public enum DestroyObjectReasons : byte
     {

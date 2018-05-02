@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using LiteNetLib;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public class LiteNetLibPlayer
     {

@@ -6,7 +6,7 @@ using UnityEngine.Events;
 using UnityEditor;
 #endif
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public class LiteNetLibAssets : MonoBehaviour
     {

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     [System.Serializable]
     public class LiteNetLibScene

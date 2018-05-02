@@ -5,7 +5,7 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     public abstract class LiteNetLibSyncList : LiteNetLibElement
     {

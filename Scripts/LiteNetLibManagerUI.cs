@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     [RequireComponent(typeof(LiteNetLibManager))]
     public class LiteNetLibManagerUI : MonoBehaviour

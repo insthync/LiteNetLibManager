@@ -9,7 +9,7 @@ using LiteNetLib.Utils;
 using UnityEditor;
 #endif
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     [RequireComponent(typeof(LiteNetLibIdentity))]
     public class LiteNetLibBehaviour : MonoBehaviour, ILiteNetLibMessage

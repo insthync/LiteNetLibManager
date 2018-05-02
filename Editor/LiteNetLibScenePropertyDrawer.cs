@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     [CustomPropertyDrawer(typeof(LiteNetLibScene))]
     public class LiteNetLibScenePropertyDrawer : PropertyDrawer

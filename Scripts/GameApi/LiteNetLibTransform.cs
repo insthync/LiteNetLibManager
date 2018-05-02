@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace LiteNetLibHighLevel
+namespace LiteNetLibManager
 {
     [DisallowMultipleComponent]
     public class LiteNetLibTransform : LiteNetLibBehaviour
