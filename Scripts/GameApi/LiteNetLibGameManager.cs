@@ -550,19 +550,20 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSceneChange(LiteNetLibMessageHandler messageHandler)
         {
-            // Scene name sent from server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
             // Scene name sent from server
             var message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             var serverSceneName = message.serverSceneName;
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
             {
-                Assets.Initialize();
+                if (!IsServer)
+                    Assets.Initialize();
                 SendClientReady();
             }
             else
-                StartCoroutine(LoadSceneRoutine(serverSceneName, true));
+            {
+                if (!IsServer)
+                    StartCoroutine(LoadSceneRoutine(serverSceneName, true));
+            }
         }
         #endregion
 
