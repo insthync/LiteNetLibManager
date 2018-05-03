@@ -39,8 +39,6 @@ namespace LiteNetLibManager
         public SyncOptions syncRotationY;
         public SyncOptions syncRotationZ;
 
-        private LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion> netFuncTeleport;
-
         #region Cache components
         public Transform CacheTransform { get; private set; }
         public NavMeshAgent CacheNavMeshAgent { get; private set; }
@@ -72,8 +70,6 @@ namespace LiteNetLibManager
                     CacheRigidbody2D = GetComponent<Rigidbody2D>();
                 }
             }
-
-            RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
         }
 
         private void Start()
@@ -84,16 +80,33 @@ namespace LiteNetLibManager
             currentInterpResult.timestamp = Time.realtimeSinceStartup;
             syncResult = currentInterpResult;
             endInterpResult = currentInterpResult;
+            if (IsServer)
+                Teleport(CacheTransform.position, CacheTransform.rotation);
         }
 
         public override void OnSetup()
         {
             base.OnSetup();
-            netFuncTeleport = new LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion>(NetFuncTeleportCallback);
-            RegisterNetFunction("Teleport", netFuncTeleport);
+            RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
+            RegisterNetFunction("Teleport", new LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion>(TeleportCallback));
         }
 
-        private void NetFuncTeleportCallback(NetFieldVector3 position, NetFieldQuaternion rotation)
+        private void ClientSendResultCallback(TransformResultNetField resultParam)
+        {
+            // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
+            if (!ownerClientCanSendTransform || IsOwnerClient)
+                return;
+            var result = resultParam.Value;
+            // Discard out of order results
+            if (result.timestamp <= lastClientTimestamp)
+                return;
+            lastClientTimestamp = result.timestamp;
+            // Adding results to the results list so they can be used in interpolation process
+            result.timestamp = Time.realtimeSinceStartup;
+            endInterpResult = result;
+        }
+
+        private void TeleportCallback(NetFieldVector3 position, NetFieldQuaternion rotation)
         {
             currentInterpResult = new TransformResult();
             currentInterpResult.position = position;
@@ -112,19 +125,10 @@ namespace LiteNetLibManager
             CallNetFunction("ClientSendResult", FunctionReceivers.Server, result);
         }
 
-        private void ClientSendResultCallback(TransformResultNetField resultParam)
+        public void Teleport(Vector3 position, Quaternion rotation)
         {
-            // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
-            if (!ownerClientCanSendTransform || IsOwnerClient)
-                return;
-            var result = resultParam.Value;
-            // Discard out of order results
-            if (result.timestamp <= lastClientTimestamp)
-                return;
-            lastClientTimestamp = result.timestamp;
-            // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.realtimeSinceStartup;
-            endInterpResult = result;
+            if (IsServer || (ownerClientCanSendTransform && IsOwnerClient))
+                CallNetFunction("Teleport", FunctionReceivers.All, position, rotation);
         }
 
         public override bool ShouldSyncBehaviour()
@@ -350,12 +354,6 @@ namespace LiteNetLibManager
                 CacheTransform.position = position;
                 CacheTransform.rotation = rotation;
             }
-        }
-
-        public void Teleport(Vector3 position, Quaternion rotation)
-        {
-            if (IsServer || (ownerClientCanSendTransform && IsOwnerClient))
-                CallNetFunction("Teleport", FunctionReceivers.All, position, rotation);
         }
     }
 }
