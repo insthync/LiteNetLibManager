@@ -13,7 +13,17 @@ namespace LiteNetLibManager
             get { return Peer.ConnectId; }
         }
 
-        public bool IsOwnerClient
+        public bool IsServer
+        {
+            get { return Manager.IsServer; }
+        }
+
+        public bool IsClient
+        {
+            get { return Manager.IsClient; }
+        }
+
+        public bool IsLocalClient
         {
             get { return ConnectId == Manager.Client.Peer.ConnectId; }
         }
@@ -34,7 +44,7 @@ namespace LiteNetLibManager
 
             Manager.SendServerSpawnObjectWithData(Peer, identity);
             // If this is player for local host client, show object
-            if (Manager.IsServer && Manager.IsClient && IsOwnerClient)
+            if (IsServer && IsClient && IsLocalClient)
                 identity.OnServerSubscribingAdded();
         }
 
@@ -46,7 +56,7 @@ namespace LiteNetLibManager
             {
                 Manager.SendServerDestroyObject(Peer, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
                 // If this is player for local host client, hide object
-                if (Manager.IsServer && Manager.IsClient && IsOwnerClient)
+                if (IsServer && IsClient && IsLocalClient)
                     identity.OnServerSubscribingRemoved();
             }
         }
