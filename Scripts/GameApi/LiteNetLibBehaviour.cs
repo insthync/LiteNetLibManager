@@ -115,10 +115,10 @@ namespace LiteNetLibManager
             }
 
             // Sync behaviour
-            if (Time.realtimeSinceStartup - lastSentTime < sendInterval)
+            if (Time.unscaledTime - lastSentTime < sendInterval)
                 return;
 
-            lastSentTime = Time.realtimeSinceStartup;
+            lastSentTime = Time.unscaledTime;
 
             if (ShouldSyncBehaviour())
             {

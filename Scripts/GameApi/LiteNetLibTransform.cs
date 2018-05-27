@@ -77,7 +77,7 @@ namespace LiteNetLibManager
             currentInterpResult = new TransformResult();
             currentInterpResult.position = CacheTransform.position;
             currentInterpResult.rotation = CacheTransform.rotation;
-            currentInterpResult.timestamp = Time.realtimeSinceStartup;
+            currentInterpResult.timestamp = Time.unscaledTime;
             syncResult = currentInterpResult;
             endInterpResult = currentInterpResult;
             if (IsServer)
@@ -102,7 +102,7 @@ namespace LiteNetLibManager
                 return;
             lastClientTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.realtimeSinceStartup;
+            result.timestamp = Time.unscaledTime;
             endInterpResult = result;
         }
 
@@ -111,7 +111,7 @@ namespace LiteNetLibManager
             currentInterpResult = new TransformResult();
             currentInterpResult.position = position;
             currentInterpResult.rotation = rotation;
-            currentInterpResult.timestamp = Time.realtimeSinceStartup;
+            currentInterpResult.timestamp = Time.unscaledTime;
             syncResult = currentInterpResult;
             endInterpResult = currentInterpResult;
             Snap(position, rotation);
@@ -137,7 +137,7 @@ namespace LiteNetLibManager
             {
                 syncResult.position = CacheTransform.position;
                 syncResult.rotation = CacheTransform.rotation;
-                syncResult.timestamp = Time.realtimeSinceStartup;
+                syncResult.timestamp = Time.unscaledTime;
                 return true;
             }
             return false;
@@ -151,7 +151,7 @@ namespace LiteNetLibManager
             SerializeFloat(writer, CacheTransform.rotation.eulerAngles.x, syncRotationX);
             SerializeFloat(writer, CacheTransform.rotation.eulerAngles.y, syncRotationY);
             SerializeFloat(writer, CacheTransform.rotation.eulerAngles.z, syncRotationZ);
-            writer.Put(Time.realtimeSinceStartup);
+            writer.Put(Time.unscaledTime);
         }
 
         public override void OnDeserialize(NetDataReader reader)
@@ -174,7 +174,7 @@ namespace LiteNetLibManager
                 return;
             lastServerTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.realtimeSinceStartup;
+            result.timestamp = Time.unscaledTime;
             endInterpResult = result;
         }
 

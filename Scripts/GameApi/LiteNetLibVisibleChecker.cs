@@ -23,10 +23,10 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            if (Time.realtimeSinceStartup - lastUpdateTime > updateInterval)
+            if (Time.unscaledTime - lastUpdateTime > updateInterval)
             {
                 Identity.RebuildSubscribers(false);
-                lastUpdateTime = Time.realtimeSinceStartup;
+                lastUpdateTime = Time.unscaledTime;
             }
         }
 

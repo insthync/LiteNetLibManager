@@ -21,10 +21,10 @@ namespace LiteNetLibManager
             if (!ValidateBeforeAccess())
                 return;
 
-            if (Time.realtimeSinceStartup - lastSentTime < sendInterval)
+            if (Time.unscaledTime - lastSentTime < sendInterval)
                 return;
 
-            lastSentTime = Time.realtimeSinceStartup;
+            lastSentTime = Time.unscaledTime;
             SendUpdate();
         }
 

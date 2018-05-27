@@ -41,8 +41,8 @@ namespace LiteNetLibManager
             get
             {
                 if (IsServer)
-                    return Time.realtimeSinceStartup;
-                return Time.realtimeSinceStartup + ServerTimeOffset;
+                    return Time.unscaledTime;
+                return Time.unscaledTime + ServerTimeOffset;
             }
         }
 
@@ -84,10 +84,10 @@ namespace LiteNetLibManager
                 {
                     spawnedObject.NetworkUpdate();
                 }
-                if (Time.realtimeSinceStartup - lastSendServerTime > updateTime)
+                if (Time.unscaledTime - lastSendServerTime > updateTime)
                 {
                     SendServerTime();
-                    lastSendServerTime = Time.realtimeSinceStartup;
+                    lastSendServerTime = Time.unscaledTime;
                 }
             }
             base.Update();
@@ -525,7 +525,7 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             var message = messageHandler.ReadMessage<ServerTimeMessage>();
-            ServerTimeOffset = message.serverTime - Time.realtimeSinceStartup;
+            ServerTimeOffset = message.serverTime - Time.unscaledTime;
         }
 
         protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
