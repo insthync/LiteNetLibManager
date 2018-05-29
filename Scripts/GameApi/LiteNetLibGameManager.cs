@@ -34,6 +34,7 @@ namespace LiteNetLibManager
         private float lastSendServerTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
+        private List<LiteNetLibIdentity> updatingSpawnedObjects;
 
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
@@ -79,8 +80,8 @@ namespace LiteNetLibManager
         {
             if (IsServer && loadSceneAsyncOperation == null)
             {
-                var spawnedObjects = Assets.GetSpawnedObjects();
-                foreach (var spawnedObject in spawnedObjects)
+                updatingSpawnedObjects = Assets.GetSpawnedObjects();
+                foreach (var spawnedObject in updatingSpawnedObjects)
                 {
                     spawnedObject.NetworkUpdate();
                 }
