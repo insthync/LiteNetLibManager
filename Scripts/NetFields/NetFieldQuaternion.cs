@@ -8,8 +8,8 @@ namespace LiteNetLibManager
         public override void Deserialize(NetDataReader reader)
         {
             var vector3 = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
-            var quaternon = vector3.sqrMagnitude <= 0 ? Quaternion.identity : Quaternion.Euler(vector3);
-            Value = quaternon;
+            var quaternion = vector3.magnitude <= 0 ? Quaternion.identity : Quaternion.Euler(vector3);
+            Value = quaternion;
         }
 
         public override void Serialize(NetDataWriter writer)
