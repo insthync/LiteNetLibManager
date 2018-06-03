@@ -30,7 +30,7 @@ namespace LiteNetLibManager
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
-        
+
         private float lastSendServerTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
@@ -69,11 +69,14 @@ namespace LiteNetLibManager
         }
 
         public bool doNotEnterGameOnConnect;
+        public bool doNotDestroyOnSceneChanges;
 
         protected override void Awake()
         {
             base.Awake();
             serverSceneName = string.Empty;
+            if (doNotDestroyOnSceneChanges)
+                DontDestroyOnLoad(gameObject);
         }
 
         protected override void Update()
@@ -115,7 +118,10 @@ namespace LiteNetLibManager
         {
             if (loadSceneAsyncOperation == null)
             {
-                DontDestroyOnLoad(gameObject);
+                // If doNotDestroyOnSceneChanges not TRUE still not destroy this game object
+                // But it will be destroyed after scene loaded
+                if (!doNotDestroyOnSceneChanges)
+                    DontDestroyOnLoad(gameObject);
 
                 if (online)
                 {
@@ -153,11 +159,15 @@ namespace LiteNetLibManager
                         serverSceneName = sceneName;
                         SendServerSceneChange(sceneName);
                         Assets.SpawnSceneObjects();
+                        OnServerOnlineSceneLoaded();
                     }
                     if (IsClient)
+                    {
                         SendClientReady();
+                        OnClientOnlineSceneLoaded();
+                    }
                 }
-                else
+                else if (!doNotDestroyOnSceneChanges)
                     Destroy(gameObject);
             }
         }
@@ -217,6 +227,7 @@ namespace LiteNetLibManager
                 serverSceneName = SceneManager.GetActiveScene().name;
                 Assets.Initialize();
                 Assets.SpawnSceneObjects();
+                OnServerOnlineSceneLoaded();
             }
             else
             {
@@ -559,6 +570,7 @@ namespace LiteNetLibManager
                 if (!IsServer)
                     Assets.Initialize();
                 SendClientReady();
+                OnClientOnlineSceneLoaded();
             }
             else
             {
@@ -580,6 +592,16 @@ namespace LiteNetLibManager
         /// <param name="playerIdentity"></param>
         /// <param name="reader"></param>
         public virtual void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, NetDataReader reader) { }
+
+        /// <summary>
+        /// Override this function to do anything after online scene loaded at server side
+        /// </summary>
+        public virtual void OnServerOnlineSceneLoaded() { }
+
+        /// <summary>
+        /// Override this function to do anything after online scene loaded at client side
+        /// </summary>
+        public virtual void OnClientOnlineSceneLoaded() { }
 
         /// <summary>
         /// Override this function to show error message / disconnect
