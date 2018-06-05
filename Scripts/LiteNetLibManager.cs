@@ -80,6 +80,8 @@ namespace LiteNetLibManager
         protected int maxConnectAttempts = 10;
 
         public readonly Dictionary<long, NetPeer> Peers = new Dictionary<long, NetPeer>();
+        private readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
+        private uint nextAckId = 1;
 
         private LiteNetLibMessageHandlers messageHandlers;
         public LiteNetLibMessageHandlers MessageHandlers
@@ -307,6 +309,29 @@ namespace LiteNetLibManager
         public void SendPacket(SendOptions options, NetPeer peer, short msgType)
         {
             MessageHandlers.SendPacket(options, peer, msgType);
+        }
+
+        public uint SendAckPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData, AckMessageCallback callback) where T : BaseAckMessage
+        {
+            var ackId = nextAckId++;
+            lock (ackCallbacks)
+                ackCallbacks.Add(ackId, callback);
+            messageData.ackId = ackId;
+            SendPacket(options, peer, msgType, messageData);
+            return ackId;
+        }
+
+        protected void TriggerAck<T>(uint ackId, T messageData) where T : BaseAckMessage
+        {
+            lock (ackCallbacks)
+            {
+                AckMessageCallback ackCallback;
+                if (ackCallbacks.TryGetValue(ackId, out ackCallback))
+                {
+                    ackCallbacks.Remove(ackId);
+                    ackCallback(null, messageData);
+                }
+            }
         }
 
         public void RegisterServerMessage(short msgType, MessageHandlerDelegate handlerDelegate)

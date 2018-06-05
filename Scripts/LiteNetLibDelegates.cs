@@ -1,6 +1,7 @@
 ﻿namespace LiteNetLibManager
 {
     public delegate void MessageHandlerDelegate(LiteNetLibMessageHandler messageHandler);
+    public delegate void AckMessageCallback(string error, BaseAckMessage response);
     public delegate void NetFunctionDelegate();
     public delegate void NetFunctionDelegate<T1>(T1 param1) 
         where T1 : LiteNetLibNetField;
