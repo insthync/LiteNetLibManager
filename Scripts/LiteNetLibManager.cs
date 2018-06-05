@@ -10,7 +10,7 @@ namespace LiteNetLibManager
     [RequireComponent(typeof(LiteNetLibMessageHandlers))]
     public class LiteNetLibManager : MonoBehaviour
     {
-        public enum LogLevel : short
+        public enum LogLevel : byte
         {
             Developer = 0,
             Debug = 1,
@@ -18,7 +18,7 @@ namespace LiteNetLibManager
             Warn = 3,
             Error = 4,
             Fatal = 5,
-        };
+        }
 
         public LiteNetLibClient Client { get; protected set; }
         public LiteNetLibServer Server { get; protected set; }
@@ -327,7 +327,7 @@ namespace LiteNetLibManager
             return ackId;
         }
 
-        protected void TriggerAck<T>(uint ackId, T messageData) where T : BaseAckMessage
+        protected void TriggerAck<T>(uint ackId, AckResponseCode responseCode, T messageData) where T : BaseAckMessage
         {
             lock (ackCallbacks)
             {
@@ -335,7 +335,7 @@ namespace LiteNetLibManager
                 if (ackCallbacks.TryGetValue(ackId, out ackCallback))
                 {
                     ackCallbacks.Remove(ackId);
-                    ackCallback(null, messageData);
+                    ackCallback(responseCode, messageData);
                 }
             }
         }
