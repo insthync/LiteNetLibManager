@@ -169,6 +169,9 @@ namespace LiteNetLibManager
                 Server = null;
                 return false;
             }
+            // Reset acks
+            ackCallbacks.Clear();
+            nextAckId = 1;
             OnStartServer();
             return true;
         }
@@ -189,6 +192,9 @@ namespace LiteNetLibManager
             SetConfigs(Client.NetManager);
             Client.NetManager.Start();
             Client.NetManager.Connect(networkAddress, networkPort);
+            // Reset acks
+            ackCallbacks.Clear();
+            nextAckId = 1;
             OnStartClient(Client);
             return Client;
         }
