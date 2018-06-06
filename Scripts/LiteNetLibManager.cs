@@ -178,14 +178,17 @@ namespace LiteNetLibManager
 
         public virtual LiteNetLibClient StartClient()
         {
-            return StartClient(networkAddress, networkPort);
+            return StartClient(networkAddress, networkPort, connectKey);
         }
 
-        public virtual LiteNetLibClient StartClient(string networkAddress, int networkPort)
+        public virtual LiteNetLibClient StartClient(string networkAddress, int networkPort, string connectKey)
         {
             if (Client != null)
                 return Client;
 
+            this.networkAddress = networkAddress;
+            this.networkPort = networkPort;
+            this.connectKey = connectKey;
             if (LogDev) Debug.Log("Client connecting to " + networkAddress + ":" + networkPort);
             Client = new LiteNetLibClient(this, connectKey);
             RegisterClientMessages();
@@ -209,7 +212,7 @@ namespace LiteNetLibManager
 
         protected virtual LiteNetLibClient ConnectLocalClient()
         {
-            return StartClient("localhost", Server.NetManager.LocalPort);
+            return StartClient("localhost", Server.NetManager.LocalPort, connectKey);
         }
 
         public void StopHost()
