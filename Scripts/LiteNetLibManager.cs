@@ -150,7 +150,7 @@ namespace LiteNetLibManager
 
         public virtual bool StartServer()
         {
-            return StartServer(true);
+            return StartServer(false);
         }
 
         protected virtual bool StartServer(bool isOffline)
@@ -177,6 +177,11 @@ namespace LiteNetLibManager
         }
 
         public virtual LiteNetLibClient StartClient()
+        {
+            return StartClient(networkAddress, networkPort, connectKey);
+        }
+
+        public virtual LiteNetLibClient StartClient(string networkAddress, int networkPort)
         {
             return StartClient(networkAddress, networkPort, connectKey);
         }
