@@ -9,11 +9,13 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibClient : LiteNetLibPeerHandler
     {
+        public LiteNetLibManager Manager { get; protected set; }
         public NetPeer Peer { get; protected set; }
         public bool IsConnected { get { return Peer != null && Peer.ConnectionState == ConnectionState.Connected; } }
 
-        public LiteNetLibClient(LiteNetLibManager manager, string connectKey) : base(manager, 1, connectKey)
+        public LiteNetLibClient(LiteNetLibManager manager, string connectKey) : base(1, connectKey)
         {
+            Manager = manager;
         }
 
         public override void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)

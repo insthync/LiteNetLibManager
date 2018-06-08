@@ -7,16 +7,14 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibPeerHandler : INetEventListener
     {
-        public LiteNetLibManager Manager { get; protected set; }
         public NetManager NetManager { get; protected set; }
         protected readonly NetDataWriter writer = new NetDataWriter();
         protected readonly Dictionary<short, MessageHandlerDelegate> messageHandlers = new Dictionary<short, MessageHandlerDelegate>();
         protected readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
         protected uint nextAckId = 1;
 
-        public LiteNetLibPeerHandler(LiteNetLibManager manager, int maxConnections, string connectKey)
+        public LiteNetLibPeerHandler(int maxConnections, string connectKey)
         {
-            Manager = manager;
             NetManager = new NetManager(this, maxConnections, connectKey);
         }
 
@@ -107,7 +105,7 @@ namespace LiteNetLibManager
             return ackId;
         }
 
-        protected void TriggerAck<T>(uint ackId, AckResponseCode responseCode, T messageData) where T : BaseAckMessage
+        public void TriggerAck<T>(uint ackId, AckResponseCode responseCode, T messageData) where T : BaseAckMessage
         {
             lock (ackCallbacks)
             {

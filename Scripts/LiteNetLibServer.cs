@@ -9,8 +9,11 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibServer : LiteNetLibPeerHandler
     {
-        public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey) : base(manager, maxConnections, connectKey)
+        public LiteNetLibManager Manager { get; protected set; }
+
+        public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey) : base(maxConnections, connectKey)
         {
+            Manager = manager;
         }
 
         public override void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
