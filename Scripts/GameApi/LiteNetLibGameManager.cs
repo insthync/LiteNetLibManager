@@ -262,21 +262,21 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientEnterGame);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientEnterGame);
         }
 
         public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
         }
 
         public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
-            SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientNotReady);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientNotReady);
         }
 
         public void SendServerTime()
@@ -295,7 +295,7 @@ namespace LiteNetLibManager
                 return;
             var message = new ServerTimeMessage();
             message.serverTime = ServerTime;
-            SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerTime, message);
+            LiteNetLibPacketSender.SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerTime, message);
         }
 
         public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
@@ -319,7 +319,7 @@ namespace LiteNetLibManager
             message.objectId = identity.ObjectId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnSceneObject, message);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnSceneObject, message);
         }
 
         public void SendServerSpawnObject(LiteNetLibIdentity identity)
@@ -345,7 +345,7 @@ namespace LiteNetLibManager
             message.connectId = identity.ConnectId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnObject, message);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnObject, message);
         }
 
         public void SendServerSpawnObjectWithData(NetPeer peer, LiteNetLibIdentity identity)
@@ -380,7 +380,7 @@ namespace LiteNetLibManager
                 return;
             var message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
-            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
 
         public void SendServerError(bool shouldDisconnect, string errorMessage)
@@ -403,7 +403,7 @@ namespace LiteNetLibManager
             var message = new ServerErrorMessage();
             message.shouldDisconnect = shouldDisconnect;
             message.errorMessage = errorMessage;
-            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
         }
 
         public void SendServerSceneChange(string sceneName)
@@ -422,7 +422,7 @@ namespace LiteNetLibManager
                 return;
             var message = new ServerSceneChangeMessage();
             message.serverSceneName = sceneName;
-            SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSceneChange, message);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSceneChange, message);
         }
         #endregion
 

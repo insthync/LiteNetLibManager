@@ -122,11 +122,10 @@ namespace LiteNetLibManager
 
             if (ShouldSyncBehaviour())
             {
-                var peerValues = Manager.Peers.Values;
-                foreach (var peer in peerValues)
+                foreach (var peer in Manager.GetPeers())
                 {
                     if (Identity.IsSubscribedOrOwning(peer.ConnectId))
-                        Manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
+                        LiteNetLibPacketSender.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
                 }
             }
         }

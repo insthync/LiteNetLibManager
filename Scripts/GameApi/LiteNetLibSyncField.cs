@@ -103,18 +103,16 @@ namespace LiteNetLibManager
                 return;
 
             hasUpdate = false;
-            var peers = manager.Peers;
             if (forOwnerOnly)
             {
                 var connectId = Behaviour.ConnectId;
                 NetPeer foundPeer;
-                if (peers.TryGetValue(connectId, out foundPeer))
+                if (manager.TryGetPeer(connectId, out foundPeer))
                     SendUpdate(foundPeer);
             }
             else
             {
-                var peerValues = peers.Values;
-                foreach (var peer in peerValues)
+                foreach (var peer in manager.GetPeers())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
                         SendUpdate(peer);
@@ -126,12 +124,11 @@ namespace LiteNetLibManager
         {
             if (!ValidateBeforeAccess())
                 return;
-
-            var manager = Manager;
-            if (!manager.IsServer)
+            
+            if (!Manager.IsServer)
                 return;
 
-            manager.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
+            LiteNetLibPacketSender.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
         }
 
         protected void SerializeForSend(NetDataWriter writer)

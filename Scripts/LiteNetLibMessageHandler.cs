@@ -6,12 +6,14 @@ namespace LiteNetLibManager
     public class LiteNetLibMessageHandler
     {
         public short msgType { get; private set; }
+        public LiteNetLibPeerHandler peerHandler { get; private set; }
         public NetPeer peer { get; private set; }
         public NetDataReader reader { get; private set; }
 
-        public LiteNetLibMessageHandler(short msgType, NetPeer peer, NetDataReader reader)
+        public LiteNetLibMessageHandler(short msgType, LiteNetLibPeerHandler peerHandler, NetPeer peer, NetDataReader reader)
         {
             this.msgType = msgType;
+            this.peerHandler = peerHandler;
             this.peer = peer;
             this.reader = reader;
         }

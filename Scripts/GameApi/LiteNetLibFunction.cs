@@ -38,20 +38,17 @@ namespace LiteNetLibManager
 
         protected void ServerSendCall(NetPeer peer, FunctionReceivers receivers, long connectId)
         {
-            var manager = Manager;
-            manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
         }
 
         protected void ClientSendCall(FunctionReceivers receivers, long connectId)
         {
-            var manager = Manager;
-            manager.SendPacket(SendOptions.ReliableOrdered, manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, connectId));
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, Manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, connectId));
         }
 
         protected void SendCall(FunctionReceivers receivers, long connectId)
         {
             var manager = Manager;
-            var peers = manager.Peers;
 
             if (manager.IsServer)
             {
@@ -59,12 +56,11 @@ namespace LiteNetLibManager
                 {
                     case FunctionReceivers.Target:
                         NetPeer targetPeer;
-                        if (Behaviour.Identity.IsSubscribedOrOwning(connectId) && peers.TryGetValue(connectId, out targetPeer))
+                        if (Behaviour.Identity.IsSubscribedOrOwning(connectId) && manager.TryGetPeer(connectId, out targetPeer))
                             ServerSendCall(targetPeer, receivers, connectId);
                         break;
                     case FunctionReceivers.All:
-                        var peerValues = peers.Values;
-                        foreach (var peer in peerValues)
+                        foreach (var peer in manager.GetPeers())
                         {
                             if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
                                 ServerSendCall(peer, receivers, connectId);

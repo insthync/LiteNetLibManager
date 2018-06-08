@@ -7,7 +7,6 @@ using LiteNetLibManager.Utils;
 
 namespace LiteNetLibManager
 {
-    [RequireComponent(typeof(LiteNetLibMessageHandlers))]
     public class LiteNetLibManager : MonoBehaviour
     {
         public enum LogLevel : byte
@@ -79,20 +78,7 @@ namespace LiteNetLibManager
         [SerializeField, Tooltip("maximum connection attempts before client stops and call disconnect event, default value: 10")]
         protected int maxConnectAttempts = 10;
 
-        public readonly Dictionary<long, NetPeer> Peers = new Dictionary<long, NetPeer>();
-        private readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
-        private uint nextAckId = 1;
-
-        private LiteNetLibMessageHandlers messageHandlers;
-        public LiteNetLibMessageHandlers MessageHandlers
-        {
-            get
-            {
-                if (messageHandlers == null)
-                    messageHandlers = GetComponent<LiteNetLibMessageHandlers>();
-                return messageHandlers;
-            }
-        }
+        protected readonly Dictionary<long, NetPeer> Peers = new Dictionary<long, NetPeer>();
 
         protected virtual void Awake() { }
 
@@ -101,10 +87,10 @@ namespace LiteNetLibManager
         protected virtual void Update()
         {
             if (IsServer)
-                Server.NetManager.PollEvents();
+                Server.PollEvents();
             if (IsClient)
             {
-                Client.NetManager.PollEvents();
+                Client.PollEvents();
                 if (discoveryEnabled)
                     Client.NetManager.SendDiscoveryRequest(StringBytesConverter.ConvertToBytes(discoveryRequestData), networkPort);
             }
@@ -162,16 +148,13 @@ namespace LiteNetLibManager
             Server = new LiteNetLibServer(this, maxConnections, connectKey);
             RegisterServerMessages();
             SetConfigs(Server.NetManager);
-            var canStartServer = !isOffline ? Server.NetManager.Start(networkPort) : Server.NetManager.Start();
+            var canStartServer = !isOffline ? Server.Start(networkPort) : Server.Start();
             if (!canStartServer)
             {
                 if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
                 Server = null;
                 return false;
             }
-            // Reset acks
-            ackCallbacks.Clear();
-            nextAckId = 1;
             OnStartServer();
             return true;
         }
@@ -198,11 +181,8 @@ namespace LiteNetLibManager
             Client = new LiteNetLibClient(this, connectKey);
             RegisterClientMessages();
             SetConfigs(Client.NetManager);
-            Client.NetManager.Start();
-            Client.NetManager.Connect(networkAddress, networkPort);
-            // Reset acks
-            ackCallbacks.Clear();
-            nextAckId = 1;
+            Client.Start();
+            Client.Connect(networkAddress, networkPort);
             OnStartClient(Client);
             return Client;
         }
@@ -234,9 +214,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
-            Server.NetManager.Stop();
+            Server.Stop();
             Server = null;
-            Peers.Clear();
 
             OnStopServer();
         }
@@ -247,7 +226,7 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
-            Client.NetManager.Stop();
+            Client.Stop();
             Client = null;
 
             OnStopClient();
@@ -272,100 +251,54 @@ namespace LiteNetLibManager
             return Peers.TryGetValue(connectId, out peer);
         }
 
-        #region Relates components functions
-        public void ServerReadPacket(NetPeer peer, NetDataReader reader)
+        internal IEnumerable<NetPeer> GetPeers()
         {
-            MessageHandlers.ServerReadPacket(peer, reader);
+            return Peers.Values;
         }
 
-        public void ClientReadPacket(NetPeer peer, NetDataReader reader)
-        {
-            MessageHandlers.ClientReadPacket(peer, reader);
-        }
-        
+        #region Relates components functions
         public void SendPacketToAllPeers(SendOptions options, short msgType, System.Action<NetDataWriter> serializer)
         {
-            var peers = Peers.Values;
-            foreach (var peer in peers)
+            foreach (var peer in Peers.Values)
             {
-                SendPacket(options, peer, msgType, serializer);
+                LiteNetLibPacketSender.SendPacket(options, peer, msgType, serializer);
             }
         }
 
         public void SendPacketToAllPeers<T>(SendOptions options, short msgType, T messageData) where T : ILiteNetLibMessage
         {
-            var peers = Peers.Values;
-            foreach (var peer in peers)
+            foreach (var peer in Peers.Values)
             {
-                SendPacket(options, peer, msgType, messageData);
+                LiteNetLibPacketSender.SendPacket(options, peer, msgType, messageData);
             }
         }
 
         public void SendPacketToAllPeers(SendOptions options, short msgType)
         {
-            var peers = Peers.Values;
-            foreach (var peer in peers)
+            foreach (var peer in Peers.Values)
             {
-                SendPacket(options, peer, msgType);
-            }
-        }
-
-        public void SendPacket(SendOptions options, NetPeer peer, short msgType, System.Action<NetDataWriter> serializer)
-        {
-            MessageHandlers.SendPacket(options, peer, msgType, serializer);
-        }
-
-        public void SendPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData) where T : ILiteNetLibMessage
-        {
-            MessageHandlers.SendPacket(options, peer, msgType, messageData);
-        }
-
-        public void SendPacket(SendOptions options, NetPeer peer, short msgType)
-        {
-            MessageHandlers.SendPacket(options, peer, msgType);
-        }
-
-        public uint SendAckPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData, AckMessageCallback callback) where T : BaseAckMessage
-        {
-            var ackId = nextAckId++;
-            lock (ackCallbacks)
-                ackCallbacks.Add(ackId, callback);
-            messageData.ackId = ackId;
-            SendPacket(options, peer, msgType, messageData);
-            return ackId;
-        }
-
-        protected void TriggerAck<T>(uint ackId, AckResponseCode responseCode, T messageData) where T : BaseAckMessage
-        {
-            lock (ackCallbacks)
-            {
-                AckMessageCallback ackCallback;
-                if (ackCallbacks.TryGetValue(ackId, out ackCallback))
-                {
-                    ackCallbacks.Remove(ackId);
-                    ackCallback(responseCode, messageData);
-                }
+                LiteNetLibPacketSender.SendPacket(options, peer, msgType);
             }
         }
 
         public void RegisterServerMessage(short msgType, MessageHandlerDelegate handlerDelegate)
         {
-            MessageHandlers.RegisterServerMessage(msgType, handlerDelegate);
+            Server.RegisterMessage(msgType, handlerDelegate);
         }
 
         public void UnregisterServerMessage(short msgType)
         {
-            MessageHandlers.UnregisterServerMessage(msgType);
+            Server.UnregisterMessage(msgType);
         }
 
         public void RegisterClientMessage(short msgType, MessageHandlerDelegate handlerDelegate)
         {
-            MessageHandlers.RegisterClientMessage(msgType, handlerDelegate);
+            Client.RegisterMessage(msgType, handlerDelegate);
         }
 
         public void UnregisterClientMessage(short msgType)
         {
-            MessageHandlers.UnregisterClientMessage(msgType);
+            Client.UnregisterMessage(msgType);
         }
         #endregion
 

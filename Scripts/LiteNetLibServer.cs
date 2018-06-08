@@ -7,47 +7,47 @@ using LiteNetLibManager.Utils;
 
 namespace LiteNetLibManager
 {
-    public class LiteNetLibServer : INetEventListener
+    public class LiteNetLibServer : LiteNetLibPeerHandler
     {
-        public LiteNetLibManager Manager { get; protected set; }
-        public NetManager NetManager { get; protected set; }
-
-        public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey)
+        public LiteNetLibServer(LiteNetLibManager manager, int maxConnections, string connectKey) : base(manager, maxConnections, connectKey)
         {
-            Manager = manager;
-            NetManager = new NetManager(this, maxConnections, connectKey);
         }
 
-        public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
+        public override void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
         {
+            base.OnNetworkError(endPoint, socketErrorCode);
             if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + endPoint + " socketErrorCode " + socketErrorCode);
             Manager.OnPeerNetworkError(endPoint, socketErrorCode);
         }
 
-        public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
+        public override void OnNetworkLatencyUpdate(NetPeer peer, int latency)
         {
+            base.OnNetworkLatencyUpdate(peer, latency);
         }
 
-        public void OnNetworkReceive(NetPeer peer, NetDataReader reader)
+        public override void OnNetworkReceive(NetPeer peer, NetDataReader reader)
         {
-            Manager.ServerReadPacket(peer, reader);
+            base.OnNetworkReceive(peer, reader);
         }
 
-        public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
+        public override void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
         {
+            base.OnNetworkReceiveUnconnected(remoteEndPoint, reader, messageType);
             if (messageType == UnconnectedMessageType.DiscoveryRequest)
                 Manager.OnServerReceivedDiscoveryRequest(remoteEndPoint, StringBytesConverter.ConvertToString(reader.Data));
         }
 
-        public void OnPeerConnected(NetPeer peer)
+        public override void OnPeerConnected(NetPeer peer)
         {
+            base.OnPeerConnected(peer);
             if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + peer.ConnectId);
             Manager.AddPeer(peer);
             Manager.OnPeerConnected(peer);
         }
 
-        public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+        public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
+            base.OnPeerDisconnected(peer, disconnectInfo);
             if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + peer.ConnectId + " disconnectInfo.Reason: " + disconnectInfo.Reason);
             Manager.RemovePeer(peer);
             Manager.OnPeerDisconnected(peer, disconnectInfo);

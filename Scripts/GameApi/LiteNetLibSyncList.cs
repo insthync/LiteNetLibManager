@@ -194,19 +194,17 @@ namespace LiteNetLibManager
 
             if (onOperation != null)
                 onOperation(operation, index);
-
-            var peers = manager.Peers;
+            
             if (forOwnerOnly)
             {
                 var connectId = Behaviour.ConnectId;
                 NetPeer foundPeer;
-                if (peers.TryGetValue(connectId, out foundPeer))
+                if (manager.TryGetPeer(connectId, out foundPeer))
                     SendOperation(foundPeer, operation, index);
             }
             else
             {
-                var peerValues = peers.Values;
-                foreach (var peer in peerValues)
+                foreach (var peer in manager.GetPeers())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
                         SendOperation(peer, operation, index);
@@ -219,11 +217,10 @@ namespace LiteNetLibManager
             if (!ValidateBeforeAccess())
                 return;
 
-            var manager = Manager;
-            if (!manager.IsServer)
+            if (!Manager.IsServer)
                 return;
 
-            manager.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }
 
         protected void SerializeForSendOperation(NetDataWriter writer, Operation operation, int index)
