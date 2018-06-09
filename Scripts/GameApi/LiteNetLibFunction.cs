@@ -65,10 +65,11 @@ namespace LiteNetLibManager
                             if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
                                 ServerSendCall(peer, receivers, connectId);
                         }
+                        if (!Manager.IsClientConnected)
+                            HookCallback();
                         break;
                     case FunctionReceivers.Server:
-                        if (Behaviour.Identity.IsSubscribedOrOwning(connectId))
-                            HookCallback();
+                        HookCallback();
                         break;
                 }
             }
