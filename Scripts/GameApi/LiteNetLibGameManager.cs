@@ -591,7 +591,7 @@ namespace LiteNetLibManager
         /// </summary>
         /// <param name="playerIdentity"></param>
         /// <param name="reader"></param>
-        public virtual void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, NetDataReader reader) { }
+        public virtual void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, NetPeer peer, NetDataReader reader) { }
 
         /// <summary>
         /// Override this function to do anything after online scene loaded at server side
@@ -624,7 +624,7 @@ namespace LiteNetLibManager
 
             player.IsReady = true;
             var playerIdentity = SpawnPlayer(peer);
-            DeserializeClientReadyExtra(playerIdentity, reader);
+            DeserializeClientReadyExtra(playerIdentity, peer, reader);
             var spawnedObjects = Assets.GetSpawnedObjects();
             foreach (var spawnedObject in spawnedObjects)
             {
