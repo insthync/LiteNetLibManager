@@ -134,6 +134,7 @@ namespace LiteNetLibManager
                     Assets.Clear();
                 }
 
+                if (LogDev) Debug.Log("[LiteNetLibGameManager] Scene: " + sceneName + " is online: " + online + " loading");
                 if (Assets.onLoadSceneStart != null)
                     Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
 
@@ -148,6 +149,7 @@ namespace LiteNetLibManager
                 loadSceneAsyncOperation = null;
                 yield return null;
 
+                if (LogDev) Debug.Log("[LiteNetLibGameManager] Scene: " + sceneName + " is online: " + online + " loaded");
                 if (Assets.onLoadSceneFinish != null)
                     Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
 
