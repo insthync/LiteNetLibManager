@@ -10,7 +10,8 @@ public static class LiteNetLibPacketSender
     {
         writer.Reset();
         writer.Put(msgType);
-        serializer(writer);
+        if (serializer != null)
+            serializer(writer);
         peer.Send(writer, options);
     }
 
@@ -31,9 +32,7 @@ public static class LiteNetLibPacketSender
 
     public static void SendPacket(NetDataWriter writer, SendOptions options, NetPeer peer, short msgType)
     {
-        writer.Reset();
-        writer.Put(msgType);
-        peer.Send(writer, options);
+        SendPacket(writer, options, peer, msgType, null);
     }
 
     public static void SendPacket(SendOptions options, NetPeer peer, short msgType)
