@@ -37,46 +37,45 @@ namespace LiteNetLibManager
         public string connectKey = "SampleConnectKey";
         public string networkAddress = "localhost";
         public int networkPort = 7770;
-        [SerializeField, Tooltip("enable messages receiving without connection. (with SendUnconnectedMessage method), default value: false")]
-        protected bool unconnectedMessagesEnabled;
-        [SerializeField, Tooltip("enable nat punch messages, default value: false")]
-        protected bool natPunchEnabled;
-        [SerializeField, Tooltip("library logic update (and send) period in milliseconds, default value: 15 msec. For games you can use 15 msec(66 ticks per second)")]
-        protected int updateTime = 15;
-        [SerializeField, Tooltip("Interval for latency detection and checking connection, default value: 1000 msec.")]
-        protected int pingInterval = 1000;
-        [SerializeField, Tooltip("if client or server doesn't receive any packet from remote peer during this time then connection will be closed (including library internal keepalive packets), default value: 5000 msec.")]
-        protected int disconnectTimeout = 5000;
-        [SerializeField, Tooltip("Merge small packets into one before sending to reduce outgoing packets count. (May increase a bit outgoing data size), default value: false")]
-        protected bool mergeEnabled;
+        [Tooltip("enable messages receiving without connection. (with SendUnconnectedMessage method), default value: false")]
+        public bool unconnectedMessagesEnabled;
+        [Tooltip("enable nat punch messages, default value: false")]
+        public bool natPunchEnabled;
+        [Tooltip("library logic update (and send) period in milliseconds, default value: 15 msec. For games you can use 15 msec(66 ticks per second)")]
+        public int updateTime = 15;
+        [Tooltip("Interval for latency detection and checking connection, default value: 1000 msec.")]
+        public int pingInterval = 1000;
+        [Tooltip("if client or server doesn't receive any packet from remote peer during this time then connection will be closed (including library internal keepalive packets), default value: 5000 msec.")]
+        public int disconnectTimeout = 5000;
+        [Tooltip("Merge small packets into one before sending to reduce outgoing packets count. (May increase a bit outgoing data size), default value: false")]
+        public bool mergeEnabled;
 
         [Header("Network Simulation")]
-        [SerializeField, Tooltip("simulate packet loss by dropping random amout of packets. (Works only in DEBUG mode), default value: false")]
-        protected bool simulatePacketLoss;
-        [SerializeField, Tooltip("simulate latency by holding packets for random time. (Works only in DEBUG mode), default value: false")]
-        protected bool simulateLatency;
-        [SerializeField, Tooltip("chance of packet loss when simulation enabled. value in percents, default value: 10(%)")]
-        protected int simulationPacketLossChance = 10;
-        [SerializeField, Tooltip("minimum simulated latency, default value: 30 msec")]
-        protected int simulationMinLatency = 30;
-        [SerializeField, Tooltip("maximum simulated latency, default value: 100 msec")]
-        protected int simulationMaxLatency = 100;
+        [Tooltip("simulate packet loss by dropping random amout of packets. (Works only in DEBUG mode), default value: false")]
+        public bool simulatePacketLoss;
+        [Tooltip("simulate latency by holding packets for random time. (Works only in DEBUG mode), default value: false")]
+        public bool simulateLatency;
+        [Tooltip("chance of packet loss when simulation enabled. value in percents, default value: 10(%)")]
+        public int simulationPacketLossChance = 10;
+        [Tooltip("minimum simulated latency, default value: 30 msec")]
+        public int simulationMinLatency = 30;
+        [Tooltip("maximum simulated latency, default value: 100 msec")]
+        public int simulationMaxLatency = 100;
 
         [Header("Network Discovery")]
-        [SerializeField, Tooltip("Allows receive DiscoveryRequests, default value: false")]
-        protected bool discoveryEnabled;
+        [Tooltip("Allows receive DiscoveryRequests, default value: false")]
+        public bool discoveryEnabled;
         public string discoveryRequestData;
         public string discoveryResponseData;
 
         [Header("Server Only Configs")]
-        [SerializeField]
-        protected int maxConnections = 4;
+        public int maxConnections = 4;
 
         [Header("Client Only Configs")]
-        [SerializeField, Tooltip("delay betwen connection attempts, default value: 500 msec")]
-        protected int reconnectDelay = 500;
-        [SerializeField, Tooltip("maximum connection attempts before client stops and call disconnect event, default value: 10")]
-        protected int maxConnectAttempts = 10;
+        [Tooltip("delay betwen connection attempts, default value: 500 msec")]
+        public int reconnectDelay = 500;
+        [Tooltip("maximum connection attempts before client stops and call disconnect event, default value: 10")]
+        public int maxConnectAttempts = 10;
 
         protected readonly Dictionary<long, NetPeer> Peers = new Dictionary<long, NetPeer>();
 
