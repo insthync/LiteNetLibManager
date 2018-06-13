@@ -179,10 +179,10 @@ namespace LiteNetLibManager
             this.connectKey = connectKey;
             if (LogDev) Debug.Log("Client connecting to " + networkAddress + ":" + networkPort);
             Client = new LiteNetLibClient(this, connectKey);
+            RegisterClientMessages();
             SetConfigs(Client.NetManager);
             Client.Start();
             Client.Connect(networkAddress, networkPort);
-            RegisterClientMessages();
             OnStartClient(Client);
             return Client;
         }
