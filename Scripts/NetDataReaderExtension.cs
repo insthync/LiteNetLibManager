@@ -2,6 +2,7 @@
 {
     public static class NetDataReaderExtension
     {
+        #region Packed Unsigned Int (Credit: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
         public static uint GetPackedUInt(this NetDataReader reader)
         {
             byte a0 = reader.GetByte();
@@ -93,5 +94,6 @@
             }
             throw new System.IndexOutOfRangeException("ReadPackedULong() failure: " + a0);
         }
+        #endregion
     }
 }

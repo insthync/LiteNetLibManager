@@ -2,6 +2,7 @@
 {
     public static class NetDataWriterExtension
     {
+        #region Packed Unsigned Int (Credit: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
         public static void PutPackedUInt(this NetDataWriter writer, uint value)
         {
             if (value <= 240)
@@ -119,5 +120,6 @@
             writer.Put((byte)((value >> 48) & 0xFF));
             writer.Put((byte)((value >> 56) & 0xFF));
         }
+        #endregion
     }
 }
