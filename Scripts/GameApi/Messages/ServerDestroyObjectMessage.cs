@@ -11,13 +11,13 @@ namespace LiteNetLibManager
 
         public void Deserialize(NetDataReader reader)
         {
-            objectId = reader.GetUInt();
+            objectId = reader.GetPackedUInt();
             reasons = (DestroyObjectReasons)reader.GetByte();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(objectId);
+            writer.PutPackedUInt(objectId);
             writer.Put((byte)reasons);
         }
     }

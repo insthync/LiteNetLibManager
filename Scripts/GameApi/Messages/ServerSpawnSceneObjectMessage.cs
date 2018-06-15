@@ -13,14 +13,14 @@ namespace LiteNetLibManager
 
         public void Deserialize(NetDataReader reader)
         {
-            objectId = reader.GetUInt();
+            objectId = reader.GetPackedUInt();
             position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
             rotation = Quaternion.Euler(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(objectId);
+            writer.PutPackedUInt(objectId);
             writer.Put(position.x);
             writer.Put(position.y);
             writer.Put(position.z);

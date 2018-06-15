@@ -455,7 +455,7 @@ namespace LiteNetLibManager
             FunctionReceivers receivers = (FunctionReceivers)reader.GetByte();
             long connectId = 0;
             if (receivers == FunctionReceivers.Target)
-                connectId = reader.GetLong();
+                connectId = (long)reader.GetPackedULong();
             var info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
@@ -548,7 +548,7 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             var reader = messageHandler.reader;
-            var objectId = reader.GetUInt();
+            var objectId = reader.GetPackedUInt();
             var behaviourIndex = reader.GetByte();
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(objectId, out identity))

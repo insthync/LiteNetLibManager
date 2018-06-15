@@ -112,7 +112,7 @@ namespace LiteNetLibManager
         {
             writer.Put((byte)receivers);
             if (receivers == FunctionReceivers.Target)
-                writer.Put(connectId);
+                writer.PutPackedULong((ulong)connectId);
             SerializeForSend(writer);
         }
 

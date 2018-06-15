@@ -16,8 +16,8 @@ namespace LiteNetLibManager
         public void Deserialize(NetDataReader reader)
         {
             assetId = reader.GetString();
-            objectId = reader.GetUInt();
-            connectId = reader.GetLong();
+            objectId = reader.GetPackedUInt();
+            connectId = (long)reader.GetPackedULong();
             position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
             rotation = Quaternion.Euler(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
@@ -25,8 +25,8 @@ namespace LiteNetLibManager
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(assetId);
-            writer.Put(objectId);
-            writer.Put(connectId);
+            writer.PutPackedUInt(objectId);
+            writer.PutPackedULong((ulong)connectId);
             writer.Put(position.x);
             writer.Put(position.y);
             writer.Put(position.z);

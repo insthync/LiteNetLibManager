@@ -19,14 +19,14 @@ namespace LiteNetLibManager
 
         public static void SerializeInfo(LiteNetLibElementInfo info, NetDataWriter writer)
         {
-            writer.Put(info.objectId);
+            writer.PutPackedUInt(info.objectId);
             writer.Put(info.behaviourIndex);
             writer.Put(info.elementId);
         }
 
         public static LiteNetLibElementInfo DeserializeInfo(NetDataReader reader)
         {
-            return new LiteNetLibElementInfo(reader.GetUInt(), reader.GetByte(), reader.GetByte());
+            return new LiteNetLibElementInfo(reader.GetPackedUInt(), reader.GetByte(), reader.GetByte());
         }
     }
 

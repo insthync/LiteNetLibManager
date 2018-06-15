@@ -333,7 +333,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            writer.Put(Identity.ObjectId);
+            writer.PutPackedUInt(Identity.ObjectId);
             writer.Put(BehaviourIndex);
             OnSerialize(writer);
         }
