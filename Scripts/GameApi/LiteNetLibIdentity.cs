@@ -412,7 +412,7 @@ namespace LiteNetLibManager
                     continue;
                 }
 
-                if (subscriber.ConnectId != ownerPlayer.ConnectId && (initialize || !oldSubscribers.Contains(subscriber)))
+                if ((ownerPlayer == null || subscriber.ConnectId != ownerPlayer.ConnectId) && (initialize || !oldSubscribers.Contains(subscriber)))
                 {
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)

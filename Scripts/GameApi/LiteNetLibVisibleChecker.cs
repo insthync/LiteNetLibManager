@@ -48,7 +48,7 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public override bool OnRebuildSubscribers(HashSet<LiteNetLibPlayer> observers, bool initial)
+        public override bool OnRebuildSubscribers(HashSet<LiteNetLibPlayer> subscribers, bool initialize)
         {
             // find players within range
             switch (checkMethod)
@@ -60,7 +60,7 @@ namespace LiteNetLibManager
                         {
                             var identity = hit.GetComponent<LiteNetLibIdentity>();
                             if (identity != null && identity.Player != null)
-                                observers.Add(identity.Player);
+                                subscribers.Add(identity.Player);
                         }
                         return true;
                     }
@@ -72,7 +72,7 @@ namespace LiteNetLibManager
                         {
                             var identity = hit.GetComponent<LiteNetLibIdentity>();
                             if (identity != null && identity.Player != null)
-                                observers.Add(identity.Player);
+                                subscribers.Add(identity.Player);
                         }
                         return true;
                     }
