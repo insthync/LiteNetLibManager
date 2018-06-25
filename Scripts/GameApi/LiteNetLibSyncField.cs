@@ -30,6 +30,7 @@ namespace LiteNetLibManager
 
         internal abstract void SendUpdate();
         internal abstract void SendUpdate(NetPeer peer);
+        internal abstract void SendUpdate(SendOptions sendOptions, NetPeer peer);
         internal abstract void Deserialize(NetDataReader reader);
         internal abstract void Serialize(NetDataWriter writer);
     }
@@ -122,9 +123,14 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate(NetPeer peer)
         {
+            SendUpdate(sendOptions, peer);
+        }
+
+        internal override sealed void SendUpdate(SendOptions sendOptions, NetPeer peer)
+        {
             if (!ValidateBeforeAccess())
                 return;
-            
+
             if (!Manager.IsServer)
                 return;
 

@@ -304,7 +304,7 @@ namespace LiteNetLibManager
             var fields = syncFields;
             foreach (var field in fields)
             {
-                field.SendUpdate(peer);
+                field.SendUpdate(SendOptions.ReliableOrdered, peer);
             }
         }
 
