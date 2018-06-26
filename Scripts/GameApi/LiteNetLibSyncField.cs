@@ -80,12 +80,12 @@ namespace LiteNetLibManager
         {
             if (Behaviour == null)
             {
-                Debug.LogError("[LiteNetLibElement] Error while set value, behaviour is empty");
+                Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty");
                 return false;
             }
             if (!Behaviour.IsServer)
             {
-                Debug.LogError("[LiteNetLibElement] Error while set value, not the server");
+                Debug.LogError("[LiteNetLibSyncField] Error while set value, not the server");
                 return false;
             }
             return true;
