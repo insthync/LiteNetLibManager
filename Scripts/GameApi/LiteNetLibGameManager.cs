@@ -152,10 +152,12 @@ namespace LiteNetLibManager
                 if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " is online: " + online);
                 if (Assets.onLoadSceneFinish != null)
                     Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
+                yield return null;
 
                 if (online)
                 {
                     Assets.Initialize();
+                    yield return null;
                     if (IsClient)
                         OnClientOnlineSceneLoaded();
                     if (IsServer)
@@ -164,10 +166,12 @@ namespace LiteNetLibManager
                         Assets.SpawnSceneObjects();
                         OnServerOnlineSceneLoaded();
                     }
-                    if (IsClient)
-                        SendClientReady();
+                    yield return null;
                     if (IsServer)
                         SendServerSceneChange(sceneName);
+                    yield return null;
+                    if (IsClient)
+                        SendClientReady();
                 }
                 else if (!doNotDestroyOnSceneChanges)
                     Destroy(gameObject);
