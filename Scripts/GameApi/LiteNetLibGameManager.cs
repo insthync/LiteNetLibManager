@@ -159,15 +159,15 @@ namespace LiteNetLibManager
                     if (IsServer)
                     {
                         serverSceneName = sceneName;
-                        SendServerSceneChange(sceneName);
                         Assets.SpawnSceneObjects();
                         OnServerOnlineSceneLoaded();
                     }
                     if (IsClient)
-                    {
-                        SendClientReady();
                         OnClientOnlineSceneLoaded();
-                    }
+                    if (IsServer)
+                        SendServerSceneChange(sceneName);
+                    if (IsClient)
+                        SendClientReady();
                 }
                 else if (!doNotDestroyOnSceneChanges)
                     Destroy(gameObject);
