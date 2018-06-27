@@ -268,21 +268,21 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientEnterGame);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientEnterGame);
         }
 
         public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
         }
 
         public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableUnordered, Client.Peer, GameMsgTypes.ClientNotReady);
+            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientNotReady);
         }
 
         public void SendServerTime()
