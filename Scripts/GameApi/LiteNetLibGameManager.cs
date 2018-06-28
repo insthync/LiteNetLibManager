@@ -157,21 +157,34 @@ namespace LiteNetLibManager
                 if (online)
                 {
                     Assets.Initialize();
+                    if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> Assets.Initialize()");
                     yield return null;
                     if (IsClient)
+                    {
                         OnClientOnlineSceneLoaded();
+                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
+                    }
+                    yield return null;
                     if (IsServer)
                     {
                         serverSceneName = sceneName;
                         Assets.SpawnSceneObjects();
+                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
                         OnServerOnlineSceneLoaded();
+                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> OnServerOnlineSceneLoaded()");
                     }
                     yield return null;
                     if (IsServer)
+                    {
                         SendServerSceneChange(sceneName);
+                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> SendServerSceneChange()");
+                    }
                     yield return null;
                     if (IsClient)
+                    {
                         SendClientReady();
+                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> SendClientReady()");
+                    }
                 }
                 else if (!doNotDestroyOnSceneChanges)
                     Destroy(gameObject);
@@ -568,6 +581,9 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSceneChange(LiteNetLibMessageHandler messageHandler)
         {
+            // Server scene changes made from server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
             // Scene name sent from server
             var message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             var serverSceneName = message.serverSceneName;
