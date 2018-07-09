@@ -30,6 +30,27 @@ namespace LiteNetLibManager
         internal readonly List<LiteNetLibBehaviour> Behaviours = new List<LiteNetLibBehaviour>();
         internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
         public string AssetId { get { return assetId; } }
+        public int HashAssetId
+        {
+            get
+            {
+                unchecked
+                {
+                    int hash1 = 5381;
+                    int hash2 = hash1;
+
+                    for (int i = 0; i < AssetId.Length && AssetId[i] != '\0'; i += 2)
+                    {
+                        hash1 = ((hash1 << 5) + hash1) ^ AssetId[i];
+                        if (i == AssetId.Length - 1 || AssetId[i + 1] == '\0')
+                            break;
+                        hash2 = ((hash2 << 5) + hash2) ^ AssetId[i + 1];
+                    }
+
+                    return hash1 + (hash2 * 1566083941);
+                }
+            }
+        }
         public uint ObjectId { get { return objectId; } }
         public long ConnectId { get { return connectId; } }
         public LiteNetLibGameManager Manager { get { return manager; } }

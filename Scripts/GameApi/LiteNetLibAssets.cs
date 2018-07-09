@@ -22,7 +22,7 @@ namespace LiteNetLibManager
         public LiteNetLibLoadSceneEvent onLoadSceneFinish;
 
         private readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
-        private readonly Dictionary<string, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<string, LiteNetLibIdentity>();
+        private readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         private readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         private readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
@@ -82,8 +82,8 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterPrefab - prefab is null.");
                 return;
             }
-            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::RegisterPrefab [" + prefab.AssetId + "]");
-            GuidToPrefabs[prefab.AssetId] = prefab;
+            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::RegisterPrefab [" + prefab.HashAssetId + "]");
+            GuidToPrefabs[prefab.HashAssetId] = prefab;
         }
 
         public bool UnregisterPrefab(LiteNetLibIdentity prefab)
@@ -93,8 +93,8 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::UnregisterPrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::UnregisterPrefab [" + prefab.AssetId + "]");
-            return GuidToPrefabs.Remove(prefab.AssetId);
+            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::UnregisterPrefab [" + prefab.HashAssetId + "]");
+            return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
         public void ClearSpawnedObjects()
@@ -184,10 +184,10 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
                 return null;
             }
-            return NetworkSpawn(identity.AssetId, position, rotation, objectId, connectId);
+            return NetworkSpawn(identity.HashAssetId, position, rotation, objectId, connectId);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(string assetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -204,7 +204,7 @@ namespace LiteNetLibManager
                 return null;
             
             LiteNetLibIdentity spawningObject = null;
-            if (GuidToPrefabs.TryGetValue(assetId, out spawningObject))
+            if (GuidToPrefabs.TryGetValue(hashAssetId, out spawningObject))
             {
                 var spawnedObject = Instantiate(spawningObject);
                 spawnedObject.gameObject.SetActive(true);
@@ -219,7 +219,7 @@ namespace LiteNetLibManager
                 return spawnedObject;
             }
             else if (Manager.LogWarn)
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + assetId + " is not registered.");
+                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + hashAssetId + " is not registered.");
             return null;
         }
 

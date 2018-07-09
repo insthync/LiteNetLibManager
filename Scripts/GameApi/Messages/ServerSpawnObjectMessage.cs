@@ -7,7 +7,7 @@ namespace LiteNetLibManager
 {
     public class ServerSpawnObjectMessage : ILiteNetLibMessage
     {
-        public string assetId;
+        public int hashAssetId;
         public uint objectId;
         public long connectId;
         public Vector3 position;
@@ -15,7 +15,7 @@ namespace LiteNetLibManager
 
         public void Deserialize(NetDataReader reader)
         {
-            assetId = reader.GetString();
+            hashAssetId = reader.GetInt();
             objectId = reader.GetPackedUInt();
             connectId = (long)reader.GetPackedULong();
             position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
@@ -24,7 +24,7 @@ namespace LiteNetLibManager
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(assetId);
+            writer.Put(hashAssetId);
             writer.PutPackedUInt(objectId);
             writer.PutPackedULong((ulong)connectId);
             writer.Put(position.x);

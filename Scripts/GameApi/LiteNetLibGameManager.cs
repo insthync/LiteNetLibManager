@@ -359,7 +359,7 @@ namespace LiteNetLibManager
             if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
                 return;
             var message = new ServerSpawnObjectMessage();
-            message.assetId = identity.AssetId;
+            message.hashAssetId = identity.HashAssetId;
             message.objectId = identity.ObjectId;
             message.connectId = identity.ConnectId;
             message.position = identity.transform.position;
@@ -505,7 +505,7 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             var message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
-            Assets.NetworkSpawn(message.assetId, message.position, message.rotation, message.objectId, message.connectId);
+            Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, message.connectId);
         }
 
         protected virtual void HandleServerDestroyObject(LiteNetLibMessageHandler messageHandler)
@@ -683,12 +683,12 @@ namespace LiteNetLibManager
         {
             if (prefab == null)
                 return null;
-            return SpawnPlayer(peer, prefab.AssetId);
+            return SpawnPlayer(peer, prefab.HashAssetId);
         }
 
-        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer, string assetId)
+        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer, int hashAssetId)
         {
-            var spawnedObject = Assets.NetworkSpawn(assetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, peer.ConnectId);
+            var spawnedObject = Assets.NetworkSpawn(hashAssetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, peer.ConnectId);
             if (spawnedObject != null)
             {
                 spawnedObject.SendInitSyncFields(peer);
