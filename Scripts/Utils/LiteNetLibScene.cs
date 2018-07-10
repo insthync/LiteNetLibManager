@@ -6,9 +6,9 @@ namespace LiteNetLibManager
     public class LiteNetLibScene
     {
         [SerializeField]
-        private Object sceneAsset;
+        public Object sceneAsset;
         [SerializeField]
-        private string sceneName = "";
+        public string sceneName = string.Empty;
 
         public string SceneName
         {
