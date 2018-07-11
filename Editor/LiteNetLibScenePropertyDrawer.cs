@@ -33,6 +33,8 @@ namespace LiteNetLibManager
                             sceneName.stringValue = null;
                         }
                     }
+                    else
+                        sceneName.stringValue = null;
                 }
             }
             EditorGUI.EndProperty();
