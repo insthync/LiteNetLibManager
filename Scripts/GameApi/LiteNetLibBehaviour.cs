@@ -174,10 +174,10 @@ namespace LiteNetLibManager
                     Debug.LogWarning("Element named " + fieldName + " was not found");
                     continue;
                 }
-                var syncList = (T)field.GetValue(this);
+                var element = (T)field.GetValue(this);
                 var elementId = Convert.ToByte(elementList.Count);
-                syncList.Setup(this, elementId);
-                elementList.Add(syncList);
+                element.Setup(this, elementId);
+                elementList.Add(element);
             }
         }
 
