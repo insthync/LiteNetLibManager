@@ -1,6 +1,5 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
-using LiteNetLibManager.Utils;
 using System.Collections.Generic;
 
 namespace LiteNetLibManager
@@ -12,6 +11,8 @@ namespace LiteNetLibManager
         protected readonly Dictionary<short, MessageHandlerDelegate> messageHandlers = new Dictionary<short, MessageHandlerDelegate>();
         protected readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
         protected uint nextAckId = 1;
+
+        public int AckCallbacksCount { get { return ackCallbacks.Count; } }
 
         public LiteNetLibPeerHandler(int maxConnections, string connectKey)
         {
