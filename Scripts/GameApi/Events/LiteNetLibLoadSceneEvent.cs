@@ -1,6 +1,9 @@
 ﻿using UnityEngine.Events;
 
-[System.Serializable]
-public class LiteNetLibLoadSceneEvent : UnityEvent<string, bool, float>
+namespace LiteNetLibManager
 {
+    [System.Serializable]
+    public class LiteNetLibLoadSceneEvent : UnityEvent<string, bool, float>
+    {
+    }
 }
