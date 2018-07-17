@@ -2,8 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 using LiteNetLib;
 using LiteNetLib.Utils;
@@ -152,6 +154,8 @@ namespace LiteNetLibManager
                 assetId = string.Empty;
                 ValidateObjectId();
             }
+            EditorUtility.SetDirty(this);
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 #endif
         #endregion
@@ -302,7 +306,13 @@ namespace LiteNetLibManager
             foreach (LiteNetLibIdentity netObject in netObjects)
             {
                 netObject.objectId = ++HighestObjectId;
+#if UNITY_EDITOR
+                EditorUtility.SetDirty(netObject);
+#endif
             }
+#if UNITY_EDITOR
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+#endif
         }
 
         internal void ClearSubscribers()
