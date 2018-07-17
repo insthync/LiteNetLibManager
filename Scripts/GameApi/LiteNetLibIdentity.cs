@@ -154,8 +154,12 @@ namespace LiteNetLibManager
                 assetId = string.Empty;
                 ValidateObjectId();
             }
-            EditorUtility.SetDirty(this);
-            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            // Do not mark dirty while playing
+            if (!Application.isPlaying)
+            {
+                EditorUtility.SetDirty(this);
+                EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            }
         }
 #endif
         #endregion
@@ -307,11 +311,15 @@ namespace LiteNetLibManager
             {
                 netObject.objectId = ++HighestObjectId;
 #if UNITY_EDITOR
-                EditorUtility.SetDirty(netObject);
+                // Do not mark dirty while playing
+                if (!Application.isPlaying)
+                    EditorUtility.SetDirty(netObject);
 #endif
             }
 #if UNITY_EDITOR
-            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            // Do not mark dirty while playing
+            if (!Application.isPlaying)
+                EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 #endif
         }
 
