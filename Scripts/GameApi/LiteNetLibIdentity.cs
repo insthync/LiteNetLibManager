@@ -147,19 +147,20 @@ namespace LiteNetLibManager
                 // This is a scene object with prefab link
                 AssignAssetID(prefab);
                 ValidateObjectId();
+                if (!Application.isPlaying)
+                    EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             }
             else
             {
                 // This is a pure scene object (Not a prefab)
                 assetId = string.Empty;
                 ValidateObjectId();
+                if (!Application.isPlaying)
+                    EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             }
             // Do not mark dirty while playing
             if (!Application.isPlaying)
-            {
                 EditorUtility.SetDirty(this);
-                EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-            }
         }
 #endif
         #endregion
