@@ -690,11 +690,7 @@ namespace LiteNetLibManager
         {
             var spawnedObject = Assets.NetworkSpawn(hashAssetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, peer.ConnectId);
             if (spawnedObject != null)
-            {
-                spawnedObject.SendInitSyncFields(peer);
-                spawnedObject.SendInitSyncLists(peer);
                 return spawnedObject;
-            }
             return null;
         }
     }

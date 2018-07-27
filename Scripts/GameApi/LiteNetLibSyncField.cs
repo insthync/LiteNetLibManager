@@ -71,6 +71,8 @@ namespace LiteNetLibManager
             }
         }
 
+        protected bool updatedOnce;
+
         public static implicit operator TFieldType(LiteNetLibSyncField<TField, TFieldType> field)
         {
             return field.Value;
@@ -123,6 +125,13 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate(NetPeer peer)
         {
+            // Update first time should be reliable
+            if (!updatedOnce)
+            {
+                updatedOnce = true;
+                SendUpdate(SendOptions.ReliableOrdered, peer);
+                return;
+            }
             SendUpdate(sendOptions, peer);
         }
 
