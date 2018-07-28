@@ -65,6 +65,9 @@ namespace LiteNetLibManager
                 {
                     Field.Value = this.value = value;
                     hasUpdate = true;
+                    // If never updates, force update it as initialize state
+                    if (!updatedOnce)
+                        SendUpdate();
                     if (onChange != null)
                         onChange(value);
                 }
@@ -111,27 +114,31 @@ namespace LiteNetLibManager
                 var connectId = Behaviour.ConnectId;
                 NetPeer foundPeer;
                 if (manager.TryGetPeer(connectId, out foundPeer))
-                    SendUpdate(foundPeer);
+                {
+                    if (!updatedOnce)
+                        SendUpdate(SendOptions.ReliableOrdered, foundPeer);
+                    else
+                        SendUpdate(foundPeer);
+                }
             }
             else
             {
                 foreach (var peer in manager.GetPeers())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
-                        SendUpdate(peer);
+                    {
+                        if (!updatedOnce)
+                            SendUpdate(SendOptions.ReliableOrdered, peer);
+                        else
+                            SendUpdate(peer);
+                    }
                 }
             }
+            updatedOnce = true;
         }
 
         internal override sealed void SendUpdate(NetPeer peer)
         {
-            // Update first time should be reliable
-            if (!updatedOnce)
-            {
-                updatedOnce = true;
-                SendUpdate(SendOptions.ReliableOrdered, peer);
-                return;
-            }
             SendUpdate(sendOptions, peer);
         }
 
