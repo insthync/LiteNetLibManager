@@ -18,6 +18,11 @@ namespace LiteNetLibManager
 
         private float lastUpdateTime;
 
+        void Start()
+        {
+            lastUpdateTime = Time.unscaledTime + Random.value;
+        }
+
         void Update()
         {
             if (!IsServer)
