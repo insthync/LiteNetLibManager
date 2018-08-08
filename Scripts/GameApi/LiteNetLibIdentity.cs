@@ -9,6 +9,7 @@ using UnityEditor.SceneManagement;
 #endif
 using LiteNetLib;
 using LiteNetLib.Utils;
+using UnityEngine.Profiling;
 
 namespace LiteNetLibManager
 {
@@ -29,7 +30,7 @@ namespace LiteNetLibManager
         private List<long> subscriberIds = new List<long>();
 #endif
         private bool hasSetupBehaviours;
-        internal readonly List<LiteNetLibBehaviour> Behaviours = new List<LiteNetLibBehaviour>();
+        internal LiteNetLibBehaviour[] Behaviours { get; private set; }
         internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
         public string AssetId { get { return assetId; } }
         public int HashAssetId
@@ -83,12 +84,20 @@ namespace LiteNetLibManager
             get { return Manager != null && Manager.Client != null && Manager.Client.Peer != null && ConnectId == Manager.Client.Peer.ConnectId; }
         }
 
-        internal void NetworkUpdate()
+        // Optimize garbage collector
+        private int loopCounter;
+
+        private void Update()
         {
-            foreach (var behaviour in Behaviours)
+            if (!IsServer || Manager == null)
+                return;
+
+            Profiler.BeginSample("LiteNetLibIdentity - Network Update");
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                behaviour.NetworkUpdate();
+                Behaviours[loopCounter].NetworkUpdate();
             }
+            Profiler.EndSample();
         }
 
         #region IDs generate in Editor
@@ -169,7 +178,7 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex >= Behaviours.Count)
+            if (info.behaviourIndex >= Behaviours.Length)
                 return null;
             return Behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
         }
@@ -178,7 +187,7 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex >= Behaviours.Count)
+            if (info.behaviourIndex >= Behaviours.Length)
                 return null;
             return Behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
         }
@@ -187,14 +196,14 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex >= Behaviours.Count)
+            if (info.behaviourIndex >= Behaviours.Length)
                 return null;
             return Behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
         }
 
         internal LiteNetLibBehaviour ProcessSyncBehaviour(byte behaviourIndex, NetDataReader reader)
         {
-            if (behaviourIndex >= Behaviours.Count)
+            if (behaviourIndex >= Behaviours.Length)
                 return null;
             var behaviour = Behaviours[behaviourIndex];
             behaviour.Deserialize(reader);
@@ -203,33 +212,33 @@ namespace LiteNetLibManager
 
         internal void SendInitSyncFields()
         {
-            foreach (var behaviour in Behaviours)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                behaviour.SendInitSyncFields();
+                Behaviours[loopCounter].SendInitSyncFields();
             }
         }
 
         internal void SendInitSyncFields(NetPeer peer)
         {
-            foreach (var behaviour in Behaviours)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                behaviour.SendInitSyncFields(peer);
+                Behaviours[loopCounter].SendInitSyncFields(peer);
             }
         }
 
         internal void SendInitSyncLists()
         {
-            foreach (var behaviour in Behaviours)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                behaviour.SendInitSyncLists();
+                Behaviours[loopCounter].SendInitSyncLists();
             }
         }
 
         internal void SendInitSyncLists(NetPeer peer)
         {
-            foreach (var behaviour in Behaviours)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                behaviour.SendInitSyncLists(peer);
+                Behaviours[loopCounter].SendInitSyncLists(peer);
             }
         }
 
@@ -259,12 +268,10 @@ namespace LiteNetLibManager
             if (!hasSetupBehaviours)
             {
                 // Setup behaviours index, we will use this as reference for network functions
-                Behaviours.Clear();
-                var behaviourComponents = GetComponents<LiteNetLibBehaviour>();
-                foreach (var behaviour in behaviourComponents)
+                Behaviours = GetComponents<LiteNetLibBehaviour>();
+                for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
-                    behaviour.Setup(Convert.ToByte(Behaviours.Count));
-                    Behaviours.Add(behaviour);
+                    Behaviours[loopCounter].Setup(Convert.ToByte(loopCounter));
                 }
                 hasSetupBehaviours = true;
             }
@@ -383,11 +390,9 @@ namespace LiteNetLibManager
 
         internal bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
         {
-            var count = Behaviours.Count;
-            for (var i = 0; i < count; ++i)
+            for (var i = 0; i < Behaviours.Length; ++i)
             {
-                var behaviour = Behaviours[i];
-                if (!behaviour.ShouldAddSubscriber(subscriber))
+                if (!Behaviours[i].ShouldAddSubscriber(subscriber))
                     return false;
             }
             return true;
@@ -412,12 +417,10 @@ namespace LiteNetLibManager
             bool shouldRebuild = false;
             HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
             HashSet<LiteNetLibPlayer> oldSubscribers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
-
-            var count = Behaviours.Count;
-            for (var i = 0; i < count; ++i)
+            
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                var behaviour = Behaviours[i];
-                shouldRebuild |= behaviour.OnRebuildSubscribers(newSubscribers, initialize);
+                shouldRebuild |= Behaviours[loopCounter].OnRebuildSubscribers(newSubscribers, initialize);
             }
 
             // If shouldRebuild is FALSE, it's means it does not have to rebuild subscribers
@@ -490,21 +493,17 @@ namespace LiteNetLibManager
 
         public void OnServerSubscribingAdded()
         {
-            var count = Behaviours.Count;
-            for (int i = 0; i < count; ++i)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                var behaviour = Behaviours[i];
-                behaviour.OnServerSubscribingAdded();
+                Behaviours[loopCounter].OnServerSubscribingAdded();
             }
         }
 
         public void OnServerSubscribingRemoved()
         {
-            var count = Behaviours.Count;
-            for (var i = 0; i < count; ++i)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                var behaviour = Behaviours[i];
-                behaviour.OnServerSubscribingRemoved();
+                Behaviours[loopCounter].OnServerSubscribingRemoved();
             }
         }
 
@@ -532,11 +531,9 @@ namespace LiteNetLibManager
 
         public void OnNetworkDestroy(DestroyObjectReasons reasons)
         {
-            var count = Behaviours.Count;
-            for (var i = 0; i < count; ++i)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                var behaviour = Behaviours[i];
-                behaviour.OnNetworkDestroy(reasons);
+                Behaviours[loopCounter].OnNetworkDestroy(reasons);
             }
         }
     }

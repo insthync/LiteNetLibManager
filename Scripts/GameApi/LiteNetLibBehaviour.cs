@@ -105,15 +105,18 @@ namespace LiteNetLibManager
             get { return Identity.IsOwnerClient; }
         }
 
+        // Optimize garbage collector
+        private int loopCounter;
+
         internal void NetworkUpdate()
         {
             if (!IsServer)
                 return;
 
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Fields");
-            foreach (var syncField in syncFields)
+            for (loopCounter = 0; loopCounter < syncFields.Count; ++loopCounter)
             {
-                syncField.NetworkUpdate();
+                syncFields[loopCounter].NetworkUpdate();
             }
             Profiler.EndSample();
 
