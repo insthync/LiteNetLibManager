@@ -389,5 +389,15 @@ namespace LiteNetLibManager
     public class SyncListVector4 : LiteNetLibSyncList<NetFieldVector4, Vector4>
     {
     }
+
+    [Serializable]
+    public class SyncListPackedUInt : LiteNetLibSyncList<NetFieldUInt, uint>
+    {
+    }
+
+    [Serializable]
+    public class SyncListPackedULong : LiteNetLibSyncList<NetFieldULong, ulong>
+    {
+    }
     #endregion
 }

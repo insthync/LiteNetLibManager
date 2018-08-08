@@ -280,5 +280,15 @@ namespace LiteNetLibManager
         where T : struct
     {
     }
+
+    [Serializable]
+    public class SyncFieldPackedUInt : LiteNetLibSyncField<NetFieldPackedUInt, uint>
+    {
+    }
+
+    [Serializable]
+    public class SyncFieldPackedULong : LiteNetLibSyncField<NetFieldPackedULong, ulong>
+    {
+    }
     #endregion
 }
