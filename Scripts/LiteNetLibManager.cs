@@ -4,6 +4,7 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using LiteNetLibManager.Utils;
+using UnityEngine.Profiling;
 
 namespace LiteNetLibManager
 {

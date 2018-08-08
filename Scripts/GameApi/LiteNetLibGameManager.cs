@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using UnityEngine.Profiling;
 
 namespace LiteNetLibManager
 {
@@ -34,7 +35,7 @@ namespace LiteNetLibManager
         private float lastSendServerTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
-        private List<LiteNetLibIdentity> updatingSpawnedObjects;
+        private ICollection<LiteNetLibIdentity> updatingSpawnedObjects;
 
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
@@ -83,11 +84,13 @@ namespace LiteNetLibManager
         {
             if (IsServer && loadSceneAsyncOperation == null)
             {
+                Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
                 updatingSpawnedObjects = Assets.GetSpawnedObjects();
                 foreach (var spawnedObject in updatingSpawnedObjects)
                 {
                     spawnedObject.NetworkUpdate();
                 }
+                Profiler.EndSample();
                 if (Time.unscaledTime - lastSendServerTime > updateTime)
                 {
                     SendServerTime();

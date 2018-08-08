@@ -5,6 +5,7 @@ using System.Reflection;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using UnityEngine.Profiling;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -109,10 +110,12 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
+            Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Fields");
             foreach (var syncField in syncFields)
             {
                 syncField.NetworkUpdate();
             }
+            Profiler.EndSample();
 
             // Sync behaviour
             if (Time.unscaledTime - lastSentTime < sendInterval)
@@ -120,6 +123,7 @@ namespace LiteNetLibManager
 
             lastSentTime = Time.unscaledTime;
 
+            Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
             if (ShouldSyncBehaviour())
             {
                 foreach (var peer in Manager.GetPeers())
@@ -128,6 +132,7 @@ namespace LiteNetLibManager
                         LiteNetLibPacketSender.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
                 }
             }
+            Profiler.EndSample();
         }
 
 #if UNITY_EDITOR

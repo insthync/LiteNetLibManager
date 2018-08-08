@@ -286,14 +286,14 @@ namespace LiteNetLibManager
             }
         }
 
-        public List<LiteNetLibIdentity> GetSceneObjects()
+        public ICollection<LiteNetLibIdentity> GetSceneObjects()
         {
-            return new List<LiteNetLibIdentity>(SceneObjects.Values);
+            return SceneObjects.Values;
         }
 
-        public List<LiteNetLibIdentity> GetSpawnedObjects()
+        public ICollection<LiteNetLibIdentity> GetSpawnedObjects()
         {
-            return new List<LiteNetLibIdentity>(SpawnedObjects.Values);
+            return SpawnedObjects.Values;
         }
 
         public bool ContainsSceneObject(uint objectId)
