@@ -146,8 +146,8 @@ namespace LiteNetLibManager
         public override void OnSerialize(NetDataWriter writer)
         {
             SerializeFloat(writer, CacheTransform.position.x, syncPositionX);
-            SerializeFloat(writer, CacheTransform.position.y, syncPositionX);
-            SerializeFloat(writer, CacheTransform.position.z, syncPositionX);
+            SerializeFloat(writer, CacheTransform.position.y, syncPositionY);
+            SerializeFloat(writer, CacheTransform.position.z, syncPositionZ);
             SerializeFloat(writer, CacheTransform.rotation.eulerAngles.x, syncRotationX);
             SerializeFloat(writer, CacheTransform.rotation.eulerAngles.y, syncRotationY);
             SerializeFloat(writer, CacheTransform.rotation.eulerAngles.z, syncRotationZ);
