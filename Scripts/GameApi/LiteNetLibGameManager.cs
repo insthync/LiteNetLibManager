@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using UnityEngine.Profiling;
 
 namespace LiteNetLibManager
 {
@@ -34,7 +35,6 @@ namespace LiteNetLibManager
         private float lastSendServerTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
-        private ICollection<LiteNetLibIdentity> updatingSpawnedObjects;
 
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
@@ -83,6 +83,12 @@ namespace LiteNetLibManager
         {
             if (IsServer && loadSceneAsyncOperation == null)
             {
+                Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
+                foreach (var spawnedObject in Assets.SpawnedObjects)
+                {
+                    spawnedObject.Value.NetworkUpdate();
+                }
+                Profiler.EndSample();
                 if (Time.unscaledTime - lastSendServerTime > updateTime)
                 {
                     SendServerTime();
@@ -642,14 +648,13 @@ namespace LiteNetLibManager
             player.IsReady = true;
             var playerIdentity = SpawnPlayer(peer);
             DeserializeClientReadyExtra(playerIdentity, peer, reader);
-            var spawnedObjects = Assets.GetSpawnedObjects();
-            foreach (var spawnedObject in spawnedObjects)
+            foreach (var spawnedObject in Assets.SpawnedObjects)
             {
-                if (spawnedObject.ConnectId == player.ConnectId)
+                if (spawnedObject.Value.ConnectId == player.ConnectId)
                     continue;
 
-                if (spawnedObject.ShouldAddSubscriber(player))
-                    spawnedObject.AddSubscriber(player);
+                if (spawnedObject.Value.ShouldAddSubscriber(player))
+                    spawnedObject.Value.AddSubscriber(player);
             }
         }
 

@@ -87,7 +87,7 @@ namespace LiteNetLibManager
         // Optimize garbage collector
         private int loopCounter;
 
-        private void Update()
+        internal void NetworkUpdate()
         {
             if (!IsServer || Manager == null)
                 return;

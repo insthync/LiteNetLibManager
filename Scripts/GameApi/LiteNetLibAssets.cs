@@ -21,10 +21,10 @@ namespace LiteNetLibManager
         public LiteNetLibLoadSceneEvent onLoadSceneProgress;
         public LiteNetLibLoadSceneEvent onLoadSceneFinish;
 
-        private readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
-        private readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
-        private readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        private readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
+        internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
+        internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
         private LiteNetLibGameManager manager;
         public LiteNetLibGameManager Manager
@@ -284,16 +284,6 @@ namespace LiteNetLibManager
                     spawnPositionCounter = 0;
                 return CacheSpawnPoints[spawnPositionCounter++].Position;
             }
-        }
-
-        public ICollection<LiteNetLibIdentity> GetSceneObjects()
-        {
-            return SceneObjects.Values;
-        }
-
-        public ICollection<LiteNetLibIdentity> GetSpawnedObjects()
-        {
-            return SpawnedObjects.Values;
         }
 
         public bool ContainsSceneObject(uint objectId)
