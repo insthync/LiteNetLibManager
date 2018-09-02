@@ -282,6 +282,11 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldPackedUShort : LiteNetLibSyncField<NetFieldPackedUShort, ushort>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldPackedUInt : LiteNetLibSyncField<NetFieldPackedUInt, uint>
     {
     }

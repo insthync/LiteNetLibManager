@@ -2,19 +2,19 @@
 
 namespace LiteNetLibManager
 {
-    public class NetFieldShort : LiteNetLibNetField<short>
+    public class NetFieldPackedUShort : LiteNetLibNetField<ushort>
     {
         public override void Deserialize(NetDataReader reader)
         {
-            Value = reader.GetShort();
+            Value = reader.GetPackedUShort();
         }
 
         public override void Serialize(NetDataWriter writer)
         {
-            writer.Put(Value);
+            writer.PutPackedUShort(Value);
         }
 
-        public override bool IsValueChanged(short newValue)
+        public override bool IsValueChanged(ushort newValue)
         {
             return newValue != Value;
         }

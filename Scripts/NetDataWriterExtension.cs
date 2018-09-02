@@ -3,40 +3,14 @@
     public static class NetDataWriterExtension
     {
         #region Packed Unsigned Int (Credit: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
+        public static void PutPackedUShort(this NetDataWriter writer, ushort value)
+        {
+            PutPackedULong(writer, value);
+        }
+
         public static void PutPackedUInt(this NetDataWriter writer, uint value)
         {
-            if (value <= 240)
-            {
-                writer.Put((byte)value);
-                return;
-            }
-            if (value <= 2287)
-            {
-                writer.Put((byte)((value - 240) / 256 + 241));
-                writer.Put((byte)((value - 240) % 256));
-                return;
-            }
-            if (value <= 67823)
-            {
-                writer.Put((byte)249);
-                writer.Put((byte)((value - 2288) / 256));
-                writer.Put((byte)((value - 2288) % 256));
-                return;
-            }
-            if (value <= 16777215)
-            {
-                writer.Put((byte)250);
-                writer.Put((byte)(value & 0xFF));
-                writer.Put((byte)((value >> 8) & 0xFF));
-                writer.Put((byte)((value >> 16) & 0xFF));
-                return;
-            }
-            // all other values of uint
-            writer.Put((byte)251);
-            writer.Put((byte)(value & 0xFF));
-            writer.Put((byte)((value >> 8) & 0xFF));
-            writer.Put((byte)((value >> 16) & 0xFF));
-            writer.Put((byte)((value >> 24) & 0xFF));
+            PutPackedULong(writer, value);
         }
 
         public static void PutPackedULong(this NetDataWriter writer, ulong value)
