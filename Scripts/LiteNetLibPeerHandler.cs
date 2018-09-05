@@ -8,7 +8,7 @@ namespace LiteNetLibManager
     {
         public NetManager NetManager { get; protected set; }
         protected readonly NetDataWriter writer = new NetDataWriter();
-        protected readonly Dictionary<short, MessageHandlerDelegate> messageHandlers = new Dictionary<short, MessageHandlerDelegate>();
+        protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
         protected readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
         protected uint nextAckId = 1;
 
@@ -77,7 +77,7 @@ namespace LiteNetLibManager
         
         protected void ReadPacket(NetPeer peer, NetDataReader reader)
         {
-            var msgType = reader.GetShort();
+            var msgType = reader.GetPackedUShort();
             MessageHandlerDelegate handlerDelegate;
             if (messageHandlers.TryGetValue(msgType, out handlerDelegate))
             {
@@ -86,17 +86,17 @@ namespace LiteNetLibManager
             }
         }
 
-        public void RegisterMessage(short msgType, MessageHandlerDelegate handlerDelegate)
+        public void RegisterMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
         {
             messageHandlers[msgType] = handlerDelegate;
         }
 
-        public void UnregisterMessage(short msgType)
+        public void UnregisterMessage(ushort msgType)
         {
             messageHandlers.Remove(msgType);
         }
 
-        public uint SendAckPacket<T>(SendOptions options, NetPeer peer, short msgType, T messageData, AckMessageCallback callback) where T : BaseAckMessage
+        public uint SendAckPacket<T>(SendOptions options, NetPeer peer, ushort msgType, T messageData, AckMessageCallback callback) where T : BaseAckMessage
         {
             var ackId = nextAckId++;
             lock (ackCallbacks)

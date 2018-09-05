@@ -13,21 +13,21 @@ namespace LiteNetLibManager
     {
         public class GameMsgTypes
         {
-            public const short ClientEnterGame = 0;
-            public const short ClientReady = 1;
-            public const short ClientNotReady = 2;
-            public const short ClientCallFunction = 3;
-            public const short ServerSpawnSceneObject = 4;
-            public const short ServerSpawnObject = 5;
-            public const short ServerDestroyObject = 6;
-            public const short ServerUpdateSyncField = 7;
-            public const short ServerCallFunction = 8;
-            public const short ServerUpdateSyncList = 9;
-            public const short ServerTime = 10;
-            public const short ServerSyncBehaviour = 11;
-            public const short ServerError = 12;
-            public const short ServerSceneChange = 13;
-            public const short Highest = 13;
+            public const ushort ClientEnterGame = 0;
+            public const ushort ClientReady = 1;
+            public const ushort ClientNotReady = 2;
+            public const ushort ClientCallFunction = 3;
+            public const ushort ServerSpawnSceneObject = 4;
+            public const ushort ServerSpawnObject = 5;
+            public const ushort ServerDestroyObject = 6;
+            public const ushort ServerUpdateSyncField = 7;
+            public const ushort ServerCallFunction = 8;
+            public const ushort ServerUpdateSyncList = 9;
+            public const ushort ServerTime = 10;
+            public const ushort ServerSyncBehaviour = 11;
+            public const ushort ServerError = 12;
+            public const ushort ServerSceneChange = 13;
+            public const ushort Highest = 13;
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();

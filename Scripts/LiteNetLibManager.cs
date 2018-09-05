@@ -257,7 +257,7 @@ namespace LiteNetLibManager
         }
 
         #region Relates components functions
-        public void SendPacketToAllPeers(SendOptions options, short msgType, System.Action<NetDataWriter> serializer)
+        public void SendPacketToAllPeers(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             foreach (var peer in Peers.Values)
             {
@@ -265,7 +265,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendPacketToAllPeers<T>(SendOptions options, short msgType, T messageData) where T : ILiteNetLibMessage
+        public void SendPacketToAllPeers<T>(SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
         {
             foreach (var peer in Peers.Values)
             {
@@ -273,7 +273,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendPacketToAllPeers(SendOptions options, short msgType)
+        public void SendPacketToAllPeers(SendOptions options, ushort msgType)
         {
             foreach (var peer in Peers.Values)
             {
@@ -281,22 +281,22 @@ namespace LiteNetLibManager
             }
         }
 
-        public void RegisterServerMessage(short msgType, MessageHandlerDelegate handlerDelegate)
+        public void RegisterServerMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
         {
             Server.RegisterMessage(msgType, handlerDelegate);
         }
 
-        public void UnregisterServerMessage(short msgType)
+        public void UnregisterServerMessage(ushort msgType)
         {
             Server.UnregisterMessage(msgType);
         }
 
-        public void RegisterClientMessage(short msgType, MessageHandlerDelegate handlerDelegate)
+        public void RegisterClientMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
         {
             Client.RegisterMessage(msgType, handlerDelegate);
         }
 
-        public void UnregisterClientMessage(short msgType)
+        public void UnregisterClientMessage(ushort msgType)
         {
             Client.UnregisterMessage(msgType);
         }
