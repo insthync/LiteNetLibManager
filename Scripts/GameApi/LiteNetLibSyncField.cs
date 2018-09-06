@@ -9,7 +9,7 @@ namespace LiteNetLibManager
     {
         public SendOptions sendOptions;
         [Tooltip("Interval to send network data")]
-        [Range(0f, 2f)]
+        [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
         [Tooltip("If this is TRUE, this will update for owner object only")]
         public bool forOwnerOnly;

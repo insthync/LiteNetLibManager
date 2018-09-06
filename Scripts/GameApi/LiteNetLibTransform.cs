@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using LiteNetLib.Utils;
 using UnityEngine;
 using UnityEngine.AI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace LiteNetLibManager
 {
-    [DisallowMultipleComponent]
     public class LiteNetLibTransform : LiteNetLibBehaviour
     {
         [System.Serializable]
@@ -16,14 +18,21 @@ namespace LiteNetLibManager
             public Quaternion rotation;
             public float timestamp;
         }
-        private class TransformResultNetField : NetFieldStruct<TransformResult> { }
 
-        public enum SyncOptions
+        public enum SyncPositionOptions
         {
             Sync,
             NotSync,
         }
 
+        public enum SyncRotationOptions
+        {
+            Sync,
+            NotSync,
+        }
+
+        [Tooltip("Which transform you are going to sync, if it is empty it will use transform which this component attached to")]
+        public Transform syncingTransform;
         [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
         public bool ownerClientCanSendTransform;
         [Tooltip("If this is TRUE, it will not interpolate transform at owner client, but it's still snapping")]
@@ -31,16 +40,15 @@ namespace LiteNetLibManager
         public float snapThreshold = 5.0f;
         public float movementTheshold = 0.075f;
         [Header("Sync Position Settings")]
-        public SyncOptions syncPositionX;
-        public SyncOptions syncPositionY;
-        public SyncOptions syncPositionZ;
+        public SyncPositionOptions syncPositionX;
+        public SyncPositionOptions syncPositionY;
+        public SyncPositionOptions syncPositionZ;
         [Header("Sync Rotation Settings")]
-        public SyncOptions syncRotationX;
-        public SyncOptions syncRotationY;
-        public SyncOptions syncRotationZ;
+        public SyncRotationOptions syncRotationX;
+        public SyncRotationOptions syncRotationY;
+        public SyncRotationOptions syncRotationZ;
 
         #region Cache components
-        public Transform CacheTransform { get; private set; }
         public NavMeshAgent CacheNavMeshAgent { get; private set; }
         public Rigidbody CacheRigidbody3D { get; private set; }
         public Rigidbody2D CacheRigidbody2D { get; private set; }
@@ -57,17 +65,18 @@ namespace LiteNetLibManager
 
         private void Awake()
         {
-            CacheTransform = GetComponent<Transform>();
+            if (syncingTransform == null)
+                syncingTransform = GetComponent<Transform>();
             // Nav mesh agent is highest priority, then character controller
             // Then Rigidbodies, that both 3d/2d are same priority
-            CacheNavMeshAgent = GetComponent<NavMeshAgent>();
+            CacheNavMeshAgent = syncingTransform.GetComponent<NavMeshAgent>();
             if (CacheNavMeshAgent == null)
             {
-                CacheCharacterController = GetComponent<CharacterController>();
+                CacheCharacterController = syncingTransform.GetComponent<CharacterController>();
                 if (CacheCharacterController == null)
                 {
-                    CacheRigidbody3D = GetComponent<Rigidbody>();
-                    CacheRigidbody2D = GetComponent<Rigidbody2D>();
+                    CacheRigidbody3D = syncingTransform.GetComponent<Rigidbody>();
+                    CacheRigidbody2D = syncingTransform.GetComponent<Rigidbody2D>();
                 }
             }
         }
@@ -75,28 +84,48 @@ namespace LiteNetLibManager
         private void Start()
         {
             currentInterpResult = new TransformResult();
-            currentInterpResult.position = CacheTransform.position;
-            currentInterpResult.rotation = CacheTransform.rotation;
+            currentInterpResult.position = syncingTransform.position;
+            currentInterpResult.rotation = syncingTransform.rotation;
             currentInterpResult.timestamp = Time.unscaledTime;
             syncResult = currentInterpResult;
             endInterpResult = currentInterpResult;
             if (IsServer)
-                Teleport(CacheTransform.position, CacheTransform.rotation);
+                Teleport(syncingTransform.position, syncingTransform.rotation);
+        }
+
+        public override void OnBehaviourValidate()
+        {
+            base.OnBehaviourValidate();
+#if UNITY_EDITOR
+            if (sendInterval < 0.05f)
+            {
+                sendInterval = 0.05f;
+                EditorUtility.SetDirty(gameObject);
+            }
+#endif
         }
 
         public override void OnSetup()
         {
             base.OnSetup();
-            RegisterNetFunction("ClientSendResult", new LiteNetLibFunction<TransformResultNetField>(ClientSendResultCallback));
             RegisterNetFunction("Teleport", new LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion>(TeleportCallback));
         }
 
-        private void ClientSendResultCallback(TransformResultNetField resultParam)
+        internal void HandleClientSendTransform(NetDataReader reader)
         {
             // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
             if (!ownerClientCanSendTransform || IsOwnerClient)
                 return;
-            var result = resultParam.Value;
+            var result = new TransformResult();
+            result.position = new Vector3(
+                DeserializePositionAxis(reader, syncPositionX, syncingTransform.position.x),
+                DeserializePositionAxis(reader, syncPositionY, syncingTransform.position.y),
+                DeserializePositionAxis(reader, syncPositionZ, syncingTransform.position.z));
+            result.rotation = Quaternion.Euler(
+                DeserializeRotationAxis(reader, syncRotationX, syncingTransform.rotation.eulerAngles.x),
+                DeserializeRotationAxis(reader, syncRotationY, syncingTransform.rotation.eulerAngles.y),
+                DeserializeRotationAxis(reader, syncRotationZ, syncingTransform.rotation.eulerAngles.z));
+            result.timestamp = reader.GetFloat();
             // Discard out of order results
             if (result.timestamp <= lastClientTimestamp)
                 return;
@@ -117,12 +146,25 @@ namespace LiteNetLibManager
             Snap(position, rotation);
         }
 
-        private void ClientSendResult(TransformResult result)
+        private void ClientSendTransform(TransformResult transformResult)
         {
             // Don't request to set transform if not set "canClientSendResult" to TRUE
             if (!ownerClientCanSendTransform || !IsOwnerClient || IsServer)
                 return;
-            CallNetFunction("ClientSendResult", FunctionReceivers.Server, result);
+            LiteNetLibPacketSender.SendPacket(sendOptions, Manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientSendTransform, (writer) => ClientSendTransformWriter(writer, transformResult));
+        }
+
+        private void ClientSendTransformWriter(NetDataWriter writer, TransformResult transformResult)
+        {
+            writer.PutPackedUInt(ObjectId);
+            writer.Put(BehaviourIndex);
+            SerializePositionAxis(writer, transformResult.position.x, syncPositionX);
+            SerializePositionAxis(writer, transformResult.position.y, syncPositionY);
+            SerializePositionAxis(writer, transformResult.position.z, syncPositionZ);
+            SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.x, syncRotationX);
+            SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.y, syncRotationY);
+            SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.z, syncRotationZ);
+            writer.Put(Time.unscaledTime);
         }
 
         public void Teleport(Vector3 position, Quaternion rotation)
@@ -133,10 +175,10 @@ namespace LiteNetLibManager
 
         public override bool ShouldSyncBehaviour()
         {
-            if (Vector3.Distance(syncResult.position, CacheTransform.position) >= movementTheshold || syncResult.rotation != CacheTransform.rotation)
+            if (Vector3.Distance(syncResult.position, syncingTransform.position) >= movementTheshold || syncResult.rotation != syncingTransform.rotation)
             {
-                syncResult.position = CacheTransform.position;
-                syncResult.rotation = CacheTransform.rotation;
+                syncResult.position = syncingTransform.position;
+                syncResult.rotation = syncingTransform.rotation;
                 syncResult.timestamp = Time.unscaledTime;
                 return true;
             }
@@ -145,12 +187,12 @@ namespace LiteNetLibManager
 
         public override void OnSerialize(NetDataWriter writer)
         {
-            SerializeFloat(writer, CacheTransform.position.x, syncPositionX);
-            SerializeFloat(writer, CacheTransform.position.y, syncPositionY);
-            SerializeFloat(writer, CacheTransform.position.z, syncPositionZ);
-            SerializeFloat(writer, CacheTransform.rotation.eulerAngles.x, syncRotationX);
-            SerializeFloat(writer, CacheTransform.rotation.eulerAngles.y, syncRotationY);
-            SerializeFloat(writer, CacheTransform.rotation.eulerAngles.z, syncRotationZ);
+            SerializePositionAxis(writer, syncingTransform.position.x, syncPositionX);
+            SerializePositionAxis(writer, syncingTransform.position.y, syncPositionY);
+            SerializePositionAxis(writer, syncingTransform.position.z, syncPositionZ);
+            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.x, syncRotationX);
+            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.y, syncRotationY);
+            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.z, syncRotationZ);
             writer.Put(Time.unscaledTime);
         }
 
@@ -161,13 +203,13 @@ namespace LiteNetLibManager
                 return;
             var result = new TransformResult();
             result.position = new Vector3(
-                DeserializeFloat(reader, syncPositionX),
-                DeserializeFloat(reader, syncPositionY),
-                DeserializeFloat(reader, syncPositionZ));
+                DeserializePositionAxis(reader, syncPositionX, syncingTransform.position.x),
+                DeserializePositionAxis(reader, syncPositionY, syncingTransform.position.y),
+                DeserializePositionAxis(reader, syncPositionZ, syncingTransform.position.z));
             result.rotation = Quaternion.Euler(
-                DeserializeFloat(reader, syncRotationX),
-                DeserializeFloat(reader, syncRotationY),
-                DeserializeFloat(reader, syncRotationZ));
+                DeserializeRotationAxis(reader, syncRotationX, syncingTransform.rotation.eulerAngles.x),
+                DeserializeRotationAxis(reader, syncRotationY, syncingTransform.rotation.eulerAngles.y),
+                DeserializeRotationAxis(reader, syncRotationZ, syncingTransform.rotation.eulerAngles.z));
             result.timestamp = reader.GetFloat();
             // Discard out of order results
             if (result.timestamp <= lastServerTimestamp)
@@ -178,30 +220,56 @@ namespace LiteNetLibManager
             endInterpResult = result;
         }
 
-        private void SerializeFloat(NetDataWriter writer, float data, SyncOptions syncOptions)
+        private void SerializePositionAxis(NetDataWriter writer, float data, SyncPositionOptions syncOptions)
         {
             switch (syncOptions)
             {
-                case SyncOptions.Sync:
+                case SyncPositionOptions.Sync:
                     writer.Put(data);
                     break;
                 default:
-                case SyncOptions.NotSync:
+                case SyncPositionOptions.NotSync:
                     break;
             }
         }
 
-        private float DeserializeFloat(NetDataReader reader, SyncOptions syncOptions)
+        private void SerializeRotationAxis(NetDataWriter writer, float data, SyncRotationOptions syncOptions)
         {
             switch (syncOptions)
             {
-                case SyncOptions.Sync:
-                    return reader.GetFloat();
+                case SyncRotationOptions.Sync:
+                    writer.Put(data);
+                    break;
                 default:
-                case SyncOptions.NotSync:
+                case SyncRotationOptions.NotSync:
                     break;
             }
-            return 0f;
+        }
+
+        private float DeserializePositionAxis(NetDataReader reader, SyncPositionOptions syncOptions, float defaultValue)
+        {
+            switch (syncOptions)
+            {
+                case SyncPositionOptions.Sync:
+                    return reader.GetFloat();
+                default:
+                case SyncPositionOptions.NotSync:
+                    break;
+            }
+            return defaultValue;
+        }
+
+        private float DeserializeRotationAxis(NetDataReader reader, SyncRotationOptions syncOptions, float defaultValue)
+        {
+            switch (syncOptions)
+            {
+                case SyncRotationOptions.Sync:
+                    return reader.GetFloat();
+                default:
+                case SyncRotationOptions.NotSync:
+                    break;
+            }
+            return defaultValue;
         }
 
         private void Update()
@@ -213,7 +281,7 @@ namespace LiteNetLibManager
                 {
                     // Send transform to server only when there are changes on transform
                     if (ShouldSyncBehaviour())
-                        ClientSendResult(syncResult);
+                        ClientSendTransform(syncResult);
                     syncElapsed = 0;
                 }
                 syncElapsed += Time.deltaTime;
@@ -275,7 +343,7 @@ namespace LiteNetLibManager
             if (CacheRigidbody2D != null)
                 dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
             else
-                dist = (CacheTransform.position - targetPosition).magnitude;
+                dist = (syncingTransform.position - targetPosition).magnitude;
             return dist > snapThreshold;
         }
 
@@ -284,7 +352,7 @@ namespace LiteNetLibManager
             if (CacheNavMeshAgent != null)
             {
                 CacheNavMeshAgent.Warp(position);
-                CacheTransform.rotation = rotation;
+                syncingTransform.rotation = rotation;
             }
             else if (CacheRigidbody3D != null)
             {
@@ -298,8 +366,8 @@ namespace LiteNetLibManager
             }
             else
             {
-                CacheTransform.position = position;
-                CacheTransform.rotation = rotation;
+                syncingTransform.position = position;
+                syncingTransform.rotation = rotation;
             }
         }
 
@@ -307,20 +375,20 @@ namespace LiteNetLibManager
         {
             if (CacheNavMeshAgent != null)
             {
-                CacheNavMeshAgent.Move(position - CacheTransform.position);
-                CacheTransform.rotation = rotation;
+                CacheNavMeshAgent.Move(position - syncingTransform.position);
+                syncingTransform.rotation = rotation;
             }
             else if (CacheCharacterController != null)
             {
-                CacheCharacterController.Move(position - CacheTransform.position);
-                CacheTransform.rotation = rotation;
+                CacheCharacterController.Move(position - syncingTransform.position);
+                syncingTransform.rotation = rotation;
             }
             else if (CacheRigidbody3D != null)
             {
                 CacheRigidbody3D.MoveRotation(rotation);
-                var velocity = (position - CacheRigidbody3D.position) * GetPositionInterpStep();
                 if (Vector3.Distance(position, CacheRigidbody3D.position) >= movementTheshold)
                 {
+                    var velocity = (position - CacheRigidbody3D.position) * GetPositionInterpStep();
                     if (!CacheRigidbody3D.isKinematic)
                         CacheRigidbody3D.velocity = velocity;
                     else
@@ -335,9 +403,9 @@ namespace LiteNetLibManager
             else if (CacheRigidbody2D != null)
             {
                 CacheRigidbody2D.MoveRotation(rotation.eulerAngles.z);
-                var velocity = ((Vector2)position - CacheRigidbody2D.position) * GetPositionInterpStep();
                 if (Vector2.Distance(position, CacheRigidbody2D.position) >= movementTheshold)
                 {
+                    var velocity = ((Vector2)position - CacheRigidbody2D.position) * GetPositionInterpStep();
                     if (!CacheRigidbody2D.isKinematic)
                         CacheRigidbody2D.velocity = velocity;
                     else
@@ -351,8 +419,8 @@ namespace LiteNetLibManager
             }
             else
             {
-                CacheTransform.position = position;
-                CacheTransform.rotation = rotation;
+                syncingTransform.position = position;
+                syncingTransform.rotation = rotation;
             }
         }
     }

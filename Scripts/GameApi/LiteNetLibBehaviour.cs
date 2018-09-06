@@ -29,7 +29,7 @@ namespace LiteNetLibManager
         [Header("Behaviour sync options")]
         public SendOptions sendOptions;
         [Tooltip("Interval to send network data")]
-        [Range(0f, 2f)]
+        [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
 
         private float lastSentTime;

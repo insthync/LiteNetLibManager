@@ -210,6 +210,16 @@ namespace LiteNetLibManager
             return behaviour;
         }
 
+        internal bool TryGetBehaviour<T>(byte behaviourIndex, out T behaviour)
+            where T : LiteNetLibBehaviour
+        {
+            behaviour = null;
+            if (behaviourIndex >= Behaviours.Length)
+                return false;
+            behaviour = Behaviours[behaviourIndex] as T;
+            return behaviour != null;
+        }
+
         internal void SendInitSyncFields()
         {
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)

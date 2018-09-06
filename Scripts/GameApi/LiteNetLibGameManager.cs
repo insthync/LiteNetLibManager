@@ -27,7 +27,8 @@ namespace LiteNetLibManager
             public const ushort ServerSyncBehaviour = 11;
             public const ushort ServerError = 12;
             public const ushort ServerSceneChange = 13;
-            public const ushort Highest = 13;
+            public const ushort ClientSendTransform = 14;
+            public const ushort Highest = 14;
         }
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
@@ -199,6 +200,7 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
             RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.ClientCallFunction, HandleClientCallFunction);
+            RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
         }
 
         protected override void RegisterClientMessages()
@@ -488,6 +490,20 @@ namespace LiteNetLibManager
                     else
                         netFunction.Call(receivers);
                 }
+            }
+        }
+
+        protected virtual void HandleClientSendTransform(LiteNetLibMessageHandler messageHandler)
+        {
+            var reader = messageHandler.reader;
+            var objectId = reader.GetPackedUInt();
+            var behaviourIndex = reader.GetByte();
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(objectId, out identity))
+            {
+                LiteNetLibTransform netTransform;
+                if (identity.TryGetBehaviour(behaviourIndex, out netTransform))
+                    netTransform.HandleClientSendTransform(reader);
             }
         }
 
