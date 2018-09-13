@@ -204,7 +204,7 @@ namespace LiteNetLibManager
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function with existed id [" + id + "].");
                 return;
             }
-            if (netFunctions.Count == ushort.MaxValue)
+            if (netFunctions.Count == byte.MaxValue)
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
