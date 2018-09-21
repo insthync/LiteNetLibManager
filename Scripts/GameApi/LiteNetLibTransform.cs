@@ -387,13 +387,7 @@ namespace LiteNetLibManager
             {
                 CacheRigidbody3D.MoveRotation(rotation);
                 if (Vector3.Distance(position, CacheRigidbody3D.position) >= movementTheshold)
-                {
-                    var velocity = (position - CacheRigidbody3D.position) * GetPositionInterpStep();
-                    if (!CacheRigidbody3D.isKinematic)
-                        CacheRigidbody3D.velocity = velocity;
-                    else
-                        CacheRigidbody3D.MovePosition(position);
-                }
+                    CacheRigidbody3D.MovePosition(position);
                 else
                 {
                     CacheRigidbody3D.velocity = Vector3.zero;
@@ -404,13 +398,7 @@ namespace LiteNetLibManager
             {
                 CacheRigidbody2D.MoveRotation(rotation.eulerAngles.z);
                 if (Vector2.Distance(position, CacheRigidbody2D.position) >= movementTheshold)
-                {
-                    var velocity = ((Vector2)position - CacheRigidbody2D.position) * GetPositionInterpStep();
-                    if (!CacheRigidbody2D.isKinematic)
-                        CacheRigidbody2D.velocity = velocity;
-                    else
-                        CacheRigidbody2D.MovePosition(position);
-                }
+                    CacheRigidbody2D.MovePosition(position);
                 else
                 {
                     CacheRigidbody2D.velocity = Vector2.zero;
