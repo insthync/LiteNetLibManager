@@ -510,6 +510,7 @@ namespace LiteNetLibManager
             var message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
             if (!IsServer)
                 Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation); LiteNetLibIdentity identity;
+            // If it is host, it may hidden so show it
             if (IsServer && Assets.TryGetSpawnedObject(message.objectId, out identity))
                 identity.OnServerSubscribingAdded();
         }
@@ -519,10 +520,12 @@ namespace LiteNetLibManager
             var message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
             if (!IsServer)
                 Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, 0);
+            // Setup owner client
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {
                 identity.SetOwnerClient(message.isOwner);
+                // If it is host, it may hidden so show it
                 if (IsServer)
                     identity.OnServerSubscribingAdded();
             }
@@ -533,6 +536,7 @@ namespace LiteNetLibManager
             var message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
             if (!IsServer)
                 Assets.NetworkDestroy(message.objectId, message.reasons);
+            // If this is host and reasons is removed from subscribing so hide it, don't destroy it
             LiteNetLibIdentity identity;
             if (IsServer && message.reasons == DestroyObjectReasons.RemovedFromSubscribing && Assets.TryGetSpawnedObject(message.objectId, out identity))
                 identity.OnServerSubscribingRemoved();
