@@ -7,7 +7,6 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
-using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
 
@@ -55,7 +54,7 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } }
-        public long ConnectId { get { return connectId; } }
+        public long ConnectionId { get { return connectId; } }
         public LiteNetLibGameManager Manager { get { return manager; } }
 
         public LiteNetLibPlayer Player
@@ -63,7 +62,7 @@ namespace LiteNetLibManager
             get
             {
                 LiteNetLibPlayer foundPlayer;
-                if (Manager == null || !Manager.Players.TryGetValue(ConnectId, out foundPlayer))
+                if (Manager == null || !Manager.Players.TryGetValue(ConnectionId, out foundPlayer))
                     return null;
                 return foundPlayer;
             }
@@ -79,10 +78,7 @@ namespace LiteNetLibManager
             get { return Manager != null && Manager.IsClient; }
         }
 
-        public bool IsOwnerClient
-        {
-            get { return Manager != null && Manager.Client != null && ConnectId == Manager.Client.ClientConnectionId; }
-        }
+        public bool IsOwnerClient { get; private set; }
 
         // Optimize garbage collector
         private int loopCounter;
@@ -286,11 +282,22 @@ namespace LiteNetLibManager
                 hasSetupBehaviours = true;
             }
 
-            // If this is not local host client object, hide it
-            if (IsServer && IsClient && !IsOwnerClient)
+            // If this is host, hide it then will showing when rebuild subscribers
+            if (IsServer && IsClient)
                 OnServerSubscribingRemoved();
 
             RebuildSubscribers(true);
+        }
+
+        internal void SetOwnerClient(bool isOwnerClient)
+        {
+            IsOwnerClient = isOwnerClient;
+
+            Behaviours = GetComponents<LiteNetLibBehaviour>();
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            {
+                Behaviours[loopCounter].OnSetOwnerClient();
+            }
         }
 
         internal void ValidateObjectId()
@@ -410,7 +417,7 @@ namespace LiteNetLibManager
 
         public bool IsSubscribedOrOwning(long connectId)
         {
-            return ContainsSubscriber(connectId) || connectId == ConnectId;
+            return ContainsSubscriber(connectId) || connectId == ConnectionId;
         }
 
         public void RebuildSubscribers(bool initialize)
@@ -442,7 +449,7 @@ namespace LiteNetLibManager
                     var players = Manager.Players.Values;
                     foreach (var player in players)
                     {
-                        if (ConnectId == player.ConnectionId || !player.IsReady)
+                        if (ConnectionId == player.ConnectionId || !player.IsReady)
                             continue;
 
                         if (ShouldAddSubscriber(player))

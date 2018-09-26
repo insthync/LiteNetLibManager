@@ -9,11 +9,6 @@ namespace LiteNetLibManager
         public LiteNetLibGameManager Manager { get; protected set; }
         public long ConnectionId { get; protected set; }
 
-        public bool IsOwnerClient
-        {
-            get { return ConnectionId == Manager.Client.ClientConnectionId; }
-        }
-
         internal bool IsReady { get; set; }
         internal readonly HashSet<LiteNetLibIdentity> SubscribingObjects = new HashSet<LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
@@ -29,9 +24,6 @@ namespace LiteNetLibManager
             SubscribingObjects.Add(identity);
 
             Manager.SendServerSpawnObjectWithData(ConnectionId, identity);
-            // If this is player for local host client, show object
-            if (Manager.IsServer && Manager.IsClient && IsOwnerClient)
-                identity.OnServerSubscribingAdded();
         }
 
         internal void RemoveSubscribing(LiteNetLibIdentity identity, bool destroyObjectsOnPeer)
@@ -39,12 +31,7 @@ namespace LiteNetLibManager
             SubscribingObjects.Remove(identity);
 
             if (destroyObjectsOnPeer)
-            {
                 Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
-                // If this is player for local host client, hide object
-                if (Manager.IsServer && Manager.IsClient && IsOwnerClient)
-                    identity.OnServerSubscribingRemoved();
-            }
         }
 
         internal void ClearSubscribing(bool destroyObjectsOnPeer)

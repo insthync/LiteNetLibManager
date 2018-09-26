@@ -25,7 +25,7 @@ namespace LiteNetLibManager
         public LiteNetLibServer Server { get; protected set; }
         public bool IsServer { get { return Server != null; } }
         public bool IsClient { get { return Client != null; } }
-        public bool IsClientConnected { get { return Client != null && Client.IsClientConnected; } }
+        public bool IsClientConnected { get { return Client != null && Client.IsClientStarted; } }
         public bool IsNetworkActive { get { return Server != null || Client != null; } }
         public bool LogDev { get { return currentLogLevel <= LogLevel.Developer; } }
         public bool LogDebug { get { return currentLogLevel <= LogLevel.Debug; } }

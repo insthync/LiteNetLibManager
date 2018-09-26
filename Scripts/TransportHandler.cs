@@ -11,16 +11,16 @@ namespace LiteNetLibManager
 
         public ITransport Transport { get; protected set; }
         public string ConnectKey { get; protected set; }
-        public bool IsClientConnected { get { return Transport.IsClientStarted(); } }
-        public bool IsServerRunning { get { return Transport.IsServerStarted(); } }
-        protected long clientConnectionId;
-        public long ClientConnectionId { get { return clientConnectionId; } }
+        public bool IsClientStarted { get { return Transport.IsClientStarted(); } }
+        public bool IsServerStarted { get { return Transport.IsServerStarted(); } }
         public int ServerPort { get; protected set; }
         protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
         protected readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
         protected uint nextAckId = 1;
         protected TransportEventData tempEventData;
-        protected bool isNetworkActive;
+        protected bool isClientActive;
+        protected bool isServerActive;
+        protected bool isNetworkActive { get { return isClientActive || isServerActive; } }
 
         public int AckCallbacksCount { get { return ackCallbacks.Count; } }
 
@@ -36,13 +36,19 @@ namespace LiteNetLibManager
 
         public void Update()
         {
-            while (Transport.ServerReceive(out tempEventData))
+            if (isServerActive)
             {
-                OnServerReceive(tempEventData);
+                while (Transport.ServerReceive(out tempEventData))
+                {
+                    OnServerReceive(tempEventData);
+                }
             }
-            while (Transport.ClientReceive(out tempEventData))
+            if (isClientActive)
             {
-                OnClientReceive(tempEventData);
+                while (Transport.ClientReceive(out tempEventData))
+                {
+                    OnClientReceive(tempEventData);
+                }
             }
         }
 
@@ -53,17 +59,16 @@ namespace LiteNetLibManager
                 Debug.LogWarning("[TransportHandler] Cannot Start Client, network already active");
                 return false;
             }
-            isNetworkActive = true;
+            isClientActive = true;
             // Reset acks
             ackCallbacks.Clear();
             nextAckId = 1;
-            return Transport.StartClient(ConnectKey, address, port, out clientConnectionId);
+            return Transport.StartClient(ConnectKey, address, port);
         }
 
         public void StopClient()
         {
-            if (isNetworkActive)
-                isNetworkActive = false;
+            isClientActive = false;
             Transport.StopClient();
         }
 
@@ -74,7 +79,7 @@ namespace LiteNetLibManager
                 Debug.LogWarning("[TransportHandler] Cannot Start Server, network already active");
                 return false;
             }
-            isNetworkActive = true;
+            isServerActive = true;
             // Reset acks
             ackCallbacks.Clear();
             nextAckId = 1;
@@ -84,8 +89,7 @@ namespace LiteNetLibManager
 
         public void StopServer()
         {
-            if (isNetworkActive)
-                isNetworkActive = false;
+            isServerActive = false;
             Transport.StopServer();
             ServerPort = 0;
         }
@@ -151,7 +155,7 @@ namespace LiteNetLibManager
             writer.Reset();
             writer.PutPackedUShort(msgType);
             if (serializer != null)
-                serializer(writer);
+                serializer.Invoke(writer);
             Transport.ClientSend(options, writer);
         }
 
@@ -160,7 +164,7 @@ namespace LiteNetLibManager
             writer.Reset();
             writer.PutPackedUShort(msgType);
             if (serializer != null)
-                serializer(writer);
+                serializer.Invoke(writer);
             Transport.ServerSend(connectionId, options, writer);
         }
     }

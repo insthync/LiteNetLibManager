@@ -6,7 +6,7 @@ namespace LiteNetLibManager
     public interface ITransport
     {
         bool IsClientStarted();
-        bool StartClient(string connectKey, string address, int port, out long connectionId);
+        bool StartClient(string connectKey, string address, int port);
         bool ClientSend(SendOptions sendOptions, NetDataWriter writer);
         bool ClientReceive(out TransportEventData eventData);
         void StopClient();

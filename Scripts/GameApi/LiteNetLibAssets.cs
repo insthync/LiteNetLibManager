@@ -252,7 +252,7 @@ namespace LiteNetLibManager
             {
                 // Remove from player spawned objects dictionary
                 LiteNetLibPlayer player;
-                if (Manager.Players.TryGetValue(spawnedObject.ConnectId, out player))
+                if (Manager.Players.TryGetValue(spawnedObject.ConnectionId, out player))
                     player.SpawnedObjects.Remove(objectId);
                 // Remove from asset spawned objects dictionary
                 SpawnedObjects.Remove(objectId);

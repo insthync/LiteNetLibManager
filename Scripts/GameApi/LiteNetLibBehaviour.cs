@@ -77,7 +77,7 @@ namespace LiteNetLibManager
 
         public long ConnectId
         {
-            get { return Identity.ConnectId; }
+            get { return Identity.ConnectionId; }
         }
 
         public uint ObjectId
@@ -367,6 +367,11 @@ namespace LiteNetLibManager
         {
             Identity.NetworkDestroy(delay);
         }
+
+        /// <summary>
+        /// This function will be called when this client has been verified as owner client
+        /// </summary>
+        public virtual void OnSetOwnerClient() { }
 
         /// <summary>
         /// This function will be called when object destroy from server

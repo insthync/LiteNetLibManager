@@ -366,7 +366,7 @@ namespace LiteNetLibManager
             var message = new ServerSpawnObjectMessage();
             message.hashAssetId = identity.HashAssetId;
             message.objectId = identity.ObjectId;
-            message.connectId = identity.ConnectId;
+            message.isOwner = identity.ConnectionId == connectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
             ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message);
@@ -404,6 +404,7 @@ namespace LiteNetLibManager
                 return;
             var message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
+            message.reasons = reasons;
             ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
         }
 
@@ -506,29 +507,35 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSpawnSceneObject(LiteNetLibMessageHandler messageHandler)
         {
-            // Object spawned at server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
             var message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
-            Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation);
+            if (!IsServer)
+                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation); LiteNetLibIdentity identity;
+            if (IsServer && Assets.TryGetSpawnedObject(message.objectId, out identity))
+                identity.OnServerSubscribingAdded();
         }
 
         protected virtual void HandleServerSpawnObject(LiteNetLibMessageHandler messageHandler)
         {
-            // Object spawned at server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
             var message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
-            Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, message.connectId);
+            if (!IsServer)
+                Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, 0);
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(message.objectId, out identity))
+            {
+                identity.SetOwnerClient(message.isOwner);
+                if (IsServer)
+                    identity.OnServerSubscribingAdded();
+            }
         }
 
         protected virtual void HandleServerDestroyObject(LiteNetLibMessageHandler messageHandler)
         {
-            // Object spawned at server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
             var message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
-            Assets.NetworkDestroy(message.objectId, message.reasons);
+            if (!IsServer)
+                Assets.NetworkDestroy(message.objectId, message.reasons);
+            LiteNetLibIdentity identity;
+            if (IsServer && message.reasons == DestroyObjectReasons.RemovedFromSubscribing && Assets.TryGetSpawnedObject(message.objectId, out identity))
+                identity.OnServerSubscribingRemoved();
         }
 
         protected virtual void HandleServerUpdateSyncField(LiteNetLibMessageHandler messageHandler)
@@ -663,7 +670,7 @@ namespace LiteNetLibManager
             DeserializeClientReadyExtra(playerIdentity, connectionId, reader);
             foreach (var spawnedObject in Assets.SpawnedObjects)
             {
-                if (spawnedObject.Value.ConnectId == player.ConnectionId)
+                if (spawnedObject.Value.ConnectionId == player.ConnectionId)
                     continue;
 
                 if (spawnedObject.Value.ShouldAddSubscriber(player))

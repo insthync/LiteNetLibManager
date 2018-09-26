@@ -25,17 +25,11 @@ namespace LiteNetLibManager
             return client != null && client.GetFirstPeer() != null && client.GetFirstPeer().ConnectionState == ConnectionState.Connected;
         }
 
-        public bool StartClient(string connectKey, string address, int port, out long connectionId)
+        public bool StartClient(string connectKey, string address, int port)
         {
-            connectionId = 0;
             clientEventQueue.Clear();
             client = new NetManager(new LiteNetLibTransportEventListener(clientEventQueue), connectKey);
-            if (client.Start() && client.Connect(address, port) != null)
-            {
-                connectionId = client.GetFirstPeer().ConnectId;
-                return true;
-            }
-            return false;
+            return client.Start() && client.Connect(address, port) != null;
         }
 
         public void StopClient()
