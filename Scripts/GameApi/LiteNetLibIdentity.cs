@@ -80,6 +80,7 @@ namespace LiteNetLibManager
 
         public bool IsOwnerClient { get; private set; }
 
+        private bool ownerValidated;
         // Optimize garbage collector
         private int loopCounter;
 
@@ -291,6 +292,12 @@ namespace LiteNetLibManager
 
         internal void SetOwnerClient(bool isOwnerClient)
         {
+            // Validate owner at client only 1 time each identity
+            if (ownerValidated)
+                return;
+
+            ownerValidated = true;
+
             IsOwnerClient = isOwnerClient;
 
             Behaviours = GetComponents<LiteNetLibBehaviour>();
