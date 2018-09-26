@@ -81,7 +81,7 @@ namespace LiteNetLibManager
 
         public bool IsOwnerClient
         {
-            get { return Manager != null && Manager.Client != null && Manager.Client.Peer != null && ConnectId == Manager.Client.Peer.ConnectId; }
+            get { return Manager != null && Manager.Client != null && ConnectId == Manager.Client.ClientConnectionId; }
         }
 
         // Optimize garbage collector
@@ -228,11 +228,11 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void SendInitSyncFields(NetPeer peer)
+        internal void SendInitSyncFields(long connectionId)
         {
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                Behaviours[loopCounter].SendInitSyncFields(peer);
+                Behaviours[loopCounter].SendInitSyncFields(connectionId);
             }
         }
 
@@ -244,11 +244,11 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void SendInitSyncLists(NetPeer peer)
+        internal void SendInitSyncLists(long connectionId)
         {
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                Behaviours[loopCounter].SendInitSyncLists(peer);
+                Behaviours[loopCounter].SendInitSyncLists(connectionId);
             }
         }
 
@@ -364,17 +364,17 @@ namespace LiteNetLibManager
             if (!IsServer || subscriber == null)
                 return;
             
-            if (Subscribers.ContainsKey(subscriber.ConnectId))
+            if (Subscribers.ContainsKey(subscriber.ConnectionId))
             {
                 if (Manager.LogDebug)
-                    Debug.Log("Subscriber [" + subscriber.ConnectId + "] already added to [" + gameObject + "]");
+                    Debug.Log("Subscriber [" + subscriber.ConnectionId + "] already added to [" + gameObject + "]");
                 return;
             }
 
-            Subscribers[subscriber.ConnectId] = subscriber;
+            Subscribers[subscriber.ConnectionId] = subscriber;
 #if UNITY_EDITOR
-            if (!subscriberIds.Contains(subscriber.ConnectId))
-                subscriberIds.Add(subscriber.ConnectId);
+            if (!subscriberIds.Contains(subscriber.ConnectionId))
+                subscriberIds.Add(subscriber.ConnectionId);
 #endif
             subscriber.AddSubscribing(this);
         }
@@ -385,9 +385,9 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            Subscribers.Remove(subscriber.ConnectId);
+            Subscribers.Remove(subscriber.ConnectionId);
 #if UNITY_EDITOR
-            subscriberIds.Remove(subscriber.ConnectId);
+            subscriberIds.Remove(subscriber.ConnectionId);
 #endif
             if (removePlayerSubscribing)
                 subscriber.RemoveSubscribing(this, false);
@@ -442,7 +442,7 @@ namespace LiteNetLibManager
                     var players = Manager.Players.Values;
                     foreach (var player in players)
                     {
-                        if (ConnectId == player.ConnectId || !player.IsReady)
+                        if (ConnectId == player.ConnectionId || !player.IsReady)
                             continue;
 
                         if (ShouldAddSubscriber(player))
@@ -461,15 +461,15 @@ namespace LiteNetLibManager
                 if (!subscriber.IsReady)
                 {
                     if (Manager.LogWarn)
-                        Debug.Log("Subscriber [" + subscriber.ConnectId + "] is not ready");
+                        Debug.Log("Subscriber [" + subscriber.ConnectionId + "] is not ready");
                     continue;
                 }
 
-                if ((ownerPlayer == null || subscriber.ConnectId != ownerPlayer.ConnectId) && (initialize || !oldSubscribers.Contains(subscriber)))
+                if ((ownerPlayer == null || subscriber.ConnectionId != ownerPlayer.ConnectionId) && (initialize || !oldSubscribers.Contains(subscriber)))
                 {
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)
-                        Debug.Log("Add subscriber [" + subscriber.ConnectId + "] to [" + gameObject + "]");
+                        Debug.Log("Add subscriber [" + subscriber.ConnectionId + "] to [" + gameObject + "]");
                     hasChanges = true;
                 }
             }
@@ -481,7 +481,7 @@ namespace LiteNetLibManager
                 {
                     subscriber.RemoveSubscribing(this, true);
                     if (Manager.LogDebug)
-                        Debug.Log("Remove subscriber [" + subscriber.ConnectId + "] from [" + gameObject + "]");
+                        Debug.Log("Remove subscriber [" + subscriber.ConnectionId + "] from [" + gameObject + "]");
                     hasChanges = true;
                 }
             }
@@ -492,12 +492,12 @@ namespace LiteNetLibManager
             // Rebuild subscribers
             Subscribers.Clear();
             foreach (var subscriber in newSubscribers)
-                Subscribers.Add(subscriber.ConnectId, subscriber);
+                Subscribers.Add(subscriber.ConnectionId, subscriber);
 
 #if UNITY_EDITOR
             subscriberIds.Clear();
             foreach (var subscriber in newSubscribers)
-                subscriberIds.Add(subscriber.ConnectId);
+                subscriberIds.Add(subscriber.ConnectionId);
 #endif
         }
 

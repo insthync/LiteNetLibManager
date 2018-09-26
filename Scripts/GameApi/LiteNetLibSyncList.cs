@@ -24,7 +24,7 @@ namespace LiteNetLibManager
 
         public abstract int Count { get; }
         public abstract void SendOperation(Operation operation, int index);
-        public abstract void SendOperation(NetPeer peer, Operation operation, int index);
+        public abstract void SendOperation(long connectionId, Operation operation, int index);
         public abstract void DeserializeOperation(NetDataReader reader);
         public abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
     }
@@ -198,21 +198,20 @@ namespace LiteNetLibManager
             if (forOwnerOnly)
             {
                 var connectId = Behaviour.ConnectId;
-                NetPeer foundPeer;
-                if (manager.TryGetPeer(connectId, out foundPeer))
-                    SendOperation(foundPeer, operation, index);
+                if (manager.ContainsConnectionId(connectId))
+                    SendOperation(connectId, operation, index);
             }
             else
             {
-                foreach (var peer in manager.GetPeers())
+                foreach (var connectionId in manager.GetConnectionIds())
                 {
-                    if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
-                        SendOperation(peer, operation, index);
+                    if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
+                        SendOperation(connectionId, operation, index);
                 }
             }
         }
 
-        public override sealed void SendOperation(NetPeer peer, Operation operation, int index)
+        public override sealed void SendOperation(long connectionId, Operation operation, int index)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -220,7 +219,7 @@ namespace LiteNetLibManager
             if (!Manager.IsServer)
                 return;
 
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
+            Manager.ServerSendPacket(connectionId, SendOptions.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }
 
         protected void SerializeForSendOperation(NetDataWriter writer, Operation operation, int index)

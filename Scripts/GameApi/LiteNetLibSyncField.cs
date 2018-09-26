@@ -29,8 +29,8 @@ namespace LiteNetLibManager
         }
 
         internal abstract void SendUpdate();
-        internal abstract void SendUpdate(NetPeer peer);
-        internal abstract void SendUpdate(SendOptions sendOptions, NetPeer peer);
+        internal abstract void SendUpdate(long connectionId);
+        internal abstract void SendUpdate(long connectionId, SendOptions sendOptions);
         internal abstract void Deserialize(NetDataReader reader);
         internal abstract void Serialize(NetDataWriter writer);
     }
@@ -112,37 +112,36 @@ namespace LiteNetLibManager
             if (forOwnerOnly)
             {
                 var connectId = Behaviour.ConnectId;
-                NetPeer foundPeer;
-                if (manager.TryGetPeer(connectId, out foundPeer))
+                if (manager.ContainsConnectionId(connectId))
                 {
                     if (!updatedOnce)
-                        SendUpdate(SendOptions.ReliableOrdered, foundPeer);
+                        SendUpdate(connectId, SendOptions.ReliableOrdered);
                     else
-                        SendUpdate(foundPeer);
+                        SendUpdate(connectId);
                 }
             }
             else
             {
-                foreach (var peer in manager.GetPeers())
+                foreach (var connectionId in manager.GetConnectionIds())
                 {
-                    if (Behaviour.Identity.IsSubscribedOrOwning(peer.ConnectId))
+                    if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
                     {
                         if (!updatedOnce)
-                            SendUpdate(SendOptions.ReliableOrdered, peer);
+                            SendUpdate(connectionId, SendOptions.ReliableOrdered);
                         else
-                            SendUpdate(peer);
+                            SendUpdate(connectionId);
                     }
                 }
             }
             updatedOnce = true;
         }
 
-        internal override sealed void SendUpdate(NetPeer peer)
+        internal override sealed void SendUpdate(long connectionId)
         {
-            SendUpdate(sendOptions, peer);
+            SendUpdate(connectionId, sendOptions);
         }
 
-        internal override sealed void SendUpdate(SendOptions sendOptions, NetPeer peer)
+        internal override sealed void SendUpdate(long connectionId, SendOptions sendOptions)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -150,7 +149,7 @@ namespace LiteNetLibManager
             if (!Manager.IsServer)
                 return;
 
-            LiteNetLibPacketSender.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
+            Manager.ServerSendPacket(connectionId, sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
         }
 
         protected void SerializeForSend(NetDataWriter writer)

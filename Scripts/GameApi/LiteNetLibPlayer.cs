@@ -7,32 +7,28 @@ namespace LiteNetLibManager
     public class LiteNetLibPlayer
     {
         public LiteNetLibGameManager Manager { get; protected set; }
-        public NetPeer Peer { get; protected set; }
-        public long ConnectId
-        {
-            get { return Peer.ConnectId; }
-        }
+        public long ConnectionId { get; protected set; }
 
         public bool IsOwnerClient
         {
-            get { return ConnectId == Manager.Client.Peer.ConnectId; }
+            get { return ConnectionId == Manager.Client.ClientConnectionId; }
         }
 
         internal bool IsReady { get; set; }
         internal readonly HashSet<LiteNetLibIdentity> SubscribingObjects = new HashSet<LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
-        public LiteNetLibPlayer(LiteNetLibGameManager manager, NetPeer peer)
+        public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
             Manager = manager;
-            Peer = peer;
+            ConnectionId = connectionId;
         }
 
         internal void AddSubscribing(LiteNetLibIdentity identity)
         {
             SubscribingObjects.Add(identity);
 
-            Manager.SendServerSpawnObjectWithData(Peer, identity);
+            Manager.SendServerSpawnObjectWithData(ConnectionId, identity);
             // If this is player for local host client, show object
             if (Manager.IsServer && Manager.IsClient && IsOwnerClient)
                 identity.OnServerSubscribingAdded();
@@ -44,7 +40,7 @@ namespace LiteNetLibManager
 
             if (destroyObjectsOnPeer)
             {
-                Manager.SendServerDestroyObject(Peer, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
+                Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
                 // If this is player for local host client, hide object
                 if (Manager.IsServer && Manager.IsClient && IsOwnerClient)
                     identity.OnServerSubscribingRemoved();
@@ -60,7 +56,7 @@ namespace LiteNetLibManager
                 // because it's going to clear in this function
                 identity.RemoveSubscriber(this, false);
                 if (destroyObjectsOnPeer)
-                    Manager.SendServerDestroyObject(Peer, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
+                    Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
             }
             SubscribingObjects.Clear();
         }

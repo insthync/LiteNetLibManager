@@ -129,10 +129,10 @@ namespace LiteNetLibManager
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
             if (ShouldSyncBehaviour())
             {
-                foreach (var peer in Manager.GetPeers())
+                foreach (var connectionId in Manager.GetConnectionIds())
                 {
-                    if (Identity.IsSubscribedOrOwning(peer.ConnectId))
-                        LiteNetLibPacketSender.SendPacket(sendOptions, peer, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
+                    if (Identity.IsSubscribedOrOwning(connectionId))
+                        Manager.ServerSendPacket(connectionId, sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
                 }
             }
             Profiler.EndSample();
@@ -314,12 +314,12 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendInitSyncFields(NetPeer peer)
+        public void SendInitSyncFields(long connectionId)
         {
             var fields = syncFields;
             foreach (var field in fields)
             {
-                field.SendUpdate(SendOptions.ReliableOrdered, peer);
+                field.SendUpdate(connectionId, SendOptions.ReliableOrdered);
             }
         }
 
@@ -333,13 +333,13 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendInitSyncLists(NetPeer peer)
+        public void SendInitSyncLists(long connectionId)
         {
             var lists = syncLists;
             foreach (var list in lists)
             {
                 for (var i = 0; i < list.Count; ++i)
-                    list.SendOperation(peer, LiteNetLibSyncList.Operation.Insert, i);
+                    list.SendOperation(connectionId, LiteNetLibSyncList.Operation.Insert, i);
             }
         }
 

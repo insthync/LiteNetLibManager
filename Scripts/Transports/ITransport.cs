@@ -5,17 +5,17 @@ namespace LiteNetLibManager
 {
     public interface ITransport
     {
-        bool IsClientConnected();
-        void ClientConnect(string connectKey, string address, int port);
+        bool IsClientStarted();
+        bool StartClient(string connectKey, string address, int port, out long connectionId);
         bool ClientSend(SendOptions sendOptions, NetDataWriter writer);
-        ENetworkEvent ClientReceive(out NetDataReader reader, out DisconnectInfo disconnectInfo);
-        void ClientDisconnect();
-        bool IsServerActive();
-        void ServerStart(string connectKey, int port, int maxConnections);
+        bool ClientReceive(out TransportEventData eventData);
+        void StopClient();
+        bool IsServerStarted();
+        bool StartServer(string connectKey, int port, int maxConnections);
         bool ServerSend(long connectionId, SendOptions sendOptions, NetDataWriter writer);
-        ENetworkEvent ServerReceive(out long connectionId, out NetDataReader reader, out DisconnectInfo disconnectInfo);
+        bool ServerReceive(out TransportEventData eventData);
         bool ServerDisconnect(long connectionId);
-        void ServerStop();
+        void StopServer();
         void Destroy();
     }
 }

@@ -40,7 +40,7 @@ namespace LiteNetLibManager
             if (subscriber == null)
                 return false;
 
-            if (subscriber.ConnectId == ConnectId)
+            if (subscriber.ConnectionId == ConnectId)
                 return true;
 
             var spawnedObjects = subscriber.SpawnedObjects.Values;

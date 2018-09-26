@@ -5,6 +5,6 @@
         DataEvent,
         ConnectEvent,
         DisconnectEvent,
-        Nothing,
+        ErrorEvent,
     }
 }

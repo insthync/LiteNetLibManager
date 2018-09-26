@@ -1,10 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Linq;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using LiteNetLibManager.Utils;
-using UnityEngine.Profiling;
 
 namespace LiteNetLibManager
 {
@@ -24,7 +25,7 @@ namespace LiteNetLibManager
         public LiteNetLibServer Server { get; protected set; }
         public bool IsServer { get { return Server != null; } }
         public bool IsClient { get { return Client != null; } }
-        public bool IsClientConnected { get { return Client != null && Client.IsConnected; } }
+        public bool IsClientConnected { get { return Client != null && Client.IsClientConnected; } }
         public bool IsNetworkActive { get { return Server != null || Client != null; } }
         public bool LogDev { get { return currentLogLevel <= LogLevel.Developer; } }
         public bool LogDebug { get { return currentLogLevel <= LogLevel.Debug; } }
@@ -38,47 +39,13 @@ namespace LiteNetLibManager
         public string connectKey = "SampleConnectKey";
         public string networkAddress = "localhost";
         public int networkPort = 7770;
-        [Tooltip("enable messages receiving without connection. (with SendUnconnectedMessage method), default value: false")]
-        public bool unconnectedMessagesEnabled;
-        [Tooltip("enable nat punch messages, default value: false")]
-        public bool natPunchEnabled;
-        [Tooltip("library logic update (and send) period in milliseconds, default value: 15 msec. For games you can use 15 msec(66 ticks per second)")]
-        public int updateTime = 15;
-        [Tooltip("Interval for latency detection and checking connection, default value: 1000 msec.")]
-        public int pingInterval = 1000;
-        [Tooltip("if client or server doesn't receive any packet from remote peer during this time then connection will be closed (including library internal keepalive packets), default value: 5000 msec.")]
-        public int disconnectTimeout = 5000;
-        [Tooltip("Merge small packets into one before sending to reduce outgoing packets count. (May increase a bit outgoing data size), default value: false")]
-        public bool mergeEnabled;
-
-        [Header("Network Simulation")]
-        [Tooltip("simulate packet loss by dropping random amout of packets. (Works only in DEBUG mode), default value: false")]
-        public bool simulatePacketLoss;
-        [Tooltip("simulate latency by holding packets for random time. (Works only in DEBUG mode), default value: false")]
-        public bool simulateLatency;
-        [Tooltip("chance of packet loss when simulation enabled. value in percents, default value: 10(%)")]
-        public int simulationPacketLossChance = 10;
-        [Tooltip("minimum simulated latency, default value: 30 msec")]
-        public int simulationMinLatency = 30;
-        [Tooltip("maximum simulated latency, default value: 100 msec")]
-        public int simulationMaxLatency = 100;
-
-        [Header("Network Discovery")]
-        [Tooltip("Allows receive DiscoveryRequests, default value: false")]
-        public bool discoveryEnabled;
-        public string discoveryRequestData;
-        public string discoveryResponseData;
 
         [Header("Server Only Configs")]
         public int maxConnections = 4;
 
-        [Header("Client Only Configs")]
-        [Tooltip("delay betwen connection attempts, default value: 500 msec")]
-        public int reconnectDelay = 500;
-        [Tooltip("maximum connection attempts before client stops and call disconnect event, default value: 10")]
-        public int maxConnectAttempts = 10;
+        public ITransport transport = new LiteNetLibTransport();
 
-        protected readonly Dictionary<long, NetPeer> Peers = new Dictionary<long, NetPeer>();
+        protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
 
         protected virtual void Awake() { }
 
@@ -87,41 +54,21 @@ namespace LiteNetLibManager
         protected virtual void Update()
         {
             if (IsServer)
-                Server.PollEvents();
+                Server.Update();
             if (IsClient)
-            {
-                Client.PollEvents();
-                if (discoveryEnabled)
-                    Client.NetManager.SendDiscoveryRequest(StringBytesConverter.ConvertToBytes(discoveryRequestData), networkPort);
-            }
+                Client.Update();
         }
 
         protected virtual void OnDestroy()
         {
             StopHost();
+            transport.Destroy();
         }
 
         protected virtual void OnApplicationQuit()
         {
             StopHost();
-        }
-
-        protected void SetConfigs(NetManager netManager)
-        {
-            netManager.UnconnectedMessagesEnabled = unconnectedMessagesEnabled;
-            netManager.NatPunchEnabled = natPunchEnabled;
-            netManager.UpdateTime = updateTime;
-            netManager.PingInterval = pingInterval;
-            netManager.DisconnectTimeout = disconnectTimeout;
-            netManager.SimulatePacketLoss = simulatePacketLoss;
-            netManager.SimulateLatency = simulateLatency;
-            netManager.SimulationPacketLossChance = simulationPacketLossChance;
-            netManager.SimulationMinLatency = simulationMinLatency;
-            netManager.SimulationMaxLatency = simulationMaxLatency;
-            netManager.DiscoveryEnabled = discoveryEnabled;
-            netManager.MergeEnabled = mergeEnabled;
-            netManager.ReconnectDelay = reconnectDelay;
-            netManager.MaxConnectAttempts = maxConnectAttempts;
+            transport.Destroy();
         }
 
         /// <summary>
@@ -144,11 +91,9 @@ namespace LiteNetLibManager
             if (Server != null)
                 return true;
 
-            var maxConnections = !isOffline ? this.maxConnections : 1;
-            Server = new LiteNetLibServer(this, maxConnections, connectKey);
+            Server = new LiteNetLibServer(this, connectKey);
             RegisterServerMessages();
-            SetConfigs(Server.NetManager);
-            var canStartServer = !isOffline ? Server.Start(networkPort) : Server.Start();
+            var canStartServer = !isOffline ? Server.StartServer(networkPort, maxConnections) : Server.StartServer(GetAvailablePort(Random.Range(5000, 10000)), 1);
             if (!canStartServer)
             {
                 if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
@@ -180,9 +125,7 @@ namespace LiteNetLibManager
             if (LogDev) Debug.Log("Client connecting to " + networkAddress + ":" + networkPort);
             Client = new LiteNetLibClient(this, connectKey);
             RegisterClientMessages();
-            SetConfigs(Client.NetManager);
-            Client.Start();
-            Client.Connect(networkAddress, networkPort);
+            Client.StartClient(networkAddress, networkPort);
             OnStartClient(Client);
             return Client;
         }
@@ -197,7 +140,7 @@ namespace LiteNetLibManager
 
         protected virtual LiteNetLibClient ConnectLocalClient()
         {
-            return StartClient("localhost", Server.NetManager.LocalPort, connectKey);
+            return StartClient("localhost", Server.ServerPort, connectKey);
         }
 
         public void StopHost()
@@ -214,7 +157,7 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
-            Server.Stop();
+            Server.StopServer();
             Server = null;
 
             OnStopServer();
@@ -226,58 +169,86 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
-            Client.Stop();
+            Client.StopClient();
             Client = null;
 
             OnStopClient();
         }
 
-        internal void AddPeer(NetPeer peer)
+        internal void AddConnectionId(long connectionId)
         {
-            if (peer == null)
-                return;
-            Peers.Add(peer.ConnectId, peer);
+            ConnectionIds.Add(connectionId);
         }
 
-        internal bool RemovePeer(NetPeer peer)
+        internal bool RemoveConnectionId(long connectionId)
         {
-            if (peer == null)
-                return false;
-            return Peers.Remove(peer.ConnectId);
+            return ConnectionIds.Remove(connectionId);
         }
 
-        internal bool TryGetPeer(long connectId, out NetPeer peer)
+        internal bool ContainsConnectionId(long connectionId)
         {
-            return Peers.TryGetValue(connectId, out peer);
+            return ConnectionIds.Contains(connectionId);
         }
 
-        internal IEnumerable<NetPeer> GetPeers()
+        internal IEnumerable<long> GetConnectionIds()
         {
-            return Peers.Values;
+            return ConnectionIds;
         }
+
+        #region Packets send / read
+        public void ClientSendPacket(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        {
+            Client.ClientSendPacket(options, msgType, serializer);
+        }
+
+        public void ClientSendPacket<T>(SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
+        {
+            ClientSendPacket(options, msgType, messageData.Serialize);
+        }
+
+        public void ClientSendPacket(SendOptions options, ushort msgType)
+        {
+            ClientSendPacket(options, msgType, null);
+        }
+
+        public void ServerSendPacket(long connectionId, SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        {
+            Server.ServerSendPacket(connectionId, options, msgType, serializer);
+        }
+
+        public void ServerSendPacket<T>(long connectionId, SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
+        {
+            ServerSendPacket(connectionId, options, msgType, messageData.Serialize);
+        }
+
+        public void ServerSendPacket(long connectionId, SendOptions options, ushort msgType)
+        {
+            ServerSendPacket(connectionId, options, msgType, null);
+        }
+        #endregion
 
         #region Relates components functions
-        public void SendPacketToAllPeers(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ServerSendPacketToAllConnections(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                LiteNetLibPacketSender.SendPacket(options, peer, msgType, serializer);
+                ServerSendPacket(connectionId, options, msgType, serializer);
             }
         }
 
-        public void SendPacketToAllPeers<T>(SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
+        public void ServerSendPacketToAllConnections<T>(SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
         {
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                LiteNetLibPacketSender.SendPacket(options, peer, msgType, messageData);
+                ServerSendPacket(connectionId, options, msgType, messageData);
             }
         }
 
-        public void SendPacketToAllPeers(SendOptions options, ushort msgType)
+        public void ServerSendPacketToAllConnections(SendOptions options, ushort msgType)
         {
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                LiteNetLibPacketSender.SendPacket(options, peer, msgType);
+                ServerSendPacket(connectionId, options, msgType);
             }
         }
 
@@ -313,22 +284,15 @@ namespace LiteNetLibManager
         /// <summary>
         /// This event will be called at server when any client connected
         /// </summary>
-        /// <param name="peer"></param>
-        public virtual void OnPeerConnected(NetPeer peer) { }
+        /// <param name="connectionId"></param>
+        public virtual void OnPeerConnected(long connectionId) { }
 
         /// <summary>
         /// This event will be called at server when any client disconnected
         /// </summary>
-        /// <param name="peer"></param>
+        /// <param name="connectionId"></param>
         /// <param name="disconnectInfo"></param>
-        public virtual void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
-
-        /// <summary>
-        /// This event will be called at server when received discovery request from client
-        /// </summary>
-        /// <param name="endPoint"></param>
-        /// <param name="data"></param>
-        public virtual void OnServerReceivedDiscoveryRequest(NetEndPoint endPoint, string data) { }
+        public virtual void OnPeerDisconnected(long connectionId, DisconnectInfo disconnectInfo) { }
 
         /// <summary>
         /// This event will be called at client when there are any network error
@@ -340,21 +304,12 @@ namespace LiteNetLibManager
         /// <summary>
         /// This event will be called at client when connected to server
         /// </summary>
-        /// <param name="peer"></param>
-        public virtual void OnClientConnected(NetPeer peer) { }
+        public virtual void OnClientConnected() { }
 
         /// <summary>
         /// This event will be called at client when disconnected from server
         /// </summary>
-        /// <param name="peer"></param>
-        public virtual void OnClientDisconnected(NetPeer peer, DisconnectInfo disconnectInfo) { }
-
-        /// <summary>
-        /// This event will be called at server when received discovery response from server
-        /// </summary>
-        /// <param name="endPoint"></param>
-        /// <param name="data"></param>
-        public virtual void OnClientReceivedDiscoveryResponse(NetEndPoint endPoint, string data) { }
+        public virtual void OnClientDisconnected(DisconnectInfo disconnectInfo) { }
         #endregion
 
         #region Start / Stop Callbacks
@@ -408,6 +363,46 @@ namespace LiteNetLibManager
         public virtual void OnStopHost()
         {
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
+        }
+        #endregion
+
+        #region Utilities
+        /// <summary>
+        /// checks for used ports and retrieves the first free port
+        /// </summary>
+        /// <returns>the free port or 0 if it did not find a free port</returns>
+        public static int GetAvailablePort(int startingPort)
+        {
+            IPEndPoint[] endPoints;
+            List<int> portArray = new List<int>();
+
+            IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
+
+            //getting active connections
+            TcpConnectionInformation[] connections = properties.GetActiveTcpConnections();
+            portArray.AddRange(from n in connections
+                               where n.LocalEndPoint.Port >= startingPort
+                               select n.LocalEndPoint.Port);
+
+            //getting active tcp listners - WCF service listening in tcp
+            endPoints = properties.GetActiveTcpListeners();
+            portArray.AddRange(from n in endPoints
+                               where n.Port >= startingPort
+                               select n.Port);
+
+            //getting active udp listeners
+            endPoints = properties.GetActiveUdpListeners();
+            portArray.AddRange(from n in endPoints
+                               where n.Port >= startingPort
+                               select n.Port);
+
+            portArray.Sort();
+
+            for (int i = startingPort; i < System.UInt16.MaxValue; i++)
+                if (!portArray.Contains(i))
+                    return i;
+
+            return 0;
         }
         #endregion
     }

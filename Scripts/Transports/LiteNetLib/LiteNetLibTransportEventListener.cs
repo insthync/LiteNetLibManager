@@ -7,15 +7,27 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibTransportEventListener : INetEventListener
     {
-        private Queue<LiteNetLibTransportEventData> eventQueue;
+        private Queue<TransportEventData> eventQueue;
+        private Dictionary<long, NetPeer> peersDict;
 
-        public LiteNetLibTransportEventListener(Queue<LiteNetLibTransportEventData> eventQueue)
+        public LiteNetLibTransportEventListener(Queue<TransportEventData> eventQueue)
         {
             this.eventQueue = eventQueue;
         }
 
+        public LiteNetLibTransportEventListener(Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> peersDict) : this(eventQueue)
+        {
+            this.peersDict = peersDict;
+        }
+
         public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
         {
+            eventQueue.Enqueue(new TransportEventData()
+            {
+                type = ENetworkEvent.ErrorEvent,
+                endPoint = endPoint,
+                socketErrorCode = socketErrorCode,
+            });
         }
 
         public void OnNetworkLatencyUpdate(NetPeer peer, int latency)
@@ -24,11 +36,11 @@ namespace LiteNetLibManager
 
         public void OnNetworkReceive(NetPeer peer, NetDataReader reader)
         {
-            eventQueue.Enqueue(new LiteNetLibTransportEventData()
+            eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DataEvent,
                 connectionId = peer.ConnectId,
-                reader = reader,
+                reader = reader.Clone(),
             });
         }
 
@@ -38,7 +50,10 @@ namespace LiteNetLibManager
 
         public void OnPeerConnected(NetPeer peer)
         {
-            eventQueue.Enqueue(new LiteNetLibTransportEventData()
+            if (peersDict != null)
+                peersDict[peer.ConnectId] = peer;
+
+            eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
                 connectionId = peer.ConnectId,
@@ -47,7 +62,10 @@ namespace LiteNetLibManager
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            eventQueue.Enqueue(new LiteNetLibTransportEventData()
+            if (peersDict != null)
+                peersDict.Remove(peer.ConnectId);
+
+            eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
                 connectionId = peer.ConnectId,

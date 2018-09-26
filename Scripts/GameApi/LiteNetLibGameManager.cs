@@ -31,6 +31,8 @@ namespace LiteNetLibManager
             public const ushort Highest = 14;
         }
 
+        public float updateServerTimeDuration = 5f;
+
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         private float lastSendServerTime;
@@ -90,7 +92,7 @@ namespace LiteNetLibManager
                     spawnedObject.Value.NetworkUpdate();
                 }
                 Profiler.EndSample();
-                if (Time.unscaledTime - lastSendServerTime > updateTime)
+                if (Time.unscaledTime - lastSendServerTime > updateServerTimeDuration)
                 {
                     SendServerTime();
                     lastSendServerTime = Time.unscaledTime;
@@ -218,25 +220,25 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
         }
 
-        public override void OnPeerConnected(NetPeer peer)
+        public override void OnPeerConnected(long connectionId)
         {
-            base.OnPeerConnected(peer);
-            SendServerTime(peer);
-            Players[peer.ConnectId] = new LiteNetLibPlayer(this, peer);
+            base.OnPeerConnected(connectionId);
+            SendServerTime(connectionId);
+            Players[connectionId] = new LiteNetLibPlayer(this, connectionId);
         }
 
-        public override void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
+        public override void OnPeerDisconnected(long connectionId, DisconnectInfo disconnectInfo)
         {
-            base.OnPeerDisconnected(peer, disconnectInfo);
-            var player = Players[peer.ConnectId];
+            base.OnPeerDisconnected(connectionId, disconnectInfo);
+            var player = Players[connectionId];
             player.ClearSubscribing(false);
             player.DestroyAllObjects();
-            Players.Remove(peer.ConnectId);
+            Players.Remove(connectionId);
         }
 
-        public override void OnClientConnected(NetPeer peer)
+        public override void OnClientConnected()
         {
-            base.OnClientConnected(peer);
+            base.OnClientConnected();
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
         }
@@ -284,82 +286,82 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientEnterGame);
+            ClientSendPacket(SendOptions.ReliableOrdered, GameMsgTypes.ClientEnterGame);
         }
 
         public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
+            ClientSendPacket(SendOptions.ReliableOrdered, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
         }
 
         public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, Client.Peer, GameMsgTypes.ClientNotReady);
+            ClientSendPacket(SendOptions.ReliableOrdered, GameMsgTypes.ClientNotReady);
         }
 
         public void SendServerTime()
         {
             if (!IsServer)
                 return;
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                SendServerTime(peer);
+                SendServerTime(connectionId);
             }
         }
 
-        public void SendServerTime(NetPeer peer)
+        public void SendServerTime(long connectionId)
         {
             if (!IsServer)
                 return;
             var message = new ServerTimeMessage();
             message.serverTime = ServerTime;
-            LiteNetLibPacketSender.SendPacket(SendOptions.Sequenced, peer, GameMsgTypes.ServerTime, message);
+            ServerSendPacket(connectionId, SendOptions.Sequenced, GameMsgTypes.ServerTime, message);
         }
 
         public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                SendServerSpawnSceneObject(peer, identity);
+                SendServerSpawnSceneObject(connectionId, identity);
             }
         }
 
-        public void SendServerSpawnSceneObject(NetPeer peer, LiteNetLibIdentity identity)
+        public void SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
             LiteNetLibPlayer player = null;
-            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
+            if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             var message = new ServerSpawnSceneObjectMessage();
             message.objectId = identity.ObjectId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnSceneObject, message);
+            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message);
         }
 
         public void SendServerSpawnObject(LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                SendServerSpawnObject(peer, identity);
+                SendServerSpawnObject(connectionId, identity);
             }
         }
 
-        public void SendServerSpawnObject(NetPeer peer, LiteNetLibIdentity identity)
+        public void SendServerSpawnObject(long connectionId, LiteNetLibIdentity identity)
         {
             if (!IsServer)
                 return;
             LiteNetLibPlayer player = null;
-            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
+            if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             var message = new ServerSpawnObjectMessage();
             message.hashAssetId = identity.HashAssetId;
@@ -367,106 +369,101 @@ namespace LiteNetLibManager
             message.connectId = identity.ConnectId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSpawnObject, message);
+            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message);
         }
 
-        public void SendServerSpawnObjectWithData(NetPeer peer, LiteNetLibIdentity identity)
+        public void SendServerSpawnObjectWithData(long connectionId, LiteNetLibIdentity identity)
         {
             if (identity == null)
                 return;
 
             if (Assets.ContainsSceneObject(identity.ObjectId))
-                SendServerSpawnSceneObject(peer, identity);
+                SendServerSpawnSceneObject(connectionId, identity);
             else
-                SendServerSpawnObject(peer, identity);
-            identity.SendInitSyncFields(peer);
-            identity.SendInitSyncLists(peer);
+                SendServerSpawnObject(connectionId, identity);
+            identity.SendInitSyncFields(connectionId);
+            identity.SendInitSyncLists(connectionId);
         }
 
         public void SendServerDestroyObject(uint objectId, DestroyObjectReasons reasons)
         {
             if (!IsServer)
                 return;
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                SendServerDestroyObject(peer, objectId, reasons);
+                SendServerDestroyObject(connectionId, objectId, reasons);
             }
         }
 
-        public void SendServerDestroyObject(NetPeer peer, uint objectId, DestroyObjectReasons reasons)
+        public void SendServerDestroyObject(long connectionId, uint objectId, DestroyObjectReasons reasons)
         {
             if (!IsServer)
                 return;
             LiteNetLibPlayer player = null;
-            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
+            if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             var message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
         }
 
         public void SendServerError(bool shouldDisconnect, string errorMessage)
         {
             if (!IsServer)
                 return;
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                SendServerError(peer, shouldDisconnect, errorMessage);
+                SendServerError(connectionId, shouldDisconnect, errorMessage);
             }
         }
 
-        public void SendServerError(NetPeer peer, bool shouldDisconnect, string errorMessage)
+        public void SendServerError(long connectionId, bool shouldDisconnect, string errorMessage)
         {
             if (!IsServer)
                 return;
             LiteNetLibPlayer player = null;
-            if (!Players.TryGetValue(peer.ConnectId, out player) || !player.IsReady)
+            if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             var message = new ServerErrorMessage();
             message.shouldDisconnect = shouldDisconnect;
             message.errorMessage = errorMessage;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
         }
 
         public void SendServerSceneChange(string sceneName)
         {
             if (!IsServer)
                 return;
-            foreach (var peer in Peers.Values)
+            foreach (var connectionId in ConnectionIds)
             {
-                SendServerSceneChange(peer, sceneName);
+                SendServerSceneChange(connectionId, sceneName);
             }
         }
 
-        public void SendServerSceneChange(NetPeer peer, string sceneName)
+        public void SendServerSceneChange(long connectionId, string sceneName)
         {
             if (!IsServer)
                 return;
             var message = new ServerSceneChangeMessage();
             message.serverSceneName = sceneName;
-            LiteNetLibPacketSender.SendPacket(SendOptions.ReliableOrdered, peer, GameMsgTypes.ServerSceneChange, message);
+            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
         }
         #endregion
 
         #region Message Handlers
         protected virtual void HandleClientEnterGame(LiteNetLibMessageHandler messageHandler)
         {
-            var peer = messageHandler.peer;
-            SendServerSceneChange(peer, ServerSceneName);
+            SendServerSceneChange(messageHandler.connectionId, ServerSceneName);
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
-            var peer = messageHandler.peer;
-            var reader = messageHandler.reader;
-            SetPlayerReady(peer, reader);
+            SetPlayerReady(messageHandler.connectionId, messageHandler.reader);
         }
 
         protected virtual void HandleClientNotReady(LiteNetLibMessageHandler messageHandler)
         {
-            var peer = messageHandler.peer;
-            var reader = messageHandler.reader;
-            SetPlayerNotReady(peer, reader);
+            SetPlayerNotReady(messageHandler.connectionId, messageHandler.reader);
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
@@ -630,7 +627,7 @@ namespace LiteNetLibManager
         /// </summary>
         /// <param name="playerIdentity"></param>
         /// <param name="reader"></param>
-        public virtual void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, NetPeer peer, NetDataReader reader) { }
+        public virtual void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader) { }
 
         /// <summary>
         /// Override this function to do anything after online scene loaded at server side
@@ -652,21 +649,21 @@ namespace LiteNetLibManager
                 StopClient();
         }
 
-        public virtual void SetPlayerReady(NetPeer peer, NetDataReader reader)
+        public virtual void SetPlayerReady(long connectionId, NetDataReader reader)
         {
             if (!IsServer)
                 return;
 
-            var player = Players[peer.ConnectId];
+            var player = Players[connectionId];
             if (player.IsReady)
                 return;
 
             player.IsReady = true;
-            var playerIdentity = SpawnPlayer(peer);
-            DeserializeClientReadyExtra(playerIdentity, peer, reader);
+            var playerIdentity = SpawnPlayer(connectionId);
+            DeserializeClientReadyExtra(playerIdentity, connectionId, reader);
             foreach (var spawnedObject in Assets.SpawnedObjects)
             {
-                if (spawnedObject.Value.ConnectId == player.ConnectId)
+                if (spawnedObject.Value.ConnectId == player.ConnectionId)
                     continue;
 
                 if (spawnedObject.Value.ShouldAddSubscriber(player))
@@ -674,12 +671,12 @@ namespace LiteNetLibManager
             }
         }
 
-        public virtual void SetPlayerNotReady(NetPeer peer, NetDataReader reader)
+        public virtual void SetPlayerNotReady(long connectionId, NetDataReader reader)
         {
             if (!IsServer)
                 return;
 
-            var player = Players[peer.ConnectId];
+            var player = Players[connectionId];
             if (!player.IsReady)
                 return;
 
@@ -688,23 +685,23 @@ namespace LiteNetLibManager
             player.DestroyAllObjects();
         }
 
-        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer)
+        protected LiteNetLibIdentity SpawnPlayer(long connectionId)
         {
             if (Assets.PlayerPrefab == null)
                 return null;
-            return SpawnPlayer(peer, assets.PlayerPrefab);
+            return SpawnPlayer(connectionId, assets.PlayerPrefab);
         }
 
-        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer, LiteNetLibIdentity prefab)
+        protected LiteNetLibIdentity SpawnPlayer(long connectionId, LiteNetLibIdentity prefab)
         {
             if (prefab == null)
                 return null;
-            return SpawnPlayer(peer, prefab.HashAssetId);
+            return SpawnPlayer(connectionId, prefab.HashAssetId);
         }
 
-        protected LiteNetLibIdentity SpawnPlayer(NetPeer peer, int hashAssetId)
+        protected LiteNetLibIdentity SpawnPlayer(long connectionId, int hashAssetId)
         {
-            var spawnedObject = Assets.NetworkSpawn(hashAssetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, peer.ConnectId);
+            var spawnedObject = Assets.NetworkSpawn(hashAssetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, connectionId);
             if (spawnedObject != null)
                 return spawnedObject;
             return null;

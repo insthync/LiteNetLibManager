@@ -82,7 +82,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterPrefab - prefab is null.");
                 return;
             }
-            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::RegisterPrefab [" + prefab.HashAssetId + "]");
+            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::RegisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
             GuidToPrefabs[prefab.HashAssetId] = prefab;
         }
 
@@ -93,7 +93,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::UnregisterPrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::UnregisterPrefab [" + prefab.HashAssetId + "]");
+            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::UnregisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 

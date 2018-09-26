@@ -151,7 +151,7 @@ namespace LiteNetLibManager
             // Don't request to set transform if not set "canClientSendResult" to TRUE
             if (!ownerClientCanSendTransform || !IsOwnerClient || IsServer)
                 return;
-            LiteNetLibPacketSender.SendPacket(sendOptions, Manager.Client.Peer, LiteNetLibGameManager.GameMsgTypes.ClientSendTransform, (writer) => ClientSendTransformWriter(writer, transformResult));
+            Manager.ClientSendPacket(sendOptions, LiteNetLibGameManager.GameMsgTypes.ClientSendTransform, (writer) => ClientSendTransformWriter(writer, transformResult));
         }
 
         private void ClientSendTransformWriter(NetDataWriter writer, TransformResult transformResult)
