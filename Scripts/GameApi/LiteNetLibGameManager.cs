@@ -223,17 +223,23 @@ namespace LiteNetLibManager
         public override void OnPeerConnected(long connectionId)
         {
             base.OnPeerConnected(connectionId);
-            SendServerTime(connectionId);
-            Players[connectionId] = new LiteNetLibPlayer(this, connectionId);
+            if (!Players.ContainsKey(connectionId))
+            {
+                SendServerTime(connectionId);
+                Players[connectionId] = new LiteNetLibPlayer(this, connectionId);
+            }
         }
 
         public override void OnPeerDisconnected(long connectionId, DisconnectInfo disconnectInfo)
         {
             base.OnPeerDisconnected(connectionId, disconnectInfo);
-            var player = Players[connectionId];
-            player.ClearSubscribing(false);
-            player.DestroyAllObjects();
-            Players.Remove(connectionId);
+            if (Players.ContainsKey(connectionId))
+            {
+                var player = Players[connectionId];
+                player.ClearSubscribing(false);
+                player.DestroyAllObjects();
+                Players.Remove(connectionId);
+            }
         }
 
         public override void OnClientConnected()
