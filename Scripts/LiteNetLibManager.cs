@@ -67,8 +67,10 @@ namespace LiteNetLibManager
 
         protected virtual void OnApplicationQuit()
         {
+#if UNITY_EDITOR
             StopHost();
             transport.Destroy();
+#endif
         }
 
         /// <summary>
