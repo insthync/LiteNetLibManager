@@ -95,7 +95,7 @@ namespace LiteNetLibManager
                 return;
 
             SetParameters(parameterValues);
-            SendCall(receivers, Behaviour.ConnectId);
+            SendCall(receivers, Behaviour.ConnectionId);
         }
 
         public void Call(long connectId, params object[] parameterValues)

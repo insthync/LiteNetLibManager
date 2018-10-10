@@ -75,7 +75,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public long ConnectId
+        public long ConnectionId
         {
             get { return Identity.ConnectionId; }
         }

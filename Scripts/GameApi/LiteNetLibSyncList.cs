@@ -197,7 +197,7 @@ namespace LiteNetLibManager
             
             if (forOwnerOnly)
             {
-                var connectId = Behaviour.ConnectId;
+                var connectId = Behaviour.ConnectionId;
                 if (manager.ContainsConnectionId(connectId))
                     SendOperation(connectId, operation, index);
             }

@@ -111,7 +111,7 @@ namespace LiteNetLibManager
             hasUpdate = false;
             if (forOwnerOnly)
             {
-                var connectId = Behaviour.ConnectId;
+                var connectId = Behaviour.ConnectionId;
                 if (manager.ContainsConnectionId(connectId))
                 {
                     if (!updatedOnce)
