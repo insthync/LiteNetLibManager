@@ -87,6 +87,11 @@ namespace LiteNetLibManager
             return Transport.StartServer(ConnectKey, port, maxConnections);
         }
 
+        public bool StartServerOffline()
+        {
+            return StartServer(Transport.GetFreePort(), 1);
+        }
+
         public void StopServer()
         {
             isServerActive = false;

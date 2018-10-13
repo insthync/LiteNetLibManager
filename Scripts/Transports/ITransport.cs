@@ -17,5 +17,6 @@ namespace LiteNetLibManager
         bool ServerDisconnect(long connectionId);
         void StopServer();
         void Destroy();
+        int GetFreePort();
     }
 }

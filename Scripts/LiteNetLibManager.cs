@@ -1,8 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Linq;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
@@ -95,7 +92,7 @@ namespace LiteNetLibManager
 
             Server = new LiteNetLibServer(this, connectKey);
             RegisterServerMessages();
-            var canStartServer = !isOffline ? Server.StartServer(networkPort, maxConnections) : Server.StartServer(GetAvailablePort(Random.Range(5000, 10000)), 1);
+            var canStartServer = !isOffline ? Server.StartServer(networkPort, maxConnections) : Server.StartServerOffline();
             if (!canStartServer)
             {
                 if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
@@ -365,46 +362,6 @@ namespace LiteNetLibManager
         public virtual void OnStopHost()
         {
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
-        }
-        #endregion
-
-        #region Utilities
-        /// <summary>
-        /// checks for used ports and retrieves the first free port
-        /// </summary>
-        /// <returns>the free port or 0 if it did not find a free port</returns>
-        public static int GetAvailablePort(int startingPort)
-        {
-            IPEndPoint[] endPoints;
-            List<int> portArray = new List<int>();
-
-            IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
-
-            //getting active connections
-            TcpConnectionInformation[] connections = properties.GetActiveTcpConnections();
-            portArray.AddRange(from n in connections
-                               where n.LocalEndPoint.Port >= startingPort
-                               select n.LocalEndPoint.Port);
-
-            //getting active tcp listners - WCF service listening in tcp
-            endPoints = properties.GetActiveTcpListeners();
-            portArray.AddRange(from n in endPoints
-                               where n.Port >= startingPort
-                               select n.Port);
-
-            //getting active udp listeners
-            endPoints = properties.GetActiveUdpListeners();
-            portArray.AddRange(from n in endPoints
-                               where n.Port >= startingPort
-                               select n.Port);
-
-            portArray.Sort();
-
-            for (int i = startingPort; i < System.UInt16.MaxValue; i++)
-                if (!portArray.Contains(i))
-                    return i;
-
-            return 0;
         }
         #endregion
     }
