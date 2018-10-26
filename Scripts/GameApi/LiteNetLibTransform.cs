@@ -93,18 +93,6 @@ namespace LiteNetLibManager
                 Teleport(syncingTransform.position, syncingTransform.rotation);
         }
 
-        public override void OnBehaviourValidate()
-        {
-            base.OnBehaviourValidate();
-#if UNITY_EDITOR
-            if (sendInterval < 0.05f)
-            {
-                sendInterval = 0.05f;
-                EditorUtility.SetDirty(gameObject);
-            }
-#endif
-        }
-
         public override void OnSetup()
         {
             base.OnSetup();
