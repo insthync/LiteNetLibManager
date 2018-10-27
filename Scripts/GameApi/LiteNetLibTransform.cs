@@ -83,14 +83,19 @@ namespace LiteNetLibManager
 
         private void Start()
         {
+            InitInterpResults(syncingTransform.position, syncingTransform.rotation);
+            if (IsServer)
+                Teleport(syncingTransform.position, syncingTransform.rotation);
+        }
+
+        private void InitInterpResults(Vector3 position, Quaternion rotation)
+        {
             currentInterpResult = new TransformResult();
-            currentInterpResult.position = syncingTransform.position;
-            currentInterpResult.rotation = syncingTransform.rotation;
+            currentInterpResult.position = position;
+            currentInterpResult.rotation = rotation;
             currentInterpResult.timestamp = Time.unscaledTime;
             syncResult = currentInterpResult;
             endInterpResult = currentInterpResult;
-            if (IsServer)
-                Teleport(syncingTransform.position, syncingTransform.rotation);
         }
 
         public override void OnSetup()
@@ -99,21 +104,18 @@ namespace LiteNetLibManager
             RegisterNetFunction("Teleport", new LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion>(TeleportCallback));
         }
 
+        private void TeleportCallback(NetFieldVector3 position, NetFieldQuaternion rotation)
+        {
+            InitInterpResults(position, rotation);
+            Snap(position, rotation);
+        }
+
         internal void HandleClientSendTransform(NetDataReader reader)
         {
             // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
             if (!ownerClientCanSendTransform || IsOwnerClient)
                 return;
-            var result = new TransformResult();
-            result.position = new Vector3(
-                DeserializePositionAxis(reader, syncPositionX, syncingTransform.position.x),
-                DeserializePositionAxis(reader, syncPositionY, syncingTransform.position.y),
-                DeserializePositionAxis(reader, syncPositionZ, syncingTransform.position.z));
-            result.rotation = Quaternion.Euler(
-                DeserializeRotationAxis(reader, syncRotationX, syncingTransform.rotation.eulerAngles.x),
-                DeserializeRotationAxis(reader, syncRotationY, syncingTransform.rotation.eulerAngles.y),
-                DeserializeRotationAxis(reader, syncRotationZ, syncingTransform.rotation.eulerAngles.z));
-            result.timestamp = reader.GetFloat();
+            var result = DeserializeResult(reader);
             // Discard out of order results
             if (result.timestamp <= lastClientTimestamp)
                 return;
@@ -121,17 +123,6 @@ namespace LiteNetLibManager
             // Adding results to the results list so they can be used in interpolation process
             result.timestamp = Time.unscaledTime;
             endInterpResult = result;
-        }
-
-        private void TeleportCallback(NetFieldVector3 position, NetFieldQuaternion rotation)
-        {
-            currentInterpResult = new TransformResult();
-            currentInterpResult.position = position;
-            currentInterpResult.rotation = rotation;
-            currentInterpResult.timestamp = Time.unscaledTime;
-            syncResult = currentInterpResult;
-            endInterpResult = currentInterpResult;
-            Snap(position, rotation);
         }
 
         private void ClientSendTransform(TransformResult transformResult)
@@ -189,6 +180,18 @@ namespace LiteNetLibManager
             // Update transform only non-owner client
             if ((ownerClientCanSendTransform && IsOwnerClient) || IsServer)
                 return;
+            var result = DeserializeResult(reader);
+            // Discard out of order results
+            if (result.timestamp <= lastServerTimestamp)
+                return;
+            lastServerTimestamp = result.timestamp;
+            // Adding results to the results list so they can be used in interpolation process
+            result.timestamp = Time.unscaledTime;
+            endInterpResult = result;
+        }
+
+        private TransformResult DeserializeResult(NetDataReader reader)
+        {
             var result = new TransformResult();
             result.position = new Vector3(
                 DeserializePositionAxis(reader, syncPositionX, syncingTransform.position.x),
@@ -199,13 +202,7 @@ namespace LiteNetLibManager
                 DeserializeRotationAxis(reader, syncRotationY, syncingTransform.rotation.eulerAngles.y),
                 DeserializeRotationAxis(reader, syncRotationZ, syncingTransform.rotation.eulerAngles.z));
             result.timestamp = reader.GetFloat();
-            // Discard out of order results
-            if (result.timestamp <= lastServerTimestamp)
-                return;
-            lastServerTimestamp = result.timestamp;
-            // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.unscaledTime;
-            endInterpResult = result;
+            return result;
         }
 
         private void SerializePositionAxis(NetDataWriter writer, float data, SyncPositionOptions syncOptions)
@@ -299,16 +296,6 @@ namespace LiteNetLibManager
                 Interpolate();
         }
 
-        private float GetPositionInterpStep()
-        {
-            return 1f / sendInterval;
-        }
-
-        private float GetRotationInterpStep()
-        {
-            return 1f / sendInterval;
-        }
-
         private void Interpolate()
         {
             if (ShouldSnap(endInterpResult.position))
@@ -319,8 +306,12 @@ namespace LiteNetLibManager
             }
             else if (!IsOwnerClient || !ownerClientNotInterpolate)
             {
-                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, GetPositionInterpStep() * Time.deltaTime);
-                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, GetRotationInterpStep() * Time.deltaTime);
+                /*
+                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, SendRate * Time.deltaTime);
+                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, SendRate * Time.deltaTime);
+                */
+                currentInterpResult.position = Vector3.MoveTowards(currentInterpResult.position, endInterpResult.position, Vector3.Distance(currentInterpResult.position, endInterpResult.position) * (1.0f / SendRate));
+                currentInterpResult.rotation = Quaternion.RotateTowards(currentInterpResult.rotation, endInterpResult.rotation, Quaternion.Angle(currentInterpResult.rotation, endInterpResult.rotation) * (1.0f / SendRate));
                 Interpolate(currentInterpResult.position, currentInterpResult.rotation);
             }
         }
