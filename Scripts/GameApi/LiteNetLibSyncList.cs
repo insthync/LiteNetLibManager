@@ -193,7 +193,7 @@ namespace LiteNetLibManager
                 return;
 
             if (onOperation != null)
-                onOperation(operation, index);
+                onOperation.Invoke(operation, index);
             
             if (forOwnerOnly)
             {
@@ -238,6 +238,7 @@ namespace LiteNetLibManager
                 case Operation.Add:
                     item.Deserialize(reader);
                     list.Add(item);
+                    index = list.Count - 1;
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
@@ -259,7 +260,7 @@ namespace LiteNetLibManager
                     break;
             }
             if (onOperation != null)
-                onOperation(operation, index);
+                onOperation.Invoke(operation, index);
         }
 
         public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
