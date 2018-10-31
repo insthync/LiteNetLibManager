@@ -81,6 +81,7 @@ namespace LiteNetLibManager
         public bool IsOwnerClient { get; private set; }
 
         private bool ownerValidated;
+        private bool destroyed;
         // Optimize garbage collector
         private int loopCounter;
 
@@ -550,7 +551,11 @@ namespace LiteNetLibManager
         IEnumerator NetworkDestroyRoutine(float delay)
         {
             yield return new WaitForSecondsRealtime(delay);
-            Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
+            if (!destroyed)
+            {
+                Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
+                destroyed = true;
+            }
         }
 
         public void OnNetworkDestroy(DestroyObjectReasons reasons)
