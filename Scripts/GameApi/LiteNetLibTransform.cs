@@ -306,12 +306,12 @@ namespace LiteNetLibManager
             }
             else if (!IsOwnerClient || !ownerClientNotInterpolate)
             {
-                /*
                 currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, SendRate * Time.deltaTime);
                 currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, SendRate * Time.deltaTime);
-                */
+                /*
                 currentInterpResult.position = Vector3.MoveTowards(currentInterpResult.position, endInterpResult.position, Vector3.Distance(currentInterpResult.position, endInterpResult.position) * (1.0f / SendRate));
                 currentInterpResult.rotation = Quaternion.RotateTowards(currentInterpResult.rotation, endInterpResult.rotation, Quaternion.Angle(currentInterpResult.rotation, endInterpResult.rotation) * (1.0f / SendRate));
+                */
                 Interpolate(currentInterpResult.position, currentInterpResult.rotation);
             }
         }
