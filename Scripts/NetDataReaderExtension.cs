@@ -1,7 +1,128 @@
-﻿namespace LiteNetLib.Utils
+﻿using System;
+using UnityEngine;
+
+namespace LiteNetLib.Utils
 {
     public static class NetDataReaderExtension
     {
+        public static object GetValue<TType>(this NetDataReader reader)
+        {
+            var type = typeof(TType);
+
+            #region Generic Values
+            if (type == typeof(bool))
+                return reader.GetBool();
+
+            if (type == typeof(byte))
+                return reader.GetByte();
+
+            if (type == typeof(char))
+                return reader.GetChar();
+
+            if (type == typeof(double))
+                return reader.GetDouble();
+
+            if (type == typeof(float))
+                return reader.GetFloat();
+
+            if (type == typeof(int))
+                return reader.GetInt();
+
+            if (type == typeof(long))
+                return reader.GetLong();
+
+            if (type == typeof(sbyte))
+                return reader.GetSByte();
+
+            if (type == typeof(short))
+                return reader.GetShort();
+
+            if (type == typeof(string))
+                return reader.GetString();
+
+            if (type == typeof(uint))
+                return reader.GetUInt();
+
+            if (type == typeof(ulong))
+                return reader.GetULong();
+
+            if (type == typeof(ushort))
+                return reader.GetUShort();
+            #endregion
+
+            #region Unity Values
+            if (type == typeof(Color))
+                return reader.GetColor();
+
+            if (type == typeof(Quaternion))
+                return reader.GetQuaternion();
+
+            if (type == typeof(Vector2))
+                return reader.GetVector2();
+
+            if (type == typeof(Vector2Int))
+                return reader.GetVector2Int();
+
+            if (type == typeof(Vector3))
+                return reader.GetVector3();
+
+            if (type == typeof(Vector3Int))
+                return reader.GetVector3Int();
+
+            if (type == typeof(Vector4))
+                return reader.GetVector4();
+            #endregion
+
+            if (typeof(INetSerializable).IsAssignableFrom(type))
+            {
+                object instance = Activator.CreateInstance(type);
+                ((INetSerializable)instance).Deserialize(reader);
+                return instance;
+            }
+
+            throw new ArgumentException("NetDataReader cannot read type " + type.Name);
+        }
+
+        public static Color GetColor(this NetDataReader reader)
+        {
+            var r = reader.GetShort() * 0.01f;
+            var g = reader.GetShort() * 0.01f;
+            var b = reader.GetShort() * 0.01f;
+            var a = reader.GetShort() * 0.01f;
+            return new Color(r, g, b, a);
+        }
+
+        public static Quaternion GetQuaternion(this NetDataReader reader)
+        {
+            var vector3 = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            return vector3.magnitude <= 0 ? Quaternion.identity : Quaternion.Euler(vector3);
+        }
+
+        public static Vector2 GetVector2(this NetDataReader reader)
+        {
+            return new Vector2(reader.GetFloat(), reader.GetFloat());
+        }
+
+        public static Vector2Int GetVector2Int(this NetDataReader reader)
+        {
+            return new Vector2Int(reader.GetInt(), reader.GetInt());
+        }
+
+        public static Vector3 GetVector3(this NetDataReader reader)
+        {
+            return new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+        }
+
+        public static Vector3Int GetVector3Int(this NetDataReader reader)
+        {
+            return new Vector3Int(reader.GetInt(), reader.GetInt(), reader.GetInt());
+        }
+
+        public static Vector4 GetVector4(this NetDataReader reader)
+        {
+            return new Vector4(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+        }
+
         #region Packed Unsigned Int (Credit: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
         public static ushort GetPackedUShort(this NetDataReader reader)
         {
