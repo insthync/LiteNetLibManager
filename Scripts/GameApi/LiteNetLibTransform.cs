@@ -101,10 +101,10 @@ namespace LiteNetLibManager
         public override void OnSetup()
         {
             base.OnSetup();
-            RegisterNetFunction("Teleport", new LiteNetLibFunction<NetFieldVector3, NetFieldQuaternion>(TeleportCallback));
+            RegisterNetFunction<Vector3, Quaternion>(NetFunction_Teleport);
         }
 
-        private void TeleportCallback(NetFieldVector3 position, NetFieldQuaternion rotation)
+        private void NetFunction_Teleport(Vector3 position, Quaternion rotation)
         {
             InitInterpResults(position, rotation);
             Snap(position, rotation);
@@ -149,7 +149,7 @@ namespace LiteNetLibManager
         public void Teleport(Vector3 position, Quaternion rotation)
         {
             if (IsServer || (ownerClientCanSendTransform && IsOwnerClient))
-                CallNetFunction("Teleport", FunctionReceivers.All, position, rotation);
+                CallNetFunction(NetFunction_Teleport, FunctionReceivers.All, position, rotation);
         }
 
         public override bool ShouldSyncBehaviour()
