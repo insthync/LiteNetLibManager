@@ -4,7 +4,7 @@ public struct PackedULong : INetSerializable
 {
     public static implicit operator PackedULong(ulong value) { return new PackedULong(value); }
     public static implicit operator ulong(PackedULong value) { return value.value; }
-    private readonly ulong value;
+    private ulong value;
     public PackedULong(ulong value)
     {
         this.value = value;
@@ -17,6 +17,6 @@ public struct PackedULong : INetSerializable
 
     public void Deserialize(NetDataReader reader)
     {
-        this = reader.GetPackedULong();
+        value = reader.GetPackedULong();
     }
 }

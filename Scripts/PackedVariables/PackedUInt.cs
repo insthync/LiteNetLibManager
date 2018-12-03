@@ -4,7 +4,7 @@ public struct PackedUInt : INetSerializable
 {
     public static implicit operator PackedUInt(uint value) { return new PackedUInt(value); }
     public static implicit operator uint(PackedUInt value) { return value.value; }
-    private readonly uint value;
+    private uint value;
     public PackedUInt(uint value)
     {
         this.value = value;
@@ -17,6 +17,6 @@ public struct PackedUInt : INetSerializable
 
     public void Deserialize(NetDataReader reader)
     {
-        this = reader.GetPackedUInt();
+        value = reader.GetPackedUInt();
     }
 }
