@@ -137,6 +137,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[1];
             ParameterTypes = new Type[1];
             ParameterTypes[0] = typeof(T1);
         }
@@ -158,6 +159,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[2];
             ParameterTypes = new Type[2];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -180,6 +182,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[3];
             ParameterTypes = new Type[3];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -203,6 +206,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[4];
             ParameterTypes = new Type[4];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -227,6 +231,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[5];
             ParameterTypes = new Type[5];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -252,6 +257,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[6];
             ParameterTypes = new Type[6];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -278,6 +284,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[7];
             ParameterTypes = new Type[7];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -305,6 +312,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[8];
             ParameterTypes = new Type[8];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -333,6 +341,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[9];
             ParameterTypes = new Type[9];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -362,6 +371,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction()
         {
+            Parameters = new object[10];
             ParameterTypes = new Type[10];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
