@@ -359,45 +359,18 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncListPackedUShort : LiteNetLibSyncList<ushort>
+    public class SyncListPackedUShort : LiteNetLibSyncList<PackedUShort>
     {
-        protected override ushort DeserializeValue(NetDataReader reader)
-        {
-            return reader.GetPackedUShort();
-        }
-
-        protected override void SerializeValue(NetDataWriter writer, ushort value)
-        {
-            writer.PutPackedUShort(value);
-        }
     }
 
     [Serializable]
-    public class SyncListPackedUInt : LiteNetLibSyncList<uint>
+    public class SyncListPackedUInt : LiteNetLibSyncList<PackedUInt>
     {
-        protected override uint DeserializeValue(NetDataReader reader)
-        {
-            return reader.GetPackedUInt();
-        }
-
-        protected override void SerializeValue(NetDataWriter writer, uint value)
-        {
-            writer.PutPackedUInt(value);
-        }
     }
 
     [Serializable]
-    public class SyncListPackedULong : LiteNetLibSyncList<ulong>
+    public class SyncListPackedULong : LiteNetLibSyncList<PackedULong>
     {
-        protected override ulong DeserializeValue(NetDataReader reader)
-        {
-            return reader.GetPackedULong();
-        }
-
-        protected override void SerializeValue(NetDataWriter writer, ulong value)
-        {
-            writer.PutPackedULong(value);
-        }
     }
     #endregion
 }
