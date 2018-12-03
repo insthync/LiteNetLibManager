@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -13,7 +12,7 @@ using UnityEditor;
 namespace LiteNetLibManager
 {
     [RequireComponent(typeof(LiteNetLibIdentity))]
-    public class LiteNetLibBehaviour : MonoBehaviour, ILiteNetLibMessage
+    public partial class LiteNetLibBehaviour : MonoBehaviour, ILiteNetLibMessage
     {
         [LiteNetLibReadOnly, SerializeField]
         private byte behaviourIndex;
@@ -200,6 +199,61 @@ namespace LiteNetLibManager
             }
         }
 
+        public void RegisterNetFunction(NetFunctionDelegate func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction(func));
+        }
+
+        public void RegisterNetFunction<T1>(NetFunctionDelegate<T1> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4, T5>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4, T5, T6>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(func));
+        }
+
+        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func)
+        {
+            RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(func));
+        }
+
         public void RegisterNetFunction(string id, LiteNetLibFunction netFunction)
         {
             if (netFunctionIds.ContainsKey(id))
@@ -220,6 +274,61 @@ namespace LiteNetLibManager
             netFunctionIds[id] = elementId;
         }
 
+        public void CallNetFunction(NetFunctionDelegate func, FunctionReceivers receivers)
+        {
+            CallNetFunction(func.Method.Name, receivers);
+        }
+
+        public void CallNetFunction<T1>(NetFunctionDelegate<T1> func, FunctionReceivers receivers, T1 param1)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1);
+        }
+
+        public void CallNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, FunctionReceivers receivers, T1 param1, T2 param2)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2);
+        }
+
+        public void CallNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        {
+            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+        }
+
         public void CallNetFunction(string id, FunctionReceivers receivers, params object[] parameters)
         {
             ushort elementId;
@@ -233,6 +342,61 @@ namespace LiteNetLibManager
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot call function, function [" + id + "] not found.");
             }
+        }
+
+        public void CallNetFunction(NetFunctionDelegate func, long connectionId)
+        {
+            CallNetFunction(func.Method.Name, connectionId);
+        }
+
+        public void CallNetFunction<T1>(NetFunctionDelegate<T1> func, long connectionId, T1 param1)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1);
+        }
+
+        public void CallNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, long connectionId, T1 param1, T2 param2)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2);
+        }
+
+        public void CallNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, long connectionId, T1 param1, T2 param2, T3 param3)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5, param6);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5, param6, param7);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5, param6, param7, param8);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        {
+            CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
 
         public void CallNetFunction(string id, long connectId, params object[] parameters)
