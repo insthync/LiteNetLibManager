@@ -1,7 +1,198 @@
-﻿namespace LiteNetLib.Utils
+﻿using System;
+using UnityEngine;
+
+namespace LiteNetLib.Utils
 {
     public static class NetDataWriterExtension
     {
+        public static void PutValue(this NetDataWriter writer, object value)
+        {
+            #region Generic Values
+            if (value is bool)
+            {
+                writer.Put((bool)value);
+                return;
+            }
+
+            if (value is byte)
+            {
+                writer.Put((byte)value);
+                return;
+            }
+
+            if (value is char)
+            {
+                writer.Put((char)value);
+                return;
+            }
+
+            if (value is double)
+            {
+                writer.Put((double)value);
+                return;
+            }
+
+            if (value is float)
+            {
+                writer.Put((float)value);
+                return;
+            }
+
+            if (value is int)
+            {
+                writer.Put((int)value);
+                return;
+            }
+
+            if (value is long)
+            {
+                writer.Put((long)value);
+                return;
+            }
+
+            if (value is sbyte)
+            {
+                writer.Put((sbyte)value);
+                return;
+            }
+
+            if (value is short)
+            {
+                writer.Put((short)value);
+                return;
+            }
+
+            if (value is string)
+            {
+                writer.Put((string)value);
+                return;
+            }
+
+            if (value is uint)
+            {
+                writer.Put((uint)value);
+                return;
+            }
+
+            if (value is ulong)
+            {
+                writer.Put((ulong)value);
+                return;
+            }
+
+            if (value is ushort)
+            {
+                writer.Put((ushort)value);
+                return;
+            }
+            #endregion
+
+            #region Unity Values
+            if (value is Color)
+            {
+                writer.Put((Color)value);
+                return;
+            }
+
+            if (value is Quaternion)
+            {
+                writer.Put((Quaternion)value);
+                return;
+            }
+
+            if (value is Vector2)
+            {
+                writer.Put((Vector2)value);
+                return;
+            }
+
+            if (value is Vector2Int)
+            {
+                writer.Put((Vector2Int)value);
+                return;
+            }
+
+            if (value is Vector3)
+            {
+                writer.Put((Vector3)value);
+                return;
+            }
+
+            if (value is Vector3Int)
+            {
+                writer.Put((Vector3Int)value);
+                return;
+            }
+
+            if (value is Vector4)
+            {
+                writer.Put((Vector4)value);
+                return;
+            }
+            #endregion
+
+            if (value is INetSerializable)
+            {
+                ((INetSerializable)value).Serialize(writer);
+                return;
+            }
+
+            throw new ArgumentException("NetDataReader cannot write type " + value.GetType().Name);
+        }
+
+        public static void Put(this NetDataWriter writer, Color value)
+        {
+            var r = (short)(value.r * 100f);
+            var g = (short)(value.g * 100f);
+            var b = (short)(value.b * 100f);
+            var a = (short)(value.a * 100f);
+            writer.Put(r);
+            writer.Put(g);
+            writer.Put(b);
+            writer.Put(a);
+        }
+
+        public static void Put(this NetDataWriter writer, Quaternion value)
+        {
+            writer.Put(value.eulerAngles.x);
+            writer.Put(value.eulerAngles.y);
+            writer.Put(value.eulerAngles.z);
+        }
+
+        public static void Put(this NetDataWriter writer, Vector2 value)
+        {
+            writer.Put(value.x);
+            writer.Put(value.y);
+        }
+
+        public static void Put(this NetDataWriter writer, Vector2Int value)
+        {
+            writer.Put(value.x);
+            writer.Put(value.y);
+        }
+
+        public static void Put(this NetDataWriter writer, Vector3 value)
+        {
+            writer.Put(value.x);
+            writer.Put(value.y);
+            writer.Put(value.z);
+        }
+
+        public static void Put(this NetDataWriter writer, Vector3Int value)
+        {
+            writer.Put(value.x);
+            writer.Put(value.y);
+            writer.Put(value.z);
+        }
+
+        public static void Put(this NetDataWriter writer, Vector4 value)
+        {
+            writer.Put(value.x);
+            writer.Put(value.y);
+            writer.Put(value.z);
+            writer.Put(value.w);
+        }
+
         #region Packed Unsigned Int (Credit: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
         public static void PutPackedUShort(this NetDataWriter writer, ushort value)
         {
