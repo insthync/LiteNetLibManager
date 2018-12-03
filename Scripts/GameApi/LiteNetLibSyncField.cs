@@ -153,12 +153,22 @@ namespace LiteNetLibManager
 
         internal override sealed void Deserialize(NetDataReader reader)
         {
-            value = (TType)reader.GetValue(typeof(TType));
+            DeserializeValue(reader);
             if (onChange != null)
                 onChange.Invoke(value);
         }
 
         internal override sealed void Serialize(NetDataWriter writer)
+        {
+            SerializeValue(writer);
+        }
+
+        protected virtual void DeserializeValue(NetDataReader reader)
+        {
+            value = (TType)reader.GetValue(typeof(TType));
+        }
+
+        protected virtual void SerializeValue(NetDataWriter writer)
         {
             writer.PutValue(value);
         }
@@ -263,6 +273,48 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldVector4 : LiteNetLibSyncField<Vector4>
     {
+    }
+
+    [Serializable]
+    public class SyncFieldPackedUShort : LiteNetLibSyncField<ushort>
+    {
+        protected override void DeserializeValue(NetDataReader reader)
+        {
+            value = reader.GetPackedUShort();
+        }
+
+        protected override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedUShort(value);
+        }
+    }
+
+    [Serializable]
+    public class SyncFieldPackedUInt : LiteNetLibSyncField<uint>
+    {
+        protected override void DeserializeValue(NetDataReader reader)
+        {
+            value = reader.GetPackedUInt();
+        }
+
+        protected override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedUInt(value);
+        }
+    }
+
+    [Serializable]
+    public class SyncFieldPackedULong : LiteNetLibSyncField<ulong>
+    {
+        protected override void DeserializeValue(NetDataReader reader)
+        {
+            value = reader.GetPackedULong();
+        }
+
+        protected override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedULong(value);
+        }
     }
     #endregion
 }

@@ -193,19 +193,19 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
-                    item = (TType)reader.GetValue(typeof(TType));
+                    item = DeserializeValue(reader);
                     list.Add(item);
                     index = list.Count - 1;
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
-                    item = (TType)reader.GetValue(typeof(TType));
+                    item = DeserializeValue(reader);
                     list.Insert(index, item);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
-                    item = (TType)reader.GetValue(typeof(TType));
+                    item = DeserializeValue(reader);
                     list[index] = item;
                     break;
                 case Operation.RemoveAt:
@@ -226,13 +226,13 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
-                    writer.PutValue(list[index]);
+                    SerializeValue(writer, list[index]);
                     break;
                 case Operation.Insert:
                 case Operation.Set:
                 case Operation.Dirty:
                     writer.Put(index);
-                    writer.PutValue(list[index]);
+                    SerializeValue(writer, list[index]);
                     break;
                 case Operation.RemoveAt:
                     writer.Put(index);
@@ -240,6 +240,16 @@ namespace LiteNetLibManager
                 case Operation.Clear:
                     break;
             }
+        }
+
+        protected virtual TType DeserializeValue(NetDataReader reader)
+        {
+            return (TType)reader.GetValue(typeof(TType));
+        }
+
+        protected virtual void SerializeValue(NetDataWriter writer, TType value)
+        {
+            writer.PutValue(value);
         }
     }
 
@@ -346,6 +356,48 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncListVector4 : LiteNetLibSyncList<Vector4>
     {
+    }
+
+    [Serializable]
+    public class SyncListPackedUShort : LiteNetLibSyncList<ushort>
+    {
+        protected override ushort DeserializeValue(NetDataReader reader)
+        {
+            return reader.GetPackedUShort();
+        }
+
+        protected override void SerializeValue(NetDataWriter writer, ushort value)
+        {
+            writer.PutPackedUShort(value);
+        }
+    }
+
+    [Serializable]
+    public class SyncListPackedUInt : LiteNetLibSyncList<uint>
+    {
+        protected override uint DeserializeValue(NetDataReader reader)
+        {
+            return reader.GetPackedUInt();
+        }
+
+        protected override void SerializeValue(NetDataWriter writer, uint value)
+        {
+            writer.PutPackedUInt(value);
+        }
+    }
+
+    [Serializable]
+    public class SyncListPackedULong : LiteNetLibSyncList<ulong>
+    {
+        protected override ulong DeserializeValue(NetDataReader reader)
+        {
+            return reader.GetPackedULong();
+        }
+
+        protected override void SerializeValue(NetDataWriter writer, ulong value)
+        {
+            writer.PutPackedULong(value);
+        }
     }
     #endregion
 }
