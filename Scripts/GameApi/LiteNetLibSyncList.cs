@@ -193,19 +193,19 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
-                    item = (TType)reader.GetValue<TType>();
+                    item = (TType)reader.GetValue(typeof(TType));
                     list.Add(item);
                     index = list.Count - 1;
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
-                    item = (TType)reader.GetValue<TType>();
+                    item = (TType)reader.GetValue(typeof(TType));
                     list.Insert(index, item);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
-                    item = (TType)reader.GetValue<TType>();
+                    item = (TType)reader.GetValue(typeof(TType));
                     list[index] = item;
                     break;
                 case Operation.RemoveAt:

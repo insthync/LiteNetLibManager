@@ -5,10 +5,8 @@ namespace LiteNetLib.Utils
 {
     public static class NetDataReaderExtension
     {
-        public static object GetValue<TType>(this NetDataReader reader)
+        public static object GetValue(this NetDataReader reader, Type type)
         {
-            var type = typeof(TType);
-
             #region Generic Values
             if (type == typeof(bool))
                 return reader.GetBool();

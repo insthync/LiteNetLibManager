@@ -35,13 +35,13 @@ namespace LiteNetLibManager
         internal abstract void Serialize(NetDataWriter writer);
     }
     
-    public class LiteNetLibSyncField<TFieldType> : LiteNetLibSyncField
+    public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
-        public Action<TFieldType> onChange;
+        public Action<TType> onChange;
 
         [LiteNetLibReadOnly, SerializeField]
-        protected TFieldType value;
-        public TFieldType Value
+        protected TType value;
+        public TType Value
         {
             get { return value; }
             set
@@ -64,12 +64,12 @@ namespace LiteNetLibManager
 
         protected bool updatedOnce;
 
-        protected virtual bool IsValueChanged(TFieldType newValue)
+        protected virtual bool IsValueChanged(TType newValue)
         {
             return value == null || !value.Equals(newValue);
         }
 
-        public static implicit operator TFieldType(LiteNetLibSyncField<TFieldType> field)
+        public static implicit operator TType(LiteNetLibSyncField<TType> field)
         {
             return field.Value;
         }
@@ -153,7 +153,7 @@ namespace LiteNetLibManager
 
         internal override sealed void Deserialize(NetDataReader reader)
         {
-            value = (TFieldType)reader.GetValue<TFieldType>();
+            value = (TType)reader.GetValue(typeof(TType));
             if (onChange != null)
                 onChange.Invoke(value);
         }
