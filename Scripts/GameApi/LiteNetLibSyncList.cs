@@ -29,11 +29,10 @@ namespace LiteNetLibManager
         public abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
     }
 
-    public class LiteNetLibSyncList<TField, TFieldType> : LiteNetLibSyncList, IList<TFieldType>
-        where TField : LiteNetLibNetField<TFieldType>, new()
+    public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
     {
-        protected readonly List<TFieldType> list = new List<TFieldType>();
-        public TFieldType this[int index]
+        protected readonly List<TType> list = new List<TType>();
+        public TType this[int index]
         {
             get { return list[index]; }
             set
@@ -41,13 +40,8 @@ namespace LiteNetLibManager
                 if (!ValidateBeforeAccess())
                     return;
 
-                var oldValue = new TField();
-                oldValue.Value = list[index];
-                if (oldValue.IsValueChanged(value))
-                {
-                    list[index] = value;
-                    SendOperation(Operation.Set, index);
-                }
+                list[index] = value;
+                SendOperation(Operation.Set, index);
             }
         }
 
@@ -61,24 +55,17 @@ namespace LiteNetLibManager
             get { return false; }
         }
 
-        public TFieldType Get(int index)
+        public TType Get(int index)
         {
             return this[index];
         }
 
-        public void Set(int index, TFieldType value)
+        public void Set(int index, TType value)
         {
             this[index] = value;
         }
 
-        public void Add(TFieldType value)
-        {
-            var item = new TField();
-            item.Value = value;
-            Add(item);
-        }
-
-        public void Add(TField item)
+        public void Add(TType item)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -86,14 +73,7 @@ namespace LiteNetLibManager
             SendOperation(Operation.Add, list.Count - 1);
         }
 
-        public void Insert(int index, TFieldType value)
-        {
-            var item = new TField();
-            item.Value = value;
-            Insert(index, item);
-        }
-
-        public void Insert(int index, TField item)
+        public void Insert(int index, TType item)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -101,44 +81,21 @@ namespace LiteNetLibManager
             SendOperation(Operation.Insert, index);
         }
 
-        public bool Contains(TFieldType value)
+        public bool Contains(TType item)
         {
-            return list.Contains(value);
+            return list.Contains(item);
         }
 
-        public bool Contains(TField item)
+        public int IndexOf(TType item)
         {
-            return Contains(item.Value);
+            return list.IndexOf(item);
         }
 
-        public int IndexOf(TFieldType value)
-        {
-            return list.IndexOf(value);
-        }
-
-        public int IndexOf(TField item)
-        {
-            return IndexOf(item.Value);
-        }
-
-        public bool Remove(TFieldType value)
+        public bool Remove(TType value)
         {
             if (!ValidateBeforeAccess())
                 return false;
             var index = IndexOf(value);
-            if (index >= 0)
-            {
-                RemoveAt(index);
-                return true;
-            }
-            return false;
-        }
-
-        public bool Remove(TField item)
-        {
-            if (!ValidateBeforeAccess())
-                return false;
-            var index = IndexOf(item);
             if (index >= 0)
             {
                 RemoveAt(index);
@@ -163,12 +120,12 @@ namespace LiteNetLibManager
             SendOperation(Operation.Clear, -1);
         }
 
-        public void CopyTo(TFieldType[] array, int arrayIndex)
+        public void CopyTo(TType[] array, int arrayIndex)
         {
             list.CopyTo(array, arrayIndex);
         }
 
-        public IEnumerator<TFieldType> GetEnumerator()
+        public IEnumerator<TType> GetEnumerator()
         {
             return list.GetEnumerator();
         }
@@ -232,23 +189,23 @@ namespace LiteNetLibManager
         {
             var operation = (Operation)reader.GetByte();
             var index = -1;
-            var item = new TField();
+            TType item;
             switch (operation)
             {
                 case Operation.Add:
-                    item.Deserialize(reader);
+                    item = (TType)reader.GetValue<TType>();
                     list.Add(item);
                     index = list.Count - 1;
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
-                    item.Deserialize(reader);
+                    item = (TType)reader.GetValue<TType>();
                     list.Insert(index, item);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
-                    item.Deserialize(reader);
+                    item = (TType)reader.GetValue<TType>();
                     list[index] = item;
                     break;
                 case Operation.RemoveAt:
@@ -265,20 +222,17 @@ namespace LiteNetLibManager
 
         public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
         {
-            var item = new TField();
             writer.Put((byte)operation);
             switch (operation)
             {
                 case Operation.Add:
-                    item.Value = list[index];
-                    item.Serialize(writer);
+                    writer.PutValue(list[index]);
                     break;
                 case Operation.Insert:
                 case Operation.Set:
                 case Operation.Dirty:
                     writer.Put(index);
-                    item.Value = list[index];
-                    item.Serialize(writer);
+                    writer.PutValue(list[index]);
                     break;
                 case Operation.RemoveAt:
                     writer.Put(index);
@@ -290,113 +244,107 @@ namespace LiteNetLibManager
     }
 
     #region Implement for general usages and serializable
+    // Generics
+
     [Serializable]
-    public class SyncListBool : LiteNetLibSyncList<NetFieldBool, bool>
+    public class SyncListBool : LiteNetLibSyncList<bool>
     {
     }
 
     [Serializable]
-    public class SyncListByte : LiteNetLibSyncList<NetFieldByte, byte>
+    public class SyncListByte : LiteNetLibSyncList<byte>
     {
     }
 
     [Serializable]
-    public class SyncListChar : LiteNetLibSyncList<NetFieldChar, char>
+    public class SyncListChar : LiteNetLibSyncList<char>
     {
     }
 
     [Serializable]
-    public class SyncListColor : LiteNetLibSyncList<NetFieldColor, Color>
+    public class SyncListDouble : LiteNetLibSyncList<double>
     {
     }
 
     [Serializable]
-    public class SyncListDouble : LiteNetLibSyncList<NetFieldDouble, double>
+    public class SyncListFloat : LiteNetLibSyncList<float>
     {
     }
 
     [Serializable]
-    public class SyncListFloat : LiteNetLibSyncList<NetFieldFloat, float>
+    public class SyncListInt : LiteNetLibSyncList<int>
     {
     }
 
     [Serializable]
-    public class SyncListInt : LiteNetLibSyncList<NetFieldInt, int>
+    public class SyncListLong : LiteNetLibSyncList<long>
     {
     }
 
     [Serializable]
-    public class SyncListLong : LiteNetLibSyncList<NetFieldLong, long>
+    public class SyncListSByte : LiteNetLibSyncList<sbyte>
     {
     }
 
     [Serializable]
-    public class SyncListQuaternion : LiteNetLibSyncList<NetFieldQuaternion, Quaternion>
+    public class SyncListShort : LiteNetLibSyncList<short>
     {
     }
 
     [Serializable]
-    public class SyncListSByte : LiteNetLibSyncList<NetFieldSByte, sbyte>
+    public class SyncListString : LiteNetLibSyncList<string>
     {
     }
 
     [Serializable]
-    public class SyncListShort : LiteNetLibSyncList<NetFieldShort, short>
+    public class SyncListUInt : LiteNetLibSyncList<uint>
     {
     }
 
     [Serializable]
-    public class SyncListString : LiteNetLibSyncList<NetFieldString, string>
+    public class SyncListULong : LiteNetLibSyncList<ulong>
     {
     }
 
     [Serializable]
-    public class SyncListUInt : LiteNetLibSyncList<NetFieldUInt, uint>
+    public class SyncListUShort : LiteNetLibSyncList<ushort>
+    {
+    }
+
+    // Unity
+
+    [Serializable]
+    public class SyncListColor : LiteNetLibSyncList<Color>
     {
     }
 
     [Serializable]
-    public class SyncListULong : LiteNetLibSyncList<NetFieldULong, ulong>
+    public class SyncListQuaternion : LiteNetLibSyncList<Quaternion>
     {
     }
 
     [Serializable]
-    public class SyncListUShort : LiteNetLibSyncList<NetFieldUShort, ushort>
+    public class SyncListVector2 : LiteNetLibSyncList<Vector2>
     {
     }
 
     [Serializable]
-    public class SyncListVector2 : LiteNetLibSyncList<NetFieldVector2, Vector2>
+    public class SyncListVector2Int : LiteNetLibSyncList<Vector2Int>
     {
     }
 
     [Serializable]
-    public class SyncListVector2Int : LiteNetLibSyncList<NetFieldVector2Int, Vector2Int>
+    public class SyncListVector3 : LiteNetLibSyncList<Vector3>
     {
     }
 
     [Serializable]
-    public class SyncListVector3 : LiteNetLibSyncList<NetFieldVector3, Vector3>
+    public class SyncListVector3Int : LiteNetLibSyncList<Vector3Int>
     {
     }
 
     [Serializable]
-    public class SyncListVector3Int : LiteNetLibSyncList<NetFieldVector3Int, Vector3Int>
-    {
-    }
-
-    [Serializable]
-    public class SyncListVector4 : LiteNetLibSyncList<NetFieldVector4, Vector4>
-    {
-    }
-
-    [Serializable]
-    public class SyncListPackedUInt : LiteNetLibSyncList<NetFieldUInt, uint>
-    {
-    }
-
-    [Serializable]
-    public class SyncListPackedULong : LiteNetLibSyncList<NetFieldULong, ulong>
+    public class SyncListVector4 : LiteNetLibSyncList<Vector4>
     {
     }
     #endregion

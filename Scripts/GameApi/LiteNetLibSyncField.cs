@@ -35,21 +35,9 @@ namespace LiteNetLibManager
         internal abstract void Serialize(NetDataWriter writer);
     }
     
-    public class LiteNetLibSyncField<TField, TFieldType> : LiteNetLibSyncField
-        where TField : LiteNetLibNetField<TFieldType>, new()
+    public class LiteNetLibSyncField<TFieldType> : LiteNetLibSyncField
     {
         public Action<TFieldType> onChange;
-
-        protected TField field;
-        public TField Field
-        {
-            get
-            {
-                if (field == null)
-                    field = new TField();
-                return field;
-            }
-        }
 
         [LiteNetLibReadOnly, SerializeField]
         protected TFieldType value;
@@ -61,22 +49,27 @@ namespace LiteNetLibManager
                 if (!ValidateBeforeAccess())
                     return;
 
-                if (Field.IsValueChanged(value))
+                if (IsValueChanged(value))
                 {
-                    Field.Value = this.value = value;
+                    this.value = value;
                     hasUpdate = true;
                     // If never updates, force update it as initialize state
                     if (!updatedOnce)
                         SendUpdate();
                     if (onChange != null)
-                        onChange(value);
+                        onChange.Invoke(value);
                 }
             }
         }
 
         protected bool updatedOnce;
 
-        public static implicit operator TFieldType(LiteNetLibSyncField<TField, TFieldType> field)
+        protected virtual bool IsValueChanged(TFieldType newValue)
+        {
+            return value == null || !value.Equals(newValue);
+        }
+
+        public static implicit operator TFieldType(LiteNetLibSyncField<TFieldType> field)
         {
             return field.Value;
         }
@@ -160,138 +153,115 @@ namespace LiteNetLibManager
 
         internal override sealed void Deserialize(NetDataReader reader)
         {
-            Field.Deserialize(reader);
-            value = Field.Value;
+            value = (TFieldType)reader.GetValue<TFieldType>();
             if (onChange != null)
-                onChange(value);
+                onChange.Invoke(value);
         }
 
         internal override sealed void Serialize(NetDataWriter writer)
         {
-            Field.Value = value;
-            Field.Serialize(writer);
+            writer.PutValue(value);
         }
     }
 
     #region Implement for general usages and serializable
     [Serializable]
-    public class SyncFieldBool : LiteNetLibSyncField<NetFieldBool, bool>
+    public class SyncFieldBool : LiteNetLibSyncField<bool>
     {
     }
 
     [Serializable]
-    public class SyncFieldByte : LiteNetLibSyncField<NetFieldByte, byte>
+    public class SyncFieldByte : LiteNetLibSyncField<byte>
     {
     }
 
     [Serializable]
-    public class SyncFieldChar : LiteNetLibSyncField<NetFieldChar, char>
+    public class SyncFieldChar : LiteNetLibSyncField<char>
     {
     }
 
     [Serializable]
-    public class SyncFieldColor : LiteNetLibSyncField<NetFieldColor, Color>
+    public class SyncFieldDouble : LiteNetLibSyncField<double>
     {
     }
 
     [Serializable]
-    public class SyncFieldDouble : LiteNetLibSyncField<NetFieldDouble, double>
+    public class SyncFieldFloat : LiteNetLibSyncField<float>
     {
     }
 
     [Serializable]
-    public class SyncFieldFloat : LiteNetLibSyncField<NetFieldFloat, float>
+    public class SyncFieldInt : LiteNetLibSyncField<int>
     {
     }
 
     [Serializable]
-    public class SyncFieldInt : LiteNetLibSyncField<NetFieldInt, int>
+    public class SyncFieldLong : LiteNetLibSyncField<long>
     {
     }
 
     [Serializable]
-    public class SyncFieldLong : LiteNetLibSyncField<NetFieldLong, long>
+    public class SyncFieldSByte : LiteNetLibSyncField<sbyte>
     {
     }
 
     [Serializable]
-    public class SyncFieldQuaternion : LiteNetLibSyncField<NetFieldQuaternion, Quaternion>
+    public class SyncFieldShort : LiteNetLibSyncField<short>
     {
     }
 
     [Serializable]
-    public class SyncFieldSByte : LiteNetLibSyncField<NetFieldSByte, sbyte>
+    public class SyncFieldString : LiteNetLibSyncField<string>
     {
     }
 
     [Serializable]
-    public class SyncFieldShort : LiteNetLibSyncField<NetFieldShort, short>
+    public class SyncFieldUInt : LiteNetLibSyncField<uint>
     {
     }
 
     [Serializable]
-    public class SyncFieldString : LiteNetLibSyncField<NetFieldString, string>
+    public class SyncFieldULong : LiteNetLibSyncField<ulong>
     {
     }
 
     [Serializable]
-    public class SyncFieldUInt : LiteNetLibSyncField<NetFieldUInt, uint>
+    public class SyncFieldUShort : LiteNetLibSyncField<ushort>
     {
     }
 
     [Serializable]
-    public class SyncFieldULong : LiteNetLibSyncField<NetFieldULong, ulong>
+    public class SyncFieldColor : LiteNetLibSyncField<Color>
     {
     }
 
     [Serializable]
-    public class SyncFieldUShort : LiteNetLibSyncField<NetFieldUShort, ushort>
+    public class SyncFieldQuaternion : LiteNetLibSyncField<Quaternion>
     {
     }
 
     [Serializable]
-    public class SyncFieldVector2 : LiteNetLibSyncField<NetFieldVector2, Vector2>
+    public class SyncFieldVector2 : LiteNetLibSyncField<Vector2>
     {
     }
 
     [Serializable]
-    public class SyncFieldVector2Int : LiteNetLibSyncField<NetFieldVector2Int, Vector2Int>
+    public class SyncFieldVector2Int : LiteNetLibSyncField<Vector2Int>
     {
     }
 
     [Serializable]
-    public class SyncFieldVector3 : LiteNetLibSyncField<NetFieldVector3, Vector3>
+    public class SyncFieldVector3 : LiteNetLibSyncField<Vector3>
     {
     }
 
     [Serializable]
-    public class SyncFieldVector3Int : LiteNetLibSyncField<NetFieldVector3Int, Vector3Int>
+    public class SyncFieldVector3Int : LiteNetLibSyncField<Vector3Int>
     {
     }
 
     [Serializable]
-    public class SyncFieldVector4 : LiteNetLibSyncField<NetFieldVector4, Vector4>
-    {
-    }
-
-    [Serializable]
-    public class SyncFieldStruct<T> : LiteNetLibSyncField<NetFieldStruct<T>, T>
-        where T : struct
-    {
-    }
-
-    [Serializable]
-    public class SyncFieldPackedUShort : LiteNetLibSyncField<NetFieldPackedUShort, ushort>
-    {
-    }
-
-    [Serializable]
-    public class SyncFieldPackedUInt : LiteNetLibSyncField<NetFieldPackedUInt, uint>
-    {
-    }
-
-    [Serializable]
-    public class SyncFieldPackedULong : LiteNetLibSyncField<NetFieldPackedULong, ulong>
+    public class SyncFieldVector4 : LiteNetLibSyncField<Vector4>
     {
     }
     #endregion
