@@ -31,6 +31,13 @@ namespace LiteNetLibManager
             public const ushort Highest = 14;
         }
 
+        public class DestroyObjectReasons
+        {
+            public const byte RequestedToDestroy = 0;
+            public const byte RemovedFromSubscribing = 1;
+            public const byte Highest = 1;
+        }
+
         public float updateServerTimeDuration = 5f;
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
@@ -391,7 +398,7 @@ namespace LiteNetLibManager
             identity.SendInitSyncLists(connectionId);
         }
 
-        public void SendServerDestroyObject(uint objectId, DestroyObjectReasons reasons)
+        public void SendServerDestroyObject(uint objectId, byte reasons)
         {
             if (!IsServer)
                 return;
@@ -401,7 +408,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendServerDestroyObject(long connectionId, uint objectId, DestroyObjectReasons reasons)
+        public void SendServerDestroyObject(long connectionId, uint objectId, byte reasons)
         {
             if (!IsServer)
                 return;

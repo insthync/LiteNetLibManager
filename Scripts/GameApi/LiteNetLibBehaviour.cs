@@ -545,7 +545,7 @@ namespace LiteNetLibManager
         /// This function will be called when object destroy from server
         /// </summary>
         /// <param name="reasons"></param>
-        public virtual void OnNetworkDestroy(DestroyObjectReasons reasons) { }
+        public virtual void OnNetworkDestroy(byte reasons) { }
 
         /// <summary>
         /// This function will be called when function OnValidate() have been called in edior

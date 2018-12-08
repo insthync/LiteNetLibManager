@@ -223,7 +223,7 @@ namespace LiteNetLibManager
             return null;
         }
 
-        public bool NetworkDestroy(GameObject gameObject, DestroyObjectReasons reasons)
+        public bool NetworkDestroy(GameObject gameObject, byte reasons)
         {
             if (gameObject == null)
             {
@@ -239,7 +239,7 @@ namespace LiteNetLibManager
             return NetworkDestroy(identity.ObjectId, reasons);
         }
 
-        public bool NetworkDestroy(uint objectId, DestroyObjectReasons reasons)
+        public bool NetworkDestroy(uint objectId, byte reasons)
         {
             if (!Manager.IsNetworkActive)
             {

@@ -553,12 +553,12 @@ namespace LiteNetLibManager
             yield return new WaitForSecondsRealtime(delay);
             if (!destroyed)
             {
-                Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
+                Manager.Assets.NetworkDestroy(ObjectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
                 destroyed = true;
             }
         }
 
-        public void OnNetworkDestroy(DestroyObjectReasons reasons)
+        public void OnNetworkDestroy(byte reasons)
         {
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
