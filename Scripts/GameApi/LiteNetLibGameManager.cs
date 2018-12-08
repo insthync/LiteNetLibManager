@@ -39,6 +39,8 @@ namespace LiteNetLibManager
         }
 
         public float updateServerTimeDuration = 5f;
+        public bool doNotEnterGameOnConnect;
+        public bool doNotDestroyOnSceneChanges;
 
         internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
@@ -77,9 +79,6 @@ namespace LiteNetLibManager
                 return assets;
             }
         }
-
-        public bool doNotEnterGameOnConnect;
-        public bool doNotDestroyOnSceneChanges;
 
         protected override void Awake()
         {
