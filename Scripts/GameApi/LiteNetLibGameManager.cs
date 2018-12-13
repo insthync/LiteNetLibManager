@@ -129,7 +129,7 @@ namespace LiteNetLibManager
             if (loadSceneAsyncOperation == null)
             {
                 // If doNotDestroyOnSceneChanges not TRUE still not destroy this game object
-                // But it will be destroyed after scene loaded
+                // But it will be destroyed after scene loaded, if scene is offline scene
                 if (!doNotDestroyOnSceneChanges)
                     DontDestroyOnLoad(gameObject);
 
@@ -197,7 +197,10 @@ namespace LiteNetLibManager
                     }
                 }
                 else if (!doNotDestroyOnSceneChanges)
+                {
+                    // Destroy manager's game object if loaded scene is not online scene
                     Destroy(gameObject);
+                }
             }
         }
 
