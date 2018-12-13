@@ -11,7 +11,7 @@ namespace LiteNetLibManager
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
-        [Tooltip("If this is TRUE, this will update for owner object only")]
+        [Tooltip("If this is TRUE, this will update to owner client only")]
         public bool forOwnerOnly;
         public bool hasUpdate { get; protected set; }
         protected float lastSentTime;

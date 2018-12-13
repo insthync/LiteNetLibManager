@@ -19,6 +19,7 @@ namespace LiteNetLibManager
             Set,
             Dirty,
         }
+        [Tooltip("If this is TRUE, this will update to owner client only")]
         public bool forOwnerOnly;
         public OnChanged onOperation;
 
