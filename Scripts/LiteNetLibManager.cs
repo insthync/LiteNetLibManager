@@ -47,7 +47,7 @@ namespace LiteNetLibManager
             get
             {
                 if (transportFactory == null)
-                    transportFactory = new LiteNetLibTransportFactory();
+                    transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
                 return transportFactory;
             }
         }
