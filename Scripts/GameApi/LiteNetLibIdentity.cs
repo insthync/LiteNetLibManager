@@ -119,8 +119,10 @@ namespace LiteNetLibManager
 
         private bool ThisIsAPrefab()
         {
-            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-            if (prefabType == PrefabType.Prefab)
+            PrefabAssetType prefabAssetType = PrefabUtility.GetPrefabAssetType(gameObject);
+            if (prefabAssetType == PrefabAssetType.Regular ||
+                prefabAssetType == PrefabAssetType.Model ||
+                prefabAssetType == PrefabAssetType.Variant)
                 return true;
             return false;
         }
@@ -128,10 +130,10 @@ namespace LiteNetLibManager
         private bool ThisIsASceneObjectWithPrefabParent(out GameObject prefab)
         {
             prefab = null;
-            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-            if (prefabType == PrefabType.None)
+            PrefabAssetType prefabAssetType = PrefabUtility.GetPrefabAssetType(gameObject);
+            if (prefabAssetType == PrefabAssetType.NotAPrefab)
                 return false;
-            prefab = (GameObject)PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+            prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
             if (prefab == null)
             {
                 Debug.LogError("Failed to find prefab parent for scene object [name:" + gameObject.name + "]");
