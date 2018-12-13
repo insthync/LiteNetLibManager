@@ -14,6 +14,12 @@ namespace LiteNetLib.Utils
                 return;
             }
 
+            if (value is bool[])
+            {
+                writer.PutArray((bool[])value);
+                return;
+            }
+
             if (value is byte)
             {
                 writer.Put((byte)value);
@@ -32,9 +38,21 @@ namespace LiteNetLib.Utils
                 return;
             }
 
+            if (value is double[])
+            {
+                writer.PutArray((double[])value);
+                return;
+            }
+
             if (value is float)
             {
                 writer.Put((float)value);
+                return;
+            }
+
+            if (value is float[])
+            {
+                writer.PutArray((float[])value);
                 return;
             }
 
@@ -44,9 +62,21 @@ namespace LiteNetLib.Utils
                 return;
             }
 
+            if (value is int[])
+            {
+                writer.PutArray((int[])value);
+                return;
+            }
+
             if (value is long)
             {
                 writer.Put((long)value);
+                return;
+            }
+
+            if (value is long[])
+            {
+                writer.PutArray((long[])value);
                 return;
             }
 
@@ -62,6 +92,12 @@ namespace LiteNetLib.Utils
                 return;
             }
 
+            if (value is short[])
+            {
+                writer.PutArray((short[])value);
+                return;
+            }
+
             if (value is string)
             {
                 writer.Put((string)value);
@@ -74,15 +110,33 @@ namespace LiteNetLib.Utils
                 return;
             }
 
+            if (value is uint[])
+            {
+                writer.PutArray((uint[])value);
+                return;
+            }
+
             if (value is ulong)
             {
                 writer.Put((ulong)value);
                 return;
             }
 
+            if (value is ulong[])
+            {
+                writer.PutArray((ulong[])value);
+                return;
+            }
+
             if (value is ushort)
             {
                 writer.Put((ushort)value);
+                return;
+            }
+
+            if (value is ushort[])
+            {
+                writer.PutArray((ushort[])value);
                 return;
             }
             #endregion

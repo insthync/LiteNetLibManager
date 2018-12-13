@@ -11,6 +11,9 @@ namespace LiteNetLib.Utils
             if (type == typeof(bool))
                 return reader.GetBool();
 
+            if (type == typeof(bool[]))
+                return reader.GetBoolArray();
+
             if (type == typeof(byte))
                 return reader.GetByte();
 
@@ -20,14 +23,26 @@ namespace LiteNetLib.Utils
             if (type == typeof(double))
                 return reader.GetDouble();
 
+            if (type == typeof(double[]))
+                return reader.GetDoubleArray();
+
             if (type == typeof(float))
                 return reader.GetFloat();
+
+            if (type == typeof(float[]))
+                return reader.GetFloatArray();
 
             if (type == typeof(int))
                 return reader.GetInt();
 
+            if (type == typeof(int[]))
+                return reader.GetIntArray();
+
             if (type == typeof(long))
                 return reader.GetLong();
+
+            if (type == typeof(long[]))
+                return reader.GetLongArray();
 
             if (type == typeof(sbyte))
                 return reader.GetSByte();
@@ -35,17 +50,29 @@ namespace LiteNetLib.Utils
             if (type == typeof(short))
                 return reader.GetShort();
 
+            if (type == typeof(short[]))
+                return reader.GetShortArray();
+
             if (type == typeof(string))
                 return reader.GetString();
 
             if (type == typeof(uint))
                 return reader.GetUInt();
 
+            if (type == typeof(uint[]))
+                return reader.GetUIntArray();
+
             if (type == typeof(ulong))
                 return reader.GetULong();
 
+            if (type == typeof(ulong[]))
+                return reader.GetULongArray();
+
             if (type == typeof(ushort))
                 return reader.GetUShort();
+
+            if (type == typeof(ushort[]))
+                return reader.GetUShortArray();
             #endregion
 
             #region Unity Values

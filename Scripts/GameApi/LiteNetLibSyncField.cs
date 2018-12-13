@@ -181,6 +181,11 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldBoolArray : LiteNetLibSyncField<bool[]>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldByte : LiteNetLibSyncField<byte>
     {
     }
@@ -196,7 +201,17 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldDoubleArray : LiteNetLibSyncField<double[]>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldFloat : LiteNetLibSyncField<float>
+    {
+    }
+
+    [Serializable]
+    public class SyncFieldFloatArray : LiteNetLibSyncField<float[]>
     {
     }
 
@@ -206,7 +221,17 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldIntArray : LiteNetLibSyncField<int[]>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldLong : LiteNetLibSyncField<long>
+    {
+    }
+
+    [Serializable]
+    public class SyncFieldLongArray : LiteNetLibSyncField<long[]>
     {
     }
 
@@ -221,6 +246,11 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldShortArray : LiteNetLibSyncField<short[]>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldString : LiteNetLibSyncField<string>
     {
     }
@@ -231,12 +261,27 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldUIntArray : LiteNetLibSyncField<uint[]>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldULong : LiteNetLibSyncField<ulong>
     {
     }
 
     [Serializable]
+    public class SyncFieldULongArray : LiteNetLibSyncField<ulong[]>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldUShort : LiteNetLibSyncField<ushort>
+    {
+    }
+
+    [Serializable]
+    public class SyncFieldUShortArray : LiteNetLibSyncField<ushort[]>
     {
     }
 
