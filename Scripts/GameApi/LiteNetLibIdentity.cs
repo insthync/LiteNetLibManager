@@ -121,7 +121,6 @@ namespace LiteNetLibManager
         {
             PrefabAssetType prefabAssetType = PrefabUtility.GetPrefabAssetType(gameObject);
             if (prefabAssetType == PrefabAssetType.Regular ||
-                prefabAssetType == PrefabAssetType.Model ||
                 prefabAssetType == PrefabAssetType.Variant)
                 return true;
             return false;
