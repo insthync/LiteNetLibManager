@@ -8,7 +8,7 @@ namespace LiteNetLibManager
     {
         public LiteNetLibManager Manager { get; protected set; }
 
-        public LiteNetLibServer(LiteNetLibManager manager, string connectKey) : base(manager.transport, connectKey)
+        public LiteNetLibServer(LiteNetLibManager manager, string connectKey) : base(manager.Transport, connectKey)
         {
             Manager = manager;
         }

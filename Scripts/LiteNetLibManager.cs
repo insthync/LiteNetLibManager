@@ -40,7 +40,28 @@ namespace LiteNetLibManager
         [Header("Server Only Configs")]
         public int maxConnections = 4;
 
-        public ITransport transport = new LiteNetLibTransport();
+        [SerializeField]
+        private BaseTransportFactory transportFactory;
+        public BaseTransportFactory TransportFactory
+        {
+            get
+            {
+                if (transportFactory == null)
+                    transportFactory = new LiteNetLibTransportFactory();
+                return transportFactory;
+            }
+        }
+
+        private ITransport transport;
+        public ITransport Transport
+        {
+            get
+            {
+                if (transport == null)
+                    transport = TransportFactory.Build();
+                return transport;
+            }
+        }
 
         protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
 
@@ -59,14 +80,14 @@ namespace LiteNetLibManager
         protected virtual void OnDestroy()
         {
             StopHost();
-            transport.Destroy();
+            Transport.Destroy();
         }
 
         protected virtual void OnApplicationQuit()
         {
 #if UNITY_EDITOR
             StopHost();
-            transport.Destroy();
+            Transport.Destroy();
 #endif
         }
 
