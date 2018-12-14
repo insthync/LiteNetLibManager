@@ -7,6 +7,9 @@ namespace LiteNetLib.Utils
     {
         public static void PutValue(this NetDataWriter writer, object value)
         {
+            if (value == null)
+                return;
+
             #region Generic Values
             if (value is bool)
             {
