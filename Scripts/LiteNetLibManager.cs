@@ -40,6 +40,7 @@ namespace LiteNetLibManager
         [Header("Server Only Configs")]
         public int maxConnections = 4;
 
+        [Header("Other Configs")]
         [SerializeField]
         private BaseTransportFactory transportFactory;
         public BaseTransportFactory TransportFactory
