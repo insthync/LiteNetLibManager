@@ -77,7 +77,7 @@ private void Alert() {
 ```
 
 
-### Call Command, ClientRpc, TargetRpc
+## Call Command, ClientRpc, TargetRpc
 **UNET**
 ```
 CmdShoot(bulletType);
@@ -89,4 +89,18 @@ TargetAlert(connectionToClient);
 CallNetFunction(Shoot, FunctionReceivers.Server, bulletType);
 CallNetFunction(ShowDamage, FunctionReceivers.All, damage);
 CallNetFunction(Alert, ConnectionId);
+```
+
+## Autority Checking
+**UNET**
+```
+isServer
+isClient
+isLocalPlayer
+```
+**LiteNetLibManager**
+```
+IsServer
+IsClient
+IsOwnerClient
 ```
