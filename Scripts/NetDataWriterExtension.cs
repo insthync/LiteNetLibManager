@@ -5,141 +5,138 @@ namespace LiteNetLib.Utils
 {
     public static class NetDataWriterExtension
     {
-        public static void PutValue(this NetDataWriter writer, object value)
+        public static void PutValue<TType>(this NetDataWriter writer, TType value)
         {
-            if (value == null)
-                return;
-
             #region Generic Values
             if (value is bool)
             {
-                writer.Put((bool)value);
+                writer.Put((bool)(object)value);
                 return;
             }
 
             if (value is bool[])
             {
-                writer.PutArray((bool[])value);
+                writer.PutArray((bool[])(object)value);
                 return;
             }
 
             if (value is byte)
             {
-                writer.Put((byte)value);
+                writer.Put((byte)(object)value);
                 return;
             }
 
             if (value is char)
             {
-                writer.Put((char)value);
+                writer.Put((char)(object)value);
                 return;
             }
 
             if (value is double)
             {
-                writer.Put((double)value);
+                writer.Put((double)(object)value);
                 return;
             }
 
             if (value is double[])
             {
-                writer.PutArray((double[])value);
+                writer.PutArray((double[])(object)value);
                 return;
             }
 
             if (value is float)
             {
-                writer.Put((float)value);
+                writer.Put((float)(object)value);
                 return;
             }
 
             if (value is float[])
             {
-                writer.PutArray((float[])value);
+                writer.PutArray((float[])(object)value);
                 return;
             }
 
             if (value is int)
             {
-                writer.Put((int)value);
+                writer.Put((int)(object)value);
                 return;
             }
 
             if (value is int[])
             {
-                writer.PutArray((int[])value);
+                writer.PutArray((int[])(object)value);
                 return;
             }
 
             if (value is long)
             {
-                writer.Put((long)value);
+                writer.Put((long)(object)value);
                 return;
             }
 
             if (value is long[])
             {
-                writer.PutArray((long[])value);
+                writer.PutArray((long[])(object)value);
                 return;
             }
 
             if (value is sbyte)
             {
-                writer.Put((sbyte)value);
+                writer.Put((sbyte)(object)value);
                 return;
             }
 
             if (value is short)
             {
-                writer.Put((short)value);
+                writer.Put((short)(object)value);
                 return;
             }
 
             if (value is short[])
             {
-                writer.PutArray((short[])value);
+                writer.PutArray((short[])(object)value);
                 return;
             }
 
-            if (value is string)
+            if (typeof(TType) == typeof(string))
             {
-                writer.Put((string)value);
+                writer.Put((string)(object)value);
                 return;
             }
 
             if (value is uint)
             {
-                writer.Put((uint)value);
+                writer.Put((uint)(object)value);
                 return;
             }
 
             if (value is uint[])
             {
-                writer.PutArray((uint[])value);
+                writer.PutArray((uint[])(object)value);
                 return;
             }
 
             if (value is ulong)
             {
-                writer.Put((ulong)value);
+                writer.Put((ulong)(object)value);
                 return;
             }
 
             if (value is ulong[])
             {
-                writer.PutArray((ulong[])value);
+                writer.PutArray((ulong[])(object)value);
                 return;
             }
 
             if (value is ushort)
             {
-                writer.Put((ushort)value);
+                writer.Put((ushort)(object)value);
                 return;
             }
 
             if (value is ushort[])
             {
-                writer.PutArray((ushort[])value);
+                writer.PutArray((ushort[])(object)value);
                 return;
             }
             #endregion
@@ -147,43 +144,43 @@ namespace LiteNetLib.Utils
             #region Unity Values
             if (value is Color)
             {
-                writer.Put((Color)value);
+                writer.Put((Color)(object)value);
                 return;
             }
 
             if (value is Quaternion)
             {
-                writer.Put((Quaternion)value);
+                writer.Put((Quaternion)(object)value);
                 return;
             }
 
             if (value is Vector2)
             {
-                writer.Put((Vector2)value);
+                writer.Put((Vector2)(object)value);
                 return;
             }
 
             if (value is Vector2Int)
             {
-                writer.Put((Vector2Int)value);
+                writer.Put((Vector2Int)(object)value);
                 return;
             }
 
             if (value is Vector3)
             {
-                writer.Put((Vector3)value);
+                writer.Put((Vector3)(object)value);
                 return;
             }
 
             if (value is Vector3Int)
             {
-                writer.Put((Vector3Int)value);
+                writer.Put((Vector3Int)(object)value);
                 return;
             }
 
             if (value is Vector4)
             {
-                writer.Put((Vector4)value);
+                writer.Put((Vector4)(object)value);
                 return;
             }
             #endregion
