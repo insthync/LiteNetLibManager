@@ -222,7 +222,7 @@ namespace LiteNetLibManager
             Client.ClientSendPacket(options, msgType, serializer);
         }
 
-        public void ClientSendPacket<T>(SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
+        public void ClientSendPacket<T>(SendOptions options, ushort msgType, T messageData) where T : INetSerializable
         {
             ClientSendPacket(options, msgType, messageData.Serialize);
         }
@@ -237,7 +237,7 @@ namespace LiteNetLibManager
             Server.ServerSendPacket(connectionId, options, msgType, serializer);
         }
 
-        public void ServerSendPacket<T>(long connectionId, SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
+        public void ServerSendPacket<T>(long connectionId, SendOptions options, ushort msgType, T messageData) where T : INetSerializable
         {
             ServerSendPacket(connectionId, options, msgType, messageData.Serialize);
         }
@@ -257,7 +257,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void ServerSendPacketToAllConnections<T>(SendOptions options, ushort msgType, T messageData) where T : ILiteNetLibMessage
+        public void ServerSendPacketToAllConnections<T>(SendOptions options, ushort msgType, T messageData) where T : INetSerializable
         {
             foreach (var connectionId in ConnectionIds)
             {

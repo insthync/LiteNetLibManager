@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public class BaseAckMessage : ILiteNetLibMessage
+    public class BaseAckMessage : INetSerializable
     {
         public uint ackId;
         public AckResponseCode responseCode;

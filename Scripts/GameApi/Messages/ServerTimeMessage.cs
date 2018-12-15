@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public class ServerTimeMessage : ILiteNetLibMessage
+    public class ServerTimeMessage : INetSerializable
     {
         public float serverTime;
 

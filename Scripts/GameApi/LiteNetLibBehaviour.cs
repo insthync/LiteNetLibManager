@@ -12,7 +12,7 @@ using UnityEditor;
 namespace LiteNetLibManager
 {
     [RequireComponent(typeof(LiteNetLibIdentity))]
-    public partial class LiteNetLibBehaviour : MonoBehaviour, ILiteNetLibMessage
+    public partial class LiteNetLibBehaviour : MonoBehaviour, INetSerializable
     {
         [LiteNetLibReadOnly, SerializeField]
         private byte behaviourIndex;
