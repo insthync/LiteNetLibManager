@@ -119,18 +119,13 @@ namespace LiteNetLibManager
 
         private bool ThisIsAPrefab()
         {
-            PrefabAssetType prefabAssetType = PrefabUtility.GetPrefabAssetType(gameObject);
-            if (prefabAssetType == PrefabAssetType.Regular ||
-                prefabAssetType == PrefabAssetType.Variant)
-                return true;
-            return false;
+            return PrefabUtility.IsPartOfPrefabAsset(gameObject);
         }
 
         private bool ThisIsASceneObjectWithPrefabParent(out GameObject prefab)
         {
             prefab = null;
-            PrefabAssetType prefabAssetType = PrefabUtility.GetPrefabAssetType(gameObject);
-            if (prefabAssetType == PrefabAssetType.NotAPrefab)
+            if (!PrefabUtility.IsPartOfNonAssetPrefabInstance(gameObject))
                 return false;
             prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
             if (prefab == null)
