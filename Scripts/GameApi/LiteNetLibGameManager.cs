@@ -93,9 +93,9 @@ namespace LiteNetLibManager
             if (IsServer && loadSceneAsyncOperation == null)
             {
                 Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
-                foreach (var spawnedObject in Assets.SpawnedObjects)
+                foreach (var spawnedObject in Assets.SpawnedObjects.Values)
                 {
-                    spawnedObject.Value.NetworkUpdate();
+                    spawnedObject.NetworkUpdate();
                 }
                 Profiler.EndSample();
                 if (Time.unscaledTime - lastSendServerTime > updateServerTimeDuration)
@@ -687,13 +687,13 @@ namespace LiteNetLibManager
             player.IsReady = true;
             var playerIdentity = SpawnPlayer(connectionId);
             DeserializeClientReadyExtra(playerIdentity, connectionId, reader);
-            foreach (var spawnedObject in Assets.SpawnedObjects)
+            foreach (var spawnedObject in Assets.SpawnedObjects.Values)
             {
-                if (spawnedObject.Value.ConnectionId == player.ConnectionId)
+                if (spawnedObject.ConnectionId == player.ConnectionId)
                     continue;
 
-                if (spawnedObject.Value.ShouldAddSubscriber(player))
-                    spawnedObject.Value.AddSubscriber(player);
+                if (spawnedObject.ShouldAddSubscriber(player))
+                    spawnedObject.AddSubscriber(player);
             }
         }
 
