@@ -18,14 +18,14 @@ namespace LiteNetLibManager
             this.reader = reader;
         }
 
-        public T ReadMessage<T>() where T : ILiteNetLibMessage, new()
+        public T ReadMessage<T>() where T : INetSerializable, new()
         {
             var msg = new T();
             msg.Deserialize(reader);
             return msg;
         }
 
-        public void ReadMessage<T>(T msg) where T : ILiteNetLibMessage
+        public void ReadMessage<T>(T msg) where T : INetSerializable
         {
             msg.Deserialize(reader);
         }

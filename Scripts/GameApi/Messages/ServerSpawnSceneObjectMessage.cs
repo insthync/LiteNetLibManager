@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace LiteNetLibManager
 {
-    public class ServerSpawnSceneObjectMessage : ILiteNetLibMessage
+    public class ServerSpawnSceneObjectMessage : INetSerializable
     {
         public uint objectId;
         public Vector3 position;

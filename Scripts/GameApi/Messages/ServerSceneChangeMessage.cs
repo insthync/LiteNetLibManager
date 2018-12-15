@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public class ServerSceneChangeMessage : ILiteNetLibMessage
+    public class ServerSceneChangeMessage : INetSerializable
     {
         public string serverSceneName;
 

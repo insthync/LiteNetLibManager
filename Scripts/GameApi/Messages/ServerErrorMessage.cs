@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public class ServerErrorMessage : ILiteNetLibMessage
+    public class ServerErrorMessage : INetSerializable
     {
         public bool shouldDisconnect;
         public string errorMessage;
