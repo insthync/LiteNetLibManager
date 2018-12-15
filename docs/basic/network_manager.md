@@ -26,6 +26,23 @@ When you're writing your scripts for connections, you'll have to call following 
 - `LiteNetLibGameManager.StartServer()` to start game as server only
 - `LiteNetLibGameManager.StartClient()` to start game as client only
 - `LiteNetLibGameManager.StartHost()` to start game as host which start both server and client
+- `LiteNetLibGameManager.StopServer()`, to stop when running as server
+- `LiteNetLibGameManager.StopClient()`, to stop when running as client
+- `LiteNetLibGameManager.StopHost()`, to stop when running as host. It will stop both server and client, so you can use this to stop when running as server or client too
+
+There are following functions that overrideable:
+- `LiteNetLibGameManager.OnPeerNetworkError()`, Called on the server when a network error occurs for a client connection.
+- `LiteNetLibGameManager.OnPeerConnected()`, Called on the server when a new client connects.
+- `LiteNetLibGameManager.OnPeerDisconnected()`, Called on the server when a client disconnects.
+- `LiteNetLibGameManager.OnClientNetworkError()`, Called on clients when a network error occurs.
+- `LiteNetLibGameManager.OnClientConnected()`, Called on the client when connected to a server.
+- `LiteNetLibGameManager.OnClientDisconnected()`, Called on clients when disconnected from a server.
+- `LiteNetLibGameManager.OnStartClient()`, This is a hook that is invoked when the client is started.
+- `LiteNetLibGameManager.OnStartHost()`, This hook is invoked when a host is started.
+- `LiteNetLibGameManager.OnStartServer()`, This hook is invoked when a server is started.
+- `LiteNetLibGameManager.OnStopClient()`, This hook is called when a client is stopped.
+- `LiteNetLibGameManager.OnStopHost()`, This hook is called when a host is stopped.
+- `LiteNetLibGameManager.OnStopServer()`, This hook is called when a server is stopped.
 
 ## Scene Management
 
