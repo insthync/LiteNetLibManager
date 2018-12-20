@@ -153,17 +153,29 @@ namespace LiteNetLibManager
             {
                 // This is a scene object with prefab link
                 AssignAssetID(prefab);
-                ValidateObjectId();
-                if (!Application.isPlaying)
-                    EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+                if (gameObject.scene != null && gameObject.scene == SceneManager.GetActiveScene())
+                {
+                    // Assign object id if it is in scene
+                    ValidateObjectId();
+                    if (!Application.isPlaying)
+                        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+                }
+                else
+                    objectId = 0;
             }
             else
             {
                 // This is a pure scene object (Not a prefab)
                 assetId = string.Empty;
-                ValidateObjectId();
-                if (!Application.isPlaying)
-                    EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+                if (gameObject.scene != null && gameObject.scene == SceneManager.GetActiveScene())
+                {
+                    // Assign object id if it is in scene
+                    ValidateObjectId();
+                    if (!Application.isPlaying)
+                        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+                }
+                else
+                    objectId = 0;
             }
             // Do not mark dirty while playing
             if (!Application.isPlaying)
@@ -252,9 +264,19 @@ namespace LiteNetLibManager
 
         public bool IsSceneObjectExists(uint objectId)
         {
-            if (Manager == null)
-                return false;
-            return Manager.Assets.ContainsSceneObject(objectId);
+            if (Manager != null)
+            {
+                // If this is spawned while gameplay, find it by manager assets
+                return Manager.Assets.ContainsSceneObject(objectId);
+            }
+            // If this is now spawned while gameplay, find objects in scene
+            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            foreach (LiteNetLibIdentity netObject in netObjects)
+            {
+                if (netObject.objectId == objectId && netObject != this)
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>
