@@ -286,6 +286,7 @@ namespace LiteNetLibManager
             this.objectId = objectId;
             this.connectId = connectId;
             this.manager = manager;
+            destroyed = false;
             if (objectId > HighestObjectId)
                 HighestObjectId = objectId;
             if (!isSceneObject)
@@ -573,6 +574,7 @@ namespace LiteNetLibManager
             {
                 Manager.Assets.NetworkDestroy(ObjectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
                 destroyed = true;
+                Debug.LogError("Destroy");
             }
         }
 
