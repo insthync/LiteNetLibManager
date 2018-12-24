@@ -574,7 +574,6 @@ namespace LiteNetLibManager
             {
                 Manager.Assets.NetworkDestroy(ObjectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
                 destroyed = true;
-                Debug.LogError("Destroy");
             }
         }
 
