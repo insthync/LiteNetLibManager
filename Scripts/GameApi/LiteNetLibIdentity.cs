@@ -119,15 +119,32 @@ namespace LiteNetLibManager
 
         private bool ThisIsAPrefab()
         {
+#if UNITY_2018_3_OR_NEWER
             return PrefabUtility.IsPartOfPrefabAsset(gameObject);
+#else
+            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
+            if (prefabType == PrefabType.Prefab)
+                return true;
+            return false;
+#endif
         }
 
-        private bool ThisIsASceneObjectWithPrefabParent(out GameObject prefab)
+        private bool ThisIsASceneObjectWithThatReferencesPrefabAsset(out GameObject prefab)
         {
             prefab = null;
+#if UNITY_2018_3_OR_NEWER
             if (!PrefabUtility.IsPartOfNonAssetPrefabInstance(gameObject))
                 return false;
+#else
+            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
+            if (prefabType == PrefabType.None)
+                return false;
+#endif
+#if UNITY_2018_2_OR_NEWER
             prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+#else
+            prefab = (GameObject)PrefabUtility.GetPrefabParent(gameObject);
+#endif
             if (prefab == null)
             {
                 Debug.LogError("Failed to find prefab parent for scene object [name:" + gameObject.name + "]");
@@ -145,7 +162,7 @@ namespace LiteNetLibManager
                 AssignAssetID(gameObject);
                 objectId = 0;
             }
-            else if (ThisIsASceneObjectWithPrefabParent(out prefab))
+            else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out prefab))
             {
                 // This is a scene object with prefab link
                 AssignAssetID(prefab);
@@ -178,9 +195,9 @@ namespace LiteNetLibManager
                 EditorUtility.SetDirty(this);
         }
 #endif
-        #endregion
+#endregion
 
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
+            internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
