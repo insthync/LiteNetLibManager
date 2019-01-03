@@ -3,26 +3,32 @@ using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
+#if !UNITY_WEBGL || UNITY_EDITOR
 using WebSocketSharp;
 using WebSocketSharp.Server;
+#endif
 
 namespace LiteNetLibManager
 {
     public class WebSocketTransport : ITransport
     {
         private WebSocket client;
+#if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer server;
         private long nextConnectionId = 1;
         private long tempConnectionId;
         private readonly Dictionary<long, WSBehavior> serverPeers;
         private readonly Queue<TransportEventData> serverEventQueue;
+#endif
         private bool dirtyIsConnected;
         private byte[] tempBuffers;
 
         public WebSocketTransport()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             serverPeers = new Dictionary<long, WSBehavior>();
             serverEventQueue = new Queue<TransportEventData>();
+#endif
         }
 
         public bool IsClientStarted()
@@ -89,11 +95,16 @@ namespace LiteNetLibManager
 
         public bool IsServerStarted()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             return server != null;
+#else
+            return false;
+#endif
         }
 
         public bool StartServer(string connectKey, int port, int maxConnections)
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             serverPeers.Clear();
             server = new WebSocketServer(port);
             server.AddWebSocketService("/", () =>
@@ -105,45 +116,58 @@ namespace LiteNetLibManager
             });
             server.Start();
             return true;
+#else
+            return false;
+#endif
         }
 
         public bool ServerReceive(out TransportEventData eventData)
         {
             eventData = default(TransportEventData);
+#if !UNITY_WEBGL || UNITY_EDITOR
             if (server == null)
                 return false;
             if (serverEventQueue.Count == 0)
                 return false;
             eventData = serverEventQueue.Dequeue();
             return true;
+#else
+            return false;
+#endif
         }
 
         public bool ServerSend(long connectionId, SendOptions sendOptions, NetDataWriter writer)
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
             {
                 serverPeers[connectionId].Context.WebSocket.Send(writer.Data);
                 return true;
             }
+#endif
             return false;
         }
 
         public bool ServerDisconnect(long connectionId)
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
             {
                 serverPeers[connectionId].Context.WebSocket.Close();
                 return true;
             }
+#endif
             return false;
         }
 
         public void StopServer()
         {
+#if !UNITY_WEBGL || UNITY_EDITOR
             if (server != null)
                 server.Stop();
             nextConnectionId = 1;
             server = null;
+#endif
         }
 
         public void Destroy()
@@ -161,6 +185,7 @@ namespace LiteNetLibManager
             return port;
         }
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private class WSBehavior : WebSocketBehavior
         {
             public long connectionId { get; }
@@ -212,5 +237,6 @@ namespace LiteNetLibManager
                 });
             }
         }
+#endif
     }
 }
