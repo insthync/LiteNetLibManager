@@ -120,6 +120,7 @@ public class WebSocket
 #endif
         }
     }
+
     public string Error
     {
         get
