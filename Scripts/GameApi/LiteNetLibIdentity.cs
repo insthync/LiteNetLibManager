@@ -197,9 +197,9 @@ namespace LiteNetLibManager
                 EditorUtility.SetDirty(this);
         }
 #endif
-#endregion
+        #endregion
 
-            internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
+        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
@@ -416,7 +416,7 @@ namespace LiteNetLibManager
             // Only server can manage subscribers
             if (!IsServer || subscriber == null)
                 return;
-            
+
             if (Subscribers.ContainsKey(subscriber.ConnectionId))
             {
                 if (Manager.LogDebug)
@@ -480,7 +480,7 @@ namespace LiteNetLibManager
             bool shouldRebuild = false;
             HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
             HashSet<LiteNetLibPlayer> oldSubscribers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
-            
+
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 shouldRebuild |= Behaviours[loopCounter].OnRebuildSubscribers(newSubscribers, initialize);
