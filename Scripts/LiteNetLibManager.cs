@@ -36,6 +36,7 @@ namespace LiteNetLibManager
         public string connectKey = "SampleConnectKey";
         public string networkAddress = "localhost";
         public int networkPort = 7770;
+        public bool useWebSocket = false;
 
         [Header("Server Only Configs")]
         public int maxConnections = 4;
@@ -47,8 +48,22 @@ namespace LiteNetLibManager
         {
             get
             {
-                if (transportFactory == null)
-                    transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
+#if UNITY_WEBGL && !UNITY_EDITOR
+                // Force to use websocket transport if it's running as webgl
+                if (transportFactory == null || !(transportFactory is WebSocketTransportFactory))
+                    transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+#else
+                if (useWebSocket)
+                {
+                    if (transportFactory == null || !(transportFactory is WebSocketTransportFactory))
+                        transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+                }
+                else
+                {
+                    if (transportFactory == null)
+                        transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
+                }
+#endif
                 return transportFactory;
             }
         }
@@ -216,7 +231,7 @@ namespace LiteNetLibManager
             return ConnectionIds;
         }
 
-        #region Packets send / read
+#region Packets send / read
         public void ClientSendPacket(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             Client.ClientSendPacket(options, msgType, serializer);
@@ -246,9 +261,9 @@ namespace LiteNetLibManager
         {
             ServerSendPacket(connectionId, options, msgType, null);
         }
-        #endregion
+#endregion
 
-        #region Relates components functions
+#region Relates components functions
         public void ServerSendPacketToAllConnections(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             foreach (var connectionId in ConnectionIds)
@@ -292,9 +307,9 @@ namespace LiteNetLibManager
         {
             Client.UnregisterMessage(msgType);
         }
-        #endregion
+#endregion
 
-        #region Network Events Callbacks
+#region Network Events Callbacks
         /// <summary>
         /// This event will be called at server when there are any network error
         /// </summary>
@@ -331,9 +346,9 @@ namespace LiteNetLibManager
         /// This event will be called at client when disconnected from server
         /// </summary>
         public virtual void OnClientDisconnected(DisconnectInfo disconnectInfo) { }
-        #endregion
+#endregion
 
-        #region Start / Stop Callbacks
+#region Start / Stop Callbacks
         // Since there are multiple versions of StartServer, StartClient and StartHost, to reliably customize
         // their functionality, users would need override all the versions. Instead these callbacks are invoked
         // from all versions, so users only need to implement this one case.
@@ -385,6 +400,6 @@ namespace LiteNetLibManager
         {
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
         }
-        #endregion
+#endregion
     }
 }
