@@ -155,6 +155,8 @@ namespace LiteNetLibManager
 
         private void SetupIDs()
         {
+            var oldAssetId = assetId;
+            var oldObjectId = objectId;
             GameObject prefab;
             if (ThisIsAPrefab())
             {
@@ -191,7 +193,7 @@ namespace LiteNetLibManager
                     objectId = 0;
             }
             // Do not mark dirty while playing
-            if (!Application.isPlaying)
+            if (!Application.isPlaying && (oldAssetId != assetId || oldObjectId != objectId))
                 EditorUtility.SetDirty(this);
         }
 #endif
