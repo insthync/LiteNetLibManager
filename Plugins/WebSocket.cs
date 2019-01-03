@@ -56,42 +56,75 @@ public class WebSocket
 	[DllImport("__Internal")]
 	private static extern int SocketError(int socketInstance, byte[] ptr, int length);
 
-	int m_NativeRef = 0;
+	private int m_NativeRef = 0;
+#else
+    private WebSocketSharp.WebSocket m_Socket;
+    private Queue<byte[]> m_Messages = new Queue<byte[]>();
+    private string m_Error = null;
+#endif
 
-	public void Send(byte[] buffer)
-	{
-		SocketSend(m_NativeRef, buffer, buffer.Length);
-	}
-
-	public byte[] Recv()
-	{
-		int length = SocketRecvLength (m_NativeRef);
-		if (length == 0)
-			return null;
-		byte[] buffer = new byte[length];
-		SocketRecv(m_NativeRef, buffer, length);
-		return buffer;
-	}
-
-	public void Connect()
-	{
-		m_NativeRef = SocketCreate(mUrl.ToString());
-	}
- 
-	public void Close()
-	{
-		SocketClose(m_NativeRef);
-	}
-    
-    public bool IsConnected
+    public void Connect()
     {
-        get { return SocketState(m_NativeRef) == 1; }
+#if UNITY_WEBGL && !UNITY_EDITOR
+		m_NativeRef = SocketCreate(mUrl.ToString());
+#else
+        m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
+        m_Socket.OnMessage += (sender, e) => m_Messages.Enqueue(e.RawData);
+        m_Socket.OnError += (sender, e) => m_Error = e.Message;
+        m_Socket.ConnectAsync();
+#endif
     }
 
-	public string Error
-	{
-		get
+    public void Close()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        SocketClose(m_NativeRef);
+#else
+        m_Socket.Close();
+#endif
+    }
+
+    public void Send(byte[] buffer)
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        SocketSend(m_NativeRef, buffer, buffer.Length);
+#else
+        m_Socket.Send(buffer);
+#endif
+    }
+
+    public byte[] Recv()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        int length = SocketRecvLength(m_NativeRef);
+        if (length == 0)
+            return null;
+        byte[] buffer = new byte[length];
+        SocketRecv(m_NativeRef, buffer, length);
+        return buffer;
+#else
+        if (m_Messages.Count == 0)
+            return null;
+        return m_Messages.Dequeue();
+#endif
+    }
+
+    public bool IsConnected
+    {
+        get
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return SocketState(m_NativeRef) == 1;
+#else
+            return m_Socket.ReadyState == WebSocketSharp.WebSocketState.Open;
+#endif
+        }
+    }
+    public string Error
+    {
+        get
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
 			const int bufsize = 1024;
 			byte[] buffer = new byte[bufsize];
 			int result = SocketError(m_NativeRef, buffer, bufsize);
@@ -99,41 +132,10 @@ public class WebSocket
 			if (result == 0)
 				return null;
 
-			return Encoding.UTF8.GetString (buffer);				
-		}
-	}
+			return Encoding.UTF8.GetString (buffer);
 #else
-    WebSocketSharp.WebSocket m_Socket;
-    Queue<byte[]> m_Messages = new Queue<byte[]>();
-    bool m_IsConnected = false;
-    string m_Error = null;
-
-    public void Connect()
-    {
-        m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
-        m_Socket.OnMessage += (sender, e) => m_Messages.Enqueue(e.RawData);
-        m_Socket.OnError += (sender, e) => m_Error = e.Message;
-        m_Socket.ConnectAsync();
+            return m_Error;
+#endif
+        }
     }
-
-    public void Send(byte[] buffer)
-    {
-        m_Socket.Send(buffer);
-    }
-
-    public byte[] Recv()
-    {
-        if (m_Messages.Count == 0)
-            return null;
-        return m_Messages.Dequeue();
-    }
-
-    public void Close()
-    {
-        m_Socket.Close();
-    }
-
-    public bool IsConnected { get { return m_Socket.ReadyState == WebSocketSharp.WebSocketState.Open; } }
-    public string Error { get { return m_Error; } }
-#endif 
 }
