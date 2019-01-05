@@ -196,10 +196,10 @@ namespace LiteNetLib.Utils
 
         public static void Put(this NetDataWriter writer, Color value)
         {
-            var r = (short)(value.r * 100f);
-            var g = (short)(value.g * 100f);
-            var b = (short)(value.b * 100f);
-            var a = (short)(value.a * 100f);
+            short r = (short)(value.r * 100f);
+            short g = (short)(value.g * 100f);
+            short b = (short)(value.b * 100f);
+            short a = (short)(value.a * 100f);
             writer.Put(r);
             writer.Put(g);
             writer.Put(b);

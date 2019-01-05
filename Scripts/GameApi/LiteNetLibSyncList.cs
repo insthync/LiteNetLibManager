@@ -96,7 +96,7 @@ namespace LiteNetLibManager
         {
             if (!ValidateBeforeAccess())
                 return false;
-            var index = IndexOf(value);
+            int index = IndexOf(value);
             if (index >= 0)
             {
                 RemoveAt(index);
@@ -146,7 +146,7 @@ namespace LiteNetLibManager
             if (!ValidateBeforeAccess())
                 return;
 
-            var manager = Manager;
+            LiteNetLibGameManager manager = Manager;
             if (!manager.IsServer)
                 return;
 
@@ -155,13 +155,13 @@ namespace LiteNetLibManager
             
             if (forOwnerOnly)
             {
-                var connectId = Behaviour.ConnectionId;
+                long connectId = Behaviour.ConnectionId;
                 if (manager.ContainsConnectionId(connectId))
                     SendOperation(connectId, operation, index);
             }
             else
             {
-                foreach (var connectionId in manager.GetConnectionIds())
+                foreach (long connectionId in manager.GetConnectionIds())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
                         SendOperation(connectionId, operation, index);
@@ -188,8 +188,8 @@ namespace LiteNetLibManager
 
         public override sealed void DeserializeOperation(NetDataReader reader)
         {
-            var operation = (Operation)reader.GetByte();
-            var index = -1;
+            Operation operation = (Operation)reader.GetByte();
+            int index = -1;
             TType item;
             switch (operation)
             {

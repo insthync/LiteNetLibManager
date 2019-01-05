@@ -37,7 +37,7 @@ namespace LiteNetLibManager
         internal void ClearSubscribing(bool destroyObjectsOnPeer)
         {
             // Remove this from identities subscriber list
-            foreach (var identity in SubscribingObjects)
+            foreach (LiteNetLibIdentity identity in SubscribingObjects)
             {
                 // Don't call for remove subscribing 
                 // because it's going to clear in this function
@@ -53,8 +53,8 @@ namespace LiteNetLibManager
         /// </summary>
         internal void DestroyAllObjects()
         {
-            var objectIds = new List<uint>(SpawnedObjects.Keys);
-            foreach (var objectId in objectIds)
+            List<uint> objectIds = new List<uint>(SpawnedObjects.Keys);
+            foreach (uint objectId in objectIds)
                 Manager.Assets.NetworkDestroy(objectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
             SpawnedObjects.Clear();
         }

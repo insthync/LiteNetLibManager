@@ -63,9 +63,9 @@ namespace LiteNetLibManager
         public void RegisterPrefabs()
         {
             GuidToPrefabs.Clear();
-            for (var i = 0; i < spawnablePrefabs.Length; ++i)
+            for (int i = 0; i < spawnablePrefabs.Length; ++i)
             {
-                var registeringPrefab = spawnablePrefabs[i];
+                LiteNetLibIdentity registeringPrefab = spawnablePrefabs[i];
                 RegisterPrefab(registeringPrefab);
             }
             if (playerPrefab != null)
@@ -99,10 +99,10 @@ namespace LiteNetLibManager
 
         public void ClearSpawnedObjects()
         {
-            var objectIds = new List<uint>(SpawnedObjects.Keys);
-            for (var i = objectIds.Count - 1; i >= 0; --i)
+            List<uint> objectIds = new List<uint>(SpawnedObjects.Keys);
+            for (int i = objectIds.Count - 1; i >= 0; --i)
             {
-                var objectId = objectIds[i];
+                uint objectId = objectIds[i];
                 LiteNetLibIdentity spawnedObject;
                 if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
                 {
@@ -121,10 +121,10 @@ namespace LiteNetLibManager
         public void RegisterSceneObjects()
         {
             SceneObjects.Clear();
-            var sceneObjects = FindObjectsOfType<LiteNetLibIdentity>();
-            for (var i = 0; i < sceneObjects.Length; ++i)
+            LiteNetLibIdentity[] sceneObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            for (int i = 0; i < sceneObjects.Length; ++i)
             {
-                var sceneObject = sceneObjects[i];
+                LiteNetLibIdentity sceneObject = sceneObjects[i];
                 if (sceneObject.ObjectId > 0)
                 {
                     sceneObject.gameObject.SetActive(false);
@@ -135,10 +135,10 @@ namespace LiteNetLibManager
 
         public void SpawnSceneObjects()
         {
-            var sceneObjects = new List<LiteNetLibIdentity>(SceneObjects.Values);
-            for (var i = 0; i < sceneObjects.Count; ++i)
+            List<LiteNetLibIdentity> sceneObjects = new List<LiteNetLibIdentity>(SceneObjects.Values);
+            for (int i = 0; i < sceneObjects.Count; ++i)
             {
-                var sceneObject = sceneObjects[i];
+                LiteNetLibIdentity sceneObject = sceneObjects[i];
                 NetworkSpawnScene(sceneObject.ObjectId, sceneObject.transform.position, sceneObject.transform.rotation);
             }
         }
@@ -173,7 +173,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - gameObject is null.");
                 return null;
             }
-            var identity = gameObject.GetComponent<LiteNetLibIdentity>();
+            LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
             return NetworkSpawn(identity, position, rotation, objectId, connectId);
         }
 
@@ -206,7 +206,7 @@ namespace LiteNetLibManager
             LiteNetLibIdentity spawningObject = null;
             if (GuidToPrefabs.TryGetValue(hashAssetId, out spawningObject))
             {
-                var spawnedObject = Instantiate(spawningObject);
+                LiteNetLibIdentity spawnedObject = Instantiate(spawningObject);
                 spawnedObject.gameObject.SetActive(true);
                 spawnedObject.transform.position = position;
                 spawnedObject.transform.rotation = rotation;
@@ -230,7 +230,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - gameObject is null.");
                 return false;
             }
-            var identity = gameObject.GetComponent<LiteNetLibIdentity>();
+            LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
             if (identity == null)
             {
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");

@@ -115,7 +115,7 @@ namespace LiteNetLibManager
             // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
             if (!ownerClientCanSendTransform || IsOwnerClient)
                 return;
-            var result = DeserializeResult(reader);
+            TransformResult result = DeserializeResult(reader);
             // Discard out of order results
             if (result.timestamp <= lastClientTimestamp)
                 return;
@@ -180,7 +180,7 @@ namespace LiteNetLibManager
             // Update transform only non-owner client
             if ((ownerClientCanSendTransform && IsOwnerClient) || IsServer)
                 return;
-            var result = DeserializeResult(reader);
+            TransformResult result = DeserializeResult(reader);
             // Discard out of order results
             if (result.timestamp <= lastServerTimestamp)
                 return;
@@ -192,7 +192,7 @@ namespace LiteNetLibManager
 
         private TransformResult DeserializeResult(NetDataReader reader)
         {
-            var result = new TransformResult();
+            TransformResult result = new TransformResult();
             result.position = new Vector3(
                 DeserializePositionAxis(reader, syncPositionX, syncingTransform.position.x),
                 DeserializePositionAxis(reader, syncPositionY, syncingTransform.position.y),
@@ -318,7 +318,7 @@ namespace LiteNetLibManager
 
         private bool ShouldSnap(Vector3 targetPosition)
         {
-            var dist = 0f;
+            float dist = 0f;
             if (CacheRigidbody2D != null)
                 dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
             else

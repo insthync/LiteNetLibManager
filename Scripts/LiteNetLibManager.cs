@@ -129,7 +129,7 @@ namespace LiteNetLibManager
 
             Server = new LiteNetLibServer(this, connectKey);
             RegisterServerMessages();
-            var canStartServer = !isOffline ? Server.StartServer(networkPort, maxConnections) : Server.StartServerOffline();
+            bool canStartServer = !isOffline ? Server.StartServer(networkPort, maxConnections) : Server.StartServerOffline();
             if (!canStartServer)
             {
                 if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
@@ -266,7 +266,7 @@ namespace LiteNetLibManager
 #region Relates components functions
         public void ServerSendPacketToAllConnections(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 ServerSendPacket(connectionId, options, msgType, serializer);
             }
@@ -274,7 +274,7 @@ namespace LiteNetLibManager
 
         public void ServerSendPacketToAllConnections<T>(SendOptions options, ushort msgType, T messageData) where T : INetSerializable
         {
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 ServerSendPacket(connectionId, options, msgType, messageData);
             }
@@ -282,7 +282,7 @@ namespace LiteNetLibManager
 
         public void ServerSendPacketToAllConnections(SendOptions options, ushort msgType)
         {
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 ServerSendPacket(connectionId, options, msgType);
             }

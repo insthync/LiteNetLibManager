@@ -110,7 +110,7 @@ namespace LiteNetLibManager
             server.AddWebSocketService("/", () =>
             {
                 tempConnectionId = nextConnectionId++;
-                var behavior = new WSBehavior(tempConnectionId, serverEventQueue);
+                WSBehavior behavior = new WSBehavior(tempConnectionId, serverEventQueue);
                 serverPeers[tempConnectionId] = behavior;
                 return behavior;
             });

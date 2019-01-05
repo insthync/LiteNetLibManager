@@ -44,7 +44,7 @@ namespace LiteNetLibManager
 
         protected void SendCall(FunctionReceivers receivers, long targetConnectionId)
         {
-            var manager = Manager;
+            LiteNetLibGameManager manager = Manager;
 
             if (manager.IsServer)
             {
@@ -55,7 +55,7 @@ namespace LiteNetLibManager
                             ServerSendCall(targetConnectionId, receivers, targetConnectionId);
                         break;
                     case FunctionReceivers.All:
-                        foreach (var connectionId in manager.GetConnectionIds())
+                        foreach (long connectionId in manager.GetConnectionIds())
                         {
                             if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
                                 ServerSendCall(connectionId, receivers, targetConnectionId);
@@ -113,7 +113,7 @@ namespace LiteNetLibManager
         {
             if (Parameters == null || Parameters.Length == 0)
                 return;
-            for (var i = 0; i < Parameters.Length; ++i)
+            for (int i = 0; i < Parameters.Length; ++i)
             {
                 Parameters[i] = reader.GetValue(ParameterTypes[i]);
             }
@@ -123,7 +123,7 @@ namespace LiteNetLibManager
         {
             if (Parameters == null || Parameters.Length == 0)
                 return;
-            for (var i = 0; i < Parameters.Length; ++i)
+            for (int i = 0; i < Parameters.Length; ++i)
             {
                 writer.PutValue(Parameters[i]);
             }

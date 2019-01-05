@@ -101,11 +101,11 @@ namespace LiteNetLibManager
 
         protected void ReadPacket(long connectionId, NetDataReader reader)
         {
-            var msgType = reader.GetPackedUShort();
+            ushort msgType = reader.GetPackedUShort();
             MessageHandlerDelegate handlerDelegate;
             if (messageHandlers.TryGetValue(msgType, out handlerDelegate))
             {
-                var messageHandler = new LiteNetLibMessageHandler(msgType, this, connectionId, reader);
+                LiteNetLibMessageHandler messageHandler = new LiteNetLibMessageHandler(msgType, this, connectionId, reader);
                 handlerDelegate.Invoke(messageHandler);
             }
         }
@@ -122,7 +122,7 @@ namespace LiteNetLibManager
 
         public uint AddAckCallback(AckMessageCallback callback)
         {
-            var ackId = nextAckId++;
+            uint ackId = nextAckId++;
             lock (ackCallbacks)
                 ackCallbacks.Add(ackId, callback);
             return ackId;

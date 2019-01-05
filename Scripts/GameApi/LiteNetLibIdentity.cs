@@ -155,8 +155,8 @@ namespace LiteNetLibManager
 
         private void SetupIDs()
         {
-            var oldAssetId = assetId;
-            var oldObjectId = objectId;
+            string oldAssetId = assetId;
+            uint oldObjectId = objectId;
             GameObject prefab;
             if (ThisIsAPrefab())
             {
@@ -230,7 +230,7 @@ namespace LiteNetLibManager
         {
             if (behaviourIndex >= Behaviours.Length)
                 return null;
-            var behaviour = Behaviours[behaviourIndex];
+            LiteNetLibBehaviour behaviour = Behaviours[behaviourIndex];
             behaviour.Deserialize(reader);
             return behaviour;
         }
@@ -400,8 +400,8 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            var values = Subscribers.Values;
-            foreach (var subscriber in values)
+            Dictionary<long, LiteNetLibPlayer>.ValueCollection values = Subscribers.Values;
+            foreach (LiteNetLibPlayer subscriber in values)
             {
                 subscriber.RemoveSubscribing(this, false);
             }
@@ -453,7 +453,7 @@ namespace LiteNetLibManager
 
         internal bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
         {
-            for (var i = 0; i < Behaviours.Length; ++i)
+            for (int i = 0; i < Behaviours.Length; ++i)
             {
                 if (!Behaviours[i].ShouldAddSubscriber(subscriber))
                     return false;
@@ -472,7 +472,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            var ownerPlayer = Player;
+            LiteNetLibPlayer ownerPlayer = Player;
             if (initialize)
                 AddSubscriber(ownerPlayer);
 
@@ -492,8 +492,8 @@ namespace LiteNetLibManager
                 // None of the behaviours rebuilt our subscribers, use built-in rebuild method
                 if (initialize)
                 {
-                    var players = Manager.Players.Values;
-                    foreach (var player in players)
+                    Dictionary<long, LiteNetLibPlayer>.ValueCollection players = Manager.Players.Values;
+                    foreach (LiteNetLibPlayer player in players)
                     {
                         if (ConnectionId == player.ConnectionId || !player.IsReady)
                             continue;
@@ -506,7 +506,7 @@ namespace LiteNetLibManager
             }
 
             // Apply changes from rebuild
-            foreach (var subscriber in newSubscribers)
+            foreach (LiteNetLibPlayer subscriber in newSubscribers)
             {
                 if (subscriber == null)
                     continue;
@@ -528,7 +528,7 @@ namespace LiteNetLibManager
             }
 
             // Remove subscribers that is not in new subscribers list
-            foreach (var subscriber in oldSubscribers)
+            foreach (LiteNetLibPlayer subscriber in oldSubscribers)
             {
                 if (!newSubscribers.Contains(subscriber))
                 {
@@ -544,12 +544,12 @@ namespace LiteNetLibManager
 
             // Rebuild subscribers
             Subscribers.Clear();
-            foreach (var subscriber in newSubscribers)
+            foreach (LiteNetLibPlayer subscriber in newSubscribers)
                 Subscribers.Add(subscriber.ConnectionId, subscriber);
 
 #if UNITY_EDITOR
             subscriberIds.Clear();
-            foreach (var subscriber in newSubscribers)
+            foreach (LiteNetLibPlayer subscriber in newSubscribers)
                 subscriberIds.Add(subscriber.ConnectionId);
 #endif
         }

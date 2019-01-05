@@ -93,7 +93,7 @@ namespace LiteNetLibManager
             if (IsServer && loadSceneAsyncOperation == null)
             {
                 Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
-                foreach (var spawnedObject in Assets.SpawnedObjects.Values)
+                foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
                 {
                     spawnedObject.NetworkUpdate();
                 }
@@ -135,7 +135,7 @@ namespace LiteNetLibManager
 
                 if (online)
                 {
-                    foreach (var player in Players.Values)
+                    foreach (LiteNetLibPlayer player in Players.Values)
                     {
                         player.IsReady = false;
                         player.SubscribingObjects.Clear();
@@ -244,7 +244,7 @@ namespace LiteNetLibManager
             base.OnPeerDisconnected(connectionId, disconnectInfo);
             if (Players.ContainsKey(connectionId))
             {
-                var player = Players[connectionId];
+                LiteNetLibPlayer player = Players[connectionId];
                 player.ClearSubscribing(false);
                 player.DestroyAllObjects();
                 Players.Remove(connectionId);
@@ -322,7 +322,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 SendServerTime(connectionId);
             }
@@ -332,7 +332,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            var message = new ServerTimeMessage();
+            ServerTimeMessage message = new ServerTimeMessage();
             message.serverTime = ServerTime;
             ServerSendPacket(connectionId, SendOptions.Sequenced, GameMsgTypes.ServerTime, message);
         }
@@ -341,7 +341,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 SendServerSpawnSceneObject(connectionId, identity);
             }
@@ -354,7 +354,7 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player = null;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
-            var message = new ServerSpawnSceneObjectMessage();
+            ServerSpawnSceneObjectMessage message = new ServerSpawnSceneObjectMessage();
             message.objectId = identity.ObjectId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
@@ -365,7 +365,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 SendServerSpawnObject(connectionId, identity);
             }
@@ -378,7 +378,7 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player = null;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
-            var message = new ServerSpawnObjectMessage();
+            ServerSpawnObjectMessage message = new ServerSpawnObjectMessage();
             message.hashAssetId = identity.HashAssetId;
             message.objectId = identity.ObjectId;
             message.isOwner = identity.ConnectionId == connectionId;
@@ -404,7 +404,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 SendServerDestroyObject(connectionId, objectId, reasons);
             }
@@ -417,7 +417,7 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player = null;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
-            var message = new ServerDestroyObjectMessage();
+            ServerDestroyObjectMessage message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
             message.reasons = reasons;
             ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
@@ -427,7 +427,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 SendServerError(connectionId, shouldDisconnect, errorMessage);
             }
@@ -440,7 +440,7 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player = null;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
-            var message = new ServerErrorMessage();
+            ServerErrorMessage message = new ServerErrorMessage();
             message.shouldDisconnect = shouldDisconnect;
             message.errorMessage = errorMessage;
             ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
@@ -450,7 +450,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (var connectionId in ConnectionIds)
+            foreach (long connectionId in ConnectionIds)
             {
                 SendServerSceneChange(connectionId, sceneName);
             }
@@ -460,7 +460,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            var message = new ServerSceneChangeMessage();
+            ServerSceneChangeMessage message = new ServerSceneChangeMessage();
             message.serverSceneName = sceneName;
             ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
         }
@@ -484,12 +484,12 @@ namespace LiteNetLibManager
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
         {
-            var reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.reader;
             FunctionReceivers receivers = (FunctionReceivers)reader.GetByte();
             long connectId = 0;
             if (receivers == FunctionReceivers.Target)
                 connectId = (long)reader.GetPackedULong();
-            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
@@ -497,7 +497,7 @@ namespace LiteNetLibManager
                     identity.ProcessNetFunction(info, reader, true);
                 else
                 {
-                    var netFunction = identity.ProcessNetFunction(info, reader, false);
+                    LiteNetLibFunction netFunction = identity.ProcessNetFunction(info, reader, false);
                     if (receivers == FunctionReceivers.Target)
                         netFunction.Call(connectId);
                     else
@@ -508,9 +508,9 @@ namespace LiteNetLibManager
 
         protected virtual void HandleClientSendTransform(LiteNetLibMessageHandler messageHandler)
         {
-            var reader = messageHandler.reader;
-            var objectId = reader.GetPackedUInt();
-            var behaviourIndex = reader.GetByte();
+            NetDataReader reader = messageHandler.reader;
+            uint objectId = reader.GetPackedUInt();
+            byte behaviourIndex = reader.GetByte();
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(objectId, out identity))
             {
@@ -522,7 +522,7 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSpawnSceneObject(LiteNetLibMessageHandler messageHandler)
         {
-            var message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
+            ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
             if (!IsServer)
                 Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation); LiteNetLibIdentity identity;
             // If it is host, it may hidden so show it
@@ -532,7 +532,7 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSpawnObject(LiteNetLibMessageHandler messageHandler)
         {
-            var message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
+            ServerSpawnObjectMessage message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
             if (!IsServer)
                 Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, 0);
             // Setup owner client
@@ -548,7 +548,7 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerDestroyObject(LiteNetLibMessageHandler messageHandler)
         {
-            var message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
+            ServerDestroyObjectMessage message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
             if (!IsServer)
                 Assets.NetworkDestroy(message.objectId, message.reasons);
             // If this is host and reasons is removed from subscribing so hide it, don't destroy it
@@ -562,8 +562,8 @@ namespace LiteNetLibManager
             // Field updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            var reader = messageHandler.reader;
-            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            NetDataReader reader = messageHandler.reader;
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncField(info, reader);
@@ -571,8 +571,8 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerCallFunction(LiteNetLibMessageHandler messageHandler)
         {
-            var reader = messageHandler.reader;
-            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            NetDataReader reader = messageHandler.reader;
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessNetFunction(info, reader, true);
@@ -583,8 +583,8 @@ namespace LiteNetLibManager
             // List updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            var reader = messageHandler.reader;
-            var info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            NetDataReader reader = messageHandler.reader;
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncList(info, reader);
@@ -595,7 +595,7 @@ namespace LiteNetLibManager
             // Server time updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            var message = messageHandler.ReadMessage<ServerTimeMessage>();
+            ServerTimeMessage message = messageHandler.ReadMessage<ServerTimeMessage>();
             ServerTimeOffset = message.serverTime - Time.unscaledTime;
         }
 
@@ -604,9 +604,9 @@ namespace LiteNetLibManager
             // Behaviour sync from server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            var reader = messageHandler.reader;
-            var objectId = reader.GetPackedUInt();
-            var behaviourIndex = reader.GetByte();
+            NetDataReader reader = messageHandler.reader;
+            uint objectId = reader.GetPackedUInt();
+            byte behaviourIndex = reader.GetByte();
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(objectId, out identity))
                 identity.ProcessSyncBehaviour(behaviourIndex, reader);
@@ -615,7 +615,7 @@ namespace LiteNetLibManager
         protected virtual void HandleServerError(LiteNetLibMessageHandler messageHandler)
         {
             // Error sent from server
-            var message = messageHandler.ReadMessage<ServerErrorMessage>();
+            ServerErrorMessage message = messageHandler.ReadMessage<ServerErrorMessage>();
             OnServerError(message);
         }
 
@@ -625,8 +625,8 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             // Scene name sent from server
-            var message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
-            var serverSceneName = message.serverSceneName;
+            ServerSceneChangeMessage message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
+            string serverSceneName = message.serverSceneName;
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
             {
                 if (!IsServer)
@@ -680,14 +680,14 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            var player = Players[connectionId];
+            LiteNetLibPlayer player = Players[connectionId];
             if (player.IsReady)
                 return;
 
             player.IsReady = true;
-            var playerIdentity = SpawnPlayer(connectionId);
+            LiteNetLibIdentity playerIdentity = SpawnPlayer(connectionId);
             DeserializeClientReadyExtra(playerIdentity, connectionId, reader);
-            foreach (var spawnedObject in Assets.SpawnedObjects.Values)
+            foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
             {
                 if (spawnedObject.ConnectionId == player.ConnectionId)
                     continue;
@@ -702,7 +702,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            var player = Players[connectionId];
+            LiteNetLibPlayer player = Players[connectionId];
             if (!player.IsReady)
                 return;
 
@@ -727,7 +727,7 @@ namespace LiteNetLibManager
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, int hashAssetId)
         {
-            var spawnedObject = Assets.NetworkSpawn(hashAssetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, connectionId);
+            LiteNetLibIdentity spawnedObject = Assets.NetworkSpawn(hashAssetId, Assets.GetPlayerSpawnPosition(), Quaternion.identity, 0, connectionId);
             if (spawnedObject != null)
                 return spawnedObject;
             return null;

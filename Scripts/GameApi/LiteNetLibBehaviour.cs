@@ -132,7 +132,7 @@ namespace LiteNetLibManager
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
             if (ShouldSyncBehaviour())
             {
-                foreach (var connectionId in Manager.GetConnectionIds())
+                foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Identity.IsSubscribedOrOwning(connectionId))
                         Manager.ServerSendPacket(connectionId, sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
@@ -146,9 +146,9 @@ namespace LiteNetLibManager
         {
             syncFieldNames.Clear();
             syncListNames.Clear();
-            var fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+            List<FieldInfo> fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
             fields.Sort((a, b) => a.Name.CompareTo(b.Name));
-            foreach (var field in fields)
+            foreach (FieldInfo field in fields)
             {
                 if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
                     syncFieldNames.Add(field.Name);
@@ -171,9 +171,9 @@ namespace LiteNetLibManager
         private void SetupSyncElements<T>(List<string> fieldNames, Dictionary<string, FieldInfo> cache, List<T> elementList) where T : LiteNetLibElement
         {
             elementList.Clear();
-            foreach (var fieldName in fieldNames)
+            foreach (string fieldName in fieldNames)
             {
-                var key = TypeName + "_" + fieldName;
+                string key = TypeName + "_" + fieldName;
                 FieldInfo field;
                 if (!cache.TryGetValue(key, out field))
                 {
@@ -187,8 +187,8 @@ namespace LiteNetLibManager
                 }
                 try
                 {
-                    var element = (T)field.GetValue(this);
-                    var elementId = Convert.ToByte(elementList.Count);
+                    T element = (T)field.GetValue(this);
+                    byte elementId = Convert.ToByte(elementList.Count);
                     element.Setup(this, elementId);
                     elementList.Add(element);
                 }
@@ -268,7 +268,7 @@ namespace LiteNetLibManager
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
-            var elementId = Convert.ToByte(netFunctions.Count);
+            byte elementId = Convert.ToByte(netFunctions.Count);
             netFunction.Setup(this, elementId);
             netFunctions.Add(netFunction);
             netFunctionIds[id] = elementId;
@@ -334,7 +334,7 @@ namespace LiteNetLibManager
             ushort elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                var syncFunction = netFunctions[elementId];
+                LiteNetLibFunction syncFunction = netFunctions[elementId];
                 syncFunction.Call(receivers, parameters);
             }
             else
@@ -404,7 +404,7 @@ namespace LiteNetLibManager
             ushort elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                var syncFunction = netFunctions[elementId];
+                LiteNetLibFunction syncFunction = netFunctions[elementId];
                 syncFunction.Call(connectId, parameters);
             }
             else
@@ -418,10 +418,10 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            var elementId = info.elementId;
+            byte elementId = info.elementId;
             if (elementId >= 0 && elementId < syncFields.Count)
             {
-                var syncField = syncFields[elementId];
+                LiteNetLibSyncField syncField = syncFields[elementId];
                 syncField.Deserialize(reader);
                 return syncField;
             }
@@ -437,10 +437,10 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            var elementId = info.elementId;
+            byte elementId = info.elementId;
             if (elementId >= 0 && elementId < netFunctions.Count)
             {
-                var netFunction = netFunctions[elementId];
+                LiteNetLibFunction netFunction = netFunctions[elementId];
                 netFunction.DeserializeParameters(reader);
                 if (hookCallback)
                     netFunction.HookCallback();
@@ -458,10 +458,10 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            var elementId = info.elementId;
+            byte elementId = info.elementId;
             if (elementId >= 0 && elementId < syncLists.Count)
             {
-                var syncList = syncLists[elementId];
+                LiteNetLibSyncList syncList = syncLists[elementId];
                 syncList.DeserializeOperation(reader);
                 return syncList;
             }
@@ -475,8 +475,8 @@ namespace LiteNetLibManager
 
         public void SendInitSyncFields()
         {
-            var fields = syncFields;
-            foreach (var field in fields)
+            List<LiteNetLibSyncField> fields = syncFields;
+            foreach (LiteNetLibSyncField field in fields)
             {
                 field.SendUpdate();
             }
@@ -484,8 +484,8 @@ namespace LiteNetLibManager
 
         public void SendInitSyncFields(long connectionId)
         {
-            var fields = syncFields;
-            foreach (var field in fields)
+            List<LiteNetLibSyncField> fields = syncFields;
+            foreach (LiteNetLibSyncField field in fields)
             {
                 field.SendUpdate(connectionId, SendOptions.ReliableOrdered);
             }
@@ -493,20 +493,20 @@ namespace LiteNetLibManager
 
         public void SendInitSyncLists()
         {
-            var lists = syncLists;
-            foreach (var list in lists)
+            List<LiteNetLibSyncList> lists = syncLists;
+            foreach (LiteNetLibSyncList list in lists)
             {
-                for (var i = 0; i < list.Count; ++i)
+                for (int i = 0; i < list.Count; ++i)
                     list.SendOperation(LiteNetLibSyncList.Operation.Insert, i);
             }
         }
 
         public void SendInitSyncLists(long connectionId)
         {
-            var lists = syncLists;
-            foreach (var list in lists)
+            List<LiteNetLibSyncList> lists = syncLists;
+            foreach (LiteNetLibSyncList list in lists)
             {
-                for (var i = 0; i < list.Count; ++i)
+                for (int i = 0; i < list.Count; ++i)
                     list.SendOperation(connectionId, LiteNetLibSyncList.Operation.Insert, i);
             }
         }

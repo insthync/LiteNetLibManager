@@ -43,10 +43,10 @@ namespace LiteNetLibManager
             if (subscriber.ConnectionId == ConnectionId)
                 return true;
 
-            var spawnedObjects = subscriber.SpawnedObjects.Values;
-            foreach (var spawnedObject in spawnedObjects)
+            Dictionary<uint, LiteNetLibIdentity>.ValueCollection spawnedObjects = subscriber.SpawnedObjects.Values;
+            foreach (LiteNetLibIdentity spawnedObject in spawnedObjects)
             {
-                var pos = spawnedObject.transform.position;
+                Vector3 pos = spawnedObject.transform.position;
                 if ((pos - transform.position).magnitude < range)
                     return true;
             }
@@ -60,10 +60,10 @@ namespace LiteNetLibManager
             {
                 case CheckMethod.Physics3D:
                     {
-                        var hits = Physics.OverlapSphere(transform.position, range, layerMask.value);
-                        foreach (var hit in hits)
+                        Collider[] hits = Physics.OverlapSphere(transform.position, range, layerMask.value);
+                        foreach (Collider hit in hits)
                         {
-                            var identity = hit.GetComponent<LiteNetLibIdentity>();
+                            LiteNetLibIdentity identity = hit.GetComponent<LiteNetLibIdentity>();
                             if (identity != null && identity.Player != null)
                                 subscribers.Add(identity.Player);
                         }
@@ -72,10 +72,10 @@ namespace LiteNetLibManager
 
                 case CheckMethod.Physics2D:
                     {
-                        var hits = Physics2D.OverlapCircleAll(transform.position, range, layerMask.value);
-                        foreach (var hit in hits)
+                        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range, layerMask.value);
+                        foreach (Collider2D hit in hits)
                         {
-                            var identity = hit.GetComponent<LiteNetLibIdentity>();
+                            LiteNetLibIdentity identity = hit.GetComponent<LiteNetLibIdentity>();
                             if (identity != null && identity.Player != null)
                                 subscribers.Add(identity.Player);
                         }
@@ -88,8 +88,8 @@ namespace LiteNetLibManager
         public override void OnServerSubscribingAdded()
         {
             base.OnServerSubscribingAdded();
-            var renderers = GetComponentsInChildren<Renderer>();
-            foreach (var renderer in renderers)
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            foreach (Renderer renderer in renderers)
             {
                 renderer.enabled = true;
             }
@@ -98,8 +98,8 @@ namespace LiteNetLibManager
         public override void OnServerSubscribingRemoved()
         {
             base.OnServerSubscribingRemoved();
-            var renderers = GetComponentsInChildren<Renderer>();
-            foreach (var renderer in renderers)
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            foreach (Renderer renderer in renderers)
             {
                 renderer.enabled = false;
             }

@@ -20,7 +20,7 @@ namespace LiteNetLibManager
 
         public T ReadMessage<T>() where T : INetSerializable, new()
         {
-            var msg = new T();
+            T msg = new T();
             msg.Deserialize(reader);
             return msg;
         }

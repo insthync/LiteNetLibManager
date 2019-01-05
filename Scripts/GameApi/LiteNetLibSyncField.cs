@@ -97,14 +97,14 @@ namespace LiteNetLibManager
             if (!ValidateBeforeAccess())
                 return;
 
-            var manager = Manager;
+            LiteNetLibGameManager manager = Manager;
             if (!manager.IsServer)
                 return;
 
             hasUpdate = false;
             if (forOwnerOnly)
             {
-                var connectId = Behaviour.ConnectionId;
+                long connectId = Behaviour.ConnectionId;
                 if (manager.ContainsConnectionId(connectId))
                 {
                     if (!updatedOnce)
@@ -115,7 +115,7 @@ namespace LiteNetLibManager
             }
             else
             {
-                foreach (var connectionId in manager.GetConnectionIds())
+                foreach (long connectionId in manager.GetConnectionIds())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
                     {

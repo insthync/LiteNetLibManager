@@ -110,16 +110,16 @@ namespace LiteNetLib.Utils
 
         public static Color GetColor(this NetDataReader reader)
         {
-            var r = reader.GetShort() * 0.01f;
-            var g = reader.GetShort() * 0.01f;
-            var b = reader.GetShort() * 0.01f;
-            var a = reader.GetShort() * 0.01f;
+            float r = reader.GetShort() * 0.01f;
+            float g = reader.GetShort() * 0.01f;
+            float b = reader.GetShort() * 0.01f;
+            float a = reader.GetShort() * 0.01f;
             return new Color(r, g, b, a);
         }
 
         public static Quaternion GetQuaternion(this NetDataReader reader)
         {
-            var vector3 = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            Vector3 vector3 = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
             return vector3.magnitude <= 0 ? Quaternion.identity : Quaternion.Euler(vector3);
         }
 
