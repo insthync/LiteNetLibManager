@@ -141,7 +141,7 @@ namespace LiteNetLibManager
                 return false;
 #endif
 #if UNITY_2018_2_OR_NEWER
-            prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+            prefab = (GameObject)PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
 #else
             prefab = (GameObject)PrefabUtility.GetPrefabParent(gameObject);
 #endif
