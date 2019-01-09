@@ -125,7 +125,7 @@ namespace LiteNetLibManager
                 return;
             for (int i = 0; i < Parameters.Length; ++i)
             {
-                writer.PutValue(Parameters[i]);
+                writer.PutValue(ParameterTypes[i], Parameters[i]);
             }
         }
     }

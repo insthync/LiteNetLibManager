@@ -7,185 +7,190 @@ namespace LiteNetLib.Utils
     {
         public static void PutValue<TType>(this NetDataWriter writer, TType value)
         {
+            writer.PutValue(typeof(TType), value);
+        }
+
+        public static void PutValue(this NetDataWriter writer, Type type, object value)
+        {
             #region Generic Values
-            if (value is bool)
+            if (type == typeof(bool))
             {
-                writer.Put((bool)(object)value);
+                writer.Put((bool)value);
                 return;
             }
 
-            if (value is bool[])
+            if (type == typeof(bool[]))
             {
-                writer.PutArray((bool[])(object)value);
+                writer.PutArray((bool[])value);
                 return;
             }
 
-            if (value is byte)
+            if (type == typeof(byte))
             {
-                writer.Put((byte)(object)value);
+                writer.Put((byte)value);
                 return;
             }
 
-            if (value is char)
+            if (type == typeof(char))
             {
-                writer.Put((char)(object)value);
+                writer.Put((char)value);
                 return;
             }
 
-            if (value is double)
+            if (type == typeof(double))
             {
-                writer.Put((double)(object)value);
+                writer.Put((double)value);
                 return;
             }
 
-            if (value is double[])
+            if (type == typeof(double[]))
             {
-                writer.PutArray((double[])(object)value);
+                writer.PutArray((double[])value);
                 return;
             }
 
-            if (value is float)
+            if (type == typeof(float))
             {
-                writer.Put((float)(object)value);
+                writer.Put((float)value);
                 return;
             }
 
-            if (value is float[])
+            if (type == typeof(float[]))
             {
-                writer.PutArray((float[])(object)value);
+                writer.PutArray((float[])value);
                 return;
             }
 
-            if (value is int)
+            if (type == typeof(int))
             {
-                writer.Put((int)(object)value);
+                writer.Put((int)value);
                 return;
             }
 
-            if (value is int[])
+            if (type == typeof(int[]))
             {
-                writer.PutArray((int[])(object)value);
+                writer.PutArray((int[])value);
                 return;
             }
 
-            if (value is long)
+            if (type == typeof(long))
             {
-                writer.Put((long)(object)value);
+                writer.Put((long)value);
                 return;
             }
 
-            if (value is long[])
+            if (type == typeof(long[]))
             {
-                writer.PutArray((long[])(object)value);
+                writer.PutArray((long[])value);
                 return;
             }
 
-            if (value is sbyte)
+            if (type == typeof(sbyte))
             {
-                writer.Put((sbyte)(object)value);
+                writer.Put((sbyte)value);
                 return;
             }
 
-            if (value is short)
+            if (type == typeof(short))
             {
-                writer.Put((short)(object)value);
+                writer.Put((short)value);
                 return;
             }
 
-            if (value is short[])
+            if (type == typeof(short[]))
             {
-                writer.PutArray((short[])(object)value);
+                writer.PutArray((short[])value);
                 return;
             }
 
-            if (typeof(TType) == typeof(string))
+            if (type == typeof(string))
             {
-                writer.Put((string)(object)value);
+                writer.Put((string)value);
                 return;
             }
 
-            if (value is uint)
+            if (type == typeof(uint))
             {
-                writer.Put((uint)(object)value);
+                writer.Put((uint)value);
                 return;
             }
 
-            if (value is uint[])
+            if (type == typeof(uint[]))
             {
-                writer.PutArray((uint[])(object)value);
+                writer.PutArray((uint[])value);
                 return;
             }
 
-            if (value is ulong)
+            if (type == typeof(ulong))
             {
-                writer.Put((ulong)(object)value);
+                writer.Put((ulong)value);
                 return;
             }
 
-            if (value is ulong[])
+            if (type == typeof(ulong[]))
             {
-                writer.PutArray((ulong[])(object)value);
+                writer.PutArray((ulong[])value);
                 return;
             }
 
-            if (value is ushort)
+            if (type == typeof(ushort))
             {
-                writer.Put((ushort)(object)value);
+                writer.Put((ushort)value);
                 return;
             }
 
-            if (value is ushort[])
+            if (type == typeof(ushort[]))
             {
-                writer.PutArray((ushort[])(object)value);
+                writer.PutArray((ushort[])value);
                 return;
             }
             #endregion
 
             #region Unity Values
-            if (value is Color)
+            if (type == typeof(Color))
             {
-                writer.Put((Color)(object)value);
+                writer.Put((Color)value);
                 return;
             }
 
-            if (value is Quaternion)
+            if (type == typeof(Quaternion))
             {
-                writer.Put((Quaternion)(object)value);
+                writer.Put((Quaternion)value);
                 return;
             }
 
-            if (value is Vector2)
+            if (type == typeof(Vector2))
             {
-                writer.Put((Vector2)(object)value);
+                writer.Put((Vector2)value);
                 return;
             }
 
-            if (value is Vector2Int)
+            if (type == typeof(Vector2Int))
             {
-                writer.Put((Vector2Int)(object)value);
+                writer.Put((Vector2Int)value);
                 return;
             }
 
-            if (value is Vector3)
+            if (type == typeof(Vector3))
             {
-                writer.Put((Vector3)(object)value);
+                writer.Put((Vector3)value);
                 return;
             }
 
-            if (value is Vector3Int)
+            if (type == typeof(Vector3Int))
             {
-                writer.Put((Vector3Int)(object)value);
+                writer.Put((Vector3Int)value);
                 return;
             }
 
-            if (value is Vector4)
+            if (type == typeof(Vector4))
             {
-                writer.Put((Vector4)(object)value);
+                writer.Put((Vector4)value);
                 return;
             }
             #endregion
 
-            if (value is INetSerializable)
+            if (typeof(INetSerializable).IsAssignableFrom(type))
             {
                 ((INetSerializable)value).Serialize(writer);
                 return;
