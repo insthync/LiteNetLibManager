@@ -2,7 +2,7 @@
 {
     public class WebSocketTransportFactory : BaseTransportFactory
     {
-        public override bool CanUseWithWebGL { get { return false; } }
+        public override bool CanUseWithWebGL { get { return true; } }
 
         public override ITransport Build()
         {
