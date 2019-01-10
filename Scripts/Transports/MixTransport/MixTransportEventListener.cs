@@ -36,10 +36,12 @@ namespace LiteNetLibManager
 
         public void OnNetworkReceive(NetPeer peer, NetDataReader reader)
         {
+            tempConnectionId = peerIdsDict[peer.ConnectId];
+
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DataEvent,
-                connectionId = peer.ConnectId,
+                connectionId = tempConnectionId,
                 reader = reader.Clone(),
             });
         }
@@ -57,7 +59,7 @@ namespace LiteNetLibManager
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
-                connectionId = peer.ConnectId,
+                connectionId = tempConnectionId,
             });
         }
 
@@ -70,7 +72,7 @@ namespace LiteNetLibManager
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
-                connectionId = peer.ConnectId,
+                connectionId = tempConnectionId,
                 disconnectInfo = disconnectInfo,
             });
         }

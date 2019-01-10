@@ -147,7 +147,6 @@ namespace LiteNetLibManager
             // Don't integrate server networking to WebGL clients
             return false;
 #else
-
             return wsServer != null && server != null;
 #endif
         }
@@ -188,6 +187,7 @@ namespace LiteNetLibManager
 #else
             if (wsServer == null || server == null)
                 return false;
+            server.PollEvents();
             if (serverEventQueue.Count == 0)
                 return false;
             eventData = serverEventQueue.Dequeue();
