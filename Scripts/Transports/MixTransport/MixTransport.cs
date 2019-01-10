@@ -37,6 +37,9 @@ namespace LiteNetLibManager
         {
 #if !UNITY_WEBGL
             wsServerPeers = new Dictionary<long, WSBehavior>();
+            serverPeers = new Dictionary<long, NetPeer>();
+            clientEventQueue = new Queue<TransportEventData>();
+            serverEventQueue = new Queue<TransportEventData>();
 #endif
             this.webSocketPortOffset = webSocketPortOffset;
         }
