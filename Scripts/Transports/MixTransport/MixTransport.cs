@@ -14,7 +14,6 @@ namespace LiteNetLibManager
     {
         private long nextConnectionId = 1;
         private long tempConnectionId;
-        private bool dirtyIsConnected;
         private byte[] tempBuffers;
 
         // WebSocket data
@@ -22,6 +21,7 @@ namespace LiteNetLibManager
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer wsServer;
         private readonly Dictionary<long, WSBehavior> wsServerPeers;
+        private bool wsDirtyIsConnected;
 #endif
 
         // LiteNetLib data
