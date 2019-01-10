@@ -30,7 +30,7 @@ When you're writing your scripts for connections, you'll have to call following 
 - `LiteNetLibGameManager.StopClient()`, to stop when running as client
 - `LiteNetLibGameManager.StopHost()`, to stop when running as host. It will stop both server and client, so you can use this to stop when running as server or client too
 
-There are following functions that overrideable:
+There are following event functions that overrideable:
 - `LiteNetLibGameManager.OnPeerNetworkError()`, Called on the server when a network error occurs for a client connection.
 - `LiteNetLibGameManager.OnPeerConnected()`, Called on the server when a new client connects.
 - `LiteNetLibGameManager.OnPeerDisconnected()`, Called on the server when a client disconnects.

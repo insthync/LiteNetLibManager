@@ -14,7 +14,7 @@ This is allows you to invoke `LiteNetLibNetFunction`, receive various callbacks,
 
 Some of the built-in components of the networking system are derived from `LiteNetLibBehaviour`, including `LiteNetLibTransform` and `LiteNetLibVisibleChecker`.
 
-There are following functions that overrideable:
+There are following event functions that overrideable:
 - `OnSetOwnerClient()`, This function will be called when this client has been verified as owner client (Player who can controls it)
 - `OnNetworkDestroy()`, This function will be called when object destroy from server
 - `OnBehaviourValidate()`, This function will be called when function OnValidate() have been called in editor

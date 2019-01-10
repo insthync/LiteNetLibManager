@@ -42,5 +42,5 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 
 There are 3 types of net function calls:
 - `CallNetFunction(Shoot, FunctionReceivers.Server, bulletType)`, call `Shoot` function from client to server
-- `CallNetFunction(Shoot, FunctionReceivers.All, bulletType)`, call `Shoot` function from client or server to all clients, if it is call from client it will send data to server with parameters then server send received data to all clients
-- `CallNetFunction(Shoot, targetConnectionId, bulletType)`, call `Shoot` function from client or server to target client, if it is call from client it will send data to server with parameters then server send received data to target clients
+- `CallNetFunction(Shoot, FunctionReceivers.All, bulletType)`, call `Shoot` function from client or server to all clients, if it is call from client it will send data to server with parameters then server pass received data to all clients
+- `CallNetFunction(Shoot, targetConnectionId, bulletType)`, call `Shoot` function from client or server to target client, if it is call from client it will send data to server with parameters then server pass received data to target clients
