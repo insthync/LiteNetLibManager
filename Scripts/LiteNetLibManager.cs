@@ -50,12 +50,12 @@ namespace LiteNetLibManager
             {
 #if UNITY_WEBGL && !UNITY_EDITOR
                 // Force to use websocket transport if it's running as webgl
-                if (transportFactory == null || !(transportFactory is WebSocketTransportFactory))
+                if (transportFactory == null || !transportFactory.CanUseWithWebGL)
                     transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
 #else
                 if (useWebSocket)
                 {
-                    if (transportFactory == null || !(transportFactory is WebSocketTransportFactory))
+                    if (transportFactory == null || !transportFactory.CanUseWithWebGL)
                         transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
                 }
                 else
