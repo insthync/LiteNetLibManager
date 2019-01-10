@@ -12,6 +12,10 @@ Add factory component to any game object or the same game object which network m
 
 You can get ENet Transport from (https://github.com/insthync/LiteNetLibManager_ENET)
 
-### Websocket Transport Layer
+### WebSocket Transport Layer
 
-Under Construction
+This transport layer is included with the project, developer can set `Use Web Socket` to `TRUE` to use `WebSocket` as transport layer, WebGL client will be forced to use `WebSocket`
+
+### Mix Transport Layer
+
+This transport layer is included with the project, it's mix of `LiteNetLib` and `WebSocket`. it will run `LiteNetLib` and `WebSocket` at same as the server but difference port, WebSocket port offset can be set at its factory (`MixTransportFactory` component). it will use `WebSocket` when game running for `WebGL` client, for other platforms it will use `LiteNetLib` as transport layer.
