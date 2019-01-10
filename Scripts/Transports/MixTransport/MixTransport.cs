@@ -18,10 +18,10 @@ namespace LiteNetLibManager
 
         // WebSocket data
         private WebSocket wsClient;
+        private bool wsDirtyIsConnected;
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer wsServer;
         private readonly Dictionary<long, WSBehavior> wsServerPeers;
-        private bool wsDirtyIsConnected;
 #endif
 
         // LiteNetLib data
@@ -86,9 +86,9 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL
             if (wsClient == null)
                 return false;
-            if (dirtyIsConnected != wsClient.IsConnected)
+            if (wsDirtyIsConnected != wsClient.IsConnected)
             {
-                dirtyIsConnected = wsClient.IsConnected;
+                wsDirtyIsConnected = wsClient.IsConnected;
                 if (wsClient.IsConnected)
                 {
                     // Connect state changed to connected, so it's connect event
