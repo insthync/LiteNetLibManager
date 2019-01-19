@@ -17,6 +17,9 @@ namespace LiteNetLib.Utils
             if (type == typeof(byte))
                 return reader.GetByte();
 
+            if (type == typeof(byte[]))
+                return reader.GetBytesWithLength();
+
             if (type == typeof(char))
                 return reader.GetChar();
 
@@ -110,10 +113,10 @@ namespace LiteNetLib.Utils
 
         public static Color GetColor(this NetDataReader reader)
         {
-            float r = reader.GetShort() * 0.01f;
-            float g = reader.GetShort() * 0.01f;
-            float b = reader.GetShort() * 0.01f;
-            float a = reader.GetShort() * 0.01f;
+            float r = reader.GetByte() * 0.01f;
+            float g = reader.GetByte() * 0.01f;
+            float b = reader.GetByte() * 0.01f;
+            float a = reader.GetByte() * 0.01f;
             return new Color(r, g, b, a);
         }
 

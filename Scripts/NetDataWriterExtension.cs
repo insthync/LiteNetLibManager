@@ -31,6 +31,12 @@ namespace LiteNetLib.Utils
                 return;
             }
 
+            if (type == typeof(byte[]))
+            {
+                writer.PutBytesWithLength((byte[])value);
+                return;
+            }
+
             if (type == typeof(char))
             {
                 writer.Put((char)value);
@@ -201,10 +207,10 @@ namespace LiteNetLib.Utils
 
         public static void Put(this NetDataWriter writer, Color value)
         {
-            short r = (short)(value.r * 100f);
-            short g = (short)(value.g * 100f);
-            short b = (short)(value.b * 100f);
-            short a = (short)(value.a * 100f);
+            byte r = (byte)(value.r * 100f);
+            byte g = (byte)(value.g * 100f);
+            byte b = (byte)(value.b * 100f);
+            byte a = (byte)(value.a * 100f);
             writer.Put(r);
             writer.Put(g);
             writer.Put(b);

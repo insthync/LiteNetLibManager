@@ -191,6 +191,11 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldByteArray : LiteNetLibSyncField<byte[]>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldChar : LiteNetLibSyncField<char>
     {
     }
