@@ -14,17 +14,19 @@ namespace LiteNetLibManager
     [RequireComponent(typeof(LiteNetLibIdentity))]
     public partial class LiteNetLibBehaviour : MonoBehaviour, INetSerializable
     {
+        private struct CachingFieldName
+        {
+            public IList<string> fieldNames;
+            public IList<string> listNames;
+        }
+
         [LiteNetLibReadOnly, SerializeField]
         private byte behaviourIndex;
         public byte BehaviourIndex
         {
             get { return behaviourIndex; }
         }
-
-        [LiteNetLibReadOnly, SerializeField]
-        private List<string> syncFieldNames = new List<string>();
-        [LiteNetLibReadOnly, SerializeField]
-        private List<string> syncListNames = new List<string>();
+        
         [Header("Behaviour sync options")]
         public SendOptions sendOptions;
         [Tooltip("Interval to send network data")]
@@ -36,14 +38,22 @@ namespace LiteNetLibManager
         }
 
         private float lastSentTime;
-
-        private static Dictionary<string, FieldInfo> CacheSyncFieldInfos = new Dictionary<string, FieldInfo>();
-        private static Dictionary<string, FieldInfo> CacheSyncListInfos = new Dictionary<string, FieldInfo>();
+        
+        private static readonly Dictionary<string, CachingFieldName> CacheFieldNames = new Dictionary<string, CachingFieldName>();
+        private static readonly Dictionary<string, FieldInfo> CacheSyncFieldInfos = new Dictionary<string, FieldInfo>();
+        private static readonly Dictionary<string, FieldInfo> CacheSyncListInfos = new Dictionary<string, FieldInfo>();
 
         private readonly List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
         private readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
         private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
         private readonly List<LiteNetLibSyncList> syncLists = new List<LiteNetLibSyncList>();
+
+        // Optimize garbage collector
+        private string tempFieldKey;
+        private FieldInfo tempField;
+        private IList<string> tempFieldNames;
+        private IList<string> tempListNames;
+        private CachingFieldName tempCachingFieldName;
 
         private Type classType;
         public Type ClassType
@@ -141,53 +151,63 @@ namespace LiteNetLibManager
             Profiler.EndSample();
         }
 
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            syncFieldNames.Clear();
-            syncListNames.Clear();
-            List<FieldInfo> fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
-            fields.Sort((a, b) => a.Name.CompareTo(b.Name));
-            foreach (FieldInfo field in fields)
-            {
-                if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
-                    syncFieldNames.Add(field.Name);
-                if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
-                    syncListNames.Add(field.Name);
-            }
-            EditorUtility.SetDirty(this);
-            OnBehaviourValidate();
-        }
-#endif
-
         public void Setup(byte behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
-            SetupSyncElements(syncFieldNames, CacheSyncFieldInfos, syncFields);
-            SetupSyncElements(syncListNames, CacheSyncListInfos, syncLists);
+            tempFieldNames = null;
+            tempListNames = null;
+            // Caching field names
+            if (!CacheFieldNames.TryGetValue(TypeName, out tempCachingFieldName))
+            {
+                tempFieldNames = new List<string>();
+                tempListNames = new List<string>();
+                List<FieldInfo> fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+                fields.Sort((a, b) => a.Name.CompareTo(b.Name));
+                foreach (FieldInfo field in fields)
+                {
+                    if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
+                        tempFieldNames.Add(field.Name);
+                    if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
+                        tempListNames.Add(field.Name);
+                }
+                CacheFieldNames.Add(TypeName, new CachingFieldName()
+                {
+                    fieldNames = tempFieldNames,
+                    listNames = tempListNames,
+                });
+            }
+            else
+            {
+                tempFieldNames = tempCachingFieldName.fieldNames;
+                tempListNames = tempCachingFieldName.listNames;
+            }
+            SetupSyncElements(tempFieldNames, CacheSyncFieldInfos, syncFields);
+            SetupSyncElements(tempListNames, CacheSyncListInfos, syncLists);
             OnSetup();
         }
 
-        private void SetupSyncElements<T>(List<string> fieldNames, Dictionary<string, FieldInfo> cache, List<T> elementList) where T : LiteNetLibElement
+        private void SetupSyncElements<T>(IList<string> fieldNames, Dictionary<string, FieldInfo> cacheInfos, List<T> elementList) where T : LiteNetLibElement
         {
-            elementList.Clear();
+            if (fieldNames == null || fieldNames.Count == 0)
+                return;
+
             foreach (string fieldName in fieldNames)
             {
-                string key = TypeName + "_" + fieldName;
-                FieldInfo field;
-                if (!cache.TryGetValue(key, out field))
+                // Get field info
+                tempFieldKey = TypeName + "_" + fieldName;
+                if (!cacheInfos.TryGetValue(tempFieldKey, out tempField))
                 {
-                    field = ClassType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    cache[key] = field;
+                    tempField = ClassType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    cacheInfos[tempFieldKey] = tempField;
                 }
-                if (field == null)
+                if (tempField == null)
                 {
                     Debug.LogWarning("Element named " + fieldName + " was not found");
                     continue;
                 }
                 try
                 {
-                    T element = (T)field.GetValue(this);
+                    T element = (T)tempField.GetValue(this);
                     byte elementId = Convert.ToByte(elementList.Count);
                     element.Setup(this, elementId);
                     elementList.Add(element);
@@ -546,11 +566,6 @@ namespace LiteNetLibManager
         /// </summary>
         /// <param name="reasons"></param>
         public virtual void OnNetworkDestroy(byte reasons) { }
-
-        /// <summary>
-        /// This function will be called when function OnValidate() have been called in edior
-        /// </summary>
-        public virtual void OnBehaviourValidate() { }
 
         /// <summary>
         /// This function will be called when this behaviour have been setup by identity
