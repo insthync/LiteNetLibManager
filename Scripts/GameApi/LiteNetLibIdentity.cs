@@ -168,7 +168,7 @@ namespace LiteNetLibManager
             {
                 // This is a scene object with prefab link
                 AssignAssetID(prefab);
-                if (gameObject.scene != null && gameObject.scene == SceneManager.GetActiveScene())
+                if (gameObject.scene == SceneManager.GetActiveScene())
                 {
                     // Assign object id if it is in scene
                     ValidateObjectId();
@@ -182,7 +182,7 @@ namespace LiteNetLibManager
             {
                 // This is a pure scene object (Not a prefab)
                 assetId = string.Empty;
-                if (gameObject.scene != null && gameObject.scene == SceneManager.GetActiveScene())
+                if (gameObject.scene == SceneManager.GetActiveScene())
                 {
                     // Assign object id if it is in scene
                     ValidateObjectId();
