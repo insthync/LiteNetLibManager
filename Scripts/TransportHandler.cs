@@ -128,17 +128,27 @@ namespace LiteNetLibManager
             return ackId;
         }
 
-        public uint ClientSendAckPacket<T>(SendOptions options, ushort msgType, T messageData, AckMessageCallback callback) where T : BaseAckMessage
+        public uint ClientSendAckPacket<T>(SendOptions options, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
         {
             messageData.ackId = AddAckCallback(callback);
-            ClientSendPacket(options, msgType, messageData.Serialize);
+            ClientSendPacket(options, msgType, (writer) =>
+            {
+                messageData.Serialize(writer);
+                if (extraSerializer != null)
+                    extraSerializer.Invoke(writer);
+            });
             return messageData.ackId;
         }
 
-        public uint ServerSendAckPacket<T>(long connectionId, SendOptions options, ushort msgType, T messageData, AckMessageCallback callback) where T : BaseAckMessage
+        public uint ServerSendAckPacket<T>(long connectionId, SendOptions options, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
         {
             messageData.ackId = AddAckCallback(callback);
-            ServerSendPacket(connectionId, options, msgType, messageData.Serialize);
+            ServerSendPacket(connectionId, options, msgType, (writer) =>
+            {
+                messageData.Serialize(writer);
+                if (extraSerializer != null)
+                    extraSerializer.Invoke(writer);
+            });
             return messageData.ackId;
         }
 
