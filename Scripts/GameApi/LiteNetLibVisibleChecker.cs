@@ -42,9 +42,8 @@ namespace LiteNetLibManager
 
             if (subscriber.ConnectionId == ConnectionId)
                 return true;
-
-            Dictionary<uint, LiteNetLibIdentity>.ValueCollection spawnedObjects = subscriber.SpawnedObjects.Values;
-            foreach (LiteNetLibIdentity spawnedObject in spawnedObjects)
+            
+            foreach (LiteNetLibIdentity spawnedObject in subscriber.SpawnedObjects.Values)
             {
                 Vector3 pos = spawnedObject.transform.position;
                 if ((pos - transform.position).magnitude < range)
