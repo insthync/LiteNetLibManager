@@ -214,7 +214,7 @@ namespace LiteNetLibManager
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 // Add to player spawned objects dictionary
                 LiteNetLibPlayer player;
-                if (Manager.Players.TryGetValue(connectId, out player))
+                if (Manager.TryGetPlayer(connectId, out player))
                     player.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 return spawnedObject;
             }
@@ -252,7 +252,7 @@ namespace LiteNetLibManager
             {
                 // Remove from player spawned objects dictionary
                 LiteNetLibPlayer player;
-                if (Manager.Players.TryGetValue(spawnedObject.ConnectionId, out player))
+                if (Manager.TryGetPlayer(spawnedObject.ConnectionId, out player))
                     player.SpawnedObjects.Remove(objectId);
                 // Remove from asset spawned objects dictionary
                 SpawnedObjects.Remove(objectId);
@@ -291,11 +291,6 @@ namespace LiteNetLibManager
             return SceneObjects.ContainsKey(objectId);
         }
 
-        public bool ContainsSpawnedObject(uint objectId)
-        {
-            return SpawnedObjects.ContainsKey(objectId);
-        }
-
         public bool TryGetSceneObject(uint objectId, out LiteNetLibIdentity identity)
         {
             return SceneObjects.TryGetValue(objectId, out identity);
@@ -313,6 +308,16 @@ namespace LiteNetLibManager
             return false;
         }
 
+        public Dictionary<uint, LiteNetLibIdentity>.ValueCollection GetSceneObjects()
+        {
+            return SceneObjects.Values;
+        }
+
+        public bool ContainsSpawnedObject(uint objectId)
+        {
+            return SpawnedObjects.ContainsKey(objectId);
+        }
+
         public bool TryGetSpawnedObject(uint objectId, out LiteNetLibIdentity identity)
         {
             return SpawnedObjects.TryGetValue(objectId, out identity);
@@ -328,6 +333,11 @@ namespace LiteNetLibManager
                 return result != null;
             }
             return false;
+        }
+
+        public Dictionary<uint, LiteNetLibIdentity>.ValueCollection GetSpawnedObjects()
+        {
+            return SpawnedObjects.Values;
         }
 
         public static void ResetSpawnPositionCounter()
