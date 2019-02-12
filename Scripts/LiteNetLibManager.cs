@@ -211,22 +211,22 @@ namespace LiteNetLibManager
             OnStopClient();
         }
 
-        internal void AddConnectionId(long connectionId)
+        public void AddConnectionId(long connectionId)
         {
             ConnectionIds.Add(connectionId);
         }
 
-        internal bool RemoveConnectionId(long connectionId)
+        public bool RemoveConnectionId(long connectionId)
         {
             return ConnectionIds.Remove(connectionId);
         }
 
-        internal bool ContainsConnectionId(long connectionId)
+        public bool ContainsConnectionId(long connectionId)
         {
             return ConnectionIds.Contains(connectionId);
         }
 
-        internal IEnumerable<long> GetConnectionIds()
+        public IEnumerable<long> GetConnectionIds()
         {
             return ConnectionIds;
         }
