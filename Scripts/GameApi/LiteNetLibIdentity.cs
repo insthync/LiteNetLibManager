@@ -62,7 +62,7 @@ namespace LiteNetLibManager
             get
             {
                 LiteNetLibPlayer foundPlayer;
-                if (Manager == null || !Manager.Players.TryGetValue(ConnectionId, out foundPlayer))
+                if (Manager == null || !Manager.TryGetPlayer(ConnectionId, out foundPlayer))
                     return null;
                 return foundPlayer;
             }
@@ -394,14 +394,13 @@ namespace LiteNetLibManager
 #endif
         }
 
-        internal void ClearSubscribers()
+        public void ClearSubscribers()
         {
             // Only server can manage subscribers
             if (!IsServer)
                 return;
-
-            Dictionary<long, LiteNetLibPlayer>.ValueCollection values = Subscribers.Values;
-            foreach (LiteNetLibPlayer subscriber in values)
+            
+            foreach (LiteNetLibPlayer subscriber in Subscribers.Values)
             {
                 subscriber.RemoveSubscribing(this, false);
             }
@@ -411,7 +410,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        internal void AddSubscriber(LiteNetLibPlayer subscriber)
+        public void AddSubscriber(LiteNetLibPlayer subscriber)
         {
             // Only server can manage subscribers
             if (!IsServer || subscriber == null)
@@ -432,7 +431,7 @@ namespace LiteNetLibManager
             subscriber.AddSubscribing(this);
         }
 
-        internal void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing)
+        public void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing)
         {
             // Only server can manage subscribers
             if (!IsServer)
@@ -446,12 +445,12 @@ namespace LiteNetLibManager
                 subscriber.RemoveSubscribing(this, false);
         }
 
-        internal bool ContainsSubscriber(long connectId)
+        public bool ContainsSubscriber(long connectId)
         {
             return Subscribers.ContainsKey(connectId);
         }
 
-        internal bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
+        public bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
         {
             for (int i = 0; i < Behaviours.Length; ++i)
             {
@@ -492,8 +491,7 @@ namespace LiteNetLibManager
                 // None of the behaviours rebuilt our subscribers, use built-in rebuild method
                 if (initialize)
                 {
-                    Dictionary<long, LiteNetLibPlayer>.ValueCollection players = Manager.Players.Values;
-                    foreach (LiteNetLibPlayer player in players)
+                    foreach (LiteNetLibPlayer player in Manager.GetPlayers())
                     {
                         if (ConnectionId == player.ConnectionId || !player.IsReady)
                             continue;
