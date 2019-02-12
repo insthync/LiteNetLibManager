@@ -8,31 +8,33 @@ using System.Collections;
 using UnityEngine;
 using System.Runtime.InteropServices;
 
-public class WebSocket
+namespace LiteNetLibManager
 {
-    private Uri mUrl;
-
-    public WebSocket(Uri url)
+    public class WebSocket
     {
-        mUrl = url;
+        private Uri mUrl;
 
-        string protocol = mUrl.Scheme;
-        if (!protocol.Equals("ws") && !protocol.Equals("wss"))
-            throw new ArgumentException("Unsupported protocol: " + protocol);
-    }
+        public WebSocket(Uri url)
+        {
+            mUrl = url;
 
-    public void SendString(string str)
-    {
-        Send(Encoding.UTF8.GetBytes(str));
-    }
+            string protocol = mUrl.Scheme;
+            if (!protocol.Equals("ws") && !protocol.Equals("wss"))
+                throw new ArgumentException("Unsupported protocol: " + protocol);
+        }
 
-    public string RecvString()
-    {
-        byte[] retval = Recv();
-        if (retval == null)
-            return null;
-        return Encoding.UTF8.GetString(retval);
-    }
+        public void SendString(string str)
+        {
+            Send(Encoding.UTF8.GetBytes(str));
+        }
+
+        public string RecvString()
+        {
+            byte[] retval = Recv();
+            if (retval == null)
+                return null;
+            return Encoding.UTF8.GetString(retval);
+        }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 	[DllImport("__Internal")]
@@ -58,43 +60,43 @@ public class WebSocket
 
 	private int m_NativeRef = 0;
 #else
-    private WebSocketSharp.WebSocket m_Socket;
-    private Queue<byte[]> m_Messages = new Queue<byte[]>();
-    private string m_Error = null;
+        private WebSocketSharp.WebSocket m_Socket;
+        private Queue<byte[]> m_Messages = new Queue<byte[]>();
+        private string m_Error = null;
 #endif
 
-    public void Connect()
-    {
+        public void Connect()
+        {
 #if UNITY_WEBGL && !UNITY_EDITOR
 		m_NativeRef = SocketCreate(mUrl.ToString());
 #else
-        m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
-        m_Socket.OnMessage += (sender, e) => m_Messages.Enqueue(e.RawData);
-        m_Socket.OnError += (sender, e) => m_Error = e.Message;
-        m_Socket.ConnectAsync();
+            m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
+            m_Socket.OnMessage += (sender, e) => m_Messages.Enqueue(e.RawData);
+            m_Socket.OnError += (sender, e) => m_Error = e.Message;
+            m_Socket.ConnectAsync();
 #endif
-    }
+        }
 
-    public void Close()
-    {
+        public void Close()
+        {
 #if UNITY_WEBGL && !UNITY_EDITOR
         SocketClose(m_NativeRef);
 #else
-        m_Socket.Close();
+            m_Socket.Close();
 #endif
-    }
+        }
 
-    public void Send(byte[] buffer)
-    {
+        public void Send(byte[] buffer)
+        {
 #if UNITY_WEBGL && !UNITY_EDITOR
         SocketSend(m_NativeRef, buffer, buffer.Length);
 #else
-        m_Socket.Send(buffer);
+            m_Socket.Send(buffer);
 #endif
-    }
+        }
 
-    public byte[] Recv()
-    {
+        public byte[] Recv()
+        {
 #if UNITY_WEBGL && !UNITY_EDITOR
         int length = SocketRecvLength(m_NativeRef);
         if (length == 0)
@@ -103,28 +105,28 @@ public class WebSocket
         SocketRecv(m_NativeRef, buffer, length);
         return buffer;
 #else
-        if (m_Messages.Count == 0)
-            return null;
-        return m_Messages.Dequeue();
+            if (m_Messages.Count == 0)
+                return null;
+            return m_Messages.Dequeue();
 #endif
-    }
+        }
 
-    public bool IsConnected
-    {
-        get
+        public bool IsConnected
         {
+            get
+            {
 #if UNITY_WEBGL && !UNITY_EDITOR
             return SocketState(m_NativeRef) == 1;
 #else
-            return m_Socket.ReadyState == WebSocketSharp.WebSocketState.Open;
+                return m_Socket.ReadyState == WebSocketSharp.WebSocketState.Open;
 #endif
+            }
         }
-    }
 
-    public string Error
-    {
-        get
+        public string Error
         {
+            get
+            {
 #if UNITY_WEBGL && !UNITY_EDITOR
 			const int bufsize = 1024;
 			byte[] buffer = new byte[bufsize];
@@ -135,8 +137,9 @@ public class WebSocket
 
 			return Encoding.UTF8.GetString (buffer);
 #else
-            return m_Error;
+                return m_Error;
 #endif
+            }
         }
     }
 }
