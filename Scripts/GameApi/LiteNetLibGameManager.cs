@@ -107,6 +107,26 @@ namespace LiteNetLibManager
             base.Update();
         }
 
+        public bool TryGetPlayer(long connectId, out LiteNetLibPlayer player)
+        {
+            return Players.TryGetValue(connectId, out player);
+        }
+
+        public bool ContainsPlayer(long connectId)
+        {
+            return Players.ContainsKey(connectId);
+        }
+
+        public LiteNetLibPlayer GetPlayer(long connectId)
+        {
+            return Players[connectId];
+        }
+
+        public Dictionary<long, LiteNetLibPlayer>.ValueCollection GetPlayers()
+        {
+            return Players.Values;
+        }
+
         /// <summary>
         /// Call this function to change gameplay scene at server, then the server will tell clients to change scene
         /// </summary>
