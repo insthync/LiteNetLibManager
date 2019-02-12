@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using LiteNetLib;
+﻿using System.Collections.Generic;
 
 namespace LiteNetLibManager
 {
@@ -9,7 +7,7 @@ namespace LiteNetLibManager
         public LiteNetLibGameManager Manager { get; protected set; }
         public long ConnectionId { get; protected set; }
 
-        internal bool IsReady { get; set; }
+        public bool IsReady { get; set; }
         internal readonly HashSet<LiteNetLibIdentity> SubscribingObjects = new HashSet<LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
