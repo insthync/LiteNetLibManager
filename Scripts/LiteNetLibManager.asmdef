@@ -1,0 +1,14 @@
+{
+    "name": "LiteNetLibManager",
+    "references": [
+        "LiteNetLibManagerPlugins"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
