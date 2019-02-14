@@ -46,10 +46,10 @@ namespace LiteNetLibManager
 
         public void Clear()
         {
+            ClearSpawnedObjects();
             CacheSpawnPoints.Clear();
             GuidToPrefabs.Clear();
             SceneObjects.Clear();
-            ClearSpawnedObjects();
             LiteNetLibIdentity.ResetObjectId();
             ResetSpawnPositionCounter();
         }
@@ -108,10 +108,8 @@ namespace LiteNetLibManager
                 {
                     // Remove from asset spawned objects dictionary
                     SpawnedObjects.Remove(objectId);
-                    // If the object is scene object, don't destroy just hide it, else destroy
-                    if (SceneObjects.ContainsKey(objectId))
-                        spawnedObject.gameObject.SetActive(false);
-                    else
+                    // Destroy only non scene object
+                    if (!SceneObjects.ContainsKey(objectId))
                         Destroy(spawnedObject.gameObject);
                 }
             }

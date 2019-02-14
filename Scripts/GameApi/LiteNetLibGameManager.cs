@@ -649,15 +649,14 @@ namespace LiteNetLibManager
             string serverSceneName = message.serverSceneName;
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
             {
-                if (!IsServer)
-                    Assets.Initialize();
-                SendClientReady();
+                Assets.Initialize();
                 OnClientOnlineSceneLoaded();
+                SendClientReady();
             }
             else
             {
-                if (!IsServer)
-                    StartCoroutine(LoadSceneRoutine(serverSceneName, true));
+                // If scene is difference, load changing scene
+                StartCoroutine(LoadSceneRoutine(serverSceneName, true));
             }
         }
         #endregion
