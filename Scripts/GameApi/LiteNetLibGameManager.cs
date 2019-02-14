@@ -42,7 +42,7 @@ namespace LiteNetLibManager
         public bool doNotEnterGameOnConnect;
         public bool doNotDestroyOnSceneChanges;
 
-        internal readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
+        protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         private float lastSendServerTime;
         private string serverSceneName;
