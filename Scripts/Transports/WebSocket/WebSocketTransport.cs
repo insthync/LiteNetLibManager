@@ -38,6 +38,7 @@ namespace LiteNetLibManager
 
         public bool StartClient(string connectKey, string address, int port)
         {
+            dirtyIsConnected = false;
             client = new WebSocket(new System.Uri("ws://" + address + ":" + port));
             client.Connect();
             return true;

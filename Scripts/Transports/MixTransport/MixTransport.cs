@@ -55,6 +55,7 @@ namespace LiteNetLibManager
 
         public bool StartClient(string connectKey, string address, int port)
         {
+            wsDirtyIsConnected = false;
 #if UNITY_WEBGL
             int wsPort = port + webSocketPortOffset;
             wsClient = new WebSocket(new System.Uri("ws://" + address + ":" + wsPort));
