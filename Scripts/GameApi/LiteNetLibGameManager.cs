@@ -321,21 +321,21 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(SendOptions.ReliableOrdered, GameMsgTypes.ClientEnterGame);
+            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.ClientEnterGame);
         }
 
         public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(SendOptions.ReliableOrdered, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
+            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
         }
 
         public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(SendOptions.ReliableOrdered, GameMsgTypes.ClientNotReady);
+            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.ClientNotReady);
         }
 
         public void SendServerTime()
@@ -354,7 +354,7 @@ namespace LiteNetLibManager
                 return;
             ServerTimeMessage message = new ServerTimeMessage();
             message.serverTime = ServerTime;
-            ServerSendPacket(connectionId, SendOptions.Sequenced, GameMsgTypes.ServerTime, message);
+            ServerSendPacket(connectionId, DeliveryMethod.Sequenced, GameMsgTypes.ServerTime, message);
         }
 
         public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
@@ -378,7 +378,7 @@ namespace LiteNetLibManager
             message.objectId = identity.ObjectId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message);
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message);
         }
 
         public void SendServerSpawnObject(LiteNetLibIdentity identity)
@@ -404,7 +404,7 @@ namespace LiteNetLibManager
             message.isOwner = identity.ConnectionId == connectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message);
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message);
         }
 
         public void SendServerSpawnObjectWithData(long connectionId, LiteNetLibIdentity identity)
@@ -440,7 +440,7 @@ namespace LiteNetLibManager
             ServerDestroyObjectMessage message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
             message.reasons = reasons;
-            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
         }
 
         public void SendServerError(bool shouldDisconnect, string errorMessage)
@@ -463,7 +463,7 @@ namespace LiteNetLibManager
             ServerErrorMessage message = new ServerErrorMessage();
             message.shouldDisconnect = shouldDisconnect;
             message.errorMessage = errorMessage;
-            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
         }
 
         public void SendServerSceneChange(string sceneName)
@@ -482,7 +482,7 @@ namespace LiteNetLibManager
                 return;
             ServerSceneChangeMessage message = new ServerSceneChangeMessage();
             message.serverSceneName = sceneName;
-            ServerSendPacket(connectionId, SendOptions.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
         }
         #endregion
 

@@ -31,8 +31,8 @@ namespace LiteNetLibManager
                     Manager.OnPeerDisconnected(eventData.connectionId, eventData.disconnectInfo);
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketErrorCode);
-                    Manager.OnPeerNetworkError(eventData.endPoint, eventData.socketErrorCode);
+                    if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError);
+                    Manager.OnPeerNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }
         }

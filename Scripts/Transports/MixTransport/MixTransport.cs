@@ -10,7 +10,7 @@ using WebSocketSharp.Server;
 
 namespace LiteNetLibManager
 {
-    public class MixTransport : ITransport
+    public sealed class MixTransport : ITransport
     {
         private long nextConnectionId = 1;
         private long tempConnectionId;
@@ -18,15 +18,19 @@ namespace LiteNetLibManager
 
         // WebSocket data
         private WebSocket wsClient;
+#if UNITY_WEBGL
         private bool wsDirtyIsConnected;
+#endif
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer wsServer;
         private readonly Dictionary<long, WSBehavior> wsServerPeers;
 #endif
 
         // LiteNetLib data
-        private NetManager client;
-        private NetManager server;
+        public NetManager client { get; private set; }
+        public NetManager server { get; private set; }
+        public string connectKey { get; private set; }
+        public int maxConnections { get; private set; }
         private readonly Dictionary<long, NetPeer> serverPeers;
         private readonly Queue<TransportEventData> clientEventQueue;
         private readonly Queue<TransportEventData> serverEventQueue;
@@ -49,22 +53,22 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL
             return wsClient != null && wsClient.IsConnected;
 #else
-            return client != null && client.GetFirstPeer() != null && client.GetFirstPeer().ConnectionState == ConnectionState.Connected;
+            return client != null && client.FirstPeer != null && client.FirstPeer.ConnectionState == ConnectionState.Connected;
 #endif
         }
 
         public bool StartClient(string connectKey, string address, int port)
         {
-            wsDirtyIsConnected = false;
 #if UNITY_WEBGL
+            wsDirtyIsConnected = false;
             int wsPort = port + webSocketPortOffset;
             wsClient = new WebSocket(new System.Uri("ws://" + address + ":" + wsPort));
             wsClient.Connect();
             return true;
 #else
             clientEventQueue.Clear();
-            client = new NetManager(new LiteNetLibTransportEventListener(clientEventQueue), connectKey);
-            return client.Start() && client.Connect(address, port) != null;
+            client = new NetManager(new MixTransportEventListener(this, clientEventQueue));
+            return client.Start() && client.Connect(address, port, connectKey) != null;
 #endif
         }
 
@@ -124,7 +128,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ClientSend(SendOptions sendOptions, NetDataWriter writer)
+        public bool ClientSend(DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if UNITY_WEBGL
             if (IsClientStarted())
@@ -135,7 +139,7 @@ namespace LiteNetLibManager
 #else
             if (IsClientStarted())
             {
-                client.GetFirstPeer().Send(writer, sendOptions);
+                client.FirstPeer.Send(writer, deliveryMethod);
                 return true;
             }
 #endif
@@ -174,7 +178,9 @@ namespace LiteNetLibManager
             // Start LiteNetLib Server
             serverPeers.Clear();
             serverEventQueue.Clear();
-            server = new NetManager(new MixTransportEventListener(this, serverEventQueue, serverPeers), maxConnections, connectKey);
+            server = new NetManager(new MixTransportEventListener(this, serverEventQueue, serverPeers));
+            this.connectKey = connectKey;
+            this.maxConnections = maxConnections;
             return server.Start(port);
 #endif
         }
@@ -196,7 +202,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ServerSend(long connectionId, SendOptions sendOptions, NetDataWriter writer)
+        public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if !UNITY_WEBGL
             // WebSocket Server Send
@@ -208,7 +214,7 @@ namespace LiteNetLibManager
             // LiteNetLib Server Send
             if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
             {
-                serverPeers[connectionId].Send(writer, sendOptions);
+                serverPeers[connectionId].Send(writer, deliveryMethod);
                 return true;
             }
 #endif

@@ -28,7 +28,7 @@ namespace LiteNetLibManager
         }
         
         [Header("Behaviour sync options")]
-        public SendOptions sendOptions;
+        public DeliveryMethod sendOptions;
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
@@ -507,7 +507,7 @@ namespace LiteNetLibManager
             List<LiteNetLibSyncField> fields = syncFields;
             foreach (LiteNetLibSyncField field in fields)
             {
-                field.SendUpdate(connectionId, SendOptions.ReliableOrdered);
+                field.SendUpdate(connectionId, DeliveryMethod.ReliableOrdered);
             }
         }
 

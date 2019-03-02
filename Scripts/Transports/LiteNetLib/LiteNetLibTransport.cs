@@ -6,10 +6,12 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public class LiteNetLibTransport : ITransport
+    public sealed class LiteNetLibTransport : ITransport
     {
-        private NetManager client;
-        private NetManager server;
+        public NetManager client { get; private set; }
+        public NetManager server { get; private set; }
+        public string connectKey { get; private set; }
+        public int maxConnections { get; private set; }
         private readonly Dictionary<long, NetPeer> serverPeers;
         private readonly Queue<TransportEventData> clientEventQueue;
         private readonly Queue<TransportEventData> serverEventQueue;
@@ -23,14 +25,14 @@ namespace LiteNetLibManager
 
         public bool IsClientStarted()
         {
-            return client != null && client.GetFirstPeer() != null && client.GetFirstPeer().ConnectionState == ConnectionState.Connected;
+            return client != null && client.FirstPeer != null && client.FirstPeer.ConnectionState == ConnectionState.Connected;
         }
 
         public bool StartClient(string connectKey, string address, int port)
         {
             clientEventQueue.Clear();
-            client = new NetManager(new LiteNetLibTransportEventListener(clientEventQueue), connectKey);
-            return client.Start() && client.Connect(address, port) != null;
+            client = new NetManager(new LiteNetLibTransportEventListener(this, clientEventQueue));
+            return client.Start() && client.Connect(address, port, connectKey) != null;
         }
 
         public void StopClient()
@@ -52,11 +54,11 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ClientSend(SendOptions sendOptions, NetDataWriter writer)
+        public bool ClientSend(DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsClientStarted())
             {
-                client.GetFirstPeer().Send(writer, sendOptions);
+                client.FirstPeer.Send(writer, deliveryMethod);
                 return true;
             }
             return false;
@@ -71,7 +73,9 @@ namespace LiteNetLibManager
         {
             serverPeers.Clear();
             serverEventQueue.Clear();
-            server = new NetManager(new LiteNetLibTransportEventListener(serverEventQueue, serverPeers), maxConnections, connectKey);
+            server = new NetManager(new LiteNetLibTransportEventListener(this, serverEventQueue, serverPeers));
+            this.connectKey = connectKey;
+            this.maxConnections = maxConnections;
             return server.Start(port);
         }
 
@@ -87,11 +91,11 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ServerSend(long connectionId, SendOptions sendOptions, NetDataWriter writer)
+        public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
             {
-                serverPeers[connectionId].Send(writer, sendOptions);
+                serverPeers[connectionId].Send(writer, deliveryMethod);
                 return true;
             }
             return false;

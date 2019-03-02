@@ -34,12 +34,12 @@ namespace LiteNetLibManager
 
         protected void ServerSendCall(long connectionId, FunctionReceivers receivers, long targetConnectionId)
         {
-            Manager.ServerSendPacket(connectionId, SendOptions.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
+            Manager.ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
         }
 
         protected void ClientSendCall(FunctionReceivers receivers, long targetConnectionId)
         {
-            Manager.ClientSendPacket(SendOptions.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, targetConnectionId));
+            Manager.ClientSendPacket(DeliveryMethod.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, targetConnectionId));
         }
 
         protected void SendCall(FunctionReceivers receivers, long targetConnectionId)

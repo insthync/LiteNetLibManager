@@ -7,7 +7,7 @@ namespace LiteNetLibManager
 {
     public abstract class LiteNetLibSyncField : LiteNetLibElement
     {
-        public SendOptions sendOptions;
+        public DeliveryMethod deliveryMethod;
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
@@ -30,7 +30,7 @@ namespace LiteNetLibManager
 
         internal abstract void SendUpdate();
         internal abstract void SendUpdate(long connectionId);
-        internal abstract void SendUpdate(long connectionId, SendOptions sendOptions);
+        internal abstract void SendUpdate(long connectionId, DeliveryMethod deliveryMethod);
         internal abstract void Deserialize(NetDataReader reader);
         internal abstract void Serialize(NetDataWriter writer);
     }
@@ -108,7 +108,7 @@ namespace LiteNetLibManager
                 if (manager.ContainsConnectionId(connectId))
                 {
                     if (!updatedOnce)
-                        SendUpdate(connectId, SendOptions.ReliableOrdered);
+                        SendUpdate(connectId, DeliveryMethod.ReliableOrdered);
                     else
                         SendUpdate(connectId);
                 }
@@ -120,7 +120,7 @@ namespace LiteNetLibManager
                     if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
                     {
                         if (!updatedOnce)
-                            SendUpdate(connectionId, SendOptions.ReliableOrdered);
+                            SendUpdate(connectionId, DeliveryMethod.ReliableOrdered);
                         else
                             SendUpdate(connectionId);
                     }
@@ -131,10 +131,10 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate(long connectionId)
         {
-            SendUpdate(connectionId, sendOptions);
+            SendUpdate(connectionId, deliveryMethod);
         }
 
-        internal override sealed void SendUpdate(long connectionId, SendOptions sendOptions)
+        internal override sealed void SendUpdate(long connectionId, DeliveryMethod deliveryMethod)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -142,7 +142,7 @@ namespace LiteNetLibManager
             if (!Manager.IsServer)
                 return;
 
-            Manager.ServerSendPacket(connectionId, sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
+            Manager.ServerSendPacket(connectionId, deliveryMethod, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
         }
 
         protected void SerializeForSend(NetDataWriter writer)

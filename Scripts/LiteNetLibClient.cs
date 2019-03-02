@@ -34,8 +34,8 @@ namespace LiteNetLibManager
                     Manager.OnClientDisconnected(eventData.disconnectInfo);
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibClient::OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketErrorCode);
-                    Manager.OnClientNetworkError(eventData.endPoint, eventData.socketErrorCode);
+                    if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibClient::OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError);
+                    Manager.OnClientNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }
         }

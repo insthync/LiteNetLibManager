@@ -1,5 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
@@ -232,59 +233,59 @@ namespace LiteNetLibManager
         }
 
 #region Packets send / read
-        public void ClientSendPacket(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ClientSendPacket(DeliveryMethod options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             Client.ClientSendPacket(options, msgType, serializer);
         }
 
-        public void ClientSendPacket<T>(SendOptions options, ushort msgType, T messageData) where T : INetSerializable
+        public void ClientSendPacket<T>(DeliveryMethod options, ushort msgType, T messageData) where T : INetSerializable
         {
             ClientSendPacket(options, msgType, messageData.Serialize);
         }
 
-        public void ClientSendPacket(SendOptions options, ushort msgType)
+        public void ClientSendPacket(DeliveryMethod options, ushort msgType)
         {
             ClientSendPacket(options, msgType, null);
         }
 
-        public void ServerSendPacket(long connectionId, SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
         {
-            Server.ServerSendPacket(connectionId, options, msgType, serializer);
+            Server.ServerSendPacket(connectionId, deliveryMethod, msgType, serializer);
         }
 
-        public void ServerSendPacket<T>(long connectionId, SendOptions options, ushort msgType, T messageData) where T : INetSerializable
+        public void ServerSendPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData) where T : INetSerializable
         {
-            ServerSendPacket(connectionId, options, msgType, messageData.Serialize);
+            ServerSendPacket(connectionId, deliveryMethod, msgType, messageData.Serialize);
         }
 
-        public void ServerSendPacket(long connectionId, SendOptions options, ushort msgType)
+        public void ServerSendPacket(long connectionId, DeliveryMethod options, ushort msgType)
         {
             ServerSendPacket(connectionId, options, msgType, null);
         }
 #endregion
 
 #region Relates components functions
-        public void ServerSendPacketToAllConnections(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             foreach (long connectionId in ConnectionIds)
             {
-                ServerSendPacket(connectionId, options, msgType, serializer);
+                ServerSendPacket(connectionId, deliveryMethod, msgType, serializer);
             }
         }
 
-        public void ServerSendPacketToAllConnections<T>(SendOptions options, ushort msgType, T messageData) where T : INetSerializable
+        public void ServerSendPacketToAllConnections<T>(DeliveryMethod deliveryMethod, ushort msgType, T messageData) where T : INetSerializable
         {
             foreach (long connectionId in ConnectionIds)
             {
-                ServerSendPacket(connectionId, options, msgType, messageData);
+                ServerSendPacket(connectionId, deliveryMethod, msgType, messageData);
             }
         }
 
-        public void ServerSendPacketToAllConnections(SendOptions options, ushort msgType)
+        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType)
         {
             foreach (long connectionId in ConnectionIds)
             {
-                ServerSendPacket(connectionId, options, msgType);
+                ServerSendPacket(connectionId, deliveryMethod, msgType);
             }
         }
 
@@ -307,15 +308,15 @@ namespace LiteNetLibManager
         {
             Client.UnregisterMessage(msgType);
         }
-#endregion
+        #endregion
 
-#region Network Events Callbacks
+        #region Network Events Callbacks
         /// <summary>
         /// This event will be called at server when there are any network error
         /// </summary>
         /// <param name="endPoint"></param>
-        /// <param name="socketErrorCode"></param>
-        public virtual void OnPeerNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
+        /// <param name="socketError"></param>
+        public virtual void OnPeerNetworkError(IPEndPoint endPoint, SocketError socketError) { }
 
         /// <summary>
         /// This event will be called at server when any client connected
@@ -334,8 +335,8 @@ namespace LiteNetLibManager
         /// This event will be called at client when there are any network error
         /// </summary>
         /// <param name="endPoint"></param>
-        /// <param name="socketErrorCode"></param>
-        public virtual void OnClientNetworkError(NetEndPoint endPoint, int socketErrorCode) { }
+        /// <param name="socketError"></param>
+        public virtual void OnClientNetworkError(IPEndPoint endPoint, SocketError socketError) { }
 
         /// <summary>
         /// This event will be called at client when connected to server

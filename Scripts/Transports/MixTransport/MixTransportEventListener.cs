@@ -1,6 +1,8 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 
 namespace LiteNetLibManager
 {
@@ -12,21 +14,33 @@ namespace LiteNetLibManager
         private Dictionary<long, long> peerIdsDict;
         private long tempConnectionId;
 
-        public MixTransportEventListener(MixTransport mixTransport, Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> peersDict)
+        public MixTransportEventListener(MixTransport mixTransport, Queue<TransportEventData> eventQueue)
         {
             this.mixTransport = mixTransport;
             this.eventQueue = eventQueue;
+        }
+
+        public MixTransportEventListener(MixTransport mixTransport, Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> peersDict) : this(mixTransport, eventQueue)
+        {
             this.peersDict = peersDict;
             peerIdsDict = new Dictionary<long, long>();
         }
 
-        public void OnNetworkError(NetEndPoint endPoint, int socketErrorCode)
+        public void OnConnectionRequest(ConnectionRequest request)
+        {
+            if (mixTransport.server.PeersCount < mixTransport.maxConnections)
+                request.AcceptIfKey(mixTransport.connectKey);
+            else
+                request.Reject();
+        }
+
+        public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ErrorEvent,
                 endPoint = endPoint,
-                socketErrorCode = socketErrorCode,
+                socketError = socketError,
             });
         }
 
@@ -34,19 +48,19 @@ namespace LiteNetLibManager
         {
         }
 
-        public void OnNetworkReceive(NetPeer peer, NetDataReader reader)
+        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
         {
-            tempConnectionId = peerIdsDict[peer.ConnectId];
+            tempConnectionId = peerIdsDict[peer.Id];
 
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DataEvent,
                 connectionId = tempConnectionId,
-                reader = reader.Clone(),
+                reader = reader,
             });
         }
 
-        public void OnNetworkReceiveUnconnected(NetEndPoint remoteEndPoint, NetDataReader reader, UnconnectedMessageType messageType)
+        public void OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
         }
 
@@ -54,7 +68,7 @@ namespace LiteNetLibManager
         {
             tempConnectionId = mixTransport.GetNewConnectionID();
             peersDict[tempConnectionId] = peer;
-            peerIdsDict[peer.ConnectId] = tempConnectionId;
+            peerIdsDict[peer.Id] = tempConnectionId;
 
             eventQueue.Enqueue(new TransportEventData()
             {
@@ -65,9 +79,9 @@ namespace LiteNetLibManager
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            tempConnectionId = peerIdsDict[peer.ConnectId];
+            tempConnectionId = peerIdsDict[peer.Id];
             peersDict.Remove(tempConnectionId);
-            peerIdsDict.Remove(peer.ConnectId);
+            peerIdsDict.Remove(peer.Id);
 
             eventQueue.Enqueue(new TransportEventData()
             {

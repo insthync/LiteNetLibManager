@@ -128,10 +128,10 @@ namespace LiteNetLibManager
             return ackId;
         }
 
-        public uint ClientSendAckPacket<T>(SendOptions options, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        public uint ClientSendAckPacket<T>(DeliveryMethod deliveryMethod, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
         {
             messageData.ackId = AddAckCallback(callback);
-            ClientSendPacket(options, msgType, (writer) =>
+            ClientSendPacket(deliveryMethod, msgType, (writer) =>
             {
                 messageData.Serialize(writer);
                 if (extraSerializer != null)
@@ -140,10 +140,10 @@ namespace LiteNetLibManager
             return messageData.ackId;
         }
 
-        public uint ServerSendAckPacket<T>(long connectionId, SendOptions options, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        public uint ServerSendAckPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
         {
             messageData.ackId = AddAckCallback(callback);
-            ServerSendPacket(connectionId, options, msgType, (writer) =>
+            ServerSendPacket(connectionId, deliveryMethod, msgType, (writer) =>
             {
                 messageData.Serialize(writer);
                 if (extraSerializer != null)
@@ -165,22 +165,22 @@ namespace LiteNetLibManager
             }
         }
 
-        public void ClientSendPacket(SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ClientSendPacket(DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             writer.Reset();
             writer.PutPackedUShort(msgType);
             if (serializer != null)
                 serializer.Invoke(writer);
-            Transport.ClientSend(options, writer);
+            Transport.ClientSend(deliveryMethod, writer);
         }
 
-        public void ServerSendPacket(long connectionId, SendOptions options, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             writer.Reset();
             writer.PutPackedUShort(msgType);
             if (serializer != null)
                 serializer.Invoke(writer);
-            Transport.ServerSend(connectionId, options, writer);
+            Transport.ServerSend(connectionId, deliveryMethod, writer);
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
+using System.Net;
+using System.Net.Sockets;
 
 namespace LiteNetLibManager
 {
@@ -9,7 +11,7 @@ namespace LiteNetLibManager
         public long connectionId;
         public NetDataReader reader;
         public DisconnectInfo disconnectInfo;
-        public NetEndPoint endPoint;
-        public int socketErrorCode;
+        public IPEndPoint endPoint;
+        public SocketError socketError;
     }
 }
