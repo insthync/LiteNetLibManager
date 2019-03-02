@@ -107,19 +107,19 @@ namespace LiteNetLibManager
             base.Update();
         }
 
-        public bool TryGetPlayer(long connectId, out LiteNetLibPlayer player)
+        public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
         {
-            return Players.TryGetValue(connectId, out player);
+            return Players.TryGetValue(connectionId, out player);
         }
 
-        public bool ContainsPlayer(long connectId)
+        public bool ContainsPlayer(long connectionId)
         {
-            return Players.ContainsKey(connectId);
+            return Players.ContainsKey(connectionId);
         }
 
-        public LiteNetLibPlayer GetPlayer(long connectId)
+        public LiteNetLibPlayer GetPlayer(long connectionId)
         {
-            return Players[connectId];
+            return Players[connectionId];
         }
 
         public Dictionary<long, LiteNetLibPlayer>.ValueCollection GetPlayers()
@@ -506,9 +506,9 @@ namespace LiteNetLibManager
         {
             NetDataReader reader = messageHandler.reader;
             FunctionReceivers receivers = (FunctionReceivers)reader.GetByte();
-            long connectId = 0;
+            long connectionId = -1;
             if (receivers == FunctionReceivers.Target)
-                connectId = (long)reader.GetPackedULong();
+                connectionId = (long)reader.GetPackedULong();
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
@@ -519,7 +519,7 @@ namespace LiteNetLibManager
                 {
                     LiteNetLibFunction netFunction = identity.ProcessNetFunction(info, reader, false);
                     if (receivers == FunctionReceivers.Target)
-                        netFunction.Call(connectId);
+                        netFunction.Call(connectionId);
                     else
                         netFunction.Call(receivers);
                 }

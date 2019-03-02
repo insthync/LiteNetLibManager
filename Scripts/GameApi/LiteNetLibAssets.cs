@@ -164,7 +164,7 @@ namespace LiteNetLibManager
             return null;
         }
 
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
         {
             if (gameObject == null)
             {
@@ -172,20 +172,20 @@ namespace LiteNetLibManager
                 return null;
             }
             LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
-            return NetworkSpawn(identity, position, rotation, objectId, connectId);
+            return NetworkSpawn(identity, position, rotation, objectId, connectionId);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
         {
             if (identity == null)
             {
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
                 return null;
             }
-            return NetworkSpawn(identity.HashAssetId, position, rotation, objectId, connectId);
+            return NetworkSpawn(identity.HashAssetId, position, rotation, objectId, connectionId);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectId = 0)
+        public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -208,11 +208,11 @@ namespace LiteNetLibManager
                 spawnedObject.gameObject.SetActive(true);
                 spawnedObject.transform.position = position;
                 spawnedObject.transform.rotation = rotation;
-                spawnedObject.Initial(Manager, false, objectId, connectId);
+                spawnedObject.Initial(Manager, false, objectId, connectionId);
                 SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 // Add to player spawned objects dictionary
                 LiteNetLibPlayer player;
-                if (Manager.TryGetPlayer(connectId, out player))
+                if (Manager.TryGetPlayer(connectionId, out player))
                     player.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 return spawnedObject;
             }

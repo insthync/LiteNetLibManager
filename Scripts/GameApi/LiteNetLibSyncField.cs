@@ -104,13 +104,13 @@ namespace LiteNetLibManager
             hasUpdate = false;
             if (forOwnerOnly)
             {
-                long connectId = Behaviour.ConnectionId;
-                if (manager.ContainsConnectionId(connectId))
+                long connectionId = Behaviour.ConnectionId;
+                if (manager.ContainsConnectionId(connectionId))
                 {
                     if (!updatedOnce)
-                        SendUpdate(connectId, DeliveryMethod.ReliableOrdered);
+                        SendUpdate(connectionId, DeliveryMethod.ReliableOrdered);
                     else
-                        SendUpdate(connectId);
+                        SendUpdate(connectionId);
                 }
             }
             else

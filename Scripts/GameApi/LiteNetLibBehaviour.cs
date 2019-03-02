@@ -419,13 +419,13 @@ namespace LiteNetLibManager
             CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
 
-        public void CallNetFunction(string id, long connectId, params object[] parameters)
+        public void CallNetFunction(string id, long connectionId, params object[] parameters)
         {
             ushort elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
                 LiteNetLibFunction syncFunction = netFunctions[elementId];
-                syncFunction.Call(connectId, parameters);
+                syncFunction.Call(connectionId, parameters);
             }
             else
             {

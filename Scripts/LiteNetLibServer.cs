@@ -18,7 +18,7 @@ namespace LiteNetLibManager
             switch (eventData.type)
             {
                 case ENetworkEvent.ConnectEvent:
-                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectId: " + eventData.connectionId);
+                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectionId: " + eventData.connectionId);
                     Manager.AddConnectionId(eventData.connectionId);
                     Manager.OnPeerConnected(eventData.connectionId);
                     break;
@@ -26,7 +26,7 @@ namespace LiteNetLibManager
                     ReadPacket(eventData.connectionId, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
-                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectId: " + eventData.connectionId + " disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
+                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectionId: " + eventData.connectionId + " disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
                     Manager.RemoveConnectionId(eventData.connectionId);
                     Manager.OnPeerDisconnected(eventData.connectionId, eventData.disconnectInfo);
                     break;

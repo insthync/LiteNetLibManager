@@ -21,7 +21,7 @@ namespace LiteNetLibManager
         [LiteNetLibReadOnly, SerializeField]
         private uint objectId;
         [LiteNetLibReadOnly, SerializeField]
-        private long connectId;
+        private long connectionId;
         [LiteNetLibReadOnly, SerializeField]
         private LiteNetLibGameManager manager;
 #if UNITY_EDITOR
@@ -54,7 +54,7 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } }
-        public long ConnectionId { get { return connectId; } }
+        public long ConnectionId { get { return connectionId; } }
         public LiteNetLibGameManager Manager { get { return manager; } }
 
         public LiteNetLibPlayer Player
@@ -299,11 +299,11 @@ namespace LiteNetLibManager
         /// </summary>
         /// <param name="manager"></param>
         /// <param name="objectId"></param>
-        /// <param name="connectId"></param>
-        internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectId = 0)
+        /// <param name="connectionId"></param>
+        internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectionId = -1)
         {
             this.objectId = objectId;
-            this.connectId = connectId;
+            this.connectionId = connectionId;
             this.manager = manager;
             destroyed = false;
             if (objectId > HighestObjectId)
@@ -445,9 +445,9 @@ namespace LiteNetLibManager
                 subscriber.RemoveSubscribing(this, false);
         }
 
-        public bool ContainsSubscriber(long connectId)
+        public bool ContainsSubscriber(long connectionId)
         {
-            return Subscribers.ContainsKey(connectId);
+            return Subscribers.ContainsKey(connectionId);
         }
 
         public bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
@@ -460,9 +460,9 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool IsSubscribedOrOwning(long connectId)
+        public bool IsSubscribedOrOwning(long connectionId)
         {
-            return ContainsSubscriber(connectId) || connectId == ConnectionId;
+            return ContainsSubscriber(connectionId) || connectionId == ConnectionId;
         }
 
         public void RebuildSubscribers(bool initialize)

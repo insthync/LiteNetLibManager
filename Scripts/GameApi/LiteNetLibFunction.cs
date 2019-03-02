@@ -86,20 +86,20 @@ namespace LiteNetLibManager
             SendCall(receivers, Behaviour.ConnectionId);
         }
 
-        public void Call(long connectId, params object[] parameterValues)
+        public void Call(long connectionId, params object[] parameterValues)
         {
             if (!ValidateBeforeAccess())
                 return;
 
             SetParameters(parameterValues);
-            SendCall(FunctionReceivers.Target, connectId);
+            SendCall(FunctionReceivers.Target, connectionId);
         }
         
-        protected void SerializeForClient(NetDataWriter writer, FunctionReceivers receivers, long connectId)
+        protected void SerializeForClient(NetDataWriter writer, FunctionReceivers receivers, long connectionId)
         {
             writer.Put((byte)receivers);
             if (receivers == FunctionReceivers.Target)
-                writer.PutPackedULong((ulong)connectId);
+                writer.PutPackedULong((ulong)connectionId);
             SerializeForSend(writer);
         }
 
