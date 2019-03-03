@@ -11,6 +11,8 @@ namespace LiteNetLibManager
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
+        [Tooltip("If this is TRUE it will syncing although no changes")]
+        public bool alwaysSync;
         [Tooltip("If this is TRUE, this will update to owner client only")]
         public bool forOwnerOnly;
         public bool hasUpdate { get; protected set; }
@@ -25,6 +27,7 @@ namespace LiteNetLibManager
                 return;
 
             lastSentTime = Time.unscaledTime;
+            
             SendUpdate();
         }
 
@@ -91,7 +94,7 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate()
         {
-            if (!hasUpdate)
+            if (!alwaysSync && !hasUpdate)
                 return;
 
             if (!ValidateBeforeAccess())
