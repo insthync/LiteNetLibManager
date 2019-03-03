@@ -29,6 +29,8 @@ namespace LiteNetLibManager
         {
             Sync,
             NotSync,
+            CompressToUShort,
+            CompressToByte,
         }
 
         [Tooltip("Which transform you are going to sync, if it is empty it will use transform which this component attached to")]
@@ -220,10 +222,17 @@ namespace LiteNetLibManager
 
         private void SerializeRotationAxis(NetDataWriter writer, float data, SyncRotationOptions syncOptions)
         {
+            data = To360Angle(data);
             switch (syncOptions)
             {
                 case SyncRotationOptions.Sync:
                     writer.Put(data);
+                    break;
+                case SyncRotationOptions.CompressToUShort:
+                    writer.Put((ushort)(data * 100));
+                    break;
+                case SyncRotationOptions.CompressToByte:
+                    writer.Put((byte)(data / 360f * 100));
                     break;
                 default:
                 case SyncRotationOptions.NotSync:
@@ -250,6 +259,10 @@ namespace LiteNetLibManager
             {
                 case SyncRotationOptions.Sync:
                     return reader.GetFloat();
+                case SyncRotationOptions.CompressToUShort:
+                    return (float)reader.GetUShort() * 0.01f;
+                case SyncRotationOptions.CompressToByte:
+                    return (float)reader.GetByte() * 0.01f * 360f;
                 default:
                 case SyncRotationOptions.NotSync:
                     break;
@@ -390,5 +403,17 @@ namespace LiteNetLibManager
                 syncingTransform.rotation = rotation;
             }
         }
+
+        #region Math Utilities
+        public static float To360Angle(float angle)
+        {
+            float result = angle - Mathf.CeilToInt(angle / 360f) * 360f;
+            if (result < 0)
+            {
+                result += 360f;
+            }
+            return result;
+        }
+        #endregion
     }
 }
