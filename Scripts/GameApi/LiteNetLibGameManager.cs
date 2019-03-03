@@ -521,7 +521,7 @@ namespace LiteNetLibManager
                     if (receivers == FunctionReceivers.Target)
                         netFunction.Call(connectionId);
                     else
-                        netFunction.Call(receivers);
+                        netFunction.Call(DeliveryMethod.ReliableOrdered, receivers);
                 }
             }
         }

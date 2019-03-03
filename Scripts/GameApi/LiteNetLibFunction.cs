@@ -14,7 +14,7 @@ namespace LiteNetLibManager
     public class LiteNetLibFunction : LiteNetLibElement
     {
         private NetFunctionDelegate callback;
-        
+
         public Type[] ParameterTypes { get; protected set; }
         public object[] Parameters { get; protected set; }
 
@@ -32,17 +32,17 @@ namespace LiteNetLibManager
             callback();
         }
 
-        protected void ServerSendCall(long connectionId, FunctionReceivers receivers, long targetConnectionId)
+        protected void ServerSendCall(long connectionId, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
-            Manager.ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
+            Manager.ServerSendPacket(connectionId, deliveryMethod, LiteNetLibGameManager.GameMsgTypes.ServerCallFunction, (writer) => SerializeForSend(writer));
         }
 
-        protected void ClientSendCall(FunctionReceivers receivers, long targetConnectionId)
+        protected void ClientSendCall(DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
-            Manager.ClientSendPacket(DeliveryMethod.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, targetConnectionId));
+            Manager.ClientSendPacket(deliveryMethod, LiteNetLibGameManager.GameMsgTypes.ClientCallFunction, (writer) => SerializeForClient(writer, receivers, targetConnectionId));
         }
 
-        protected void SendCall(FunctionReceivers receivers, long targetConnectionId)
+        protected void SendCall(DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
             LiteNetLibGameManager manager = Manager;
 
@@ -52,13 +52,13 @@ namespace LiteNetLibManager
                 {
                     case FunctionReceivers.Target:
                         if (Behaviour.Identity.IsSubscribedOrOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
-                            ServerSendCall(targetConnectionId, receivers, targetConnectionId);
+                            ServerSendCall(targetConnectionId, deliveryMethod, receivers, targetConnectionId);
                         break;
                     case FunctionReceivers.All:
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
                             if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
-                                ServerSendCall(connectionId, receivers, targetConnectionId);
+                                ServerSendCall(connectionId, deliveryMethod, receivers, targetConnectionId);
                         }
                         if (!Manager.IsClientConnected)
                             HookCallback();
@@ -69,7 +69,10 @@ namespace LiteNetLibManager
                 }
             }
             else if (manager.IsClientConnected)
-                ClientSendCall(receivers, targetConnectionId);
+            {
+                if (receivers == FunctionReceivers.Target)
+                ClientSendCall(deliveryMethod, receivers, targetConnectionId);
+            }
         }
 
         public void SetParameters(params object[] parameterValues)
@@ -77,13 +80,13 @@ namespace LiteNetLibManager
             Parameters = parameterValues;
         }
 
-        public void Call(FunctionReceivers receivers, params object[] parameterValues)
+        public void Call(DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameterValues)
         {
             if (!ValidateBeforeAccess())
                 return;
 
             SetParameters(parameterValues);
-            SendCall(receivers, Behaviour.ConnectionId);
+            SendCall(deliveryMethod, receivers, Behaviour.ConnectionId);
         }
 
         public void Call(long connectionId, params object[] parameterValues)
@@ -92,9 +95,9 @@ namespace LiteNetLibManager
                 return;
 
             SetParameters(parameterValues);
-            SendCall(FunctionReceivers.Target, connectionId);
+            SendCall(DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
         }
-        
+
         protected void SerializeForClient(NetDataWriter writer, FunctionReceivers receivers, long connectionId)
         {
             writer.Put((byte)receivers);
@@ -175,7 +178,7 @@ namespace LiteNetLibManager
             callback((T1)Parameters[0], (T2)Parameters[1]);
         }
     }
-    
+
     public class LiteNetLibFunction<T1, T2, T3> : LiteNetLibFunction
     {
         private NetFunctionDelegate<T1, T2, T3> callback;

@@ -219,6 +219,7 @@ namespace LiteNetLibManager
             }
         }
 
+        #region RegisterNetFunction
         public void RegisterNetFunction(NetFunctionDelegate func)
         {
             RegisterNetFunction(func.Method.Name, new LiteNetLibFunction(func));
@@ -273,6 +274,7 @@ namespace LiteNetLibManager
         {
             RegisterNetFunction(func.Method.Name, new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(func));
         }
+        #endregion
 
         public void RegisterNetFunction(string id, LiteNetLibFunction netFunction)
         {
@@ -294,68 +296,127 @@ namespace LiteNetLibManager
             netFunctionIds[id] = elementId;
         }
 
+        #region CallNetFunction with receivers and parameters
         public void CallNetFunction(NetFunctionDelegate func, FunctionReceivers receivers)
         {
-            CallNetFunction(func.Method.Name, receivers);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers);
         }
 
         public void CallNetFunction<T1>(NetFunctionDelegate<T1> func, FunctionReceivers receivers, T1 param1)
         {
-            CallNetFunction(func.Method.Name, receivers, param1);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1);
         }
 
         public void CallNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, FunctionReceivers receivers, T1 param1, T2 param2)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2);
         }
 
         public void CallNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3);
         }
 
         public void CallNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4);
         }
 
         public void CallNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5);
         }
 
         public void CallNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6);
         }
 
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7);
         }
 
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
-            CallNetFunction(func.Method.Name, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+            CallNetFunction(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+        }
+        #endregion
+
+        #region CallNetFunction with delivery method, receivers and parameters
+        public void CallNetFunction(NetFunctionDelegate func, DeliveryMethod deliveryMethod, FunctionReceivers receivers)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers);
         }
 
-        public void CallNetFunction(string id, FunctionReceivers receivers, params object[] parameters)
+        public void CallNetFunction<T1>(NetFunctionDelegate<T1> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1);
+        }
+
+        public void CallNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2);
+        }
+
+        public void CallNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+        }
+
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        {
+            CallNetFunction(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+        }
+        #endregion
+
+        public void CallNetFunction(string id, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
         {
             ushort elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
                 LiteNetLibFunction syncFunction = netFunctions[elementId];
-                syncFunction.Call(receivers, parameters);
+                syncFunction.Call(deliveryMethod, receivers, parameters);
             }
             else
             {
@@ -364,6 +425,7 @@ namespace LiteNetLibManager
             }
         }
 
+        #region CallNetFunction with connectionId and parameters, for call function at target connection Id only
         public void CallNetFunction(NetFunctionDelegate func, long connectionId)
         {
             CallNetFunction(func.Method.Name, connectionId);
@@ -418,6 +480,7 @@ namespace LiteNetLibManager
         {
             CallNetFunction(func.Method.Name, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
+        #endregion
 
         public void CallNetFunction(string id, long connectionId, params object[] parameters)
         {
