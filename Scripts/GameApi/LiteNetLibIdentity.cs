@@ -245,6 +245,22 @@ namespace LiteNetLibManager
             return behaviour != null;
         }
 
+        internal void WriteInitialSyncFields(NetDataWriter writer)
+        {
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            {
+                Behaviours[loopCounter].WriteInitialSyncFields(writer);
+            }
+        }
+
+        internal void ReadInitialSyncFields(NetDataReader reader)
+        {
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            {
+                Behaviours[loopCounter].ReadInitialSyncFields(reader);
+            }
+        }
+
         internal void SendInitSyncFields()
         {
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)

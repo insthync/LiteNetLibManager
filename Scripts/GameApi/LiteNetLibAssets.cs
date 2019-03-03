@@ -164,59 +164,40 @@ namespace LiteNetLibManager
             return null;
         }
 
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectionId = -1)
         {
             if (gameObject == null)
             {
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - gameObject is null.");
                 return null;
             }
-            LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
-            return NetworkSpawn(identity, position, rotation, objectId, connectionId);
-        }
 
-        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
-        {
+            LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
             if (identity == null)
             {
                 if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
                 return null;
             }
-            return NetworkSpawn(identity.HashAssetId, position, rotation, objectId, connectionId);
+
+            identity.gameObject.SetActive(true);
+            identity.Initial(Manager, false, objectId, connectionId);
+            SpawnedObjects[identity.ObjectId] = identity;
+
+            // Add to player spawned objects dictionary
+            LiteNetLibPlayer player;
+            if (Manager.TryGetPlayer(connectionId, out player))
+                player.SpawnedObjects[identity.ObjectId] = identity;
+
+            return identity;
         }
 
         public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
         {
-            if (!Manager.IsNetworkActive)
-            {
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Network is not active cannot spawn");
-                return null;
-            }
-            
-            // If it's scene object use network spawn scene function to spawn it
-            if (SceneObjects.ContainsKey(objectId))
-                return NetworkSpawnScene(objectId, position, rotation);
-            
-            // Spawned objects cannot spawning again
-            if (SpawnedObjects.ContainsKey(objectId))
-                return null;
-            
             LiteNetLibIdentity spawningObject = null;
             if (GuidToPrefabs.TryGetValue(hashAssetId, out spawningObject))
-            {
-                LiteNetLibIdentity spawnedObject = Instantiate(spawningObject);
-                spawnedObject.gameObject.SetActive(true);
-                spawnedObject.transform.position = position;
-                spawnedObject.transform.rotation = rotation;
-                spawnedObject.Initial(Manager, false, objectId, connectionId);
-                SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
-                // Add to player spawned objects dictionary
-                LiteNetLibPlayer player;
-                if (Manager.TryGetPlayer(connectionId, out player))
-                    player.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
-                return spawnedObject;
-            }
-            else if (Manager.LogWarn)
+                return NetworkSpawn(Instantiate(spawningObject.gameObject, position, rotation), objectId, connectionId);
+            // If object with hash asset id not exists
+            if (Manager.LogWarn)
                 Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + hashAssetId + " is not registered.");
             return null;
         }

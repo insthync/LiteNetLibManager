@@ -238,9 +238,14 @@ namespace LiteNetLibManager
             Client.ClientSendPacket(options, msgType, serializer);
         }
 
-        public void ClientSendPacket<T>(DeliveryMethod options, ushort msgType, T messageData) where T : INetSerializable
+        public void ClientSendPacket<T>(DeliveryMethod options, ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : INetSerializable
         {
-            ClientSendPacket(options, msgType, messageData.Serialize);
+            ClientSendPacket(options, msgType, (writer) =>
+            {
+                messageData.Serialize(writer);
+                if (extraSerializer != null)
+                    extraSerializer.Invoke(writer);
+            });
         }
 
         public void ClientSendPacket(DeliveryMethod options, ushort msgType)
@@ -253,9 +258,14 @@ namespace LiteNetLibManager
             Server.ServerSendPacket(connectionId, deliveryMethod, msgType, serializer);
         }
 
-        public void ServerSendPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData) where T : INetSerializable
+        public void ServerSendPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : INetSerializable
         {
-            ServerSendPacket(connectionId, deliveryMethod, msgType, messageData.Serialize);
+            ServerSendPacket(connectionId, deliveryMethod, msgType, (writer) =>
+            {
+                messageData.Serialize(writer);
+                if (extraSerializer != null)
+                    extraSerializer.Invoke(writer);
+            });
         }
 
         public void ServerSendPacket(long connectionId, DeliveryMethod options, ushort msgType)

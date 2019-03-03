@@ -31,6 +31,8 @@ namespace LiteNetLibManager
             SendUpdate();
         }
 
+        public abstract object Get();
+        public abstract void Set(object value);
         internal abstract void SendUpdate();
         internal abstract void SendUpdate(long connectionId);
         internal abstract void SendUpdate(long connectionId, DeliveryMethod deliveryMethod);
@@ -42,7 +44,7 @@ namespace LiteNetLibManager
     {
         public Action<TType> onChange;
 
-        [LiteNetLibReadOnly, SerializeField]
+        [SerializeField]
         protected TType value;
         public TType Value
         {
@@ -50,22 +52,31 @@ namespace LiteNetLibManager
             set
             {
                 if (!ValidateBeforeAccess())
+                {
+                    // Set intial values
+                    this.value = value;
                     return;
+                }
 
                 if (IsValueChanged(value))
                 {
                     this.value = value;
                     hasUpdate = true;
-                    // If never updates, force update it as initialize state
-                    if (!updatedOnce)
-                        SendUpdate();
                     if (onChange != null)
                         onChange.Invoke(value);
                 }
             }
         }
 
-        protected bool updatedOnce;
+        public override object Get()
+        {
+            return Value;
+        }
+
+        public override void Set(object value)
+        {
+            Value = (TType)value;
+        }
 
         protected virtual bool IsValueChanged(TType newValue)
         {
@@ -77,19 +88,16 @@ namespace LiteNetLibManager
             return field.Value;
         }
 
+        internal override void Setup(LiteNetLibBehaviour behaviour, byte elementId)
+        {
+            base.Setup(behaviour, elementId);
+            if (onChange != null)
+                onChange.Invoke(Value);
+        }
+
         protected override bool ValidateBeforeAccess()
         {
-            if (Behaviour == null)
-            {
-                Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty");
-                return false;
-            }
-            if (!Behaviour.IsServer)
-            {
-                Debug.LogError("[LiteNetLibSyncField] Error while set value, not the server");
-                return false;
-            }
-            return true;
+            return Behaviour != null && Behaviour.IsServer;
         }
 
         internal override sealed void SendUpdate()
@@ -98,38 +106,26 @@ namespace LiteNetLibManager
                 return;
 
             if (!ValidateBeforeAccess())
+            {
+                Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty or not the server");
                 return;
-
-            LiteNetLibGameManager manager = Manager;
-            if (!manager.IsServer)
-                return;
+            }
 
             hasUpdate = false;
             if (forOwnerOnly)
             {
                 long connectionId = Behaviour.ConnectionId;
-                if (manager.ContainsConnectionId(connectionId))
-                {
-                    if (!updatedOnce)
-                        SendUpdate(connectionId, DeliveryMethod.ReliableOrdered);
-                    else
-                        SendUpdate(connectionId);
-                }
+                if (Manager.ContainsConnectionId(connectionId))
+                    SendUpdate(connectionId);
             }
             else
             {
-                foreach (long connectionId in manager.GetConnectionIds())
+                foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
-                    {
-                        if (!updatedOnce)
-                            SendUpdate(connectionId, DeliveryMethod.ReliableOrdered);
-                        else
-                            SendUpdate(connectionId);
-                    }
+                        SendUpdate(connectionId);
                 }
             }
-            updatedOnce = true;
         }
 
         internal override sealed void SendUpdate(long connectionId)
@@ -140,9 +136,6 @@ namespace LiteNetLibManager
         internal override sealed void SendUpdate(long connectionId, DeliveryMethod deliveryMethod)
         {
             if (!ValidateBeforeAccess())
-                return;
-
-            if (!Manager.IsServer)
                 return;
 
             Manager.ServerSendPacket(connectionId, deliveryMethod, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);

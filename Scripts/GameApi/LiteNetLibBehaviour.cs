@@ -154,6 +154,7 @@ namespace LiteNetLibManager
         public void Setup(byte behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
+            OnSetup();
             tempFieldNames = null;
             tempListNames = null;
             // Caching field names
@@ -183,7 +184,6 @@ namespace LiteNetLibManager
             }
             SetupSyncElements(tempFieldNames, CacheSyncFieldInfos, syncFields);
             SetupSyncElements(tempListNames, CacheSyncListInfos, syncLists);
-            OnSetup();
         }
 
         private void SetupSyncElements<T>(IList<string> fieldNames, Dictionary<string, FieldInfo> cacheInfos, List<T> elementList) where T : LiteNetLibElement
@@ -497,7 +497,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
+        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
@@ -516,7 +516,7 @@ namespace LiteNetLibManager
             return null;
         }
 
-        public LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
+        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
             if (info.objectId != ObjectId)
                 return null;
@@ -537,7 +537,7 @@ namespace LiteNetLibManager
             return null;
         }
 
-        public LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
+        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
@@ -556,7 +556,25 @@ namespace LiteNetLibManager
             return null;
         }
 
-        public void SendInitSyncFields()
+        internal void WriteInitialSyncFields(NetDataWriter writer)
+        {
+            List<LiteNetLibSyncField> fields = syncFields;
+            foreach (LiteNetLibSyncField field in fields)
+            {
+                field.Serialize(writer);
+            }
+        }
+
+        internal void ReadInitialSyncFields(NetDataReader reader)
+        {
+            List<LiteNetLibSyncField> fields = syncFields;
+            foreach (LiteNetLibSyncField field in fields)
+            {
+                field.Deserialize(reader);
+            }
+        }
+
+        internal void SendInitSyncFields()
         {
             List<LiteNetLibSyncField> fields = syncFields;
             foreach (LiteNetLibSyncField field in fields)
@@ -565,7 +583,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendInitSyncFields(long connectionId)
+        internal void SendInitSyncFields(long connectionId)
         {
             List<LiteNetLibSyncField> fields = syncFields;
             foreach (LiteNetLibSyncField field in fields)
@@ -574,7 +592,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendInitSyncLists()
+        internal void SendInitSyncLists()
         {
             List<LiteNetLibSyncList> lists = syncLists;
             foreach (LiteNetLibSyncList list in lists)
@@ -584,7 +602,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SendInitSyncLists(long connectionId)
+        internal void SendInitSyncLists(long connectionId)
         {
             List<LiteNetLibSyncList> lists = syncLists;
             foreach (LiteNetLibSyncList list in lists)

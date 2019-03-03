@@ -38,9 +38,6 @@ namespace LiteNetLibManager
             get { return list[index]; }
             set
             {
-                if (!ValidateBeforeAccess())
-                    return;
-
                 list[index] = value;
                 SendOperation(Operation.Set, index);
             }
@@ -68,16 +65,12 @@ namespace LiteNetLibManager
 
         public void Add(TType item)
         {
-            if (!ValidateBeforeAccess())
-                return;
             list.Add(item);
             SendOperation(Operation.Add, list.Count - 1);
         }
 
         public void Insert(int index, TType item)
         {
-            if (!ValidateBeforeAccess())
-                return;
             list.Insert(index, item);
             SendOperation(Operation.Insert, index);
         }
@@ -94,8 +87,6 @@ namespace LiteNetLibManager
 
         public bool Remove(TType value)
         {
-            if (!ValidateBeforeAccess())
-                return false;
             int index = IndexOf(value);
             if (index >= 0)
             {
@@ -107,16 +98,12 @@ namespace LiteNetLibManager
 
         public void RemoveAt(int index)
         {
-            if (!ValidateBeforeAccess())
-                return;
             list.RemoveAt(index);
             SendOperation(Operation.RemoveAt, index);
         }
 
         public void Clear()
         {
-            if (!ValidateBeforeAccess())
-                return;
             list.Clear();
             SendOperation(Operation.Clear, -1);
         }
@@ -141,27 +128,40 @@ namespace LiteNetLibManager
             SendOperation(Operation.Dirty, index);
         }
 
+        internal override void Setup(LiteNetLibBehaviour behaviour, byte elementId)
+        {
+            base.Setup(behaviour, elementId);
+            if (list.Count > 0 && onOperation != null)
+            {
+                for (int i = 0; i < list.Count; ++i)
+                {
+                    onOperation.Invoke(Operation.Add, i);
+                }
+            }
+        }
+
+        protected override bool ValidateBeforeAccess()
+        {
+            return Behaviour != null && Behaviour.IsServer;
+        }
+
         public override sealed void SendOperation(Operation operation, int index)
         {
+            if (onOperation != null)
+                onOperation.Invoke(operation, index);
+
             if (!ValidateBeforeAccess())
                 return;
 
-            LiteNetLibGameManager manager = Manager;
-            if (!manager.IsServer)
-                return;
-
-            if (onOperation != null)
-                onOperation.Invoke(operation, index);
-            
             if (forOwnerOnly)
             {
                 long connectionId = Behaviour.ConnectionId;
-                if (manager.ContainsConnectionId(connectionId))
+                if (Manager.ContainsConnectionId(connectionId))
                     SendOperation(connectionId, operation, index);
             }
             else
             {
-                foreach (long connectionId in manager.GetConnectionIds())
+                foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
                         SendOperation(connectionId, operation, index);
@@ -172,10 +172,10 @@ namespace LiteNetLibManager
         public override sealed void SendOperation(long connectionId, Operation operation, int index)
         {
             if (!ValidateBeforeAccess())
+            {
+                Debug.LogError("[LiteNetLibSyncList] Error while send operation, behaviour is empty or not the server");
                 return;
-
-            if (!Manager.IsServer)
-                return;
+            }
 
             Manager.ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }

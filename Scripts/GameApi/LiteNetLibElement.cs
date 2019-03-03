@@ -64,12 +64,7 @@ namespace LiteNetLibManager
 
         protected virtual bool ValidateBeforeAccess()
         {
-            if (Behaviour == null)
-            {
-                Debug.LogError("[LiteNetLibElement] Error while set value, behaviour is empty");
-                return false;
-            }
-            return true;
+            return Behaviour != null;
         }
     }
 }

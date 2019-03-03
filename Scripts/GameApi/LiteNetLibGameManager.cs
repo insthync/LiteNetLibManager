@@ -378,7 +378,7 @@ namespace LiteNetLibManager
             message.objectId = identity.ObjectId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message);
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message, identity.WriteInitialSyncFields);
         }
 
         public void SendServerSpawnObject(LiteNetLibIdentity identity)
@@ -404,7 +404,7 @@ namespace LiteNetLibManager
             message.isOwner = identity.ConnectionId == connectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message);
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message, identity.WriteInitialSyncFields);
         }
 
         public void SendServerSpawnObjectWithData(long connectionId, LiteNetLibIdentity identity)
@@ -416,7 +416,6 @@ namespace LiteNetLibManager
                 SendServerSpawnSceneObject(connectionId, identity);
             else
                 SendServerSpawnObject(connectionId, identity);
-            identity.SendInitSyncFields(connectionId);
             identity.SendInitSyncLists(connectionId);
         }
 
@@ -544,10 +543,17 @@ namespace LiteNetLibManager
         {
             ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
             if (!IsServer)
-                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation); LiteNetLibIdentity identity;
-            // If it is host, it may hidden so show it
-            if (IsServer && Assets.TryGetSpawnedObject(message.objectId, out identity))
-                identity.OnServerSubscribingAdded();
+                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation);
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(message.objectId, out identity))
+            {
+                // If it is not server, read its initial data
+                if (!IsServer)
+                    identity.ReadInitialSyncFields(messageHandler.reader);
+                // If it is host, it may hidden so show it
+                if (IsServer)
+                    identity.OnServerSubscribingAdded();
+            }
         }
 
         protected virtual void HandleServerSpawnObject(LiteNetLibMessageHandler messageHandler)
@@ -555,11 +561,14 @@ namespace LiteNetLibManager
             ServerSpawnObjectMessage message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
             if (!IsServer)
                 Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, 0);
-            // Setup owner client
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {
+                // Setup owner client
                 identity.SetOwnerClient(message.isOwner);
+                // If it is not server, read its initial data
+                if (!IsServer)
+                    identity.ReadInitialSyncFields(messageHandler.reader);
                 // If it is host, it may hidden so show it
                 if (IsServer)
                     identity.OnServerSubscribingAdded();
