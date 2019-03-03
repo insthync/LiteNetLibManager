@@ -69,10 +69,7 @@ namespace LiteNetLibManager
                 }
             }
             else if (manager.IsClientConnected)
-            {
-                if (receivers == FunctionReceivers.Target)
                 ClientSendCall(deliveryMethod, receivers, targetConnectionId);
-            }
         }
 
         public void SetParameters(params object[] parameterValues)
