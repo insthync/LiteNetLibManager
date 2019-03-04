@@ -561,6 +561,8 @@ namespace LiteNetLibManager
             List<LiteNetLibSyncField> fields = syncFields;
             foreach (LiteNetLibSyncField field in fields)
             {
+                if (field.doNotSyncInitialDataImmediately)
+                    continue;
                 field.Serialize(writer);
             }
         }
@@ -570,6 +572,8 @@ namespace LiteNetLibManager
             List<LiteNetLibSyncField> fields = syncFields;
             foreach (LiteNetLibSyncField field in fields)
             {
+                if (field.doNotSyncInitialDataImmediately)
+                    continue;
                 field.Deserialize(reader);
             }
         }
@@ -579,6 +583,8 @@ namespace LiteNetLibManager
             List<LiteNetLibSyncField> fields = syncFields;
             foreach (LiteNetLibSyncField field in fields)
             {
+                if (!field.doNotSyncInitialDataImmediately)
+                    continue;
                 field.SendUpdate();
             }
         }
@@ -588,6 +594,8 @@ namespace LiteNetLibManager
             List<LiteNetLibSyncField> fields = syncFields;
             foreach (LiteNetLibSyncField field in fields)
             {
+                if (!field.doNotSyncInitialDataImmediately)
+                    continue;
                 field.SendUpdate(connectionId, DeliveryMethod.ReliableOrdered);
             }
         }

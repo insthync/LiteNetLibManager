@@ -416,6 +416,7 @@ namespace LiteNetLibManager
                 SendServerSpawnSceneObject(connectionId, identity);
             else
                 SendServerSpawnObject(connectionId, identity);
+            identity.SendInitSyncFields(connectionId);
             identity.SendInitSyncLists(connectionId);
         }
 

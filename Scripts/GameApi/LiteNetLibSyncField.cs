@@ -13,6 +13,8 @@ namespace LiteNetLibManager
         public float sendInterval = 0.1f;
         [Tooltip("If this is TRUE it will syncing although no changes")]
         public bool alwaysSync;
+        [Tooltip("If this is TRUE it will not sync initial data immdediately with spawn message (it will sync later)")]
+        public bool doNotSyncInitialDataImmediately;
         [Tooltip("If this is TRUE, this will update to owner client only")]
         public bool forOwnerOnly;
         public bool hasUpdate { get; protected set; }
@@ -23,11 +25,15 @@ namespace LiteNetLibManager
             if (!ValidateBeforeAccess())
                 return;
 
+            if (!alwaysSync && !hasUpdate)
+                return;
+
             if (Time.unscaledTime - lastSentTime < sendInterval)
                 return;
 
             lastSentTime = Time.unscaledTime;
-            
+            hasUpdate = false;
+
             SendUpdate();
         }
 
@@ -102,16 +108,12 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate()
         {
-            if (!alwaysSync && !hasUpdate)
-                return;
-
             if (!ValidateBeforeAccess())
             {
                 Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty or not the server");
                 return;
             }
 
-            hasUpdate = false;
             if (forOwnerOnly)
             {
                 long connectionId = Behaviour.ConnectionId;
