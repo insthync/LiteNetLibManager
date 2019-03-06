@@ -497,7 +497,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
+        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader, bool isInitial)
         {
             if (info.objectId != ObjectId)
                 return null;
@@ -505,7 +505,7 @@ namespace LiteNetLibManager
             if (elementId >= 0 && elementId < syncFields.Count)
             {
                 LiteNetLibSyncField syncField = syncFields[elementId];
-                syncField.Deserialize(reader);
+                syncField.Deserialize(reader, isInitial);
                 return syncField;
             }
             else
@@ -574,7 +574,7 @@ namespace LiteNetLibManager
             {
                 if (field.doNotSyncInitialDataImmediately)
                     continue;
-                field.Deserialize(reader);
+                field.Deserialize(reader, true);
             }
         }
 
@@ -585,7 +585,7 @@ namespace LiteNetLibManager
             {
                 if (!field.doNotSyncInitialDataImmediately)
                     continue;
-                field.SendUpdate();
+                field.SendUpdate(true);
             }
         }
 
@@ -596,7 +596,7 @@ namespace LiteNetLibManager
             {
                 if (!field.doNotSyncInitialDataImmediately)
                     continue;
-                field.SendUpdate(connectionId, DeliveryMethod.ReliableOrdered);
+                field.SendUpdate(true, connectionId, DeliveryMethod.ReliableOrdered);
             }
         }
 

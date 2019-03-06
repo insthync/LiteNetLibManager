@@ -22,13 +22,14 @@ namespace LiteNetLibManager
             public const ushort ServerDestroyObject = 6;
             public const ushort ServerUpdateSyncField = 7;
             public const ushort ServerCallFunction = 8;
-            public const ushort ServerUpdateSyncList = 9;
-            public const ushort ServerTime = 10;
-            public const ushort ServerSyncBehaviour = 11;
-            public const ushort ServerError = 12;
-            public const ushort ServerSceneChange = 13;
-            public const ushort ClientSendTransform = 14;
-            public const ushort Highest = 14;
+            public const ushort ServerInitialSyncField = 9;
+            public const ushort ServerUpdateSyncList = 10;
+            public const ushort ServerTime = 11;
+            public const ushort ServerSyncBehaviour = 12;
+            public const ushort ServerError = 13;
+            public const ushort ServerSceneChange = 14;
+            public const ushort ClientSendTransform = 15;
+            public const ushort Highest = 15;
         }
 
         public class DestroyObjectReasons
@@ -240,6 +241,7 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
+            RegisterClientMessage(GameMsgTypes.ServerInitialSyncField, HandleServerInitialSyncField);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.ServerCallFunction, HandleServerCallFunction);
             RegisterClientMessage(GameMsgTypes.ServerUpdateSyncList, HandleServerUpdateSyncList);
@@ -587,6 +589,18 @@ namespace LiteNetLibManager
                 identity.OnServerSubscribingRemoved();
         }
 
+        protected virtual void HandleServerInitialSyncField(LiteNetLibMessageHandler messageHandler)
+        {
+            // Field updated at server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
+            NetDataReader reader = messageHandler.reader;
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
+                identity.ProcessSyncField(info, reader, true);
+        }
+
         protected virtual void HandleServerUpdateSyncField(LiteNetLibMessageHandler messageHandler)
         {
             // Field updated at server, if this is host (client and server) then skip it.
@@ -596,7 +610,7 @@ namespace LiteNetLibManager
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-                identity.ProcessSyncField(info, reader);
+                identity.ProcessSyncField(info, reader, false);
         }
 
         protected virtual void HandleServerCallFunction(LiteNetLibMessageHandler messageHandler)

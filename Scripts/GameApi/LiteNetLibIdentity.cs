@@ -199,13 +199,13 @@ namespace LiteNetLibManager
 #endif
         #endregion
 
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader)
+        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader, bool isInitial)
         {
             if (info.objectId != ObjectId)
                 return null;
             if (info.behaviourIndex >= Behaviours.Length)
                 return null;
-            return Behaviours[info.behaviourIndex].ProcessSyncField(info, reader);
+            return Behaviours[info.behaviourIndex].ProcessSyncField(info, reader, isInitial);
         }
 
         internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)

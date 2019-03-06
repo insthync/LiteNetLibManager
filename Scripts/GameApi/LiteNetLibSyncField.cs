@@ -34,21 +34,24 @@ namespace LiteNetLibManager
             lastSentTime = Time.unscaledTime;
             hasUpdate = false;
 
-            SendUpdate();
+            SendUpdate(false);
         }
 
         public abstract object Get();
         public abstract void Set(object value);
-        internal abstract void SendUpdate();
-        internal abstract void SendUpdate(long connectionId);
-        internal abstract void SendUpdate(long connectionId, DeliveryMethod deliveryMethod);
-        internal abstract void Deserialize(NetDataReader reader);
+        internal abstract void SendUpdate(bool isInitial);
+        internal abstract void SendUpdate(bool isInitial, long connectionId);
+        internal abstract void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod);
+        internal abstract void Deserialize(NetDataReader reader, bool isInitial);
         internal abstract void Serialize(NetDataWriter writer);
     }
     
     public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
-        public Action<TType> onChange;
+        /// <summary>
+        /// Action for initial state, data this will be invoked when data changes
+        /// </summary>
+        public Action<bool, TType> onChange;
 
         [SerializeField]
         protected TType value;
@@ -69,7 +72,7 @@ namespace LiteNetLibManager
                     this.value = value;
                     hasUpdate = true;
                     if (onChange != null)
-                        onChange.Invoke(value);
+                        onChange.Invoke(false, value);
                 }
             }
         }
@@ -98,7 +101,7 @@ namespace LiteNetLibManager
         {
             base.Setup(behaviour, elementId);
             if (onChange != null)
-                onChange.Invoke(Value);
+                onChange.Invoke(true, Value);
         }
 
         protected override bool ValidateBeforeAccess()
@@ -106,7 +109,7 @@ namespace LiteNetLibManager
             return Behaviour != null && Behaviour.IsServer;
         }
 
-        internal override sealed void SendUpdate()
+        internal override sealed void SendUpdate(bool isInitial)
         {
             if (!ValidateBeforeAccess())
             {
@@ -118,29 +121,33 @@ namespace LiteNetLibManager
             {
                 long connectionId = Behaviour.ConnectionId;
                 if (Manager.ContainsConnectionId(connectionId))
-                    SendUpdate(connectionId);
+                    SendUpdate(isInitial, connectionId);
             }
             else
             {
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
-                        SendUpdate(connectionId);
+                        SendUpdate(isInitial, connectionId);
                 }
             }
         }
 
-        internal override sealed void SendUpdate(long connectionId)
+        internal override sealed void SendUpdate(bool isInitial, long connectionId)
         {
-            SendUpdate(connectionId, deliveryMethod);
+            SendUpdate(isInitial, connectionId, deliveryMethod);
         }
 
-        internal override sealed void SendUpdate(long connectionId, DeliveryMethod deliveryMethod)
+        internal override sealed void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod)
         {
             if (!ValidateBeforeAccess())
                 return;
 
-            Manager.ServerSendPacket(connectionId, deliveryMethod, LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField, SerializeForSend);
+            Manager.ServerSendPacket(connectionId, deliveryMethod,
+                (isInitial ?
+                LiteNetLibGameManager.GameMsgTypes.ServerInitialSyncField :
+                LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField),
+                SerializeForSend);
         }
 
         protected void SerializeForSend(NetDataWriter writer)
@@ -149,11 +156,11 @@ namespace LiteNetLibManager
             Serialize(writer);
         }
 
-        internal override sealed void Deserialize(NetDataReader reader)
+        internal override sealed void Deserialize(NetDataReader reader, bool isInitial)
         {
             DeserializeValue(reader);
             if (onChange != null)
-                onChange.Invoke(value);
+                onChange.Invoke(isInitial, value);
         }
 
         internal override sealed void Serialize(NetDataWriter writer)
