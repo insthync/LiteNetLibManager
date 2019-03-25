@@ -176,5 +176,20 @@ namespace LiteNetLibManager
             StopClient();
             StopServer();
         }
+
+        public int GetServerPeersCount()
+        {
+            int result = 0;
+#if !UNITY_WEBGL || UNITY_EDITOR
+            if (server != null)
+            {
+                foreach (WebSocketServiceHost host in server.WebSocketServices.Hosts)
+                {
+                    result += host.Sessions.Count;
+                }
+            }
+#endif
+            return result;
+        }
     }
 }
