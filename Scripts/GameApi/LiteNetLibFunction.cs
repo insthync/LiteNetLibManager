@@ -15,8 +15,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate callback;
 
-        public Type[] ParameterTypes { get; protected set; }
-        public object[] Parameters { get; protected set; }
+        public readonly Type[] ParameterTypes;
+        public readonly object[] Parameters;
 
         public LiteNetLibFunction()
         {
@@ -74,7 +74,12 @@ namespace LiteNetLibManager
 
         public void SetParameters(params object[] parameterValues)
         {
-            Parameters = parameterValues;
+            for (int i = 0; i < Parameters.Length; ++i)
+            {
+                if (i >= parameterValues.Length)
+                    break;
+                Parameters[i] = parameterValues[i];
+            }
         }
 
         public void Call(DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameterValues)
