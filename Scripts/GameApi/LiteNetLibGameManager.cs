@@ -523,10 +523,11 @@ namespace LiteNetLibManager
                 else
                 {
                     LiteNetLibFunction netFunction = identity.ProcessNetFunction(info, reader, false);
+                    // Use call with out parameters set because parameters already set while process net function
                     if (receivers == FunctionReceivers.Target)
-                        netFunction.Call(connectionId);
+                        netFunction.CallWithoutParametersSet(connectionId);
                     else
-                        netFunction.Call(DeliveryMethod.ReliableOrdered, receivers);
+                        netFunction.CallWithoutParametersSet(DeliveryMethod.ReliableOrdered, receivers);
                 }
             }
         }

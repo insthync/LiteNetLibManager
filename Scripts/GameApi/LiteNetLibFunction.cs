@@ -15,8 +15,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate callback;
 
-        public readonly Type[] ParameterTypes;
-        public readonly object[] Parameters;
+        public Type[] ParameterTypes { get; protected set; }
+        public object[] Parameters { get; protected set; }
 
         public LiteNetLibFunction()
         {
@@ -97,6 +97,22 @@ namespace LiteNetLibManager
                 return;
 
             SetParameters(parameterValues);
+            SendCall(DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
+        }
+
+        public void CallWithoutParametersSet(DeliveryMethod deliveryMethod, FunctionReceivers receivers)
+        {
+            if (!ValidateBeforeAccess())
+                return;
+            
+            SendCall(deliveryMethod, receivers, Behaviour.ConnectionId);
+        }
+
+        public void CallWithoutParametersSet(long connectionId)
+        {
+            if (!ValidateBeforeAccess())
+                return;
+            
             SendCall(DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
         }
 
