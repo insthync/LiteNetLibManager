@@ -761,7 +761,6 @@ namespace LiteNetLibManager
         {
             if (Assets.PlayerPrefab == null)
                 return null;
-            Debug.LogError("Spawn");
             return SpawnPlayer(connectionId, assets.PlayerPrefab);
         }
 
