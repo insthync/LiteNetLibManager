@@ -492,6 +492,9 @@ namespace LiteNetLibManager
         protected virtual void HandleClientEnterGame(LiteNetLibMessageHandler messageHandler)
         {
             SendServerSceneChange(messageHandler.connectionId, ServerSceneName);
+            // If it is host (both client and server) it will send ready state to spawn player
+            if (IsClient)
+                SendClientReady();
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
@@ -667,10 +670,7 @@ namespace LiteNetLibManager
         {
             // Server scene changes made from server, if this is host (client and server) then skip it.
             if (IsServer)
-            {
-                SendClientReady();
                 return;
-            }
             // Scene name sent from server
             ServerSceneChangeMessage message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             string serverSceneName = message.serverSceneName;
