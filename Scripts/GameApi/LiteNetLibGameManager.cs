@@ -667,7 +667,10 @@ namespace LiteNetLibManager
         {
             // Server scene changes made from server, if this is host (client and server) then skip it.
             if (IsServer)
+            {
+                SendClientReady();
                 return;
+            }
             // Scene name sent from server
             ServerSceneChangeMessage message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             string serverSceneName = message.serverSceneName;
@@ -758,6 +761,7 @@ namespace LiteNetLibManager
         {
             if (Assets.PlayerPrefab == null)
                 return null;
+            Debug.LogError("Spawn");
             return SpawnPlayer(connectionId, assets.PlayerPrefab);
         }
 
