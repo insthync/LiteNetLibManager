@@ -15,14 +15,20 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate callback;
 
-        public Type[] ParameterTypes { get; protected set; }
-        public object[] Parameters { get; protected set; }
+        public readonly Type[] ParameterTypes;
+        public readonly object[] Parameters;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : this(0)
         {
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate callback)
+        public LiteNetLibFunction(int parameterCount)
+        {
+            Parameters = new object[parameterCount];
+            ParameterTypes = new Type[parameterCount];
+        }
+
+        public LiteNetLibFunction(NetFunctionDelegate callback) : this()
         {
             this.callback = callback;
         }
@@ -104,7 +110,7 @@ namespace LiteNetLibManager
         {
             if (!ValidateBeforeAccess())
                 return;
-            
+
             SendCall(deliveryMethod, receivers, Behaviour.ConnectionId);
         }
 
@@ -112,7 +118,7 @@ namespace LiteNetLibManager
         {
             if (!ValidateBeforeAccess())
                 return;
-            
+
             SendCall(DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
         }
 
@@ -156,10 +162,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(1)
         {
-            Parameters = new object[1];
-            ParameterTypes = new Type[1];
             ParameterTypes[0] = typeof(T1);
         }
 
@@ -178,10 +182,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(2)
         {
-            Parameters = new object[2];
-            ParameterTypes = new Type[2];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
         }
@@ -201,10 +203,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(3)
         {
-            Parameters = new object[3];
-            ParameterTypes = new Type[3];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
@@ -225,10 +225,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3, T4> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(4)
         {
-            Parameters = new object[4];
-            ParameterTypes = new Type[4];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
@@ -250,10 +248,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(5)
         {
-            Parameters = new object[5];
-            ParameterTypes = new Type[5];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
@@ -276,10 +272,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(6)
         {
-            Parameters = new object[6];
-            ParameterTypes = new Type[6];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
@@ -303,10 +297,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(7)
         {
-            Parameters = new object[7];
-            ParameterTypes = new Type[7];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
@@ -331,10 +323,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(8)
         {
-            Parameters = new object[8];
-            ParameterTypes = new Type[8];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
@@ -360,10 +350,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(9)
         {
-            Parameters = new object[9];
-            ParameterTypes = new Type[9];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
@@ -390,10 +378,8 @@ namespace LiteNetLibManager
     {
         private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback;
 
-        public LiteNetLibFunction()
+        public LiteNetLibFunction() : base(10)
         {
-            Parameters = new object[10];
-            ParameterTypes = new Type[10];
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
