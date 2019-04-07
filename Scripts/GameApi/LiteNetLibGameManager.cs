@@ -495,7 +495,7 @@ namespace LiteNetLibManager
         {
             SendServerSceneChange(messageHandler.connectionId, ServerSceneName);
             // If it is host (both client and server) it will send ready state to spawn player
-            if (IsClient)
+            if (IsClient && (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name)))
                 SendClientReady();
         }
 
