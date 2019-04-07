@@ -96,6 +96,8 @@ namespace LiteNetLibManager
                 Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
                 foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
                 {
+                    if (spawnedObject == null)
+                        continue;
                     spawnedObject.NetworkUpdate();
                 }
                 Profiler.EndSample();
