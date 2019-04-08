@@ -106,11 +106,11 @@ namespace LiteNetLibManager
                 LiteNetLibIdentity spawnedObject;
                 if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
                 {
+                    // Destroy only non scene object
+                    if (!SceneObjects.ContainsKey(objectId) && spawnedObject != null)
+                        Destroy(spawnedObject.gameObject);
                     // Remove from asset spawned objects dictionary
                     SpawnedObjects.Remove(objectId);
-                    // Destroy only non scene object
-                    if (!SceneObjects.ContainsKey(objectId))
-                        Destroy(spawnedObject.gameObject);
                 }
             }
             SpawnedObjects.Clear();
