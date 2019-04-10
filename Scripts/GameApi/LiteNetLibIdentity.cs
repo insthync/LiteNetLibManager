@@ -410,6 +410,11 @@ namespace LiteNetLibManager
 #endif
         }
 
+        public int CountSubscribers()
+        {
+            return Subscribers.Count;
+        }
+
         public void ClearSubscribers()
         {
             // Only server can manage subscribers
