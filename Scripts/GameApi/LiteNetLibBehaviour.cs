@@ -129,7 +129,7 @@ namespace LiteNetLibManager
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Fields");
             for (loopCounter = 0; loopCounter < syncFields.Count; ++loopCounter)
             {
-                syncFields[loopCounter].NetworkUpdate();
+                syncFields[loopCounter].NetworkUpdate(time);
             }
             Profiler.EndSample();
 

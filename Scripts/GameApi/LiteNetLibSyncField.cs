@@ -20,7 +20,7 @@ namespace LiteNetLibManager
         public bool hasUpdate { get; protected set; }
         protected float lastSentTime;
 
-        internal void NetworkUpdate()
+        internal void NetworkUpdate(float time)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -28,10 +28,10 @@ namespace LiteNetLibManager
             if (!alwaysSync && !hasUpdate)
                 return;
 
-            if (Time.unscaledTime - lastSentTime < sendInterval)
+            if (time - lastSentTime < sendInterval)
                 return;
 
-            lastSentTime = Time.unscaledTime;
+            lastSentTime = time;
             hasUpdate = false;
 
             SendUpdate(false);
