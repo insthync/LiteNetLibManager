@@ -690,7 +690,7 @@ namespace LiteNetLibManager
         /// <returns></returns>
         public virtual bool ShouldSyncBehaviour()
         {
-            return true;
+            return false;
         }
 
         /// <summary>
