@@ -45,6 +45,7 @@ namespace LiteNetLibManager
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
+        private float tempUpdateTime;
         private float lastSendServerTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
@@ -94,17 +95,18 @@ namespace LiteNetLibManager
             if (IsServer && loadSceneAsyncOperation == null)
             {
                 Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
+                tempUpdateTime = Time.unscaledTime;
                 foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
                 {
                     if (spawnedObject == null)
                         continue;
-                    spawnedObject.NetworkUpdate();
+                    spawnedObject.NetworkUpdate(tempUpdateTime);
                 }
                 Profiler.EndSample();
-                if (Time.unscaledTime - lastSendServerTime > updateServerTimeDuration)
+                if (tempUpdateTime - lastSendServerTime > updateServerTimeDuration)
                 {
                     SendServerTime();
-                    lastSendServerTime = Time.unscaledTime;
+                    lastSendServerTime = tempUpdateTime;
                 }
             }
             base.Update();

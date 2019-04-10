@@ -121,7 +121,7 @@ namespace LiteNetLibManager
         // Optimize garbage collector
         private int loopCounter;
 
-        internal void NetworkUpdate()
+        internal void NetworkUpdate(float time)
         {
             if (!IsServer)
                 return;
@@ -134,10 +134,10 @@ namespace LiteNetLibManager
             Profiler.EndSample();
 
             // Sync behaviour
-            if (Time.unscaledTime - lastSentTime < sendInterval)
+            if (time - lastSentTime < sendInterval)
                 return;
 
-            lastSentTime = Time.unscaledTime;
+            lastSentTime = time;
 
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
             if (ShouldSyncBehaviour())

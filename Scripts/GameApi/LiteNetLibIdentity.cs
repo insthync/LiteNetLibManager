@@ -85,7 +85,7 @@ namespace LiteNetLibManager
         // Optimize garbage collector
         private int loopCounter;
 
-        internal void NetworkUpdate()
+        internal void NetworkUpdate(float time)
         {
             if (!IsServer || Manager == null)
                 return;
@@ -93,7 +93,7 @@ namespace LiteNetLibManager
             Profiler.BeginSample("LiteNetLibIdentity - Network Update");
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                Behaviours[loopCounter].NetworkUpdate();
+                Behaviours[loopCounter].NetworkUpdate(time);
             }
             Profiler.EndSample();
         }
