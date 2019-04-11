@@ -16,11 +16,14 @@ namespace LiteNetLibManager
         public CheckMethod checkMethod = CheckMethod.Physics3D;
         public LayerMask layerMask = -1;
 
+        private float tempUpdateTime;
+
         private float lastUpdateTime;
 
         void Start()
         {
-            lastUpdateTime = Time.unscaledTime + Random.value;
+            tempUpdateTime = Time.unscaledTime;
+            lastUpdateTime = tempUpdateTime + Random.value;
         }
 
         void Update()
@@ -28,10 +31,12 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            if (Time.unscaledTime - lastUpdateTime > updateInterval)
+            tempUpdateTime = Time.unscaledTime;
+
+            if (tempUpdateTime - lastUpdateTime > updateInterval)
             {
                 Identity.RebuildSubscribers(false);
-                lastUpdateTime = Time.unscaledTime;
+                lastUpdateTime = tempUpdateTime;
             }
         }
 

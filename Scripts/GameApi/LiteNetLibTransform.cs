@@ -64,6 +64,9 @@ namespace LiteNetLibManager
         private TransformResult currentInterpResult;
         private TransformResult endInterpResult;
         private TransformResult syncResult;
+        // Optimize garbage collection
+        private float tempUnscaledTime;
+        private float tempDeltaTime;
 
         private void Awake()
         {
@@ -85,6 +88,8 @@ namespace LiteNetLibManager
 
         private void Start()
         {
+            tempUnscaledTime = Time.unscaledTime;
+            tempDeltaTime = Time.deltaTime;
             InitInterpResults(syncingTransform.position, syncingTransform.rotation);
             if (IsServer)
                 Teleport(syncingTransform.position, syncingTransform.rotation);
@@ -95,7 +100,7 @@ namespace LiteNetLibManager
             currentInterpResult = new TransformResult();
             currentInterpResult.position = position;
             currentInterpResult.rotation = rotation;
-            currentInterpResult.timestamp = Time.unscaledTime;
+            currentInterpResult.timestamp = tempUnscaledTime;
             syncResult = currentInterpResult;
             endInterpResult = currentInterpResult;
         }
@@ -123,7 +128,7 @@ namespace LiteNetLibManager
                 return;
             lastClientTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.unscaledTime;
+            result.timestamp = tempUnscaledTime;
             endInterpResult = result;
         }
 
@@ -145,7 +150,7 @@ namespace LiteNetLibManager
             SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.x, syncRotationX);
             SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.y, syncRotationY);
             SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.z, syncRotationZ);
-            writer.Put(Time.unscaledTime);
+            writer.Put(tempUnscaledTime);
         }
 
         public void Teleport(Vector3 position, Quaternion rotation)
@@ -160,7 +165,7 @@ namespace LiteNetLibManager
             {
                 syncResult.position = syncingTransform.position;
                 syncResult.rotation = syncingTransform.rotation;
-                syncResult.timestamp = Time.unscaledTime;
+                syncResult.timestamp = tempUnscaledTime;
                 return true;
             }
             return false;
@@ -174,7 +179,7 @@ namespace LiteNetLibManager
             SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.x, syncRotationX);
             SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.y, syncRotationY);
             SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.z, syncRotationZ);
-            writer.Put(Time.unscaledTime);
+            writer.Put(tempUnscaledTime);
         }
 
         public override void OnDeserialize(NetDataReader reader)
@@ -188,7 +193,7 @@ namespace LiteNetLibManager
                 return;
             lastServerTimestamp = result.timestamp;
             // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.unscaledTime;
+            result.timestamp = tempUnscaledTime;
             endInterpResult = result;
         }
 
@@ -272,6 +277,8 @@ namespace LiteNetLibManager
 
         private void Update()
         {
+            tempUnscaledTime = Time.unscaledTime;
+            tempDeltaTime = Time.deltaTime;
             // Sending client transform result to server
             if (ownerClientCanSendTransform && IsOwnerClient)
             {
@@ -282,7 +289,7 @@ namespace LiteNetLibManager
                         ClientSendTransform(syncResult);
                     syncElapsed = 0;
                 }
-                syncElapsed += Time.deltaTime;
+                syncElapsed += tempDeltaTime;
             }
 
             if (CacheRigidbody2D == null && CacheRigidbody3D == null)
@@ -319,8 +326,8 @@ namespace LiteNetLibManager
             }
             else if (!IsOwnerClient || !ownerClientNotInterpolate)
             {
-                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, SendRate * Time.deltaTime);
-                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, SendRate * Time.deltaTime);
+                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, SendRate * tempDeltaTime);
+                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, SendRate * tempDeltaTime);
                 /*
                 currentInterpResult.position = Vector3.MoveTowards(currentInterpResult.position, endInterpResult.position, Vector3.Distance(currentInterpResult.position, endInterpResult.position) * (1.0f / SendRate));
                 currentInterpResult.rotation = Quaternion.RotateTowards(currentInterpResult.rotation, endInterpResult.rotation, Quaternion.Angle(currentInterpResult.rotation, endInterpResult.rotation) * (1.0f / SendRate));
