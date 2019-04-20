@@ -355,11 +355,15 @@ namespace LiteNetLibManager
             }
             else if (CacheRigidbody3D != null)
             {
+                if (CacheRigidbody3D.IsSleeping())
+                    CacheRigidbody3D.WakeUp();
                 CacheRigidbody3D.position = position;
                 CacheRigidbody3D.rotation = rotation;
             }
             else if (CacheRigidbody2D != null)
             {
+                if (CacheRigidbody2D.IsSleeping())
+                    CacheRigidbody2D.WakeUp();
                 CacheRigidbody2D.position = position;
                 CacheRigidbody2D.rotation = rotation.eulerAngles.z;
             }
