@@ -12,16 +12,17 @@ namespace LiteNetLibManager
         private Queue<TransportEventData> eventQueue;
         private Dictionary<long, NetPeer> peersDict;
         private Dictionary<long, long> peerIdsDict;
-        private long tempConnectionId;
 
         public MixTransportEventListener(MixTransport mixTransport, Queue<TransportEventData> eventQueue)
         {
+            // This is constructor for client
             this.mixTransport = mixTransport;
             this.eventQueue = eventQueue;
         }
 
         public MixTransportEventListener(MixTransport mixTransport, Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> peersDict) : this(mixTransport, eventQueue)
         {
+            // This is constructor for server
             this.peersDict = peersDict;
             peerIdsDict = new Dictionary<long, long>();
         }
@@ -50,7 +51,9 @@ namespace LiteNetLibManager
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
         {
-            tempConnectionId = peerIdsDict[peer.Id];
+            long tempConnectionId = 0;
+            if (peerIdsDict != null && peersDict != null)
+                tempConnectionId = peerIdsDict[peer.Id];
 
             eventQueue.Enqueue(new TransportEventData()
             {
@@ -66,9 +69,13 @@ namespace LiteNetLibManager
 
         public void OnPeerConnected(NetPeer peer)
         {
-            tempConnectionId = mixTransport.GetNewConnectionID();
-            peersDict[tempConnectionId] = peer;
-            peerIdsDict[peer.Id] = tempConnectionId;
+            long tempConnectionId = 0;
+            if (peerIdsDict != null && peersDict != null)
+            {
+                tempConnectionId = mixTransport.GetNewConnectionID();
+                peersDict[tempConnectionId] = peer;
+                peerIdsDict[peer.Id] = tempConnectionId;
+            }
 
             eventQueue.Enqueue(new TransportEventData()
             {
@@ -79,9 +86,13 @@ namespace LiteNetLibManager
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            tempConnectionId = peerIdsDict[peer.Id];
-            peersDict.Remove(tempConnectionId);
-            peerIdsDict.Remove(peer.Id);
+            long tempConnectionId = 0;
+            if (peerIdsDict != null && peersDict != null)
+            {
+                tempConnectionId = peerIdsDict[peer.Id];
+                peersDict.Remove(tempConnectionId);
+                peerIdsDict.Remove(peer.Id);
+            }
 
             eventQueue.Enqueue(new TransportEventData()
             {
