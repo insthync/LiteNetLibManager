@@ -252,6 +252,26 @@ namespace LiteNetLibManager
         {
             writer.PutValue(value);
         }
+
+        protected virtual TType DeserializeValueForAddOrInsert(NetDataReader reader)
+        {
+            return DeserializeValue(reader);
+        }
+
+        protected virtual void SerializeValueForAddOrInsert(NetDataWriter writer, TType value)
+        {
+            writer.PutValue(value);
+        }
+
+        protected virtual TType DeserializeValueForSetOrDirty(NetDataReader reader)
+        {
+            return DeserializeValue(reader);
+        }
+
+        protected virtual void SerializeValueForSetOrDirty(NetDataWriter writer, TType value)
+        {
+            writer.PutValue(value);
+        }
     }
 
     #region Implement for general usages and serializable
