@@ -123,14 +123,9 @@ namespace LiteNetLibManager
                 onChange.Invoke(true, Value);
         }
 
-        protected override bool ValidateBeforeAccess()
-        {
-            return Behaviour != null && Behaviour.IsServer;
-        }
-
         internal override sealed void SendUpdate(bool isInitial)
         {
-            if (Behaviour == null)
+            if (!ValidateBeforeAccess())
             {
                 Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty");
                 return;
@@ -170,7 +165,7 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod)
         {
-            if (!ValidateBeforeAccess())
+            if (!ValidateBeforeAccess() || !Behaviour.IsServer)
                 return;
 
             Manager.ServerSendPacket(connectionId, deliveryMethod,
