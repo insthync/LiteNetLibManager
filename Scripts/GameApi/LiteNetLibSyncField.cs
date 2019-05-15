@@ -7,6 +7,25 @@ namespace LiteNetLibManager
 {
     public abstract class LiteNetLibSyncField : LiteNetLibElement
     {
+        public enum SyncMode : byte
+        {
+            /// <summary>
+            /// Changes handle by server
+            /// Will send to connected clients when changes occurs on server
+            /// </summary>
+            ServerToClients,
+            /// <summary>
+            /// Changes handle by server
+            /// Will send to owner-client when changes occurs on server
+            /// </summary>
+            ServerToOwnerClient,
+            /// <summary>
+            /// Changes handle by owner-client
+            /// Will send to server then server multicast to other clients when changes occurs on owner-client
+            /// </summary>
+            ClientMulticast
+        }
+
         public DeliveryMethod deliveryMethod;
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
@@ -15,8 +34,8 @@ namespace LiteNetLibManager
         public bool alwaysSync;
         [Tooltip("If this is TRUE it will not sync initial data immdediately with spawn message (it will sync later)")]
         public bool doNotSyncInitialDataImmediately;
-        [Tooltip("If this is TRUE, this will update to owner client only")]
-        public bool forOwnerOnly;
+        [Tooltip("How data changes handle and sync")]
+        public SyncMode syncMode;
         public bool hasUpdate { get; protected set; }
         protected float lastSentTime;
 
@@ -111,25 +130,36 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate(bool isInitial)
         {
-            if (!ValidateBeforeAccess())
+            if (Behaviour == null)
             {
-                Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty or not the server");
+                Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty");
                 return;
             }
 
-            if (forOwnerOnly)
+            switch (syncMode)
             {
-                long connectionId = Behaviour.ConnectionId;
-                if (Manager.ContainsConnectionId(connectionId))
-                    SendUpdate(isInitial, connectionId);
-            }
-            else
-            {
-                foreach (long connectionId in Manager.GetConnectionIds())
-                {
-                    if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
-                        SendUpdate(isInitial, connectionId);
-                }
+                case SyncMode.ServerToClients:
+                    foreach (long connectionId in Manager.GetConnectionIds())
+                    {
+                        if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
+                            SendUpdate(isInitial, connectionId);
+                    }
+                    break;
+                case SyncMode.ServerToOwnerClient:
+                    if (Manager.ContainsConnectionId(Behaviour.ConnectionId))
+                        SendUpdate(isInitial, Behaviour.ConnectionId);
+                    break;
+                case SyncMode.ClientMulticast:
+                    if (Behaviour.IsOwnerClient)
+                    {
+                        // Client send data to server, it should reliable-ordered
+                        Manager.ClientSendPacket(DeliveryMethod.ReliableOrdered,
+                            (isInitial ?
+                            LiteNetLibGameManager.GameMsgTypes.InitialSyncField :
+                            LiteNetLibGameManager.GameMsgTypes.UpdateSyncField),
+                            SerializeForSend);
+                    }
+                    break;
             }
         }
 
@@ -145,8 +175,8 @@ namespace LiteNetLibManager
 
             Manager.ServerSendPacket(connectionId, deliveryMethod,
                 (isInitial ?
-                LiteNetLibGameManager.GameMsgTypes.ServerInitialSyncField :
-                LiteNetLibGameManager.GameMsgTypes.ServerUpdateSyncField),
+                LiteNetLibGameManager.GameMsgTypes.InitialSyncField :
+                LiteNetLibGameManager.GameMsgTypes.UpdateSyncField),
                 SerializeForSend);
         }
 

@@ -16,20 +16,19 @@ namespace LiteNetLibManager
             public const ushort ClientEnterGame = 0;
             public const ushort ClientReady = 1;
             public const ushort ClientNotReady = 2;
-            public const ushort ClientCallFunction = 3;
+            public const ushort CallFunction = 3;
             public const ushort ServerSpawnSceneObject = 4;
             public const ushort ServerSpawnObject = 5;
             public const ushort ServerDestroyObject = 6;
-            public const ushort ServerUpdateSyncField = 7;
-            public const ushort ServerCallFunction = 8;
-            public const ushort ServerInitialSyncField = 9;
-            public const ushort ServerUpdateSyncList = 10;
-            public const ushort ServerTime = 11;
-            public const ushort ServerSyncBehaviour = 12;
-            public const ushort ServerError = 13;
-            public const ushort ServerSceneChange = 14;
-            public const ushort ClientSendTransform = 15;
-            public const ushort Highest = 15;
+            public const ushort UpdateSyncField = 7;
+            public const ushort InitialSyncField = 8;
+            public const ushort OperateSyncList = 9;
+            public const ushort ServerTime = 10;
+            public const ushort ServerSyncBehaviour = 11;
+            public const ushort ServerError = 12;
+            public const ushort ServerSceneChange = 13;
+            public const ushort ClientSendTransform = 14;
+            public const ushort Highest = 14;
         }
 
         public class DestroyObjectReasons
@@ -235,7 +234,9 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.ClientEnterGame, HandleClientEnterGame);
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
             RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
-            RegisterServerMessage(GameMsgTypes.ClientCallFunction, HandleClientCallFunction);
+            RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
+            RegisterClientMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
+            RegisterClientMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
         }
 
@@ -245,10 +246,10 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
-            RegisterClientMessage(GameMsgTypes.ServerInitialSyncField, HandleServerInitialSyncField);
-            RegisterClientMessage(GameMsgTypes.ServerUpdateSyncField, HandleServerUpdateSyncField);
-            RegisterClientMessage(GameMsgTypes.ServerCallFunction, HandleServerCallFunction);
-            RegisterClientMessage(GameMsgTypes.ServerUpdateSyncList, HandleServerUpdateSyncList);
+            RegisterClientMessage(GameMsgTypes.CallFunction, HandleServerCallFunction);
+            RegisterClientMessage(GameMsgTypes.UpdateSyncField, HandleServerUpdateSyncField);
+            RegisterClientMessage(GameMsgTypes.InitialSyncField, HandleServerInitialSyncField);
+            RegisterClientMessage(GameMsgTypes.OperateSyncList, HandleServerUpdateSyncList);
             RegisterClientMessage(GameMsgTypes.ServerTime, HandleServerTime);
             RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
@@ -509,6 +510,62 @@ namespace LiteNetLibManager
         protected virtual void HandleClientNotReady(LiteNetLibMessageHandler messageHandler)
         {
             SetPlayerNotReady(messageHandler.connectionId, messageHandler.reader);
+        }
+
+        protected virtual void HandleClientInitialSyncField(LiteNetLibMessageHandler messageHandler)
+        {
+            // Field updated at owner-client, if this is server then multicast message to other clients
+            if (!IsServer)
+                return;
+            NetDataReader reader = messageHandler.reader;
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity) &&
+                info.behaviourIndex >= 0 &&
+                info.behaviourIndex < identity.Behaviours.Length)
+            {
+                LiteNetLibSyncField syncField = identity.Behaviours[info.behaviourIndex].GetSyncField(info);
+                // Sync field at server also have to be client multicast to allow it to multicast to other clients
+                if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
+                {
+                    // If this is not host, set data then pass to other clients because host already set data
+                    if (!identity.IsOwnerClient)
+                        syncField.Deserialize(reader, true);
+                    // Send to other clients
+                    foreach (long connectionId in GetConnectionIds())
+                    {
+                        if (identity.IsSubscribedOrOwning(connectionId))
+                            syncField.SendUpdate(true, connectionId);
+                    }
+                }
+            }
+        }
+
+        protected virtual void HandleClientUpdateSyncField(LiteNetLibMessageHandler messageHandler)
+        {
+            // Field updated at owner-client, if this is server then multicast message to other clients
+            if (!IsServer)
+                return;
+            NetDataReader reader = messageHandler.reader;
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
+            {
+                LiteNetLibSyncField syncField = identity.Behaviours[info.behaviourIndex].GetSyncField(info);
+                // Sync field at server also have to be client multicast to allow it to multicast to other clients
+                if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
+                {
+                    // If this is not host, set data then pass to other clients because host already set data
+                    if (!identity.IsOwnerClient)
+                        syncField.Deserialize(reader, false);
+                    // Send to other clients
+                    foreach (long connectionId in GetConnectionIds())
+                    {
+                        if (identity.IsSubscribedOrOwning(connectionId))
+                            syncField.SendUpdate(false, connectionId);
+                    }
+                }
+            }
         }
 
         protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)

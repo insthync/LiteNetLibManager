@@ -261,27 +261,11 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void SendInitSyncFields()
-        {
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
-            {
-                Behaviours[loopCounter].SendInitSyncFields();
-            }
-        }
-
         internal void SendInitSyncFields(long connectionId)
         {
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].SendInitSyncFields(connectionId);
-            }
-        }
-
-        internal void SendInitSyncLists()
-        {
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
-            {
-                Behaviours[loopCounter].SendInitSyncLists();
             }
         }
 
