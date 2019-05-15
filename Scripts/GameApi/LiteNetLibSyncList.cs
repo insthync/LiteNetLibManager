@@ -194,19 +194,19 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
-                    item = DeserializeValue(reader);
+                    item = DeserializeValueForAddOrInsert(reader);
                     list.Add(item);
                     index = list.Count - 1;
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
-                    item = DeserializeValue(reader);
+                    item = DeserializeValueForAddOrInsert(reader);
                     list.Insert(index, item);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
-                    item = DeserializeValue(reader);
+                    item = DeserializeValueForSetOrDirty(reader);
                     list[index] = item;
                     break;
                 case Operation.RemoveAt:
@@ -227,13 +227,13 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
-                    SerializeValue(writer, list[index]);
+                    SerializeValueForAddOrInsert(writer, list[index]);
                     break;
                 case Operation.Insert:
                 case Operation.Set:
                 case Operation.Dirty:
                     writer.Put(index);
-                    SerializeValue(writer, list[index]);
+                    SerializeValueForSetOrDirty(writer, list[index]);
                     break;
                 case Operation.RemoveAt:
                     writer.Put(index);
