@@ -235,8 +235,8 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
             RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
-            RegisterClientMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
-            RegisterClientMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
+            RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
+            RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
         }
 
