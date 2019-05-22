@@ -342,7 +342,7 @@ namespace LiteNetLibManager
             Behaviours = GetComponents<LiteNetLibBehaviour>();
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                Behaviours[loopCounter].OnSetOwnerClient();
+                Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
             }
         }
 

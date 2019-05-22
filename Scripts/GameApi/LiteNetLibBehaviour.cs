@@ -637,7 +637,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This function will be called when this client has been verified as owner client
         /// </summary>
-        public virtual void OnSetOwnerClient() { }
+        public virtual void OnSetOwnerClient(bool isOwnerClient) { }
 
         /// <summary>
         /// This function will be called when object destroy from server
