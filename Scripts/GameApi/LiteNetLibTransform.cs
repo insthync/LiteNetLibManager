@@ -39,6 +39,9 @@ namespace LiteNetLibManager
         public bool ownerClientCanSendTransform;
         [Tooltip("If this is TRUE, it will not interpolate transform at owner client, but it's still snapping")]
         public bool ownerClientNotInterpolate;
+        [Tooltip("This will be used when `ownerClientCanSendTransform` is set to TRUE to send transform update from client to server")]
+        [Range(0.01f, 2f)]
+        public float ownerClientSendInterval = 0.01f;
         public float snapThreshold = 5.0f;
         public float movementTheshold = 0.075f;
         [Header("Sync Position Settings")]
@@ -58,7 +61,7 @@ namespace LiteNetLibManager
         #endregion
 
         // Interpolation related variables
-        private float syncElapsed = 0;
+        private float ownerSendElapsed = 0;
         private float lastClientTimestamp = 0;
         private float lastServerTimestamp = 0;
         private TransformResult currentInterpResult;
@@ -282,24 +285,19 @@ namespace LiteNetLibManager
             // Sending client transform result to server
             if (ownerClientCanSendTransform && IsOwnerClient)
             {
-                if (syncElapsed >= sendInterval)
+                if (ownerSendElapsed >= ownerClientSendInterval)
                 {
                     // Send transform to server only when there are changes on transform
                     if (ShouldSyncBehaviour())
+                    {
                         ClientSendTransform(syncResult);
-                    syncElapsed = 0;
+                        ownerSendElapsed = 0;
+                    }
                 }
-                syncElapsed += tempDeltaTime;
+                ownerSendElapsed += tempDeltaTime;
             }
 
-            if (CacheRigidbody2D == null && CacheRigidbody3D == null)
-                UpdateInterpolate();
-        }
-
-        private void FixedUpdate()
-        {
-            if (CacheRigidbody2D != null || CacheRigidbody3D != null)
-                UpdateInterpolate();
+            UpdateInterpolate();
         }
 
         private void UpdateInterpolate()
@@ -326,12 +324,9 @@ namespace LiteNetLibManager
             }
             else if (!IsOwnerClient || !ownerClientNotInterpolate)
             {
-                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, SendRate * tempDeltaTime);
-                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, SendRate * tempDeltaTime);
-                /*
-                currentInterpResult.position = Vector3.MoveTowards(currentInterpResult.position, endInterpResult.position, Vector3.Distance(currentInterpResult.position, endInterpResult.position) * (1.0f / SendRate));
-                currentInterpResult.rotation = Quaternion.RotateTowards(currentInterpResult.rotation, endInterpResult.rotation, Quaternion.Angle(currentInterpResult.rotation, endInterpResult.rotation) * (1.0f / SendRate));
-                */
+                float deltaTimestamp = endInterpResult.timestamp - currentInterpResult.timestamp;
+                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, SendRate * deltaTimestamp);
+                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, SendRate * deltaTimestamp);
                 Interpolate(currentInterpResult.position, currentInterpResult.rotation);
             }
         }
