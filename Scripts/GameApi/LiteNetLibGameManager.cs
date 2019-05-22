@@ -49,6 +49,18 @@ namespace LiteNetLibManager
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
 
+        public int Timestamp { get { return (int)System.DateTime.UtcNow.Subtract(new System.DateTime(1970, 1, 1)).TotalSeconds; } }
+        public int ServerUnixTimeOffset { get; protected set; }
+        public int ServerUnixTime
+        {
+            get
+            {
+                if (IsServer)
+                    return Timestamp;
+                return Timestamp + ServerUnixTimeOffset;
+            }
+        }
+
         public float ServerTimeOffset { get; protected set; }
         public float ServerTime
         {
@@ -360,6 +372,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
             ServerTimeMessage message = new ServerTimeMessage();
+            message.serverUnixTime = ServerUnixTime;
             message.serverTime = ServerTime;
             ServerSendPacket(connectionId, DeliveryMethod.Sequenced, GameMsgTypes.ServerTime, message);
         }
@@ -705,6 +718,7 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             ServerTimeMessage message = messageHandler.ReadMessage<ServerTimeMessage>();
+            ServerUnixTimeOffset = message.serverUnixTime - Timestamp;
             ServerTimeOffset = message.serverTime - Time.unscaledTime;
         }
 
