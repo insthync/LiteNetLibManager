@@ -103,10 +103,11 @@ namespace LiteNetLibManager
 
         protected override void Update()
         {
-            if (IsServer && loadSceneAsyncOperation == null)
+            if (loadSceneAsyncOperation == null)
             {
-                Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
                 tempUpdateTime = Time.unscaledTime;
+                // Update Spawned Objects
+                Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
                 foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
                 {
                     if (spawnedObject == null)
@@ -114,10 +115,15 @@ namespace LiteNetLibManager
                     spawnedObject.NetworkUpdate(tempUpdateTime);
                 }
                 Profiler.EndSample();
-                if (tempUpdateTime - lastSendServerTime > updateServerTimeDuration)
+
+                if (IsServer)
                 {
-                    SendServerTime();
-                    lastSendServerTime = tempUpdateTime;
+                    // Send server time from server
+                    if (tempUpdateTime - lastSendServerTime > updateServerTimeDuration)
+                    {
+                        SendServerTime();
+                        lastSendServerTime = tempUpdateTime;
+                    }
                 }
             }
             base.Update();

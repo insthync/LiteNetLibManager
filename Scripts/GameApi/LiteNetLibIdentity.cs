@@ -87,7 +87,7 @@ namespace LiteNetLibManager
 
         internal void NetworkUpdate(float time)
         {
-            if (!IsServer || Manager == null)
+            if (Manager == null)
                 return;
 
             Profiler.BeginSample("LiteNetLibIdentity - Network Update");
