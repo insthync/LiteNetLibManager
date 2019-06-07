@@ -208,16 +208,30 @@ namespace LiteNetLibManager
                 }
                 try
                 {
-                    T element = (T)tempField.GetValue(this);
-                    byte elementId = Convert.ToByte(elementList.Count);
-                    element.Setup(this, elementId);
-                    elementList.Add(element);
+                    RegisterSyncElement((T)tempField.GetValue(this), elementList);
                 }
                 catch (Exception ex)
                 {
                     Debug.LogException(ex);
                 }
             }
+        }
+
+        private void RegisterSyncElement<T>(T element, List<T> elementList) where T : LiteNetLibElement
+        {
+            byte elementId = Convert.ToByte(elementList.Count);
+            element.Setup(this, elementId);
+            elementList.Add(element);
+        }
+
+        public void RegisterSyncField<T>(T syncField) where T : LiteNetLibSyncField
+        {
+            RegisterSyncElement(syncField, syncFields);
+        }
+
+        public void RegisterSyncList<T>(T syncList) where T : LiteNetLibSyncList
+        {
+            RegisterSyncElement(syncList, syncLists);
         }
 
         #region RegisterNetFunction
