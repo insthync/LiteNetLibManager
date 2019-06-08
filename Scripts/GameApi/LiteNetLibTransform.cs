@@ -1,17 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using LiteNetLib.Utils;
+﻿using LiteNetLib.Utils;
 using UnityEngine;
 using UnityEngine.AI;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace LiteNetLibManager
 {
     public class LiteNetLibTransform : LiteNetLibBehaviour
     {
-        [System.Serializable]
         private struct TransformResult
         {
             public Vector3 position;
@@ -52,6 +46,8 @@ namespace LiteNetLibManager
         public SyncRotationOptions syncRotationX;
         public SyncRotationOptions syncRotationY;
         public SyncRotationOptions syncRotationZ;
+
+        public System.Action<Vector3, Quaternion> onTeleport;
 
         #region Cache components
         public NavMeshAgent CacheNavMeshAgent { get; private set; }
@@ -118,6 +114,8 @@ namespace LiteNetLibManager
         {
             InitInterpResults(position, rotation);
             Snap(position, rotation);
+            if (onTeleport != null)
+                onTeleport.Invoke(position, rotation);
         }
 
         internal void HandleClientSendTransform(NetDataReader reader)
@@ -349,17 +347,29 @@ namespace LiteNetLibManager
             }
             else if (CacheRigidbody3D != null)
             {
-                if (CacheRigidbody3D.IsSleeping())
-                    CacheRigidbody3D.WakeUp();
-                CacheRigidbody3D.position = position;
-                CacheRigidbody3D.rotation = rotation;
+                if (!CacheRigidbody3D.IsSleeping())
+                {
+                    CacheRigidbody3D.position = position;
+                    CacheRigidbody3D.rotation = rotation;
+                }
+                else
+                {
+                    syncingTransform.position = position;
+                    syncingTransform.rotation = rotation;
+                }
             }
             else if (CacheRigidbody2D != null)
             {
-                if (CacheRigidbody2D.IsSleeping())
-                    CacheRigidbody2D.WakeUp();
-                CacheRigidbody2D.position = position;
-                CacheRigidbody2D.rotation = rotation.eulerAngles.z;
+                if (!CacheRigidbody2D.IsSleeping())
+                {
+                    CacheRigidbody2D.position = position;
+                    CacheRigidbody2D.rotation = rotation.eulerAngles.z;
+                }
+                else
+                {
+                    syncingTransform.position = position;
+                    syncingTransform.rotation = rotation;
+                }
             }
             else
             {
