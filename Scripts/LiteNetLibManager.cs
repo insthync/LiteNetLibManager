@@ -34,7 +34,6 @@ namespace LiteNetLibManager
 
         [Header("Client & Server Configs")]
         public LogLevel currentLogLevel = LogLevel.Info;
-        public string connectKey = "SampleConnectKey";
         public string networkAddress = "localhost";
         public int networkPort = 7770;
         public bool useWebSocket = false;
@@ -128,7 +127,7 @@ namespace LiteNetLibManager
             if (Server != null)
                 return true;
 
-            Server = new LiteNetLibServer(this, connectKey);
+            Server = new LiteNetLibServer(this);
             RegisterServerMessages();
             bool canStartServer = !isOffline ? Server.StartServer(networkPort, maxConnections) : Server.StartServerOffline();
             if (!canStartServer)
@@ -143,24 +142,18 @@ namespace LiteNetLibManager
 
         public virtual LiteNetLibClient StartClient()
         {
-            return StartClient(networkAddress, networkPort, connectKey);
+            return StartClient(networkAddress, networkPort);
         }
 
         public virtual LiteNetLibClient StartClient(string networkAddress, int networkPort)
-        {
-            return StartClient(networkAddress, networkPort, connectKey);
-        }
-
-        public virtual LiteNetLibClient StartClient(string networkAddress, int networkPort, string connectKey)
         {
             if (Client != null)
                 return Client;
 
             this.networkAddress = networkAddress;
             this.networkPort = networkPort;
-            this.connectKey = connectKey;
             if (LogDev) Debug.Log("Client connecting to " + networkAddress + ":" + networkPort);
-            Client = new LiteNetLibClient(this, connectKey);
+            Client = new LiteNetLibClient(this);
             RegisterClientMessages();
             Client.StartClient(networkAddress, networkPort);
             OnStartClient(Client);
@@ -177,7 +170,7 @@ namespace LiteNetLibManager
 
         protected virtual LiteNetLibClient ConnectLocalClient()
         {
-            return StartClient("localhost", Server.ServerPort, connectKey);
+            return StartClient("localhost", Server.ServerPort);
         }
 
         public void StopHost()

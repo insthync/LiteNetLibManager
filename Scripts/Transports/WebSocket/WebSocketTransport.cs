@@ -36,7 +36,7 @@ namespace LiteNetLibManager
             return client != null && client.IsConnected;
         }
 
-        public bool StartClient(string connectKey, string address, int port)
+        public bool StartClient(string address, int port)
         {
             dirtyIsConnected = false;
             client = new WebSocket(new System.Uri("ws://" + address + ":" + port));
@@ -103,7 +103,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool StartServer(string connectKey, int port, int maxConnections)
+        public bool StartServer(int port, int maxConnections)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
             serverPeers.Clear();

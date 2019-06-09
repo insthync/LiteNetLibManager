@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LiteNetLibManager
 {
@@ -8,7 +6,7 @@ namespace LiteNetLibManager
     {
         public LiteNetLibManager Manager { get; protected set; }
 
-        public LiteNetLibServer(LiteNetLibManager manager, string connectKey) : base(manager.Transport, connectKey)
+        public LiteNetLibServer(LiteNetLibManager manager) : base(manager.Transport)
         {
             Manager = manager;
         }

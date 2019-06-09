@@ -10,7 +10,6 @@ namespace LiteNetLibManager
         protected readonly NetDataWriter writer = new NetDataWriter();
 
         public ITransport Transport { get; protected set; }
-        public string ConnectKey { get; protected set; }
         public bool IsClientStarted { get { return Transport.IsClientStarted(); } }
         public bool IsServerStarted { get { return Transport.IsServerStarted(); } }
         public int ServerPort { get; protected set; }
@@ -24,10 +23,9 @@ namespace LiteNetLibManager
 
         public int AckCallbacksCount { get { return ackCallbacks.Count; } }
 
-        public TransportHandler(ITransport transport, string connectKey)
+        public TransportHandler(ITransport transport)
         {
             Transport = transport;
-            ConnectKey = connectKey;
         }
 
         public virtual void OnClientReceive(TransportEventData eventData) { }
@@ -63,7 +61,7 @@ namespace LiteNetLibManager
             // Reset acks
             ackCallbacks.Clear();
             nextAckId = 1;
-            return Transport.StartClient(ConnectKey, address, port);
+            return Transport.StartClient(address, port);
         }
 
         public void StopClient()
@@ -84,7 +82,7 @@ namespace LiteNetLibManager
             ackCallbacks.Clear();
             nextAckId = 1;
             ServerPort = port;
-            return Transport.StartServer(ConnectKey, port, maxConnections);
+            return Transport.StartServer(port, maxConnections);
         }
 
         public bool StartServerOffline()
