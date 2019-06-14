@@ -128,7 +128,7 @@ namespace LiteNetLibManager
             SendOperation(Operation.Dirty, index);
         }
 
-        internal override void Setup(LiteNetLibBehaviour behaviour, byte elementId)
+        internal override void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
             if (list.Count > 0 && onOperation != null)

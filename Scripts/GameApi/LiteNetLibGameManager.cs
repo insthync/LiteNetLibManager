@@ -539,11 +539,9 @@ namespace LiteNetLibManager
             NetDataReader reader = messageHandler.reader;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(info.objectId, out identity) &&
-                info.behaviourIndex >= 0 &&
-                info.behaviourIndex < identity.Behaviours.Length)
+            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
-                LiteNetLibSyncField syncField = identity.Behaviours[info.behaviourIndex].GetSyncField(info);
+                LiteNetLibSyncField syncField = identity.GetSyncField(info);
                 // Sync field at server also have to be client multicast to allow it to multicast to other clients
                 if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
                 {
@@ -570,7 +568,7 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
-                LiteNetLibSyncField syncField = identity.Behaviours[info.behaviourIndex].GetSyncField(info);
+                LiteNetLibSyncField syncField = identity.GetSyncField(info);
                 // Sync field at server also have to be client multicast to allow it to multicast to other clients
                 if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
                 {

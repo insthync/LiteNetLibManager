@@ -116,7 +116,7 @@ namespace LiteNetLibManager
             return field.Value;
         }
 
-        internal override void Setup(LiteNetLibBehaviour behaviour, byte elementId)
+        internal override void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
             if (onChange != null)

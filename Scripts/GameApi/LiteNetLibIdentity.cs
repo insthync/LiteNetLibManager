@@ -9,6 +9,7 @@ using UnityEditor.SceneManagement;
 #endif
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
+using LiteNetLib;
 
 namespace LiteNetLibManager
 {
@@ -28,6 +29,11 @@ namespace LiteNetLibManager
         [LiteNetLibReadOnly, SerializeField]
         private List<long> subscriberIds = new List<long>();
 #endif
+
+        internal readonly List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
+        internal readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
+        internal readonly List<LiteNetLibSyncList> syncLists = new List<LiteNetLibSyncList>();
+
         private bool hasSetupBehaviours;
         internal LiteNetLibBehaviour[] Behaviours { get; private set; }
         internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
@@ -91,6 +97,11 @@ namespace LiteNetLibManager
                 return;
 
             Profiler.BeginSample("LiteNetLibIdentity - Network Update");
+            for (loopCounter = 0; loopCounter < syncFields.Count; ++loopCounter)
+            {
+                syncFields[loopCounter].NetworkUpdate(time);
+            }
+
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].NetworkUpdate(time);
@@ -203,27 +214,74 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex >= Behaviours.Length)
+            LiteNetLibSyncField syncField = GetSyncField(info);
+            if (syncField == null)
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] cannot process sync field, fieldId [" + info.elementId + "] not found.");
                 return null;
-            return Behaviours[info.behaviourIndex].ProcessSyncField(info, reader, isInitial);
+            }
+            syncField.Deserialize(reader, isInitial);
+            return syncField;
+        }
+
+        internal LiteNetLibSyncField GetSyncField(LiteNetLibElementInfo info)
+        {
+            if (info.objectId != ObjectId)
+                return null;
+            if (info.elementId >= 0 && info.elementId < syncFields.Count)
+                return syncFields[info.elementId];
+            return null;
         }
 
         internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex >= Behaviours.Length)
+            LiteNetLibFunction netFunction = GetNetFunction(info);
+            if (netFunction == null)
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] cannot process net function, functionId [" + info.elementId + "] not found.");
                 return null;
-            return Behaviours[info.behaviourIndex].ProcessNetFunction(info, reader, hookCallback);
+            }
+            netFunction.DeserializeParameters(reader);
+            if (hookCallback)
+                netFunction.HookCallback();
+            return netFunction;
+        }
+
+        internal LiteNetLibFunction GetNetFunction(LiteNetLibElementInfo info)
+        {
+            if (info.objectId != ObjectId)
+                return null;
+            if (info.elementId >= 0 && info.elementId < netFunctions.Count)
+                return netFunctions[info.elementId];
+            return null;
         }
 
         internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.behaviourIndex >= Behaviours.Length)
+            LiteNetLibSyncList syncList = GetSyncList(info);
+            if (syncList == null)
+            {
+                if (Manager.LogError)
+                    Debug.LogError("[" + name + "] cannot process sync list, fieldId [" + info.elementId + "] not found.");
                 return null;
-            return Behaviours[info.behaviourIndex].ProcessSyncList(info, reader);
+            }
+            syncList.DeserializeOperation(reader);
+            return syncList;
+        }
+
+        internal LiteNetLibSyncList GetSyncList(LiteNetLibElementInfo info)
+        {
+            if (info.objectId != ObjectId)
+                return null;
+            if (info.elementId >= 0 && info.elementId < syncLists.Count)
+                return syncLists[info.elementId];
+            return null;
         }
 
         internal LiteNetLibBehaviour ProcessSyncBehaviour(byte behaviourIndex, NetDataReader reader)
@@ -247,33 +305,40 @@ namespace LiteNetLibManager
 
         internal void WriteInitialSyncFields(NetDataWriter writer)
         {
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            foreach (LiteNetLibSyncField field in syncFields)
             {
-                Behaviours[loopCounter].WriteInitialSyncFields(writer);
+                if (field.doNotSyncInitialDataImmediately)
+                    continue;
+                field.Serialize(writer);
             }
         }
 
         internal void ReadInitialSyncFields(NetDataReader reader)
         {
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            foreach (LiteNetLibSyncField field in syncFields)
             {
-                Behaviours[loopCounter].ReadInitialSyncFields(reader);
+                if (field.doNotSyncInitialDataImmediately)
+                    continue;
+                field.Deserialize(reader, true);
             }
         }
 
         internal void SendInitSyncFields(long connectionId)
         {
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            foreach (LiteNetLibSyncField field in syncFields)
             {
-                Behaviours[loopCounter].SendInitSyncFields(connectionId);
+                if (!field.doNotSyncInitialDataImmediately)
+                    continue;
+                field.SendUpdate(true, connectionId, DeliveryMethod.ReliableOrdered);
             }
         }
 
         internal void SendInitSyncLists(long connectionId)
         {
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            foreach (LiteNetLibSyncList list in syncLists)
             {
-                Behaviours[loopCounter].SendInitSyncLists(connectionId);
+                for (int i = 0; i < list.Count; ++i)
+                    list.SendOperation(connectionId, LiteNetLibSyncList.Operation.Insert, i);
             }
         }
 

@@ -43,10 +43,7 @@ namespace LiteNetLibManager
         private static readonly Dictionary<string, FieldInfo> CacheSyncFieldInfos = new Dictionary<string, FieldInfo>();
         private static readonly Dictionary<string, FieldInfo> CacheSyncListInfos = new Dictionary<string, FieldInfo>();
 
-        private readonly List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
-        private readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
-        private readonly Dictionary<string, ushort> netFunctionIds = new Dictionary<string, ushort>();
-        private readonly List<LiteNetLibSyncList> syncLists = new List<LiteNetLibSyncList>();
+        private readonly Dictionary<string, int> netFunctionIds = new Dictionary<string, int>();
 
         // Optimize garbage collector
         private string tempFieldKey;
@@ -123,13 +120,6 @@ namespace LiteNetLibManager
 
         internal void NetworkUpdate(float time)
         {
-            Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Fields");
-            for (loopCounter = 0; loopCounter < syncFields.Count; ++loopCounter)
-            {
-                syncFields[loopCounter].NetworkUpdate(time);
-            }
-            Profiler.EndSample();
-
             // Sync behaviour
             // TODO: For now, it's able to sync behaviour from server to clients only
             if (!IsServer)
@@ -183,8 +173,8 @@ namespace LiteNetLibManager
                 tempFieldNames = tempCachingFieldName.fieldNames;
                 tempListNames = tempCachingFieldName.listNames;
             }
-            SetupSyncElements(tempFieldNames, CacheSyncFieldInfos, syncFields);
-            SetupSyncElements(tempListNames, CacheSyncListInfos, syncLists);
+            SetupSyncElements(tempFieldNames, CacheSyncFieldInfos, Identity.syncFields);
+            SetupSyncElements(tempListNames, CacheSyncListInfos, Identity.syncLists);
         }
 
         private void SetupSyncElements<T>(IList<string> fieldNames, Dictionary<string, FieldInfo> cacheInfos, List<T> elementList) where T : LiteNetLibElement
@@ -219,19 +209,19 @@ namespace LiteNetLibManager
 
         private void RegisterSyncElement<T>(T element, List<T> elementList) where T : LiteNetLibElement
         {
-            byte elementId = Convert.ToByte(elementList.Count);
+            int elementId = elementList.Count;
             element.Setup(this, elementId);
             elementList.Add(element);
         }
 
         public void RegisterSyncField<T>(T syncField) where T : LiteNetLibSyncField
         {
-            RegisterSyncElement(syncField, syncFields);
+            RegisterSyncElement(syncField, Identity.syncFields);
         }
 
         public void RegisterSyncList<T>(T syncList) where T : LiteNetLibSyncList
         {
-            RegisterSyncElement(syncList, syncLists);
+            RegisterSyncElement(syncList, Identity.syncLists);
         }
 
         #region RegisterNetFunction
@@ -299,15 +289,15 @@ namespace LiteNetLibManager
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function with existed id [" + id + "].");
                 return;
             }
-            if (netFunctions.Count == byte.MaxValue)
+            if (Identity.netFunctions.Count >= int.MaxValue)
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
-            byte elementId = Convert.ToByte(netFunctions.Count);
+            int elementId = Identity.netFunctions.Count;
             netFunction.Setup(this, elementId);
-            netFunctions.Add(netFunction);
+            Identity.netFunctions.Add(netFunction);
             netFunctionIds[id] = elementId;
         }
 
@@ -427,11 +417,10 @@ namespace LiteNetLibManager
 
         public void CallNetFunction(string id, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
         {
-            ushort elementId;
+            int elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                LiteNetLibFunction syncFunction = netFunctions[elementId];
-                syncFunction.Call(deliveryMethod, receivers, parameters);
+                Identity.netFunctions[elementId].Call(deliveryMethod, receivers, parameters);
             }
             else
             {
@@ -499,127 +488,15 @@ namespace LiteNetLibManager
 
         public void CallNetFunction(string id, long connectionId, params object[] parameters)
         {
-            ushort elementId;
+            int elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                LiteNetLibFunction syncFunction = netFunctions[elementId];
-                syncFunction.Call(connectionId, parameters);
+                Identity.netFunctions[elementId].Call(connectionId, parameters);
             }
             else
             {
                 if (Manager.LogError)
                     Debug.LogError("[" + name + "] [" + TypeName + "] cannot call function, function [" + id + "] not found.");
-            }
-        }
-
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader, bool isInitial)
-        {
-            LiteNetLibSyncField syncField = GetSyncField(info);
-            if (syncField == null)
-            {
-                if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync field, fieldId [" + info.elementId + "] not found.");
-                return null;
-            }
-            syncField.Deserialize(reader, isInitial);
-            return syncField;
-        }
-
-        internal LiteNetLibSyncField GetSyncField(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            if (info.elementId >= 0 && info.elementId < syncFields.Count)
-                return syncFields[info.elementId];
-            return null;
-        }
-
-        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
-        {
-            LiteNetLibFunction netFunction = GetNetFunction(info);
-            if (netFunction == null)
-            {
-                if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process net function, functionId [" + info.elementId + "] not found.");
-                return null;
-            }
-            netFunction.DeserializeParameters(reader);
-            if (hookCallback)
-                netFunction.HookCallback();
-            return netFunction;
-        }
-
-        internal LiteNetLibFunction GetNetFunction(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            if (info.elementId >= 0 && info.elementId < netFunctions.Count)
-                return netFunctions[info.elementId];
-            return null;
-        }
-
-        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
-        {
-            LiteNetLibSyncList syncList = GetSyncList(info);
-            if (syncList == null)
-            {
-                if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot process sync list, fieldId [" + info.elementId + "] not found.");
-                return null;
-            }
-            syncList.DeserializeOperation(reader);
-            return syncList;
-        }
-
-        internal LiteNetLibSyncList GetSyncList(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            if (info.elementId >= 0 && info.elementId < syncLists.Count)
-                return syncLists[info.elementId];
-            return null;
-        }
-
-        internal void WriteInitialSyncFields(NetDataWriter writer)
-        {
-            List<LiteNetLibSyncField> fields = syncFields;
-            foreach (LiteNetLibSyncField field in fields)
-            {
-                if (field.doNotSyncInitialDataImmediately)
-                    continue;
-                field.Serialize(writer);
-            }
-        }
-
-        internal void ReadInitialSyncFields(NetDataReader reader)
-        {
-            List<LiteNetLibSyncField> fields = syncFields;
-            foreach (LiteNetLibSyncField field in fields)
-            {
-                if (field.doNotSyncInitialDataImmediately)
-                    continue;
-                field.Deserialize(reader, true);
-            }
-        }
-
-        internal void SendInitSyncFields(long connectionId)
-        {
-            List<LiteNetLibSyncField> fields = syncFields;
-            foreach (LiteNetLibSyncField field in fields)
-            {
-                if (!field.doNotSyncInitialDataImmediately)
-                    continue;
-                field.SendUpdate(true, connectionId, DeliveryMethod.ReliableOrdered);
-            }
-        }
-
-        internal void SendInitSyncLists(long connectionId)
-        {
-            List<LiteNetLibSyncList> lists = syncLists;
-            foreach (LiteNetLibSyncList list in lists)
-            {
-                for (int i = 0; i < list.Count; ++i)
-                    list.SendOperation(connectionId, LiteNetLibSyncList.Operation.Insert, i);
             }
         }
 

@@ -8,25 +8,22 @@ namespace LiteNetLibManager
     public struct LiteNetLibElementInfo
     {
         public uint objectId;
-        public byte behaviourIndex;
-        public byte elementId;
-        public LiteNetLibElementInfo(uint objectId, byte behaviourIndex, byte elementId)
+        public int elementId;
+        public LiteNetLibElementInfo(uint objectId, int elementId)
         {
             this.objectId = objectId;
-            this.behaviourIndex = behaviourIndex;
             this.elementId = elementId;
         }
 
         public static void SerializeInfo(LiteNetLibElementInfo info, NetDataWriter writer)
         {
             writer.PutPackedUInt(info.objectId);
-            writer.Put(info.behaviourIndex);
-            writer.Put(info.elementId);
+            writer.PutPackedUInt((uint)info.elementId);
         }
 
         public static LiteNetLibElementInfo DeserializeInfo(NetDataReader reader)
         {
-            return new LiteNetLibElementInfo(reader.GetPackedUInt(), reader.GetByte(), reader.GetByte());
+            return new LiteNetLibElementInfo(reader.GetPackedUInt(), (int)reader.GetPackedUInt());
         }
     }
 
@@ -40,8 +37,8 @@ namespace LiteNetLibManager
         }
 
         [LiteNetLibReadOnly, SerializeField]
-        protected byte elementId;
-        public byte ElementId
+        protected int elementId;
+        public int ElementId
         {
             get { return elementId; }
         }
@@ -53,10 +50,10 @@ namespace LiteNetLibManager
 
         public LiteNetLibElementInfo GetInfo()
         {
-            return new LiteNetLibElementInfo(Behaviour.ObjectId, Behaviour.BehaviourIndex, ElementId);
+            return new LiteNetLibElementInfo(Behaviour.ObjectId, ElementId);
         }
 
-        internal virtual void Setup(LiteNetLibBehaviour behaviour, byte elementId)
+        internal virtual void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             this.behaviour = behaviour;
             this.elementId = elementId;
