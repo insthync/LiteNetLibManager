@@ -20,22 +20,22 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
     [SerializeField]
     private LiteNetLibSyncField<int> hp = new LiteNetLibSyncField<int>() { 
         sendInterval = 0.1f,
-        forOwnerOnly = false,
+        syncMode = LiteNetLibSyncField.SyncMode.ServerToClients,
     };
     [SerializeField]
     private LiteNetLibSyncField<int> mp = new LiteNetLibSyncField<int>() { 
         sendInterval = 0.1f,
-        forOwnerOnly = false,
+        syncMode = LiteNetLibSyncField.SyncMode.ServerToClients,
     };
 }
 ```
 
 About configs there are:
 
-- `sendOptions`, how it sync to clients. For some data such as character position may sync as `Sequenced` to send data in order but not have to confirm that all data that client will receive. For some data such as character health may sync as `ReliableOrdered` so send data in order and confirm that client will receives them
-- `sendInterval`, this is interval to sync data, data will not sync to client immediately when there are changes, it will send by this interval
-- `forOwnerOnly`, if this is `TRUE` it will send data to owner client only
-- `onChange(data)`, event when data changes on clients
+- `sendOptions`, how it sync to clients. For some data such as character position may sync as `Sequenced` to send data in order but not have to confirm that all data that client will receive. For some data such as character health may sync as `ReliableOrdered` so send data in order and confirm that client will receives them.
+- `sendInterval`, this is interval to sync data, data will not sync to client immediately when there are changes, it will send by this interval.
+- `syncMode`, how its changes handles, you have 3 choices for this. 1) `ServerToClients` Changes handle by server, will send to connected clients when changes occurs on server. 2) `ServerToOwnerClient` Changes handle by server, will send to owner-client when changes occurs on server. 3) `ClientMulticast` Changes handle by owner-client, will send to server then server multicast to other clients when changes occurs on owner-client.
+- `onChange(data)`, event when data changes on clients.
 
 
 Now it's supported with following types:
