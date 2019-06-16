@@ -12,6 +12,10 @@ Add factory component to any game object or the same game object which network m
 
 You can get ENet Transport from (https://github.com/insthync/LiteNetLibManager_ENET)
 
+### KCP Transport Layer
+
+You can get KCP Transport from (https://github.com/insthync/LiteNetLibManager_KCP)
+
 ### WebSocket Transport Layer
 
 This transport layer is included with the project, developer can set `Use Web Socket` to `TRUE` to use `WebSocket` as transport layer, WebGL client will be forced to use `WebSocket`.
