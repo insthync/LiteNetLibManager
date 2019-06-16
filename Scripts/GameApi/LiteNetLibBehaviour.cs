@@ -53,6 +53,9 @@ namespace LiteNetLibManager
         private CachingFieldName tempCachingFieldName;
 
         private Type classType;
+        /// <summary>
+        /// This will be used when setup sync fields and sync lists
+        /// </summary>
         public Type ClassType
         {
             get
@@ -64,6 +67,9 @@ namespace LiteNetLibManager
         }
 
         private string typeName;
+        /// <summary>
+        /// This will be used when setup sync fields and sync lists as key for cached fields
+        /// </summary>
         public string TypeName
         {
             get
