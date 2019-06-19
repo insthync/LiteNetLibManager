@@ -403,8 +403,7 @@ namespace LiteNetLibManager
             ownerValidated = true;
 
             IsOwnerClient = isOwnerClient;
-
-            Behaviours = GetComponents<LiteNetLibBehaviour>();
+            
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
