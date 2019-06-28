@@ -206,12 +206,30 @@ namespace LiteNetLibManager
 
     #region Implement for general usages and serializable
     [Serializable]
+    public class SyncFieldArray<TType> : LiteNetLibSyncField<TType[]>
+    {
+        public TType this[int i]
+        {
+            get { return Value[i]; }
+            set
+            {
+                Value[i] = value;
+                hasUpdate = true;
+                if (onChange != null)
+                    onChange.Invoke(false, Value);
+            }
+        }
+
+        public int Length { get { return Value.Length; } }
+    }
+
+    [Serializable]
     public class SyncFieldBool : LiteNetLibSyncField<bool>
     {
     }
 
     [Serializable]
-    public class SyncFieldBoolArray : LiteNetLibSyncField<bool[]>
+    public class SyncFieldBoolArray : SyncFieldArray<bool>
     {
     }
 
@@ -221,7 +239,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldByteArray : LiteNetLibSyncField<byte[]>
+    public class SyncFieldByteArray : SyncFieldArray<byte>
     {
     }
 
@@ -236,7 +254,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldDoubleArray : LiteNetLibSyncField<double[]>
+    public class SyncFieldDoubleArray : SyncFieldArray<double>
     {
     }
 
@@ -246,7 +264,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldFloatArray : LiteNetLibSyncField<float[]>
+    public class SyncFieldFloatArray : SyncFieldArray<float>
     {
     }
 
@@ -256,7 +274,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldIntArray : LiteNetLibSyncField<int[]>
+    public class SyncFieldIntArray : SyncFieldArray<int>
     {
     }
 
@@ -266,7 +284,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldLongArray : LiteNetLibSyncField<long[]>
+    public class SyncFieldLongArray : SyncFieldArray<long>
     {
     }
 
@@ -281,7 +299,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldShortArray : LiteNetLibSyncField<short[]>
+    public class SyncFieldShortArray : SyncFieldArray<short>
     {
     }
 
@@ -296,7 +314,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldUIntArray : LiteNetLibSyncField<uint[]>
+    public class SyncFieldUIntArray : SyncFieldArray<uint>
     {
     }
 
@@ -306,7 +324,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldULongArray : LiteNetLibSyncField<ulong[]>
+    public class SyncFieldULongArray : SyncFieldArray<ulong>
     {
     }
 
@@ -316,7 +334,7 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
-    public class SyncFieldUShortArray : LiteNetLibSyncField<ushort[]>
+    public class SyncFieldUShortArray : SyncFieldArray<ushort>
     {
     }
 
