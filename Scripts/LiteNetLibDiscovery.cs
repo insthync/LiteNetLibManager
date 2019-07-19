@@ -161,7 +161,8 @@ namespace LiteNetLibManager
         private void _serverListener_NetworkReceiveUnconnectedEvent(System.Net.IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
             // Send back server data
-            if (reader.GetUShort() == broadcastKey)
+            if (messageType == UnconnectedMessageType.DiscoveryRequest &&
+                reader.GetUShort() == broadcastKey)
             {
                 _serverWriter.Reset();
                 _serverWriter.Put(broadcastKey);
