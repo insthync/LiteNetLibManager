@@ -95,9 +95,15 @@ namespace LiteNetLibManager
         {
             if (IsClient)
             {
+                _client.PollEvents();
                 _clientWriter.Reset();
                 _clientWriter.Put(broadcastKey);
                 _client.SendDiscoveryRequest(_clientWriter, broadcastPort);
+            }
+
+            if (IsServer)
+            {
+                _server.PollEvents();
             }
         }
 
@@ -114,7 +120,8 @@ namespace LiteNetLibManager
         private void _clientListener_NetworkReceiveUnconnectedEvent(System.Net.IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
             // Receive server data
-            if (reader.GetInt() == broadcastKey)
+            if (messageType == UnconnectedMessageType.DiscoveryResponse &&
+                reader.GetUShort() == broadcastKey)
             {
                 if (onReceivedBroadcast != null)
                     onReceivedBroadcast.Invoke(remoteEndPoint, reader.GetString());
@@ -154,7 +161,7 @@ namespace LiteNetLibManager
         private void _serverListener_NetworkReceiveUnconnectedEvent(System.Net.IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
             // Send back server data
-            if (reader.GetInt() == broadcastKey)
+            if (reader.GetUShort() == broadcastKey)
             {
                 _serverWriter.Reset();
                 _serverWriter.Put(broadcastKey);
