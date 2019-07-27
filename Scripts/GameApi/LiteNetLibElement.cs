@@ -36,16 +36,46 @@ namespace LiteNetLibManager
             get { return behaviour; }
         }
 
+        public LiteNetLibIdentity Identity
+        {
+            get { return Behaviour.Identity; }
+        }
+
+        public long ConnectionId
+        {
+            get { return Behaviour.ConnectionId; }
+        }
+
+        public uint ObjectId
+        {
+            get { return Behaviour.ObjectId; }
+        }
+
+        public LiteNetLibGameManager Manager
+        {
+            get { return Behaviour.Manager; }
+        }
+
+        public bool IsServer
+        {
+            get { return Behaviour.IsServer; }
+        }
+
+        public bool IsClient
+        {
+            get { return Behaviour.IsClient; }
+        }
+
+        public bool IsOwnerClient
+        {
+            get { return Behaviour.IsOwnerClient; }
+        }
+
         [LiteNetLibReadOnly, SerializeField]
         protected int elementId;
         public int ElementId
         {
             get { return elementId; }
-        }
-
-        public LiteNetLibGameManager Manager
-        {
-            get { return behaviour.Manager; }
         }
 
         public LiteNetLibElementInfo GetInfo()
