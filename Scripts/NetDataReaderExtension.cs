@@ -104,7 +104,7 @@ namespace LiteNetLib.Utils
             if (typeof(INetSerializable).IsAssignableFrom(type))
             {
                 object instance = Activator.CreateInstance(type);
-                ((INetSerializable)instance).Deserialize(reader);
+                (instance as INetSerializable).Deserialize(reader);
                 return instance;
             }
 

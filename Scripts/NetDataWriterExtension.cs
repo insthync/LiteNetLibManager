@@ -198,7 +198,7 @@ namespace LiteNetLib.Utils
 
             if (typeof(INetSerializable).IsAssignableFrom(type))
             {
-                ((INetSerializable)value).Serialize(writer);
+                (value as INetSerializable).Serialize(writer);
                 return;
             }
 
