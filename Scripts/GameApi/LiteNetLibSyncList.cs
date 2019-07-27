@@ -18,6 +18,8 @@ namespace LiteNetLibManager
             public const byte RemoveAt = 3;
             public const byte Set = 4;
             public const byte Dirty = 5;
+            public const byte RemoveFirst = 6;
+            public const byte RemoveLast = 7;
 
             public Operation(byte value)
             {
@@ -136,8 +138,21 @@ namespace LiteNetLibManager
 
         public void RemoveAt(int index)
         {
-            list.RemoveAt(index);
-            SendOperation(Operation.RemoveAt, index);
+            if (index == 0)
+            {
+                list.RemoveAt(index);
+                SendOperation(Operation.RemoveFirst, 0);
+            }
+            else if (index == list.Count - 1)
+            {
+                list.RemoveAt(index);
+                SendOperation(Operation.RemoveLast, 0);
+            }
+            else
+            {
+                list.RemoveAt(index);
+                SendOperation(Operation.RemoveAt, 0);
+            }
         }
 
         public void Clear()
@@ -251,6 +266,14 @@ namespace LiteNetLibManager
                     index = reader.GetInt();
                     list.RemoveAt(index);
                     break;
+                case Operation.RemoveFirst:
+                    index = 0;
+                    list.RemoveAt(index);
+                    break;
+                case Operation.RemoveLast:
+                    index = list.Count - 1;
+                    list.RemoveAt(index);
+                    break;
                 case Operation.Clear:
                     list.Clear();
                     break;
@@ -281,6 +304,8 @@ namespace LiteNetLibManager
                 case Operation.RemoveAt:
                     writer.Put(index);
                     break;
+                case Operation.RemoveFirst:
+                case Operation.RemoveLast:
                 case Operation.Clear:
                     break;
                 default:
