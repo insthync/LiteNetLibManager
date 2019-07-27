@@ -19,6 +19,11 @@ namespace LiteNetLibManager
             public const byte Set = 4;
             public const byte Dirty = 5;
 
+            public Operation(byte value)
+            {
+                this.value = value;
+            }
+
             private byte value;
             public byte Value
             {
@@ -33,10 +38,7 @@ namespace LiteNetLibManager
 
             public static implicit operator Operation(byte value)
             {
-                return new Operation()
-                {
-                    Value = value
-                };
+                return new Operation(value);
             }
         }
         [Tooltip("If this is TRUE, this will update to owner client only")]
@@ -224,25 +226,25 @@ namespace LiteNetLibManager
 
         public override sealed void DeserializeOperation(NetDataReader reader)
         {
-            Operation operation = (Operation)reader.GetByte();
+            Operation operation = reader.GetByte();
             int index = -1;
             TType item;
             switch (operation)
             {
                 case Operation.Add:
-                    item = DeserializeValueForAddOrInsert(reader);
+                    index = list.Count;
+                    item = DeserializeValueForAddOrInsert(index, reader);
                     list.Add(item);
-                    index = list.Count - 1;
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
-                    item = DeserializeValueForAddOrInsert(reader);
+                    item = DeserializeValueForAddOrInsert(index, reader);
                     list.Insert(index, item);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
-                    item = DeserializeValueForSetOrDirty(reader);
+                    item = DeserializeValueForSetOrDirty(index, reader);
                     list[index] = item;
                     break;
                 case Operation.RemoveAt:
@@ -252,6 +254,11 @@ namespace LiteNetLibManager
                 case Operation.Clear:
                     list.Clear();
                     break;
+                default:
+                    index = reader.GetInt();
+                    item = DeserializeValueForCustomDirty(index, operation, reader);
+                    list[index] = item;
+                    break;
             }
             if (onOperation != null)
                 onOperation.Invoke(operation, index);
@@ -259,22 +266,26 @@ namespace LiteNetLibManager
 
         public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
         {
-            writer.Put((byte)operation);
+            writer.Put(operation);
             switch (operation)
             {
                 case Operation.Add:
-                    SerializeValueForAddOrInsert(writer, list[index]);
+                    SerializeValueForAddOrInsert(index, writer, list[index]);
                     break;
                 case Operation.Insert:
                 case Operation.Set:
                 case Operation.Dirty:
                     writer.Put(index);
-                    SerializeValueForSetOrDirty(writer, list[index]);
+                    SerializeValueForSetOrDirty(index, writer, list[index]);
                     break;
                 case Operation.RemoveAt:
                     writer.Put(index);
                     break;
                 case Operation.Clear:
+                    break;
+                default:
+                    writer.Put(index);
+                    SerializeValueForCustomDirty(index, operation, writer, list[index]);
                     break;
             }
         }
@@ -298,24 +309,34 @@ namespace LiteNetLibManager
             writer.PutValue(value);
         }
 
-        protected virtual TType DeserializeValueForAddOrInsert(NetDataReader reader)
+        protected virtual TType DeserializeValueForAddOrInsert(int index, NetDataReader reader)
         {
             return DeserializeValue(reader);
         }
 
-        protected virtual void SerializeValueForAddOrInsert(NetDataWriter writer, TType value)
+        protected virtual void SerializeValueForAddOrInsert(int index, NetDataWriter writer, TType value)
         {
             SerializeValue(writer, value);
         }
 
-        protected virtual TType DeserializeValueForSetOrDirty(NetDataReader reader)
+        protected virtual TType DeserializeValueForSetOrDirty(int index, NetDataReader reader)
         {
             return DeserializeValue(reader);
         }
 
-        protected virtual void SerializeValueForSetOrDirty(NetDataWriter writer, TType value)
+        protected virtual void SerializeValueForSetOrDirty(int index, NetDataWriter writer, TType value)
         {
             SerializeValue(writer, value);
+        }
+
+        protected virtual void SerializeValueForCustomDirty(int index, byte customOperation, NetDataWriter writer, TType value)
+        {
+            SerializeValue(writer, value);
+        }
+
+        protected virtual TType DeserializeValueForCustomDirty(int index, byte customOperation, NetDataReader reader)
+        {
+            return DeserializeValue(reader);
         }
     }
 
