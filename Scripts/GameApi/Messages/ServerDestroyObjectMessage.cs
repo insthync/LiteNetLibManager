@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public class ServerDestroyObjectMessage : INetSerializable
+    public struct ServerDestroyObjectMessage : INetSerializable
     {
         public uint objectId;
         public byte reasons;

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace LiteNetLibManager
 {
-    public class ServerSpawnObjectMessage : INetSerializable
+    public struct ServerSpawnObjectMessage : INetSerializable
     {
         public int hashAssetId;
         public uint objectId;
