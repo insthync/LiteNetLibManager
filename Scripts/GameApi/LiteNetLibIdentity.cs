@@ -84,7 +84,10 @@ namespace LiteNetLibManager
             get { return Manager != null && Manager.IsClient; }
         }
 
-        public bool IsOwnerClient { get; private set; }
+        public bool IsOwnerClient
+        {
+            get { return Manager != null && Manager.ClientConnectionId == ConnectionId; }
+        }
 
         private bool ownerValidated;
         private bool destroyed;
@@ -401,8 +404,6 @@ namespace LiteNetLibManager
                 return;
 
             ownerValidated = true;
-
-            IsOwnerClient = isOwnerClient;
             
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {

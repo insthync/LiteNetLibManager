@@ -13,7 +13,7 @@ namespace LiteNetLibManager
     {
         public class GameMsgTypes
         {
-            public const ushort ClientEnterGame = 0;
+            public const ushort EnterGame = 0;
             public const ushort ClientReady = 1;
             public const ushort ClientNotReady = 2;
             public const ushort CallFunction = 3;
@@ -48,6 +48,8 @@ namespace LiteNetLibManager
         private float lastSendServerTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
+
+        public long ClientConnectionId { get; protected set; }
 
         public int Timestamp { get { return (int)System.DateTime.UtcNow.Subtract(new System.DateTime(1970, 1, 1)).TotalSeconds; } }
         public int ServerUnixTimeOffset { get; protected set; }
@@ -249,7 +251,7 @@ namespace LiteNetLibManager
         protected override void RegisterServerMessages()
         {
             base.RegisterServerMessages();
-            RegisterServerMessage(GameMsgTypes.ClientEnterGame, HandleClientEnterGame);
+            RegisterServerMessage(GameMsgTypes.EnterGame, HandleClientEnterGame);
             RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
             RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
@@ -261,6 +263,7 @@ namespace LiteNetLibManager
         protected override void RegisterClientMessages()
         {
             base.RegisterClientMessages();
+            RegisterClientMessage(GameMsgTypes.EnterGame, HandleServerEnterGame);
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
@@ -299,6 +302,8 @@ namespace LiteNetLibManager
         public override void OnClientConnected()
         {
             base.OnClientConnected();
+            // Reset client connection id, will be received from server later
+            ClientConnectionId = -1;
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
         }
@@ -346,7 +351,7 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.ClientEnterGame);
+            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.EnterGame);
         }
 
         public void SendClientReady()
@@ -427,7 +432,7 @@ namespace LiteNetLibManager
             ServerSpawnObjectMessage message = new ServerSpawnObjectMessage();
             message.hashAssetId = identity.HashAssetId;
             message.objectId = identity.ObjectId;
-            message.isOwner = identity.ConnectionId == connectionId;
+            message.connectionId = identity.ConnectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message, identity.WriteInitialSyncFields);
@@ -510,11 +515,19 @@ namespace LiteNetLibManager
             message.serverSceneName = sceneName;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
         }
+
+        public void SendServerEnterGame(long connectionId)
+        {
+            if (!IsServer)
+                return;
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.EnterGame, (writer) => { writer.Put(connectionId); });
+        }
         #endregion
 
         #region Message Handlers
         protected virtual void HandleClientEnterGame(LiteNetLibMessageHandler messageHandler)
         {
+            SendServerEnterGame(messageHandler.connectionId);
             SendServerSceneChange(messageHandler.connectionId, ServerSceneName);
             // If it is host (both client and server) it will send ready state to spawn player
             if (IsClient && (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name)))
@@ -624,6 +637,11 @@ namespace LiteNetLibManager
             }
         }
 
+        protected virtual void HandleServerEnterGame(LiteNetLibMessageHandler messageHandler)
+        {
+            ClientConnectionId = messageHandler.reader.GetLong();
+        }
+
         protected virtual void HandleServerSpawnSceneObject(LiteNetLibMessageHandler messageHandler)
         {
             ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
@@ -645,12 +663,12 @@ namespace LiteNetLibManager
         {
             ServerSpawnObjectMessage message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
             if (!IsServer)
-                Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, 0);
+                Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, message.connectionId);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {
                 // Setup owner client
-                identity.SetOwnerClient(message.isOwner);
+                identity.SetOwnerClient(message.connectionId == ClientConnectionId);
                 // If it is not server, read its initial data
                 if (!IsServer)
                     identity.ReadInitialSyncFields(messageHandler.reader);
