@@ -142,7 +142,7 @@ namespace LiteNetLibManager
 
         protected override bool ValidateBeforeAccess()
         {
-            return Behaviour != null && Behaviour.IsServer;
+            return Behaviour != null && IsServer;
         }
 
         public override sealed void SendOperation(Operation operation, int index)
@@ -155,7 +155,7 @@ namespace LiteNetLibManager
 
             if (forOwnerOnly)
             {
-                long connectionId = Behaviour.ConnectionId;
+                long connectionId = ConnectionId;
                 if (Manager.ContainsConnectionId(connectionId))
                     SendOperation(connectionId, operation, index);
             }
@@ -163,7 +163,7 @@ namespace LiteNetLibManager
             {
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
-                    if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
+                    if (Identity.IsSubscribedOrOwning(connectionId))
                         SendOperation(connectionId, operation, index);
                 }
             }

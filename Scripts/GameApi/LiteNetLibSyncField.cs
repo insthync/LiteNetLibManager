@@ -136,16 +136,16 @@ namespace LiteNetLibManager
                 case SyncMode.ServerToClients:
                     foreach (long connectionId in Manager.GetConnectionIds())
                     {
-                        if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
+                        if (Identity.IsSubscribedOrOwning(connectionId))
                             SendUpdate(isInitial, connectionId);
                     }
                     break;
                 case SyncMode.ServerToOwnerClient:
-                    if (Manager.ContainsConnectionId(Behaviour.ConnectionId))
-                        SendUpdate(isInitial, Behaviour.ConnectionId);
+                    if (Manager.ContainsConnectionId(ConnectionId))
+                        SendUpdate(isInitial, ConnectionId);
                     break;
                 case SyncMode.ClientMulticast:
-                    if (Behaviour.IsOwnerClient)
+                    if (IsOwnerClient)
                     {
                         // Client send data to server, it should reliable-ordered
                         Manager.ClientSendPacket(DeliveryMethod.ReliableOrdered,
@@ -165,7 +165,7 @@ namespace LiteNetLibManager
 
         internal override sealed void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod)
         {
-            if (!ValidateBeforeAccess() || !Behaviour.IsServer)
+            if (!ValidateBeforeAccess() || !IsServer)
                 return;
 
             Manager.ServerSendPacket(connectionId, deliveryMethod,

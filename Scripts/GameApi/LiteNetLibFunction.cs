@@ -57,13 +57,13 @@ namespace LiteNetLibManager
                 switch (receivers)
                 {
                     case FunctionReceivers.Target:
-                        if (Behaviour.Identity.IsSubscribedOrOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
+                        if (Identity.IsSubscribedOrOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                             ServerSendCall(targetConnectionId, deliveryMethod, receivers, targetConnectionId);
                         break;
                     case FunctionReceivers.All:
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
-                            if (Behaviour.Identity.IsSubscribedOrOwning(connectionId))
+                            if (Identity.IsSubscribedOrOwning(connectionId))
                                 ServerSendCall(connectionId, deliveryMethod, receivers, targetConnectionId);
                         }
                         if (!Manager.IsClientConnected)
@@ -94,7 +94,7 @@ namespace LiteNetLibManager
                 return;
 
             SetParameters(parameterValues);
-            SendCall(deliveryMethod, receivers, Behaviour.ConnectionId);
+            SendCall(deliveryMethod, receivers, ConnectionId);
         }
 
         public void Call(long connectionId, params object[] parameterValues)
@@ -111,7 +111,7 @@ namespace LiteNetLibManager
             if (!ValidateBeforeAccess())
                 return;
 
-            SendCall(deliveryMethod, receivers, Behaviour.ConnectionId);
+            SendCall(deliveryMethod, receivers, ConnectionId);
         }
 
         public void CallWithoutParametersSet(long connectionId)
