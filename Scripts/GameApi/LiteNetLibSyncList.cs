@@ -10,14 +10,34 @@ namespace LiteNetLibManager
     public abstract class LiteNetLibSyncList : LiteNetLibElement
     {
         public delegate void OnChanged(Operation op, int itemIndex);
-        public enum Operation : byte
+        public partial struct Operation
         {
-            Add,
-            Clear,
-            Insert,
-            RemoveAt,
-            Set,
-            Dirty,
+            public const byte Add = 0;
+            public const byte Clear = 1;
+            public const byte Insert = 2;
+            public const byte RemoveAt = 3;
+            public const byte Set = 4;
+            public const byte Dirty = 5;
+
+            private byte value;
+            public byte Value
+            {
+                get { return value; }
+                set { this.value = value; }
+            }
+
+            public static implicit operator byte(Operation operation)
+            {
+                return operation.Value;
+            }
+
+            public static implicit operator Operation(byte value)
+            {
+                return new Operation()
+                {
+                    Value = value
+                };
+            }
         }
         [Tooltip("If this is TRUE, this will update to owner client only")]
         public bool forOwnerOnly;
@@ -32,7 +52,23 @@ namespace LiteNetLibManager
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
     {
+        private bool checkedAbleToSetElement;
+        private bool isAbleToSetElement;
+        protected bool IsAbleToSetElement
+        {
+            get
+            {
+                if (!checkedAbleToSetElement)
+                {
+                    checkedAbleToSetElement = true;
+                    isAbleToSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(typeof(TType));
+                }
+                return isAbleToSetElement;
+            }
+        }
+
         protected readonly List<TType> list = new List<TType>();
+
         public TType this[int index]
         {
             get { return list[index]; }
@@ -245,11 +281,20 @@ namespace LiteNetLibManager
 
         protected virtual TType DeserializeValue(NetDataReader reader)
         {
+            if (IsAbleToSetElement)
+            {
+                object value = Activator.CreateInstance(typeof(TType));
+                (value as INetSerializableWithElement).Element = this;
+                (value as INetSerializableWithElement).Deserialize(reader);
+                return (TType)value;
+            }
             return (TType)reader.GetValue(typeof(TType));
         }
 
         protected virtual void SerializeValue(NetDataWriter writer, TType value)
         {
+            if (IsAbleToSetElement)
+                (value as INetSerializableWithElement).Element = this;
             writer.PutValue(value);
         }
 
@@ -260,7 +305,7 @@ namespace LiteNetLibManager
 
         protected virtual void SerializeValueForAddOrInsert(NetDataWriter writer, TType value)
         {
-            writer.PutValue(value);
+            SerializeValue(writer, value);
         }
 
         protected virtual TType DeserializeValueForSetOrDirty(NetDataReader reader)
@@ -270,7 +315,7 @@ namespace LiteNetLibManager
 
         protected virtual void SerializeValueForSetOrDirty(NetDataWriter writer, TType value)
         {
-            writer.PutValue(value);
+            SerializeValue(writer, value);
         }
     }
 

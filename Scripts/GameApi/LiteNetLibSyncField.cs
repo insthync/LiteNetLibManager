@@ -67,6 +67,21 @@ namespace LiteNetLibManager
     
     public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
+        private bool checkedAbleToSetElement;
+        private bool isAbleToSetElement;
+        protected bool IsAbleToSetElement
+        {
+            get
+            {
+                if (!checkedAbleToSetElement)
+                {
+                    checkedAbleToSetElement = true;
+                    isAbleToSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(typeof(TType));
+                }
+                return isAbleToSetElement;
+            }
+        }
+
         /// <summary>
         /// Action for initial state, data this will be invoked when data changes
         /// </summary>
@@ -195,11 +210,21 @@ namespace LiteNetLibManager
 
         protected virtual void DeserializeValue(NetDataReader reader)
         {
+            if (IsAbleToSetElement)
+            {
+                object instance = Activator.CreateInstance(typeof(TType));
+                (instance as INetSerializableWithElement).Element = this;
+                (instance as INetSerializableWithElement).Deserialize(reader);
+                value = (TType)instance;
+                return;
+            }
             value = (TType)reader.GetValue(typeof(TType));
         }
 
         protected virtual void SerializeValue(NetDataWriter writer)
         {
+            if (IsAbleToSetElement)
+                (value as INetSerializableWithElement).Element = this;
             writer.PutValue(value);
         }
     }
