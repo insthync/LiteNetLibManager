@@ -71,6 +71,8 @@ namespace LiteNetLibManager
             get { return Behaviour.IsOwnerClient; }
         }
 
+        public long SendingConnectionId { get; protected set; }
+
         [LiteNetLibReadOnly, SerializeField]
         protected int elementId;
         public int ElementId

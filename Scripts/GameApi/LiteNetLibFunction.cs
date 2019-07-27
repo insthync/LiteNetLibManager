@@ -40,6 +40,7 @@ namespace LiteNetLibManager
 
         protected void ServerSendCall(long connectionId, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
+            SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, deliveryMethod, LiteNetLibGameManager.GameMsgTypes.CallFunction, (writer) => SerializeForSend(writer));
         }
 

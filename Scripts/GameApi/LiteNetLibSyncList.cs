@@ -191,9 +191,8 @@ namespace LiteNetLibManager
 
             if (forOwnerOnly)
             {
-                long connectionId = ConnectionId;
-                if (Manager.ContainsConnectionId(connectionId))
-                    SendOperation(connectionId, operation, index);
+                if (Manager.ContainsConnectionId(ConnectionId))
+                    SendOperation(ConnectionId, operation, index);
             }
             else
             {
@@ -213,6 +212,7 @@ namespace LiteNetLibManager
                 return;
             }
 
+            SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }
 

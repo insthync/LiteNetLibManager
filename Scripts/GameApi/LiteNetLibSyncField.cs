@@ -183,6 +183,7 @@ namespace LiteNetLibManager
             if (!ValidateBeforeAccess() || !IsServer)
                 return;
 
+            SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, deliveryMethod,
                 (isInitial ?
                 LiteNetLibGameManager.GameMsgTypes.InitialSyncField :
