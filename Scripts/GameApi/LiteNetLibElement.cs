@@ -43,12 +43,12 @@ namespace LiteNetLibManager
 
         public long ConnectionId
         {
-            get { return Behaviour.ConnectionId; }
+            get { return Behaviour == null ? -1 : Behaviour.ConnectionId; }
         }
 
         public uint ObjectId
         {
-            get { return Behaviour.ObjectId; }
+            get { return Behaviour == null ? 0 : Behaviour.ObjectId; }
         }
 
         public LiteNetLibGameManager Manager
