@@ -151,7 +151,7 @@ namespace LiteNetLibManager
             else
             {
                 list.RemoveAt(index);
-                SendOperation(Operation.RemoveAt, 0);
+                SendOperation(Operation.RemoveAt, index);
             }
         }
 
