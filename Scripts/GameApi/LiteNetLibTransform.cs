@@ -157,7 +157,11 @@ namespace LiteNetLibManager
         public void Teleport(Vector3 position, Quaternion rotation)
         {
             if (IsServer || (ownerClientCanSendTransform && IsOwnerClient))
+            {
+                InitInterpResults(position, rotation);
+                Snap(position, rotation);
                 CallNetFunction(NetFunction_Teleport, FunctionReceivers.All, position, rotation);
+            }
         }
 
         public override bool ShouldSyncBehaviour()
