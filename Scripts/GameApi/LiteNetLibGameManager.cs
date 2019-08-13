@@ -311,6 +311,8 @@ namespace LiteNetLibManager
         public override void OnStartServer()
         {
             base.OnStartServer();
+            // Reset client connection id, will be received from server later
+            ClientConnectionId = -1;
             if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
             {
                 serverSceneName = SceneManager.GetActiveScene().name;
