@@ -38,6 +38,7 @@ namespace LiteNetLibManager
         public float ownerClientSendInterval = 0.01f;
         public float snapThreshold = 5.0f;
         public float movementTheshold = 0.075f;
+        public float rotateTheshold = 1f;
         [Header("Sync Position Settings")]
         public SyncPositionOptions syncPositionX;
         public SyncPositionOptions syncPositionY;
@@ -166,7 +167,7 @@ namespace LiteNetLibManager
 
         public override bool ShouldSyncBehaviour()
         {
-            if (Vector3.Distance(syncResult.position, syncingTransform.position) >= movementTheshold || syncResult.rotation != syncingTransform.rotation)
+            if (Vector3.Distance(syncResult.position, syncingTransform.position) >= movementTheshold || Quaternion.Angle(syncResult.rotation, syncingTransform.rotation) >= rotateTheshold)
             {
                 syncResult.position = syncingTransform.position;
                 syncResult.rotation = syncingTransform.rotation;
@@ -285,7 +286,9 @@ namespace LiteNetLibManager
             tempUnscaledTime = Time.unscaledTime;
             tempDeltaTime = Time.deltaTime;
             // Sending client transform result to server
-            if (ownerClientCanSendTransform && IsOwnerClient)
+            // Don't send to server if it's server which already update transform result
+            // So only owner client can send transform result to server
+            if (ownerClientCanSendTransform && IsOwnerClient && !IsServer)
             {
                 if (ownerSendElapsed >= ownerClientSendInterval)
                 {
