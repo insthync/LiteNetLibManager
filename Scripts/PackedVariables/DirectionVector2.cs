@@ -4,7 +4,7 @@ using LiteNetLib.Utils;
 public struct DirectionVector2 : INetSerializable
 {
     public static implicit operator DirectionVector2(Vector2 value) { return new DirectionVector2(value); }
-    public static implicit operator Vector2(DirectionVector2 value) { return new Vector2(value.x / 100, value.y / 100); }
+    public static implicit operator Vector2(DirectionVector2 value) { return new Vector2((float)value.x / 100f, (float)value.y / 100f); }
 
     private sbyte x;
     private sbyte y;
