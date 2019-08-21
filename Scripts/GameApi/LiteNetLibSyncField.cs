@@ -413,5 +413,15 @@ namespace LiteNetLibManager
     public class SyncFieldPackedULong : LiteNetLibSyncField<PackedULong>
     {
     }
+
+    [Serializable]
+    public class SyncFieldDirectionVector2 : LiteNetLibSyncField<DirectionVector2>
+    {
+    }
+
+    [Serializable]
+    public class SyncFieldDirectionVector3 : LiteNetLibSyncField<DirectionVector3>
+    {
+    }
     #endregion
 }
