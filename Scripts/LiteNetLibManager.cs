@@ -68,11 +68,18 @@ namespace LiteNetLibManager
             }
         }
 
+        private OfflineTransport offlineTransport;
         private ITransport transport;
         public ITransport Transport
         {
             get
             {
+                if (isOffline)
+                {
+                    if (offlineTransport == null)
+                        offlineTransport = new OfflineTransport();
+                    return offlineTransport;
+                }
                 if (transport == null)
                     transport = TransportFactory.Build();
                 return transport;
@@ -80,6 +87,8 @@ namespace LiteNetLibManager
         }
 
         protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
+
+        private bool isOffline;
 
         protected virtual void Awake() { }
 
@@ -119,18 +128,12 @@ namespace LiteNetLibManager
 
         public virtual bool StartServer()
         {
-            return StartServer(false);
-        }
-
-        protected virtual bool StartServer(bool isOffline)
-        {
             if (Server != null)
                 return true;
-
+            
             Server = new LiteNetLibServer(this);
             RegisterServerMessages();
-            bool canStartServer = !isOffline ? Server.StartServer(networkPort, maxConnections) : Server.StartServerOffline();
-            if (!canStartServer)
+            if (!Server.StartServer(networkPort, maxConnections))
             {
                 if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
                 Server = null;
@@ -163,7 +166,8 @@ namespace LiteNetLibManager
         public virtual LiteNetLibClient StartHost(bool isOffline = false)
         {
             OnStartHost();
-            if (StartServer(isOffline))
+            this.isOffline = isOffline;
+            if (StartServer())
                 return ConnectLocalClient();
             return null;
         }
