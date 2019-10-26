@@ -37,28 +37,28 @@ namespace LiteNetLibManager
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-	[DllImport("__Internal")]
-	private static extern int SocketCreate(string url);
+	    [DllImport("__Internal")]
+	    private static extern int SocketCreate(string url);
 
-	[DllImport("__Internal")]
-	private static extern int SocketState(int socketInstance);
+	    [DllImport("__Internal")]
+	    private static extern int SocketState(int socketInstance);
 
-	[DllImport("__Internal")]
-	private static extern void SocketSend(int socketInstance, byte[] ptr, int length);
+	    [DllImport("__Internal")]
+	    private static extern void SocketSend(int socketInstance, byte[] ptr, int length);
 
-	[DllImport("__Internal")]
-	private static extern void SocketRecv(int socketInstance, byte[] ptr, int length);
+	    [DllImport("__Internal")]
+	    private static extern void SocketRecv(int socketInstance, byte[] ptr, int length);
 
-	[DllImport("__Internal")]
-	private static extern int SocketRecvLength(int socketInstance);
+	    [DllImport("__Internal")]
+	    private static extern int SocketRecvLength(int socketInstance);
 
-	[DllImport("__Internal")]
-	private static extern void SocketClose(int socketInstance);
+	    [DllImport("__Internal")]
+	    private static extern void SocketClose(int socketInstance);
 
-	[DllImport("__Internal")]
-	private static extern int SocketError(int socketInstance, byte[] ptr, int length);
+	    [DllImport("__Internal")]
+	    private static extern int SocketError(int socketInstance, byte[] ptr, int length);
 
-	private int m_NativeRef = 0;
+	    private int m_NativeRef = 0;
 #else
         private WebSocketSharp.WebSocket m_Socket;
         private Queue<byte[]> m_Messages = new Queue<byte[]>();
@@ -68,7 +68,7 @@ namespace LiteNetLibManager
         public void Connect()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-		m_NativeRef = SocketCreate(mUrl.ToString());
+		    m_NativeRef = SocketCreate(mUrl.ToString());
 #else
             m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());
             m_Socket.OnMessage += (sender, e) => m_Messages.Enqueue(e.RawData);
@@ -80,7 +80,7 @@ namespace LiteNetLibManager
         public void Close()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-        SocketClose(m_NativeRef);
+            SocketClose(m_NativeRef);
 #else
             m_Socket.Close();
 #endif
@@ -89,7 +89,7 @@ namespace LiteNetLibManager
         public void Send(byte[] buffer)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-        SocketSend(m_NativeRef, buffer, buffer.Length);
+            SocketSend(m_NativeRef, buffer, buffer.Length);
 #else
             m_Socket.Send(buffer);
 #endif
@@ -98,12 +98,12 @@ namespace LiteNetLibManager
         public byte[] Recv()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-        int length = SocketRecvLength(m_NativeRef);
-        if (length == 0)
-            return null;
-        byte[] buffer = new byte[length];
-        SocketRecv(m_NativeRef, buffer, length);
-        return buffer;
+            int length = SocketRecvLength(m_NativeRef);
+            if (length == 0)
+                return null;
+            byte[] buffer = new byte[length];
+            SocketRecv(m_NativeRef, buffer, length);
+            return buffer;
 #else
             if (m_Messages.Count == 0)
                 return null;
@@ -116,7 +116,7 @@ namespace LiteNetLibManager
             get
             {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            return SocketState(m_NativeRef) == 1;
+                return SocketState(m_NativeRef) == 1;
 #else
                 return m_Socket.ReadyState == WebSocketSharp.WebSocketState.Open;
 #endif
@@ -128,14 +128,14 @@ namespace LiteNetLibManager
             get
             {
 #if UNITY_WEBGL && !UNITY_EDITOR
-			const int bufsize = 1024;
-			byte[] buffer = new byte[bufsize];
-			int result = SocketError(m_NativeRef, buffer, bufsize);
+			    const int bufsize = 1024;
+			    byte[] buffer = new byte[bufsize];
+			    int result = SocketError(m_NativeRef, buffer, bufsize);
 
-			if (result == 0)
-				return null;
+			    if (result == 0)
+				    return null;
 
-			return Encoding.UTF8.GetString (buffer);
+			    return Encoding.UTF8.GetString (buffer);
 #else
                 return m_Error;
 #endif
