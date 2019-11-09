@@ -17,8 +17,8 @@ namespace LiteNetLibManager
         public LayerMask layerMask = -1;
 
         private float tempUpdateTime;
-
         private float lastUpdateTime;
+        LiteNetLibIdentity tempIdentity;
 
         void Start()
         {
@@ -35,8 +35,9 @@ namespace LiteNetLibManager
 
             if (tempUpdateTime - lastUpdateTime > updateInterval)
             {
-                Identity.RebuildSubscribers(false);
                 lastUpdateTime = tempUpdateTime;
+                // Request identity to rebuild subscribers
+                Identity.RebuildSubscribers(false);
             }
         }
 
@@ -67,9 +68,9 @@ namespace LiteNetLibManager
                         Collider[] hits = Physics.OverlapSphere(transform.position, range, layerMask.value);
                         foreach (Collider hit in hits)
                         {
-                            LiteNetLibIdentity identity = hit.GetComponent<LiteNetLibIdentity>();
-                            if (identity != null && identity.Player != null)
-                                subscribers.Add(identity.Player);
+                            tempIdentity = hit.GetComponent<LiteNetLibIdentity>();
+                            if (tempIdentity != null && tempIdentity.Player != null)
+                                subscribers.Add(tempIdentity.Player);
                         }
                         return true;
                     }
@@ -79,9 +80,9 @@ namespace LiteNetLibManager
                         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range, layerMask.value);
                         foreach (Collider2D hit in hits)
                         {
-                            LiteNetLibIdentity identity = hit.GetComponent<LiteNetLibIdentity>();
-                            if (identity != null && identity.Player != null)
-                                subscribers.Add(identity.Player);
+                            tempIdentity = hit.GetComponent<LiteNetLibIdentity>();
+                            if (tempIdentity != null && tempIdentity.Player != null)
+                                subscribers.Add(tempIdentity.Player);
                         }
                         return true;
                     }
