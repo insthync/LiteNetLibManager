@@ -296,6 +296,9 @@ namespace LiteNetLibManager
                     SerializeValueForAddOrInsert(index, writer, list[index]);
                     break;
                 case Operation.Insert:
+                    writer.Put(index);
+                    SerializeValueForAddOrInsert(index, writer, list[index]);
+                    break;
                 case Operation.Set:
                 case Operation.Dirty:
                     writer.Put(index);
