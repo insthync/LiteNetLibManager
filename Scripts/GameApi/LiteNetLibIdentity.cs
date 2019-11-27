@@ -643,7 +643,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            StartCoroutine(NetworkDestroyRoutine(0f));
+            Manager.StartCoroutine(NetworkDestroyRoutine(0f));
         }
 
         public void NetworkDestroy(float delay)
@@ -651,7 +651,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            StartCoroutine(NetworkDestroyRoutine(delay));
+            Manager.StartCoroutine(NetworkDestroyRoutine(delay));
         }
 
         IEnumerator NetworkDestroyRoutine(float delay)
