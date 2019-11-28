@@ -399,7 +399,6 @@ namespace LiteNetLibManager
             }
             else if (CacheRigidbody3D != null)
             {
-                CacheRigidbody3D.MoveRotation(rotation);
                 if (Vector3.Distance(position, CacheRigidbody3D.position) >= movementTheshold)
                     CacheRigidbody3D.MovePosition(position);
                 else
@@ -407,10 +406,10 @@ namespace LiteNetLibManager
                     CacheRigidbody3D.velocity = Vector3.zero;
                     CacheRigidbody3D.MovePosition(position);
                 }
+                syncingTransform.rotation = rotation;
             }
             else if (CacheRigidbody2D != null)
             {
-                CacheRigidbody2D.MoveRotation(rotation.eulerAngles.z);
                 if (Vector2.Distance(position, CacheRigidbody2D.position) >= movementTheshold)
                     CacheRigidbody2D.MovePosition(position);
                 else
@@ -418,6 +417,7 @@ namespace LiteNetLibManager
                     CacheRigidbody2D.velocity = Vector2.zero;
                     CacheRigidbody2D.MovePosition(position);
                 }
+                syncingTransform.rotation = rotation;
             }
             else
             {
