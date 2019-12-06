@@ -85,7 +85,7 @@ namespace LiteNetLibManager
             get
             {
                 if (identity == null)
-                    identity = GetComponent<LiteNetLibIdentity>();
+                    identity = GetComponentInParent<LiteNetLibIdentity>();
                 return identity;
             }
         }
