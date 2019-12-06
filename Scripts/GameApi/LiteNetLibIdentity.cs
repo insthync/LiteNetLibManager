@@ -382,7 +382,7 @@ namespace LiteNetLibManager
             if (!hasSetupBehaviours)
             {
                 // Setup behaviours index, we will use this as reference for network functions
-                Behaviours = GetComponents<LiteNetLibBehaviour>();
+                Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
                 for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
                     Behaviours[loopCounter].Setup(Convert.ToByte(loopCounter));

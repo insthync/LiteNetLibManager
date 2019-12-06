@@ -11,7 +11,6 @@ using UnityEditor;
 
 namespace LiteNetLibManager
 {
-    [RequireComponent(typeof(LiteNetLibIdentity))]
     public partial class LiteNetLibBehaviour : MonoBehaviour, INetSerializable
     {
         private struct CachingFieldName
