@@ -417,11 +417,19 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldDirectionVector2 : LiteNetLibSyncField<DirectionVector2>
     {
+        protected override bool IsValueChanged(DirectionVector2 newValue)
+        {
+            return Value.x != newValue.x || Value.y != newValue.y;
+        }
     }
 
     [Serializable]
     public class SyncFieldDirectionVector3 : LiteNetLibSyncField<DirectionVector3>
     {
+        protected override bool IsValueChanged(DirectionVector3 newValue)
+        {
+            return Value.x != newValue.x || Value.y != newValue.y || Value.z != newValue.z;
+        }
     }
     #endregion
 }

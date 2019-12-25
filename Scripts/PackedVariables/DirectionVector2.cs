@@ -6,8 +6,8 @@ public struct DirectionVector2 : INetSerializable
     public static implicit operator DirectionVector2(Vector2 value) { return new DirectionVector2(value); }
     public static implicit operator Vector2(DirectionVector2 value) { return new Vector2((float)value.x / 100f, (float)value.y / 100f); }
 
-    private sbyte x;
-    private sbyte y;
+    public sbyte x;
+    public sbyte y;
 
     public DirectionVector2(Vector2 vector2)
     {
