@@ -19,7 +19,6 @@ namespace LiteNetLibManager
         private float tempUpdateTime;
         private float lastUpdateTime;
         private LiteNetLibIdentity tempIdentity;
-        private int tempLoopCounter;
 
         void Start()
         {
@@ -67,9 +66,9 @@ namespace LiteNetLibManager
                 case CheckMethod.Physics3D:
                     {
                         Collider[] hits = Physics.OverlapSphere(transform.position, range, layerMask.value);
-                        for (tempLoopCounter = 0; tempLoopCounter < hits.Length; ++tempLoopCounter)
+                        for (int i = 0; i < hits.Length; ++i)
                         {
-                            tempIdentity = hits[tempLoopCounter].GetComponent<LiteNetLibIdentity>();
+                            tempIdentity = hits[i].GetComponent<LiteNetLibIdentity>();
                             if (tempIdentity != null && tempIdentity.Player != null)
                                 subscribers.Add(tempIdentity.Player);
                         }
@@ -79,9 +78,9 @@ namespace LiteNetLibManager
                 case CheckMethod.Physics2D:
                     {
                         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range, layerMask.value);
-                        for (tempLoopCounter = 0; tempLoopCounter < hits.Length; ++tempLoopCounter)
+                        for (int i = 0; i < hits.Length; ++i)
                         {
-                            tempIdentity = hits[tempLoopCounter].GetComponent<LiteNetLibIdentity>();
+                            tempIdentity = hits[i].GetComponent<LiteNetLibIdentity>();
                             if (tempIdentity != null && tempIdentity.Player != null)
                                 subscribers.Add(tempIdentity.Player);
                         }
@@ -95,9 +94,9 @@ namespace LiteNetLibManager
         {
             base.OnServerSubscribingAdded();
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            for (tempLoopCounter = 0; tempLoopCounter < renderers.Length; ++tempLoopCounter)
+            for (int i = 0; i < renderers.Length; ++i)
             {
-                renderers[tempLoopCounter].enabled = true;
+                renderers[i].enabled = true;
             }
         }
 
@@ -105,9 +104,9 @@ namespace LiteNetLibManager
         {
             base.OnServerSubscribingRemoved();
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            for (tempLoopCounter = 0; tempLoopCounter < renderers.Length; ++tempLoopCounter)
+            for (int i = 0; i < renderers.Length; ++i)
             {
-                renderers[tempLoopCounter].enabled = false;
+                renderers[i].enabled = false;
             }
         }
     }
