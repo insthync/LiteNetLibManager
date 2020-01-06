@@ -25,16 +25,12 @@ namespace LiteNetLibManager
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        
+        public LiteNetLibGameManager Manager { get; private set; }
 
-        private LiteNetLibGameManager manager;
-        public LiteNetLibGameManager Manager
+        private void Awake()
         {
-            get
-            {
-                if (manager == null)
-                    manager = GetComponent<LiteNetLibGameManager>();
-                return manager;
-            }
+            Manager = GetComponent<LiteNetLibGameManager>();
         }
 
         public void Initialize()

@@ -18,7 +18,8 @@ namespace LiteNetLibManager
 
         private float tempUpdateTime;
         private float lastUpdateTime;
-        LiteNetLibIdentity tempIdentity;
+        private LiteNetLibIdentity tempIdentity;
+        private int tempLoopCounter;
 
         void Start()
         {
@@ -48,7 +49,7 @@ namespace LiteNetLibManager
 
             if (subscriber.ConnectionId == ConnectionId)
                 return true;
-            
+
             foreach (LiteNetLibIdentity spawnedObject in subscriber.SpawnedObjects.Values)
             {
                 Vector3 pos = spawnedObject.transform.position;
@@ -66,9 +67,9 @@ namespace LiteNetLibManager
                 case CheckMethod.Physics3D:
                     {
                         Collider[] hits = Physics.OverlapSphere(transform.position, range, layerMask.value);
-                        foreach (Collider hit in hits)
+                        for (tempLoopCounter = 0; tempLoopCounter < hits.Length; ++tempLoopCounter)
                         {
-                            tempIdentity = hit.GetComponent<LiteNetLibIdentity>();
+                            tempIdentity = hits[tempLoopCounter].GetComponent<LiteNetLibIdentity>();
                             if (tempIdentity != null && tempIdentity.Player != null)
                                 subscribers.Add(tempIdentity.Player);
                         }
@@ -78,9 +79,9 @@ namespace LiteNetLibManager
                 case CheckMethod.Physics2D:
                     {
                         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range, layerMask.value);
-                        foreach (Collider2D hit in hits)
+                        for (tempLoopCounter = 0; tempLoopCounter < hits.Length; ++tempLoopCounter)
                         {
-                            tempIdentity = hit.GetComponent<LiteNetLibIdentity>();
+                            tempIdentity = hits[tempLoopCounter].GetComponent<LiteNetLibIdentity>();
                             if (tempIdentity != null && tempIdentity.Player != null)
                                 subscribers.Add(tempIdentity.Player);
                         }
@@ -94,9 +95,9 @@ namespace LiteNetLibManager
         {
             base.OnServerSubscribingAdded();
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            foreach (Renderer renderer in renderers)
+            for (tempLoopCounter = 0; tempLoopCounter < renderers.Length; ++tempLoopCounter)
             {
-                renderer.enabled = true;
+                renderers[tempLoopCounter].enabled = true;
             }
         }
 
@@ -104,9 +105,9 @@ namespace LiteNetLibManager
         {
             base.OnServerSubscribingRemoved();
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            foreach (Renderer renderer in renderers)
+            for (tempLoopCounter = 0; tempLoopCounter < renderers.Length; ++tempLoopCounter)
             {
-                renderer.enabled = false;
+                renderers[tempLoopCounter].enabled = false;
             }
         }
     }

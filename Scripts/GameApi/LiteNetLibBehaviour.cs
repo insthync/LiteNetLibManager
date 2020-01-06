@@ -5,9 +5,6 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace LiteNetLibManager
 {
@@ -79,15 +76,19 @@ namespace LiteNetLibManager
             }
         }
 
+        private bool isFoundIdentity;
         private LiteNetLibIdentity identity;
         public LiteNetLibIdentity Identity
         {
             get
             {
-                if (identity == null)
+                if (!isFoundIdentity)
+                {
                     identity = GetComponent<LiteNetLibIdentity>();
-                if (identity == null)
-                    identity = GetComponentInParent<LiteNetLibIdentity>();
+                    if (identity == null)
+                        identity = GetComponentInParent<LiteNetLibIdentity>();
+                    isFoundIdentity = identity != null;
+                }
                 return identity;
             }
         }

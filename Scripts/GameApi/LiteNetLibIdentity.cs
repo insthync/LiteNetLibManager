@@ -34,7 +34,7 @@ namespace LiteNetLibManager
         internal readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
         internal readonly List<LiteNetLibSyncList> syncLists = new List<LiteNetLibSyncList>();
 
-        private bool hasSetupBehaviours;
+        private bool isSetupBehaviours;
         internal LiteNetLibBehaviour[] Behaviours { get; private set; }
         internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
         public string AssetId { get { return assetId; } }
@@ -379,7 +379,7 @@ namespace LiteNetLibManager
             if (!isSceneObject)
                 ValidateObjectId();
 
-            if (!hasSetupBehaviours)
+            if (!isSetupBehaviours)
             {
                 // Setup behaviours index, we will use this as reference for network functions
                 Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
@@ -387,7 +387,7 @@ namespace LiteNetLibManager
                 {
                     Behaviours[loopCounter].Setup(Convert.ToByte(loopCounter));
                 }
-                hasSetupBehaviours = true;
+                isSetupBehaviours = true;
             }
 
             // If this is host, hide it then will showing when rebuild subscribers

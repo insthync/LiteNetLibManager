@@ -6,20 +6,16 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibSpawnPoint : MonoBehaviour
     {
-        private Transform cacheTransform;
-        public Transform CacheTransform
-        {
-            get
-            {
-                if (cacheTransform == null)
-                    cacheTransform = GetComponent<Transform>();
-                return cacheTransform;
-            }
-        }
+        public Transform CacheTransform { get; private set; }
 
         public Vector3 Position
         {
             get { return CacheTransform.position; }
+        }
+
+        private void Awake()
+        {
+            CacheTransform = transform;
         }
     }
 }

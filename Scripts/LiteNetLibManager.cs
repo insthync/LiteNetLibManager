@@ -46,26 +46,7 @@ namespace LiteNetLibManager
         private BaseTransportFactory transportFactory;
         public BaseTransportFactory TransportFactory
         {
-            get
-            {
-#if UNITY_WEBGL && !UNITY_EDITOR
-                // Force to use websocket transport if it's running as webgl
-                if (transportFactory == null || !transportFactory.CanUseWithWebGL)
-                    transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
-#else
-                if (useWebSocket)
-                {
-                    if (transportFactory == null || !transportFactory.CanUseWithWebGL)
-                        transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
-                }
-                else
-                {
-                    if (transportFactory == null)
-                        transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
-                }
-#endif
-                return transportFactory;
-            }
+            get { return transportFactory; }
         }
 
         private OfflineTransport offlineTransport;
@@ -75,13 +56,7 @@ namespace LiteNetLibManager
             get
             {
                 if (isOffline)
-                {
-                    if (offlineTransport == null)
-                        offlineTransport = new OfflineTransport();
                     return offlineTransport;
-                }
-                if (transport == null)
-                    transport = TransportFactory.Build();
                 return transport;
             }
         }
@@ -90,7 +65,29 @@ namespace LiteNetLibManager
 
         private bool isOffline;
 
-        protected virtual void Awake() { }
+        protected virtual void Awake()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                // Force to use websocket transport if it's running as webgl
+                if (transportFactory == null || !transportFactory.CanUseWithWebGL)
+                    transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+#else
+            if (useWebSocket)
+            {
+                if (transportFactory == null || !transportFactory.CanUseWithWebGL)
+                    transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+            }
+            else
+            {
+                if (transportFactory == null)
+                    transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
+            }
+#endif
+            transport = TransportFactory.Build();
+
+            if (offlineTransport == null)
+                offlineTransport = new OfflineTransport();
+        }
 
         protected virtual void Start() { }
 

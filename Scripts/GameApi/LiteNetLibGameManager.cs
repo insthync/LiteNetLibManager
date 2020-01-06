@@ -83,21 +83,13 @@ namespace LiteNetLibManager
                 return string.Empty;
             }
         }
-
-        private LiteNetLibAssets assets;
-        public LiteNetLibAssets Assets
-        {
-            get
-            {
-                if (assets == null)
-                    assets = GetComponent<LiteNetLibAssets>();
-                return assets;
-            }
-        }
+        
+        public LiteNetLibAssets Assets { get; private set; }
 
         protected override void Awake()
         {
             base.Awake();
+            Assets = GetComponent<LiteNetLibAssets>();
             serverSceneName = string.Empty;
             if (doNotDestroyOnSceneChanges)
                 DontDestroyOnLoad(gameObject);
@@ -861,7 +853,7 @@ namespace LiteNetLibManager
         {
             if (Assets.PlayerPrefab == null)
                 return null;
-            return SpawnPlayer(connectionId, assets.PlayerPrefab);
+            return SpawnPlayer(connectionId, Assets.PlayerPrefab);
         }
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, LiteNetLibIdentity prefab)
