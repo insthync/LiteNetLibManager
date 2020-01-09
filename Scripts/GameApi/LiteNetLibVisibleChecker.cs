@@ -16,6 +16,9 @@ namespace LiteNetLibManager
         public CheckMethod checkMethod = CheckMethod.Physics3D;
         public LayerMask layerMask = -1;
 
+        private Collider[] colliders = new Collider[5000];
+        private Collider2D[] colliders2D = new Collider2D[5000];
+        private int colliderLength;
         private float tempUpdateTime;
         private float lastUpdateTime;
         private LiteNetLibIdentity tempIdentity;
@@ -65,10 +68,10 @@ namespace LiteNetLibManager
             {
                 case CheckMethod.Physics3D:
                     {
-                        Collider[] hits = Physics.OverlapSphere(transform.position, range, layerMask.value);
-                        for (int i = 0; i < hits.Length; ++i)
+                        colliderLength = Physics.OverlapSphereNonAlloc(transform.position, range, colliders, layerMask.value);
+                        for (int i = 0; i < colliderLength; ++i)
                         {
-                            tempIdentity = hits[i].GetComponent<LiteNetLibIdentity>();
+                            tempIdentity = colliders[i].GetComponent<LiteNetLibIdentity>();
                             if (tempIdentity != null && tempIdentity.Player != null)
                                 subscribers.Add(tempIdentity.Player);
                         }
@@ -77,10 +80,10 @@ namespace LiteNetLibManager
 
                 case CheckMethod.Physics2D:
                     {
-                        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range, layerMask.value);
-                        for (int i = 0; i < hits.Length; ++i)
+                        colliderLength = Physics2D.OverlapCircleNonAlloc(transform.position, range, colliders2D, layerMask.value);
+                        for (int i = 0; i < colliderLength; ++i)
                         {
-                            tempIdentity = hits[i].GetComponent<LiteNetLibIdentity>();
+                            tempIdentity = colliders2D[i].GetComponent<LiteNetLibIdentity>();
                             if (tempIdentity != null && tempIdentity.Player != null)
                                 subscribers.Add(tempIdentity.Player);
                         }
