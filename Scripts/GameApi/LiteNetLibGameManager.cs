@@ -552,12 +552,17 @@ namespace LiteNetLibManager
                 // Sync field at server also have to be client multicast to allow it to multicast to other clients
                 if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
                 {
-                    // If this is not host, set data then pass to other clients because host already set data
+                    // If this is server but it is not host, set data (deserialize) then pass to other clients
+                    // If this is host don't set data because it's already did (in LiteNetLibSyncField class)
                     if (!identity.IsOwnerClient)
                         syncField.Deserialize(reader, true);
                     // Send to other clients
                     foreach (long connectionId in GetConnectionIds())
                     {
+                        // Don't send the update to owner client because it was updated before send update to server
+                        if (connectionId == messageHandler.connectionId)
+                            continue;
+                        // Send update to clients except owner client
                         if (identity.IsSubscribedOrOwning(connectionId))
                             syncField.SendUpdate(true, connectionId);
                     }
@@ -579,12 +584,17 @@ namespace LiteNetLibManager
                 // Sync field at server also have to be client multicast to allow it to multicast to other clients
                 if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
                 {
-                    // If this is not host, set data then pass to other clients because host already set data
+                    // If this is server but it is not host, set data (deserialize) then pass to other clients
+                    // If this is host don't set data because it's already did (in LiteNetLibSyncField class)
                     if (!identity.IsOwnerClient)
                         syncField.Deserialize(reader, false);
                     // Send to other clients
                     foreach (long connectionId in GetConnectionIds())
                     {
+                        // Don't send the update to owner client because it was updated before send update to server
+                        if (connectionId == messageHandler.connectionId)
+                            continue;
+                        // Send update to clients except owner client
                         if (identity.IsSubscribedOrOwning(connectionId))
                             syncField.SendUpdate(false, connectionId);
                     }
