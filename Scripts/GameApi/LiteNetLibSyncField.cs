@@ -121,7 +121,7 @@ namespace LiteNetLibManager
         {
             if (CanSetElement)
                 (GetValue() as INetSerializableWithElement).Element = this;
-            writer.PutValue(GetValue());
+            writer.PutValue(GetFieldType(), GetValue());
         }
 
         internal void SendUpdate(bool isInitial)
