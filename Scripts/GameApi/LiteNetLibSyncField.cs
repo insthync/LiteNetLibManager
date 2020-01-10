@@ -295,23 +295,26 @@ namespace LiteNetLibManager
         private object instance;
 
         /// <summary>
-        /// Use this value to check value changes
-        /// </summary>
-        private object value;
-
-        /// <summary>
         /// Use this variable to tell that it has to update after value changed
         /// </summary>
         private bool hasUpdate;
 
+        /// <summary>
+        /// This method will be invoked after value changed
+        /// </summary>
         private MethodInfo onChangeMethod;
+
+        /// <summary>
+        /// Use this value to check field's value changes
+        /// </summary>
+        private object value;
 
         public LiteNetLibSyncFieldContainer(FieldInfo field, object instance, MethodInfo onChangeMethod)
         {
             this.field = field;
             this.instance = instance;
-            this.value = field.GetValue(instance);
             this.onChangeMethod = onChangeMethod;
+            value = field.GetValue(instance);
         }
 
         public override sealed Type GetFieldType()

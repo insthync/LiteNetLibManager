@@ -273,10 +273,10 @@ namespace LiteNetLibManager
                 try
                 {
                     tempAttribute = field.GetCustomAttribute<SyncFieldAttribute>();
-                    tempLookupType = ClassType;
                     tempOnChangeMethod = null;
                     if (!string.IsNullOrEmpty(tempAttribute.hook))
                     {
+                        tempLookupType = ClassType;
                         while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                         {
                             tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -309,6 +309,7 @@ namespace LiteNetLibManager
 
                             tempLookupType = tempLookupType.BaseType;
                         }
+                        // Tell developers that it can't find the function and clear the function's instance
                         if (tempOnChangeMethod == null)
                             Debug.LogError("Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
                     }
