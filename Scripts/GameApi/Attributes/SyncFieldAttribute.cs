@@ -9,7 +9,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// Sending method type
         /// </summary>
-        public DeliveryMethod deliveryMethod;
+        public DeliveryMethod deliveryMethod = DeliveryMethod.ReliableOrdered;
         /// <summary>
         /// Interval to send network data (0.01f to 2f)
         /// </summary>
@@ -17,18 +17,18 @@ namespace LiteNetLibManager
         /// <summary>
         /// If this is `TRUE` it will syncing although no changes
         /// </summary>
-        public bool alwaysSync;
+        public bool alwaysSync = false;
         /// <summary>
         /// If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later)
         /// </summary>
-        public bool doNotSyncInitialDataImmediately;
+        public bool doNotSyncInitialDataImmediately = false;
         /// <summary>
         /// How data changes handle and sync
         /// </summary>
-        public LiteNetLibSyncField.SyncMode syncMode;
+        public LiteNetLibSyncField.SyncMode syncMode = LiteNetLibSyncField.SyncMode.ServerToClients;
         /// <summary>
         /// Function name which will be invoked when data changed
         /// </summary>
-        public string hook;
+        public string hook = string.Empty;
     }
 }
