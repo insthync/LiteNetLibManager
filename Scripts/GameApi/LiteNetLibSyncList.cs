@@ -48,14 +48,35 @@ namespace LiteNetLibManager
         public bool forOwnerOnly;
         public OnChanged onOperation;
 
-        protected bool CanSetElement { get; private set; }
-        protected INetSerializableWithElement NetSerializableWithElementInstance { get; private set; }
+        protected bool CanSetElement { get; set; }
+        protected INetSerializableWithElement NetSerializableWithElementInstance { get; set; }
 
         public abstract int Count { get; }
+        public abstract Type GetFieldType();
         public abstract void SendOperation(Operation operation, int index);
         public abstract void SendOperation(long connectionId, Operation operation, int index);
         public abstract void DeserializeOperation(NetDataReader reader);
         public abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
+
+        protected override bool ValidateBeforeAccess()
+        {
+            return Behaviour != null && IsServer;
+        }
+
+        internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
+        {
+            base.Setup(behaviour, elementId);
+            CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
+            if (CanSetElement)
+                NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
+            if (Count > 0 && onOperation != null)
+            {
+                for (int i = 0; i < Count; ++i)
+                {
+                    onOperation.Invoke(Operation.Add, i);
+                }
+            }
+        }
     }
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
@@ -170,21 +191,9 @@ namespace LiteNetLibManager
             SendOperation(Operation.Dirty, index);
         }
 
-        internal override void Setup(LiteNetLibBehaviour behaviour, int elementId)
+        public override sealed Type GetFieldType()
         {
-            base.Setup(behaviour, elementId);
-            if (list.Count > 0 && onOperation != null)
-            {
-                for (int i = 0; i < list.Count; ++i)
-                {
-                    onOperation.Invoke(Operation.Add, i);
-                }
-            }
-        }
-
-        protected override bool ValidateBeforeAccess()
-        {
-            return Behaviour != null && IsServer;
+            return typeof(TType);
         }
 
         public override sealed void SendOperation(Operation operation, int index)
