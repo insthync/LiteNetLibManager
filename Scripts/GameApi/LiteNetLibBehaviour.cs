@@ -295,7 +295,7 @@ namespace LiteNetLibManager
                 try
                 {
                     types = method.GetParameters().Select(p => p.ParameterType).ToArray();
-                    RegisterNetFunction(method.Name, new LiteNetLibFunction(types, Delegate.CreateDelegate(Expression.GetActionType(types), method)));
+                    RegisterNetFunction(method.Name, new LiteNetLibFunction(types, Delegate.CreateDelegate(Expression.GetActionType(types), this, method.Name)));
                 }
                 catch (Exception ex)
                 {
