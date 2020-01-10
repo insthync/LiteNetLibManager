@@ -16,6 +16,7 @@ namespace LiteNetLibManager
         {
             public List<FieldInfo> syncFields;
             public List<FieldInfo> syncLists;
+            public List<FieldInfo> syncFieldsWithAttribute;
         }
 
         [LiteNetLibReadOnly, SerializeField]
@@ -162,10 +163,12 @@ namespace LiteNetLibManager
                 tempCacheFields = new CacheFields()
                 {
                     syncFields = new List<FieldInfo>(),
-                    syncLists = new List<FieldInfo>()
+                    syncLists = new List<FieldInfo>(),
+                    syncFieldsWithAttribute = new List<FieldInfo>()
                 };
                 tempLookupNames.Clear();
                 tempLookupType = ClassType;
+                SyncFieldAttribute tempAttribute = null;
                 // Find for sync field and sync list from the class
                 while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
@@ -177,10 +180,20 @@ namespace LiteNetLibManager
                             continue;
 
                         if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
+                        {
                             tempCacheFields.syncFields.Add(lookupField);
-
-                        if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
+                        }
+                        else if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
+                        {
                             tempCacheFields.syncLists.Add(lookupField);
+                        }
+                        else
+                        {
+                            // Must have [SyncField] attribute
+                            tempAttribute = lookupField.GetCustomAttribute<SyncFieldAttribute>();
+                            if (tempAttribute != null)
+                                tempCacheFields.syncFieldsWithAttribute.Add(lookupField);
+                        }
 
                         tempLookupNames.Add(lookupField.Name);
                     }
@@ -193,6 +206,7 @@ namespace LiteNetLibManager
             }
             SetupSyncElements(tempCacheFields.syncFields, Identity.syncFields);
             SetupSyncElements(tempCacheFields.syncLists, Identity.syncLists);
+            SetupSyncFieldsWithAttribute(tempCacheFields.syncFieldsWithAttribute);
             // Setup net functions
             if (!CacheNetFunctions.TryGetValue(TypeName, out tempCacheMethods))
             {
@@ -243,6 +257,33 @@ namespace LiteNetLibManager
                 try
                 {
                     RegisterSyncElement((T)field.GetValue(this), elementList);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+        }
+
+        private void SetupSyncFieldsWithAttribute(List<FieldInfo> fields)
+        {
+            if (fields == null || fields.Count == 0)
+                return;
+
+            SyncFieldAttribute tempAttribute = null;
+            LiteNetLibSyncField tempField = null;
+            foreach (FieldInfo field in fields)
+            {
+                try
+                {
+                    tempAttribute = field.GetCustomAttribute<SyncFieldAttribute>();
+                    tempField = Activator.CreateInstance(typeof(LiteNetLibSyncField<>).MakeGenericType(field.FieldType)) as LiteNetLibSyncField;
+                    tempField.deliveryMethod = tempAttribute.deliveryMethod;
+                    tempField.sendInterval = tempAttribute.sendInterval;
+                    tempField.alwaysSync = tempAttribute.alwaysSync;
+                    tempField.doNotSyncInitialDataImmediately = tempAttribute.doNotSyncInitialDataImmediately;
+                    tempField.syncMode = tempAttribute.syncMode;
+                    RegisterSyncElement(tempField, Identity.syncFields);
                 }
                 catch (Exception ex)
                 {

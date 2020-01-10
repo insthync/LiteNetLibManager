@@ -5,39 +5,55 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
+    public enum SyncFieldMode : byte
+    {
+        /// <summary>
+        /// Changes handle by server
+        /// Will send to connected clients when changes occurs on server
+        /// </summary>
+        ServerToClients,
+        /// <summary>
+        /// Changes handle by server
+        /// Will send to owner-client when changes occurs on server
+        /// </summary>
+        ServerToOwnerClient,
+        /// <summary>
+        /// Changes handle by owner-client
+        /// Will send to server then server multicast to other clients when changes occurs on owner-client
+        /// </summary>
+        ClientMulticast
+    }
+
     public abstract class LiteNetLibSyncField : LiteNetLibElement
     {
-        public enum SyncMode : byte
-        {
-            /// <summary>
-            /// Changes handle by server
-            /// Will send to connected clients when changes occurs on server
-            /// </summary>
-            ServerToClients,
-            /// <summary>
-            /// Changes handle by server
-            /// Will send to owner-client when changes occurs on server
-            /// </summary>
-            ServerToOwnerClient,
-            /// <summary>
-            /// Changes handle by owner-client
-            /// Will send to server then server multicast to other clients when changes occurs on owner-client
-            /// </summary>
-            ClientMulticast
-        }
-
+        [Tooltip("Sending method type")]
         public DeliveryMethod deliveryMethod;
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
-        [Tooltip("If this is TRUE it will syncing although no changes")]
+        [Tooltip("If this is `TRUE` it will syncing although no changes")]
         public bool alwaysSync;
-        [Tooltip("If this is TRUE it will not sync initial data immdediately with spawn message (it will sync later)")]
+        [Tooltip("If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later)")]
         public bool doNotSyncInitialDataImmediately;
         [Tooltip("How data changes handle and sync")]
-        public SyncMode syncMode;
+        public SyncFieldMode syncMode;
         public bool hasUpdate { get; protected set; }
         protected float lastSentTime;
+
+        private bool checkedAbleToSetElement;
+        private bool isAbleToSetElement;
+        protected bool IsAbleToSetElement
+        {
+            get
+            {
+                if (!checkedAbleToSetElement)
+                {
+                    checkedAbleToSetElement = true;
+                    isAbleToSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
+                }
+                return isAbleToSetElement;
+            }
+        }
 
         internal void NetworkUpdate(float time)
         {
@@ -56,6 +72,7 @@ namespace LiteNetLibManager
             SendUpdate(false);
         }
 
+        public abstract Type GetFieldType();
         public abstract object Get();
         public abstract void Set(object value);
         internal abstract void SendUpdate(bool isInitial);
@@ -63,25 +80,16 @@ namespace LiteNetLibManager
         internal abstract void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod);
         internal abstract void Deserialize(NetDataReader reader, bool isInitial);
         internal abstract void Serialize(NetDataWriter writer);
+
+        public static bool TypeCanBeSyncField(Type type)
+        {
+            // TODO: Implement this
+            return true;
+        }
     }
     
     public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
-        private bool checkedAbleToSetElement;
-        private bool isAbleToSetElement;
-        protected bool IsAbleToSetElement
-        {
-            get
-            {
-                if (!checkedAbleToSetElement)
-                {
-                    checkedAbleToSetElement = true;
-                    isAbleToSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(typeof(TType));
-                }
-                return isAbleToSetElement;
-            }
-        }
-
         /// <summary>
         /// Action for initial state, data this will be invoked when data changes
         /// </summary>
@@ -109,6 +117,11 @@ namespace LiteNetLibManager
                         onChange.Invoke(false, value);
                 }
             }
+        }
+
+        public override Type GetFieldType()
+        {
+            return typeof(TType);
         }
 
         public override object Get()
@@ -148,18 +161,18 @@ namespace LiteNetLibManager
 
             switch (syncMode)
             {
-                case SyncMode.ServerToClients:
+                case SyncFieldMode.ServerToClients:
                     foreach (long connectionId in Manager.GetConnectionIds())
                     {
                         if (Identity.IsSubscribedOrOwning(connectionId))
                             SendUpdate(isInitial, connectionId);
                     }
                     break;
-                case SyncMode.ServerToOwnerClient:
+                case SyncFieldMode.ServerToOwnerClient:
                     if (Manager.ContainsConnectionId(ConnectionId))
                         SendUpdate(isInitial, ConnectionId);
                     break;
-                case SyncMode.ClientMulticast:
+                case SyncFieldMode.ClientMulticast:
                     if (IsOwnerClient)
                     {
                         // Client send data to server, it should reliable-ordered
