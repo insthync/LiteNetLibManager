@@ -12,8 +12,8 @@ namespace LiteNetLibManager
     {
         private struct CachingFieldName
         {
-            public IList<string> fieldNames;
-            public IList<string> listNames;
+            public List<FieldInfo> syncFields;
+            public List<FieldInfo> syncLists;
         }
 
         [LiteNetLibReadOnly, SerializeField]
@@ -42,10 +42,8 @@ namespace LiteNetLibManager
         private readonly Dictionary<string, int> netFunctionIds = new Dictionary<string, int>();
 
         // Optimize garbage collector
-        private string tempFieldKey;
-        private FieldInfo tempField;
-        private IList<string> tempFieldNames;
-        private IList<string> tempListNames;
+        private List<FieldInfo> tempSyncFields;
+        private List<FieldInfo> tempSyncLists;
         private CachingFieldName tempCachingFieldName;
 
         private Type classType;
@@ -154,59 +152,74 @@ namespace LiteNetLibManager
         {
             this.behaviourIndex = behaviourIndex;
             OnSetup();
-            tempFieldNames = null;
-            tempListNames = null;
+            tempSyncFields = null;
+            tempSyncLists = null;
             // Caching field names
             if (!CacheFieldNames.TryGetValue(TypeName, out tempCachingFieldName))
             {
-                tempFieldNames = new List<string>();
-                tempListNames = new List<string>();
-                List<FieldInfo> fields = new List<FieldInfo>(ClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+                tempSyncFields = new List<FieldInfo>();
+                tempSyncLists = new List<FieldInfo>();
+                List<FieldInfo> fields = new List<FieldInfo>(GetFields(ClassType));
                 fields.Sort((a, b) => a.Name.CompareTo(b.Name));
                 foreach (FieldInfo field in fields)
                 {
                     if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
-                        tempFieldNames.Add(field.Name);
+                        tempSyncFields.Add(field);
                     if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
-                        tempListNames.Add(field.Name);
+                        tempSyncLists.Add(field);
                 }
                 CacheFieldNames.Add(TypeName, new CachingFieldName()
                 {
-                    fieldNames = tempFieldNames,
-                    listNames = tempListNames,
+                    syncFields = tempSyncFields,
+                    syncLists = tempSyncLists,
                 });
             }
             else
             {
-                tempFieldNames = tempCachingFieldName.fieldNames;
-                tempListNames = tempCachingFieldName.listNames;
+                tempSyncFields = tempCachingFieldName.syncFields;
+                tempSyncLists = tempCachingFieldName.syncLists;
             }
-            SetupSyncElements(tempFieldNames, CacheSyncFieldInfos, Identity.syncFields);
-            SetupSyncElements(tempListNames, CacheSyncListInfos, Identity.syncLists);
+            SetupSyncElements(tempSyncFields, Identity.syncFields);
+            SetupSyncElements(tempSyncLists, Identity.syncLists);
         }
 
-        private void SetupSyncElements<T>(IList<string> fieldNames, Dictionary<string, FieldInfo> cacheInfos, List<T> elementList) where T : LiteNetLibElement
+        #region RegisterSyncElements
+        private List<FieldInfo> GetFields(Type type, List<FieldInfo> fields = null)
         {
-            if (fieldNames == null || fieldNames.Count == 0)
+            if (type == typeof(LiteNetLibBehaviour))
+            {
+                if (fields == null)
+                    fields = new List<FieldInfo>();
+                return fields;
+            }
+
+            if (fields == null)
+            {
+                fields = new List<FieldInfo>();
+                // Get fields from inherit classes
+                fields.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+            }
+            else
+            {
+                // Get only non public fields from base classes
+                // Because all public fields already found while get fields from inherit classes
+                fields.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance));
+            }
+
+            return GetFields(type.BaseType, fields);
+        }
+
+        private void SetupSyncElements<T>(List<FieldInfo> fields, List<T> elementList) where T : LiteNetLibElement
+        {
+            if (fields == null || fields.Count == 0)
                 return;
 
-            foreach (string fieldName in fieldNames)
+            foreach (FieldInfo field in fields)
             {
                 // Get field info
-                tempFieldKey = TypeName + "_" + fieldName;
-                if (!cacheInfos.TryGetValue(tempFieldKey, out tempField))
-                {
-                    tempField = ClassType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    cacheInfos[tempFieldKey] = tempField;
-                }
-                if (tempField == null)
-                {
-                    Debug.LogWarning("Element named " + fieldName + " was not found");
-                    continue;
-                }
                 try
                 {
-                    RegisterSyncElement((T)tempField.GetValue(this), elementList);
+                    RegisterSyncElement((T)field.GetValue(this), elementList);
                 }
                 catch (Exception ex)
                 {
@@ -231,6 +244,7 @@ namespace LiteNetLibManager
         {
             RegisterSyncElement(syncList, Identity.syncLists);
         }
+        #endregion
 
         #region RegisterNetFunction
         public void RegisterNetFunction(NetFunctionDelegate func)
