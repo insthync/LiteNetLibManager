@@ -7,7 +7,7 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public abstract class LiteNetLibSyncList : LiteNetLibElement
+    public abstract partial class LiteNetLibSyncList : LiteNetLibElement
     {
         public partial struct Operation
         {
