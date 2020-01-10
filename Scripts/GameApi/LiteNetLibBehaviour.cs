@@ -12,7 +12,7 @@ namespace LiteNetLibManager
 {
     public partial class LiteNetLibBehaviour : MonoBehaviour, INetSerializable
     {
-        private struct CacheFieldInfos
+        private struct CacheFields
         {
             public List<FieldInfo> syncFields;
             public List<FieldInfo> syncLists;
@@ -37,14 +37,18 @@ namespace LiteNetLibManager
 
         private float lastSentTime;
         
-        private static readonly Dictionary<string, CacheFieldInfos> CacheSyncElements = new Dictionary<string, CacheFieldInfos>();
+        private static readonly Dictionary<string, CacheFields> CacheSyncElements = new Dictionary<string, CacheFields>();
         private static readonly Dictionary<string, List<MethodInfo>> CacheNetFunctions = new Dictionary<string, List<MethodInfo>>();
 
         private readonly Dictionary<string, int> netFunctionIds = new Dictionary<string, int>();
 
         // Optimize garbage collector
-        private CacheFieldInfos tempFieldInfos;
-        private List<MethodInfo> tempMethodInfos;
+        private CacheFields tempCacheFields;
+        private List<MethodInfo> tempCacheMethods;
+        private Type tempLookupType;
+        private HashSet<string> tempLookupNames = new HashSet<string>();
+        private FieldInfo[] tempLookupFields;
+        private MethodInfo[] tempLookupMethods;
 
         private Type classType;
         /// <summary>
@@ -153,63 +157,82 @@ namespace LiteNetLibManager
             this.behaviourIndex = behaviourIndex;
             OnSetup();
             // Setup sync elements
-            if (!CacheSyncElements.TryGetValue(TypeName, out tempFieldInfos))
+            if (!CacheSyncElements.TryGetValue(TypeName, out tempCacheFields))
             {
-                tempFieldInfos = new CacheFieldInfos()
+                tempCacheFields = new CacheFields()
                 {
                     syncFields = new List<FieldInfo>(),
                     syncLists = new List<FieldInfo>()
                 };
-                List<FieldInfo> fields = new List<FieldInfo>(GetFields(ClassType));
-                fields.Sort((a, b) => a.Name.CompareTo(b.Name));
-                foreach (FieldInfo field in fields)
+                tempLookupNames.Clear();
+                tempLookupType = ClassType;
+                // Find for sync field and sync list from the class
+                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
-                        tempFieldInfos.syncFields.Add(field);
-                    if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
-                        tempFieldInfos.syncLists.Add(field);
-                }
-                CacheSyncElements.Add(TypeName, tempFieldInfos);
-            }
-            SetupSyncElements(tempFieldInfos.syncFields, Identity.syncFields);
-            SetupSyncElements(tempFieldInfos.syncLists, Identity.syncLists);
-            // Setup net functions
-            if (!CacheNetFunctions.TryGetValue(TypeName, out tempMethodInfos))
-            {
-                tempMethodInfos = new List<MethodInfo>();
-                List<MethodInfo> methods = new List<MethodInfo>(GetMethods(ClassType));
-                NetFunctionAttribute tempAttribute = null;
-                foreach (MethodInfo method in methods)
-                {
-                    tempAttribute = method.GetCustomAttribute<NetFunctionAttribute>();
-                    if (tempAttribute == null)
-                        continue;
-                    if (method.ReturnType != typeof(void))
+                    tempLookupFields = tempLookupType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    foreach (FieldInfo lookupField in tempLookupFields)
                     {
-                        Debug.LogError("Cannot register net function [" + method.Name + "] return type must be void");
-                        continue;
+                        // Avoid duplicate fields
+                        if (tempLookupNames.Contains(lookupField.Name))
+                            continue;
+
+                        if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
+                            tempCacheFields.syncFields.Add(lookupField);
+
+                        if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
+                            tempCacheFields.syncLists.Add(lookupField);
+
+                        tempLookupNames.Add(lookupField.Name);
                     }
-                    tempMethodInfos.Add(method);
+                    tempLookupType = tempLookupType.BaseType;
                 }
-                CacheNetFunctions.Add(TypeName, tempMethodInfos);
+                // Sort name to make sure the fields will be sync correctly by its index
+                tempCacheFields.syncFields.Sort((a, b) => a.Name.CompareTo(b.Name));
+                tempCacheFields.syncLists.Sort((a, b) => a.Name.CompareTo(b.Name));
+                CacheSyncElements.Add(TypeName, tempCacheFields);
             }
-            SetupNetFunctions(tempMethodInfos);
+            SetupSyncElements(tempCacheFields.syncFields, Identity.syncFields);
+            SetupSyncElements(tempCacheFields.syncLists, Identity.syncLists);
+            // Setup net functions
+            if (!CacheNetFunctions.TryGetValue(TypeName, out tempCacheMethods))
+            {
+                tempCacheMethods = new List<MethodInfo>();
+                tempLookupNames.Clear();
+                tempLookupType = ClassType;
+                NetFunctionAttribute tempAttribute = null;
+                // Find for function with [NetFunction] attribute to register as net function
+                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
+                {
+                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    foreach (MethodInfo lookupMethod in tempLookupMethods)
+                    {
+                        // Avoid duplicate functions
+                        if (tempLookupNames.Contains(lookupMethod.Name))
+                            continue;
+
+                        // Must have [NetFunction] attribute
+                        tempAttribute = lookupMethod.GetCustomAttribute<NetFunctionAttribute>();
+                        if (tempAttribute == null)
+                            continue;
+
+                        // Return type must be `void`
+                        if (lookupMethod.ReturnType != typeof(void))
+                        {
+                            Debug.LogError("Cannot register net function [" + lookupMethod.Name + "] return type must be void");
+                            continue;
+                        }
+
+                        tempCacheMethods.Add(lookupMethod);
+                        tempLookupNames.Add(lookupMethod.Name);
+                    }
+                    tempLookupType = tempLookupType.BaseType;
+                }
+                CacheNetFunctions.Add(TypeName, tempCacheMethods);
+            }
+            SetupNetFunctions(tempCacheMethods);
         }
 
         #region RegisterSyncElements
-        private List<FieldInfo> GetFields(Type type, List<FieldInfo> fields = null)
-        {
-            if (fields == null)
-                fields = new List<FieldInfo>();
-
-            if (type == typeof(LiteNetLibBehaviour))
-                return fields;
-
-            fields.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
-
-            return GetFields(type.BaseType, fields);
-        }
-
         private void SetupSyncElements<T>(List<FieldInfo> fields, List<T> elementList) where T : LiteNetLibElement
         {
             if (fields == null || fields.Count == 0)
@@ -247,19 +270,6 @@ namespace LiteNetLibManager
         #endregion
 
         #region RegisterNetFunction
-        private List<MethodInfo> GetMethods(Type type, List<MethodInfo> methods = null)
-        {
-            if (methods == null)
-                methods = new List<MethodInfo>();
-
-            if (type == typeof(LiteNetLibBehaviour))
-                return methods;
-
-            methods.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-
-            return GetMethods(type.BaseType, methods);
-        }
-
         private void SetupNetFunctions(List<MethodInfo> methods)
         {
             if (methods == null || methods.Count == 0)
