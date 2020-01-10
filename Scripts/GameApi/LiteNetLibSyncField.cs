@@ -2,6 +2,7 @@
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using System.Reflection;
 
 namespace LiteNetLibManager
 {
@@ -37,7 +38,6 @@ namespace LiteNetLibManager
         public bool doNotSyncInitialDataImmediately;
         [Tooltip("How data changes handle and sync")]
         public SyncFieldMode syncMode;
-        public bool hasUpdate { get; protected set; }
         protected float lastSentTime;
 
         private bool checkedAbleToSetElement;
@@ -55,103 +55,86 @@ namespace LiteNetLibManager
             }
         }
 
+        private bool onChangeCalled;
+
         internal void NetworkUpdate(float time)
         {
             if (!ValidateBeforeAccess())
                 return;
 
-            if (!alwaysSync && !hasUpdate)
+            // No update
+            if (!alwaysSync && !HasUpdate())
                 return;
 
+            // Call `OnChange` if it's not called yet.
+            if (HasUpdate() && !onChangeCalled)
+            {
+                OnChange(false);
+                onChangeCalled = true;
+            }
+
+            // It's time to send update?
             if (time - lastSentTime < sendInterval)
                 return;
 
+            // Set last send update time
             lastSentTime = time;
-            hasUpdate = false;
 
+            // Send the update
             SendUpdate(false);
+
+            // Update already sent
+            Updated();
+
+            // Reset on change called state to call `OnChange` later when has update
+            onChangeCalled = false;
         }
 
         public abstract Type GetFieldType();
-        public abstract object Get();
-        public abstract void Set(object value);
-        internal abstract void SendUpdate(bool isInitial);
-        internal abstract void SendUpdate(bool isInitial, long connectionId);
-        internal abstract void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod);
-        internal abstract void Deserialize(NetDataReader reader, bool isInitial);
-        internal abstract void Serialize(NetDataWriter writer);
+        public abstract object GetValue();
+        public abstract void SetValue(object value);
+        internal abstract void OnChange(bool initial);
+        internal abstract bool HasUpdate();
+        internal abstract void Updated();
 
-        public static bool TypeCanBeSyncField(Type type)
-        {
-            // TODO: Implement this
-            return true;
-        }
-    }
-    
-    public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
-    {
-        /// <summary>
-        /// Action for initial state, data this will be invoked when data changes
-        /// </summary>
-        public Action<bool, TType> onChange;
-
-        [SerializeField]
-        protected TType value;
-        public TType Value
-        {
-            get { return value; }
-            set
-            {
-                if (!ValidateBeforeAccess())
-                {
-                    // Set intial values
-                    this.value = value;
-                    return;
-                }
-
-                if (IsValueChanged(value))
-                {
-                    this.value = value;
-                    hasUpdate = true;
-                    if (onChange != null)
-                        onChange.Invoke(false, value);
-                }
-            }
-        }
-
-        public override Type GetFieldType()
-        {
-            return typeof(TType);
-        }
-
-        public override object Get()
-        {
-            return Value;
-        }
-
-        public override void Set(object value)
-        {
-            Value = (TType)value;
-        }
-
-        protected virtual bool IsValueChanged(TType newValue)
-        {
-            return value == null || !value.Equals(newValue);
-        }
-
-        public static implicit operator TType(LiteNetLibSyncField<TType> field)
-        {
-            return field.Value;
-        }
-
-        internal override void Setup(LiteNetLibBehaviour behaviour, int elementId)
+        internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
-            if (onChange != null)
-                onChange.Invoke(true, Value);
+            OnChange(true);
         }
 
-        internal override sealed void SendUpdate(bool isInitial)
+        internal void Deserialize(NetDataReader reader, bool isInitial)
+        {
+            DeserializeValue(reader);
+            OnChange(isInitial);
+        }
+
+        internal void Serialize(NetDataWriter writer)
+        {
+            SerializeValue(writer);
+        }
+
+        internal virtual void DeserializeValue(NetDataReader reader)
+        {
+            if (IsAbleToSetElement)
+            {
+                object instance = Activator.CreateInstance(GetFieldType());
+                (instance as INetSerializableWithElement).Element = this;
+                (instance as INetSerializableWithElement).Deserialize(reader);
+                SetValue(instance);
+                return;
+            }
+            SetValue(reader.GetValue(GetFieldType()));
+        }
+
+        internal virtual void SerializeValue(NetDataWriter writer)
+        {
+            if (IsAbleToSetElement)
+                (GetValue() as INetSerializableWithElement).Element = this;
+            writer.PutValue(GetValue());
+        }
+
+        internal void SendUpdate(bool isInitial)
         {
             if (!ValidateBeforeAccess())
             {
@@ -186,12 +169,12 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override sealed void SendUpdate(bool isInitial, long connectionId)
+        internal void SendUpdate(bool isInitial, long connectionId)
         {
             SendUpdate(isInitial, connectionId, deliveryMethod);
         }
 
-        internal override sealed void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod)
+        internal void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod)
         {
             if (!ValidateBeforeAccess() || !IsServer)
                 return;
@@ -204,42 +187,136 @@ namespace LiteNetLibManager
                 SerializeForSend);
         }
 
-        protected void SerializeForSend(NetDataWriter writer)
+        private void SerializeForSend(NetDataWriter writer)
         {
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             Serialize(writer);
         }
 
-        internal override sealed void Deserialize(NetDataReader reader, bool isInitial)
+        public static bool TypeCanBeSyncField(Type type)
         {
-            DeserializeValue(reader);
-            if (onChange != null)
-                onChange.Invoke(isInitial, value);
+            // TODO: Implement this
+            return true;
+        }
+    }
+
+    public class LiteNetLibSyncFieldContainer : LiteNetLibSyncField
+    {
+        private FieldInfo field;
+        private object instance;
+        private object value;
+
+        public LiteNetLibSyncFieldContainer(FieldInfo field, object instance)
+        {
+            this.field = field;
+            this.instance = instance;
+            this.value = field.GetValue(instance);
         }
 
-        internal override sealed void Serialize(NetDataWriter writer)
+        public override sealed Type GetFieldType()
         {
-            SerializeValue(writer);
+            return field.FieldType;
         }
 
-        protected virtual void DeserializeValue(NetDataReader reader)
+        public override sealed object GetValue()
         {
-            if (IsAbleToSetElement)
+            return value;
+        }
+
+        public override sealed void SetValue(object value)
+        {
+            this.value = value;
+        }
+
+        internal override sealed bool HasUpdate()
+        {
+            return value != field.GetValue(instance);
+        }
+
+        internal override void Updated()
+        {
+            value = field.GetValue(instance);
+        }
+
+        internal override sealed void OnChange(bool initial)
+        {
+            // TODO: Change field value then call hook function
+
+        }
+    }
+    
+    public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
+    {
+        /// <summary>
+        /// Action for initial state, data this will be invoked when data changes
+        /// </summary>
+        public Action<bool, TType> onChange;
+
+        /// <summary>
+        /// Use this variable to tell that there is update after value changed
+        /// </summary>
+        protected bool hasUpdate;
+
+        [SerializeField]
+        protected TType value;
+        public TType Value
+        {
+            get { return value; }
+            set
             {
-                object instance = Activator.CreateInstance(typeof(TType));
-                (instance as INetSerializableWithElement).Element = this;
-                (instance as INetSerializableWithElement).Deserialize(reader);
-                value = (TType)instance;
-                return;
+                if (!ValidateBeforeAccess())
+                {
+                    // Set intial values
+                    this.value = value;
+                    return;
+                }
+
+                if (IsValueChanged(value))
+                {
+                    this.value = value;
+                    hasUpdate = true;
+                }
             }
-            value = (TType)reader.GetValue(typeof(TType));
         }
 
-        protected virtual void SerializeValue(NetDataWriter writer)
+        protected virtual bool IsValueChanged(TType newValue)
         {
-            if (IsAbleToSetElement)
-                (value as INetSerializableWithElement).Element = this;
-            writer.PutValue(value);
+            return value == null || !value.Equals(newValue);
+        }
+
+        internal override bool HasUpdate()
+        {
+            return hasUpdate;
+        }
+
+        internal override void Updated()
+        {
+            hasUpdate = false;
+        }
+
+        public override sealed Type GetFieldType()
+        {
+            return typeof(TType);
+        }
+
+        public override sealed object GetValue()
+        {
+            return Value;
+        }
+
+        public override sealed void SetValue(object value)
+        {
+            Value = (TType)value;
+        }
+
+        internal override sealed void OnChange(bool initial)
+        {
+            onChange.Invoke(initial, Value);
+        }
+
+        public static implicit operator TType(LiteNetLibSyncField<TType> field)
+        {
+            return field.Value;
         }
     }
 
@@ -254,8 +331,6 @@ namespace LiteNetLibManager
             {
                 Value[i] = value;
                 hasUpdate = true;
-                if (onChange != null)
-                    onChange.Invoke(false, Value);
             }
         }
 
