@@ -321,12 +321,12 @@ namespace LiteNetLibManager
 
         public override sealed object GetValue()
         {
-            return value;
+            return field.GetValue(instance);
         }
 
         public override sealed void SetValue(object value)
         {
-            this.value = value;
+            field.SetValue(instance, value);
         }
 
         internal override sealed bool HasUpdate()
@@ -334,7 +334,7 @@ namespace LiteNetLibManager
             if (hasUpdate)
                 return true;
 
-            if (value != field.GetValue(instance))
+            if (value == null || !value.Equals(field.GetValue(instance)))
             {
                 // Set value because it's going to sync later
                 value = field.GetValue(instance);
@@ -352,9 +352,6 @@ namespace LiteNetLibManager
 
         internal override sealed void OnChange(bool initial)
         {
-            // Change field value
-            field.SetValue(instance, GetValue());
-            // Call hook function
             if (onChangeMethod != null)
                 onChangeMethod.Invoke(instance, new object[] { GetValue() });
         }
