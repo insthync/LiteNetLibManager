@@ -550,7 +550,7 @@ namespace LiteNetLibManager
             {
                 LiteNetLibSyncField syncField = identity.GetSyncField(info);
                 // Sync field at server also have to be client multicast to allow it to multicast to other clients
-                if (syncField != null && syncField.syncMode == SyncFieldMode.ClientMulticast)
+                if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
                 {
                     // If this is not host, set data then pass to other clients because host already set data
                     if (!identity.IsOwnerClient)
@@ -577,7 +577,7 @@ namespace LiteNetLibManager
             {
                 LiteNetLibSyncField syncField = identity.GetSyncField(info);
                 // Sync field at server also have to be client multicast to allow it to multicast to other clients
-                if (syncField != null && syncField.syncMode == SyncFieldMode.ClientMulticast)
+                if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
                 {
                     // If this is not host, set data then pass to other clients because host already set data
                     if (!identity.IsOwnerClient)

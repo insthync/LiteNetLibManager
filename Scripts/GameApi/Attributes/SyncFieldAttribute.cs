@@ -25,7 +25,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// How data changes handle and sync
         /// </summary>
-        public SyncFieldMode syncMode;
+        public LiteNetLibSyncField.SyncMode syncMode;
         /// <summary>
         /// Function name which will be invoked when data changed
         /// </summary>

@@ -6,27 +6,27 @@ using System.Reflection;
 
 namespace LiteNetLibManager
 {
-    public enum SyncFieldMode : byte
-    {
-        /// <summary>
-        /// Changes handle by server
-        /// Will send to connected clients when changes occurs on server
-        /// </summary>
-        ServerToClients,
-        /// <summary>
-        /// Changes handle by server
-        /// Will send to owner-client when changes occurs on server
-        /// </summary>
-        ServerToOwnerClient,
-        /// <summary>
-        /// Changes handle by owner-client
-        /// Will send to server then server multicast to other clients when changes occurs on owner-client
-        /// </summary>
-        ClientMulticast
-    }
-
     public abstract class LiteNetLibSyncField : LiteNetLibElement
     {
+        public enum SyncMode : byte
+        {
+            /// <summary>
+            /// Changes handle by server
+            /// Will send to connected clients when changes occurs on server
+            /// </summary>
+            ServerToClients,
+            /// <summary>
+            /// Changes handle by server
+            /// Will send to owner-client when changes occurs on server
+            /// </summary>
+            ServerToOwnerClient,
+            /// <summary>
+            /// Changes handle by owner-client
+            /// Will send to server then server multicast to other clients when changes occurs on owner-client
+            /// </summary>
+            ClientMulticast
+        }
+
         [Tooltip("Sending method type")]
         public DeliveryMethod deliveryMethod;
         [Tooltip("Interval to send network data")]
@@ -37,7 +37,7 @@ namespace LiteNetLibManager
         [Tooltip("If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later)")]
         public bool doNotSyncInitialDataImmediately;
         [Tooltip("How data changes handle and sync")]
-        public SyncFieldMode syncMode;
+        public SyncMode syncMode;
         protected float lastSentTime;
         
         protected bool CanSetElement { get; private set; }
@@ -133,18 +133,18 @@ namespace LiteNetLibManager
 
             switch (syncMode)
             {
-                case SyncFieldMode.ServerToClients:
+                case SyncMode.ServerToClients:
                     foreach (long connectionId in Manager.GetConnectionIds())
                     {
                         if (Identity.IsSubscribedOrOwning(connectionId))
                             SendUpdate(isInitial, connectionId);
                     }
                     break;
-                case SyncFieldMode.ServerToOwnerClient:
+                case SyncMode.ServerToOwnerClient:
                     if (Manager.ContainsConnectionId(ConnectionId))
                         SendUpdate(isInitial, ConnectionId);
                     break;
-                case SyncFieldMode.ClientMulticast:
+                case SyncMode.ClientMulticast:
                     if (IsOwnerClient)
                     {
                         // Client send data to server, it should reliable-ordered
