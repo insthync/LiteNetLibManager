@@ -309,7 +309,7 @@ namespace LiteNetLibManager
 
                             tempLookupType = tempLookupType.BaseType;
                         }
-                        if (tempOnChangeMethod != null)
+                        if (tempOnChangeMethod == null)
                             Debug.LogError("Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
                     }
                     tempSyncField = new LiteNetLibSyncFieldContainer(field, this, tempOnChangeMethod);
