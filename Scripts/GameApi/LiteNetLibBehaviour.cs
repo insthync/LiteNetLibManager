@@ -184,6 +184,11 @@ namespace LiteNetLibManager
                     tempAttribute = method.GetCustomAttribute<NetFunctionAttribute>();
                     if (tempAttribute == null)
                         continue;
+                    if (method.ReturnType == typeof(void))
+                    {
+                        Debug.LogError("Cannot register net function [" + method.Name + "] return type must be void");
+                        continue;
+                    }
                     tempMethodInfos.Add(method);
                 }
                 CacheNetFunctions.Add(TypeName, tempMethodInfos);
