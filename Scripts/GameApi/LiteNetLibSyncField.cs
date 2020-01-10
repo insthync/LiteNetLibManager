@@ -39,21 +39,9 @@ namespace LiteNetLibManager
         [Tooltip("How data changes handle and sync")]
         public SyncFieldMode syncMode;
         protected float lastSentTime;
-
-        private bool checkedAbleToSetElement;
-        private bool isAbleToSetElement;
-        protected bool IsAbleToSetElement
-        {
-            get
-            {
-                if (!checkedAbleToSetElement)
-                {
-                    checkedAbleToSetElement = true;
-                    isAbleToSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
-                }
-                return isAbleToSetElement;
-            }
-        }
+        
+        protected bool CanSetElement { get; private set; }
+        protected INetSerializableWithElement NetSerializableWithElementInstance { get; private set; }
 
         private bool onChangeCalled;
 
@@ -100,6 +88,8 @@ namespace LiteNetLibManager
         internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
+            CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
+            NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
             OnChange(true);
         }
 
@@ -116,12 +106,11 @@ namespace LiteNetLibManager
 
         internal virtual void DeserializeValue(NetDataReader reader)
         {
-            if (IsAbleToSetElement)
+            if (CanSetElement)
             {
-                object instance = Activator.CreateInstance(GetFieldType());
-                (instance as INetSerializableWithElement).Element = this;
-                (instance as INetSerializableWithElement).Deserialize(reader);
-                SetValue(instance);
+                NetSerializableWithElementInstance.Element = this;
+                NetSerializableWithElementInstance.Deserialize(reader);
+                SetValue(NetSerializableWithElementInstance);
                 return;
             }
             SetValue(reader.GetValue(GetFieldType()));
@@ -129,7 +118,7 @@ namespace LiteNetLibManager
 
         internal virtual void SerializeValue(NetDataWriter writer)
         {
-            if (IsAbleToSetElement)
+            if (CanSetElement)
                 (GetValue() as INetSerializableWithElement).Element = this;
             writer.PutValue(GetValue());
         }
@@ -195,16 +184,124 @@ namespace LiteNetLibManager
 
         public static bool TypeCanBeSyncField(Type type)
         {
-            // TODO: Implement this
-            return true;
+            if (type == typeof(bool))
+                return true;
+
+            if (type == typeof(bool[]))
+                return true;
+
+            if (type == typeof(byte))
+                return true;
+
+            if (type == typeof(byte[]))
+                return true;
+
+            if (type == typeof(char))
+                return true;
+
+            if (type == typeof(double))
+                return true;
+
+            if (type == typeof(double[]))
+                return true;
+
+            if (type == typeof(float))
+                return true;
+
+            if (type == typeof(float[]))
+                return true;
+
+            if (type == typeof(int))
+                return true;
+
+            if (type == typeof(int[]))
+                return true;
+
+            if (type == typeof(long))
+                return true;
+
+            if (type == typeof(long[]))
+                return true;
+
+            if (type == typeof(sbyte))
+                return true;
+
+            if (type == typeof(short))
+                return true;
+
+            if (type == typeof(short[]))
+                return true;
+
+            if (type == typeof(string))
+                return true;
+
+            if (type == typeof(uint))
+                return true;
+
+            if (type == typeof(uint[]))
+                return true;
+
+            if (type == typeof(ulong))
+                return true;
+
+            if (type == typeof(ulong[]))
+                return true;
+
+            if (type == typeof(ushort))
+                return true;
+
+            if (type == typeof(ushort[]))
+                return true;
+
+            if (type == typeof(Color))
+                return true;
+
+            if (type == typeof(Quaternion))
+                return true;
+
+            if (type == typeof(Vector2))
+                return true;
+
+            if (type == typeof(Vector2Int))
+                return true;
+
+            if (type == typeof(Vector3))
+                return true;
+
+            if (type == typeof(Vector3Int))
+                return true;
+
+            if (type == typeof(Vector4))
+                return true;
+
+            if (typeof(INetSerializable).IsAssignableFrom(type))
+                return true;
+
+            return false;
         }
     }
 
     public class LiteNetLibSyncFieldContainer : LiteNetLibSyncField
     {
+        /// <summary>
+        /// The field which going to sync its value
+        /// </summary>
         private FieldInfo field;
+
+        /// <summary>
+        /// The class which contain the field
+        /// </summary>
         private object instance;
+
+        /// <summary>
+        /// Use this value to check value changes
+        /// </summary>
         private object value;
+
+        /// <summary>
+        /// Use this variable to tell that it has to update after value changed
+        /// </summary>
+        private bool hasUpdate;
 
         public LiteNetLibSyncFieldContainer(FieldInfo field, object instance)
         {
@@ -230,17 +327,30 @@ namespace LiteNetLibManager
 
         internal override sealed bool HasUpdate()
         {
-            return value != field.GetValue(instance);
+            if (hasUpdate)
+                return true;
+
+            if (value != field.GetValue(instance))
+            {
+                // Set value because it's going to sync later
+                value = field.GetValue(instance);
+                // Set `hasUpdate` to `TRUE` this value will turn to `FALSE` when `Updated()` called
+                hasUpdate = true;
+            }
+
+            return hasUpdate;
         }
 
         internal override void Updated()
         {
-            value = field.GetValue(instance);
+            hasUpdate = false;
         }
 
         internal override sealed void OnChange(bool initial)
         {
-            // TODO: Change field value then call hook function
+            // Change field value
+            field.SetValue(instance, GetValue());
+            // Call hook function
 
         }
     }
@@ -253,7 +363,7 @@ namespace LiteNetLibManager
         public Action<bool, TType> onChange;
 
         /// <summary>
-        /// Use this variable to tell that there is update after value changed
+        /// Use this variable to tell that it has to update after value changed
         /// </summary>
         protected bool hasUpdate;
 

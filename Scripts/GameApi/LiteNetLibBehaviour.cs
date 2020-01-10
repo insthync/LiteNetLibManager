@@ -271,19 +271,19 @@ namespace LiteNetLibManager
                 return;
 
             SyncFieldAttribute tempAttribute = null;
-            LiteNetLibSyncField tempField = null;
+            LiteNetLibSyncField tempSyncField = null;
             foreach (FieldInfo field in fields)
             {
                 try
                 {
                     tempAttribute = field.GetCustomAttribute<SyncFieldAttribute>();
-                    tempField = Activator.CreateInstance(typeof(LiteNetLibSyncField<>).MakeGenericType(field.FieldType)) as LiteNetLibSyncField;
-                    tempField.deliveryMethod = tempAttribute.deliveryMethod;
-                    tempField.sendInterval = tempAttribute.sendInterval;
-                    tempField.alwaysSync = tempAttribute.alwaysSync;
-                    tempField.doNotSyncInitialDataImmediately = tempAttribute.doNotSyncInitialDataImmediately;
-                    tempField.syncMode = tempAttribute.syncMode;
-                    RegisterSyncElement(tempField, Identity.syncFields);
+                    tempSyncField = new LiteNetLibSyncFieldContainer(field, this);
+                    tempSyncField.deliveryMethod = tempAttribute.deliveryMethod;
+                    tempSyncField.sendInterval = tempAttribute.sendInterval;
+                    tempSyncField.alwaysSync = tempAttribute.alwaysSync;
+                    tempSyncField.doNotSyncInitialDataImmediately = tempAttribute.doNotSyncInitialDataImmediately;
+                    tempSyncField.syncMode = tempAttribute.syncMode;
+                    RegisterSyncElement(tempSyncField, Identity.syncFields);
                 }
                 catch (Exception ex)
                 {
