@@ -199,25 +199,13 @@ namespace LiteNetLibManager
         #region RegisterSyncElements
         private List<FieldInfo> GetFields(Type type, List<FieldInfo> fields = null)
         {
-            if (type == typeof(LiteNetLibBehaviour))
-            {
-                if (fields == null)
-                    fields = new List<FieldInfo>();
-                return fields;
-            }
-
             if (fields == null)
-            {
                 fields = new List<FieldInfo>();
-                // Get fields from inherit classes
-                fields.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
-            }
-            else
-            {
-                // Get only non public fields from base classes
-                // Because all public fields already found while get fields from inherit classes
-                fields.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance));
-            }
+
+            if (type == typeof(LiteNetLibBehaviour))
+                return fields;
+
+            fields.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
 
             return GetFields(type.BaseType, fields);
         }
@@ -261,25 +249,13 @@ namespace LiteNetLibManager
         #region RegisterNetFunction
         private List<MethodInfo> GetMethods(Type type, List<MethodInfo> methods = null)
         {
-            if (type == typeof(LiteNetLibBehaviour))
-            {
-                if (methods == null)
-                    methods = new List<MethodInfo>();
-                return methods;
-            }
-
             if (methods == null)
-            {
                 methods = new List<MethodInfo>();
-                // Get methods from inherit classes
-                methods.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-            }
-            else
-            {
-                // Get only non public methods from base classes
-                // Because all public methods already found while get methods from inherit classes
-                methods.AddRange(type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-            }
+
+            if (type == typeof(LiteNetLibBehaviour))
+                return methods;
+
+            methods.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
 
             return GetMethods(type.BaseType, methods);
         }
