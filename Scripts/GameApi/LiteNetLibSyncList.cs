@@ -9,7 +9,6 @@ namespace LiteNetLibManager
 {
     public abstract class LiteNetLibSyncList : LiteNetLibElement
     {
-        public delegate void OnChanged(Operation op, int itemIndex);
         public partial struct Operation
         {
             public const byte Add = 0;
@@ -43,9 +42,14 @@ namespace LiteNetLibManager
                 return new Operation(value);
             }
         }
+        public delegate void OnChanged(Operation op, int itemIndex);
+
         [Tooltip("If this is TRUE, this will update to owner client only")]
         public bool forOwnerOnly;
         public OnChanged onOperation;
+
+        protected bool CanSetElement { get; private set; }
+        protected INetSerializableWithElement NetSerializableWithElementInstance { get; private set; }
 
         public abstract int Count { get; }
         public abstract void SendOperation(Operation operation, int index);
@@ -56,21 +60,6 @@ namespace LiteNetLibManager
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
     {
-        private bool checkedAbleToSetElement;
-        private bool isAbleToSetElement;
-        protected bool IsAbleToSetElement
-        {
-            get
-            {
-                if (!checkedAbleToSetElement)
-                {
-                    checkedAbleToSetElement = true;
-                    isAbleToSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(typeof(TType));
-                }
-                return isAbleToSetElement;
-            }
-        }
-
         protected readonly List<TType> list = new List<TType>();
 
         public TType this[int index]
@@ -320,19 +309,18 @@ namespace LiteNetLibManager
 
         protected virtual TType DeserializeValue(NetDataReader reader)
         {
-            if (IsAbleToSetElement)
+            if (CanSetElement)
             {
-                object value = Activator.CreateInstance(typeof(TType));
-                (value as INetSerializableWithElement).Element = this;
-                (value as INetSerializableWithElement).Deserialize(reader);
-                return (TType)value;
+                NetSerializableWithElementInstance.Element = this;
+                NetSerializableWithElementInstance.Deserialize(reader);
+                return (TType)NetSerializableWithElementInstance;
             }
             return (TType)reader.GetValue(typeof(TType));
         }
 
         protected virtual void SerializeValue(NetDataWriter writer, TType value)
         {
-            if (IsAbleToSetElement)
+            if (CanSetElement)
                 (value as INetSerializableWithElement).Element = this;
             writer.PutValue(value);
         }
