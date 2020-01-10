@@ -25,7 +25,7 @@ namespace LiteNetLibManager
         {
             get { return behaviourIndex; }
         }
-        
+
         [Header("Behaviour sync options")]
         public DeliveryMethod sendOptions;
         [Tooltip("Interval to send network data")]
@@ -37,7 +37,7 @@ namespace LiteNetLibManager
         }
 
         private float lastSentTime;
-        
+
         private static readonly Dictionary<string, CacheFields> CacheSyncElements = new Dictionary<string, CacheFields>();
         private static readonly Dictionary<string, List<MethodInfo>> CacheNetFunctions = new Dictionary<string, List<MethodInfo>>();
 
@@ -65,18 +65,12 @@ namespace LiteNetLibManager
             }
         }
 
-        private string typeName;
         /// <summary>
         /// This will be used when setup sync fields and sync lists as key for cached fields
         /// </summary>
         public string TypeName
         {
-            get
-            {
-                if (string.IsNullOrEmpty(typeName))
-                    typeName = ClassType.Name;
-                return typeName;
-            }
+            get { return ClassType.Name; }
         }
 
         private bool isFoundIdentity;
@@ -272,12 +266,53 @@ namespace LiteNetLibManager
 
             SyncFieldAttribute tempAttribute = null;
             LiteNetLibSyncField tempSyncField = null;
+            MethodInfo tempOnChangeMethod = null;
+            ParameterInfo[] tempOnChangeMethodParams = null;
             foreach (FieldInfo field in fields)
             {
                 try
                 {
                     tempAttribute = field.GetCustomAttribute<SyncFieldAttribute>();
-                    tempSyncField = new LiteNetLibSyncFieldContainer(field, this, tempAttribute.hook);
+                    tempLookupType = ClassType;
+                    tempOnChangeMethod = null;
+                    if (!string.IsNullOrEmpty(tempAttribute.hook))
+                    {
+                        while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
+                        {
+                            tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                            foreach (MethodInfo lookupMethod in tempLookupMethods)
+                            {
+                                // Return type must be `void`
+                                if (lookupMethod.ReturnType != typeof(void))
+                                    continue;
+
+                                // Not the function it's looking for
+                                if (!lookupMethod.Name.Equals(tempAttribute.hook))
+                                    continue;
+
+                                // Parameter not match
+                                tempOnChangeMethodParams = lookupMethod.GetParameters();
+                                if (tempOnChangeMethodParams == null ||
+                                    tempOnChangeMethodParams.Length == 0 ||
+                                    tempOnChangeMethodParams.Length > 1 ||
+                                    tempOnChangeMethodParams[0].ParameterType != field.FieldType)
+                                    continue;
+
+                                // Found the function
+                                tempOnChangeMethod = lookupMethod;
+                                break;
+                            }
+
+                            // Found the function so exit the loop, don't find the function in base class
+                            if (tempOnChangeMethod != null)
+                                break;
+
+                            tempLookupType = tempLookupType.BaseType;
+                        }
+                        if (tempOnChangeMethod != null)
+                            Debug.LogError("Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
+                    }
+                    tempSyncField = new LiteNetLibSyncFieldContainer(field, this, tempOnChangeMethod);
                     tempSyncField.deliveryMethod = tempAttribute.deliveryMethod;
                     tempSyncField.sendInterval = tempAttribute.sendInterval;
                     tempSyncField.alwaysSync = tempAttribute.alwaysSync;

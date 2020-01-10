@@ -306,30 +306,12 @@ namespace LiteNetLibManager
 
         private MethodInfo onChangeMethod;
 
-        public LiteNetLibSyncFieldContainer(FieldInfo field, object instance, string hook)
+        public LiteNetLibSyncFieldContainer(FieldInfo field, object instance, MethodInfo onChangeMethod)
         {
             this.field = field;
             this.instance = instance;
             this.value = field.GetValue(instance);
-            if (!string.IsNullOrEmpty(hook))
-            {
-                onChangeMethod = instance.GetType().GetMethod(hook, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                if (onChangeMethod == null)
-                {
-                    Debug.LogError("Cannot find invoking function named [" + hook + "] from [" + instance.GetType().Name + "]");
-                    return;
-                }
-                bool isCorrectParams = true;
-                ParameterInfo[] parameters = onChangeMethod.GetParameters();
-                if (parameters.Length == 0 || parameters.Length > 1)
-                    isCorrectParams = false;
-                isCorrectParams = isCorrectParams && parameters[0].ParameterType.Equals(GetFieldType());
-                if (!isCorrectParams)
-                {
-                    Debug.LogError("Invoking function named [" + hook + "] from [" + instance.GetType().Name + "] has wrong parameter, it must has 1 parameter with the same type with the field.");
-                    onChangeMethod = null;
-                }
-            }
+            this.onChangeMethod = onChangeMethod;
         }
 
         public override sealed Type GetFieldType()
