@@ -45,6 +45,22 @@ namespace LiteNetLibManager
 
         private bool onChangeCalled;
 
+        public abstract Type GetFieldType();
+        public abstract object GetValue();
+        public abstract void SetValue(object value);
+        internal abstract void OnChange(bool initial);
+        internal abstract bool HasUpdate();
+        internal abstract void Updated();
+
+        internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
+        {
+            base.Setup(behaviour, elementId);
+            CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
+            if (CanSetElement)
+                NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
+            OnChange(true);
+        }
+
         internal void NetworkUpdate(float time)
         {
             if (!ValidateBeforeAccess())
@@ -76,21 +92,6 @@ namespace LiteNetLibManager
 
             // Reset on change called state to call `OnChange` later when has update
             onChangeCalled = false;
-        }
-
-        public abstract Type GetFieldType();
-        public abstract object GetValue();
-        public abstract void SetValue(object value);
-        internal abstract void OnChange(bool initial);
-        internal abstract bool HasUpdate();
-        internal abstract void Updated();
-
-        internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
-        {
-            base.Setup(behaviour, elementId);
-            CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
-            NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
-            OnChange(true);
         }
 
         internal void Deserialize(NetDataReader reader, bool isInitial)
@@ -303,11 +304,32 @@ namespace LiteNetLibManager
         /// </summary>
         private bool hasUpdate;
 
-        public LiteNetLibSyncFieldContainer(FieldInfo field, object instance)
+        private MethodInfo onChangeMethod;
+
+        public LiteNetLibSyncFieldContainer(FieldInfo field, object instance, string hook)
         {
             this.field = field;
             this.instance = instance;
             this.value = field.GetValue(instance);
+            if (!string.IsNullOrEmpty(hook))
+            {
+                onChangeMethod = instance.GetType().GetMethod(hook, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                if (onChangeMethod == null)
+                {
+                    Debug.LogError("Cannot find invoking function named [" + hook + "] from [" + instance.GetType().Name + "]");
+                    return;
+                }
+                bool isCorrectParams = true;
+                ParameterInfo[] parameters = onChangeMethod.GetParameters();
+                if (parameters.Length == 0 || parameters.Length > 1)
+                    isCorrectParams = false;
+                isCorrectParams = isCorrectParams && parameters[0].ParameterType.Equals(GetFieldType());
+                if (!isCorrectParams)
+                {
+                    Debug.LogError("Invoking function named [" + hook + "] from [" + instance.GetType().Name + "] has wrong parameter, it must has 1 parameter with the same type with the field.");
+                    onChangeMethod = null;
+                }
+            }
         }
 
         public override sealed Type GetFieldType()
@@ -351,7 +373,8 @@ namespace LiteNetLibManager
             // Change field value
             field.SetValue(instance, GetValue());
             // Call hook function
-
+            if (onChangeMethod != null)
+                onChangeMethod.Invoke(instance, new object[] { GetValue() });
         }
     }
     
@@ -421,7 +444,8 @@ namespace LiteNetLibManager
 
         internal override sealed void OnChange(bool initial)
         {
-            onChange.Invoke(initial, Value);
+            if (onChange != null)
+                onChange.Invoke(initial, Value);
         }
 
         public static implicit operator TType(LiteNetLibSyncField<TType> field)

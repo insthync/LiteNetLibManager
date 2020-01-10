@@ -277,7 +277,7 @@ namespace LiteNetLibManager
                 try
                 {
                     tempAttribute = field.GetCustomAttribute<SyncFieldAttribute>();
-                    tempSyncField = new LiteNetLibSyncFieldContainer(field, this);
+                    tempSyncField = new LiteNetLibSyncFieldContainer(field, this, tempAttribute.hook);
                     tempSyncField.deliveryMethod = tempAttribute.deliveryMethod;
                     tempSyncField.sendInterval = tempAttribute.sendInterval;
                     tempSyncField.alwaysSync = tempAttribute.alwaysSync;
