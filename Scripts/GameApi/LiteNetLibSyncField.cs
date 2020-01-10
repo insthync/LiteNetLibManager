@@ -58,7 +58,8 @@ namespace LiteNetLibManager
             CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
             if (CanSetElement)
                 NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
-            OnChange(true);
+            if (IsServer)
+                OnChange(true);
         }
 
         internal void NetworkUpdate(float time)
