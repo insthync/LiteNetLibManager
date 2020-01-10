@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
@@ -13,10 +14,9 @@ namespace LiteNetLibManager
 
     public class LiteNetLibFunction : LiteNetLibElement
     {
-        private NetFunctionDelegate callback;
-
         public readonly Type[] ParameterTypes;
         public readonly object[] Parameters;
+        protected Delegate callback;
 
         public LiteNetLibFunction() : this(0)
         {
@@ -28,14 +28,21 @@ namespace LiteNetLibManager
             ParameterTypes = new Type[parameterCount];
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate callback) : this()
+        public LiteNetLibFunction(Type[] parameterTypes, Delegate callback)
+        {
+            Parameters = new object[parameterTypes.Length];
+            ParameterTypes = parameterTypes;
+            this.callback = callback;
+        }
+
+        public LiteNetLibFunction(Delegate callback) : this()
         {
             this.callback = callback;
         }
 
-        public virtual void HookCallback()
+        public void HookCallback()
         {
-            callback();
+            callback.DynamicInvoke(Parameters);
         }
 
         protected void ServerSendCall(long connectionId, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
@@ -161,8 +168,6 @@ namespace LiteNetLibManager
     #region Implement for multiple parameter usages
     public class LiteNetLibFunction<T1> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1> callback;
-
         public LiteNetLibFunction() : base(1)
         {
             ParameterTypes[0] = typeof(T1);
@@ -172,17 +177,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2> callback;
-
         public LiteNetLibFunction() : base(2)
         {
             ParameterTypes[0] = typeof(T1);
@@ -193,17 +191,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3> callback;
-
         public LiteNetLibFunction() : base(3)
         {
             ParameterTypes[0] = typeof(T1);
@@ -215,17 +206,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4> callback;
-
         public LiteNetLibFunction() : base(4)
         {
             ParameterTypes[0] = typeof(T1);
@@ -238,17 +222,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5> callback;
-
         public LiteNetLibFunction() : base(5)
         {
             ParameterTypes[0] = typeof(T1);
@@ -262,17 +239,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback;
-
         public LiteNetLibFunction() : base(6)
         {
             ParameterTypes[0] = typeof(T1);
@@ -287,17 +257,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback;
-
         public LiteNetLibFunction() : base(7)
         {
             ParameterTypes[0] = typeof(T1);
@@ -313,17 +276,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback;
-
         public LiteNetLibFunction() : base(8)
         {
             ParameterTypes[0] = typeof(T1);
@@ -340,17 +296,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback;
-
         public LiteNetLibFunction() : base(9)
         {
             ParameterTypes[0] = typeof(T1);
@@ -368,17 +317,10 @@ namespace LiteNetLibManager
         {
             this.callback = callback;
         }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7], (T9)Parameters[8]);
-        }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback;
-
         public LiteNetLibFunction() : base(10)
         {
             ParameterTypes[0] = typeof(T1);
@@ -396,11 +338,6 @@ namespace LiteNetLibManager
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback) : this()
         {
             this.callback = callback;
-        }
-
-        public override void HookCallback()
-        {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7], (T9)Parameters[8], (T10)Parameters[9]);
         }
     }
     #endregion

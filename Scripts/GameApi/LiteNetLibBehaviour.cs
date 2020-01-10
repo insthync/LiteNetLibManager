@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Linq;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
+using System.Linq.Expressions;
 
 namespace LiteNetLibManager
 {
@@ -36,13 +38,13 @@ namespace LiteNetLibManager
         private float lastSentTime;
         
         private static readonly Dictionary<string, CacheFieldInfos> CacheSyncElements = new Dictionary<string, CacheFieldInfos>();
+        private static readonly Dictionary<string, List<MethodInfo>> CacheNetFunctions = new Dictionary<string, List<MethodInfo>>();
 
         private readonly Dictionary<string, int> netFunctionIds = new Dictionary<string, int>();
 
         // Optimize garbage collector
-        private List<FieldInfo> tempSyncFields;
-        private List<FieldInfo> tempSyncLists;
-        private CacheFieldInfos tempCachingFieldName;
+        private CacheFieldInfos tempFieldInfos;
+        private List<MethodInfo> tempMethodInfos;
 
         private Type classType;
         /// <summary>
@@ -150,35 +152,43 @@ namespace LiteNetLibManager
         {
             this.behaviourIndex = behaviourIndex;
             OnSetup();
-            tempSyncFields = null;
-            tempSyncLists = null;
-            // Caching field names
-            if (!CacheSyncElements.TryGetValue(TypeName, out tempCachingFieldName))
+            // Setup sync elements
+            if (!CacheSyncElements.TryGetValue(TypeName, out tempFieldInfos))
             {
-                tempSyncFields = new List<FieldInfo>();
-                tempSyncLists = new List<FieldInfo>();
+                tempFieldInfos = new CacheFieldInfos()
+                {
+                    syncFields = new List<FieldInfo>(),
+                    syncLists = new List<FieldInfo>()
+                };
                 List<FieldInfo> fields = new List<FieldInfo>(GetFields(ClassType));
                 fields.Sort((a, b) => a.Name.CompareTo(b.Name));
                 foreach (FieldInfo field in fields)
                 {
                     if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
-                        tempSyncFields.Add(field);
+                        tempFieldInfos.syncFields.Add(field);
                     if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
-                        tempSyncLists.Add(field);
+                        tempFieldInfos.syncLists.Add(field);
                 }
-                CacheSyncElements.Add(TypeName, new CacheFieldInfos()
-                {
-                    syncFields = tempSyncFields,
-                    syncLists = tempSyncLists,
-                });
+                CacheSyncElements.Add(TypeName, tempFieldInfos);
             }
-            else
+            SetupSyncElements(tempFieldInfos.syncFields, Identity.syncFields);
+            SetupSyncElements(tempFieldInfos.syncLists, Identity.syncLists);
+            // Setup net functions
+            if (!CacheNetFunctions.TryGetValue(TypeName, out tempMethodInfos))
             {
-                tempSyncFields = tempCachingFieldName.syncFields;
-                tempSyncLists = tempCachingFieldName.syncLists;
+                tempMethodInfos = new List<MethodInfo>();
+                List<MethodInfo> methods = new List<MethodInfo>(GetMethods(ClassType));
+                NetFunctionAttribute tempAttribute = null;
+                foreach (MethodInfo method in methods)
+                {
+                    tempAttribute = method.GetCustomAttribute<NetFunctionAttribute>();
+                    if (tempAttribute == null)
+                        continue;
+                    tempMethodInfos.Add(method);
+                }
+                CacheNetFunctions.Add(TypeName, tempMethodInfos);
             }
-            SetupSyncElements(tempSyncFields, Identity.syncFields);
-            SetupSyncElements(tempSyncLists, Identity.syncLists);
+            SetupNetFunctions(tempMethodInfos);
         }
 
         #region RegisterSyncElements
@@ -214,7 +224,6 @@ namespace LiteNetLibManager
 
             foreach (FieldInfo field in fields)
             {
-                // Get field info
                 try
                 {
                     RegisterSyncElement((T)field.GetValue(this), elementList);
@@ -245,6 +254,51 @@ namespace LiteNetLibManager
         #endregion
 
         #region RegisterNetFunction
+        private List<MethodInfo> GetMethods(Type type, List<MethodInfo> methods = null)
+        {
+            if (type == typeof(LiteNetLibBehaviour))
+            {
+                if (methods == null)
+                    methods = new List<MethodInfo>();
+                return methods;
+            }
+
+            if (methods == null)
+            {
+                methods = new List<MethodInfo>();
+                // Get methods from inherit classes
+                methods.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+            }
+            else
+            {
+                // Get only non public methods from base classes
+                // Because all public methods already found while get methods from inherit classes
+                methods.AddRange(type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+            }
+
+            return GetMethods(type.BaseType, methods);
+        }
+
+        private void SetupNetFunctions(List<MethodInfo> methods)
+        {
+            if (methods == null || methods.Count == 0)
+                return;
+
+            Type[] types;
+            foreach (MethodInfo method in methods)
+            {
+                try
+                {
+                    types = method.GetParameters().Select(p => p.ParameterType).ToArray();
+                    RegisterNetFunction(method.Name, new LiteNetLibFunction(types, Delegate.CreateDelegate(Expression.GetActionType(types), method)));
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+        }
+
         public void RegisterNetFunction(NetFunctionDelegate func)
         {
             RegisterNetFunction(func.Method.Name, new LiteNetLibFunction(func));
