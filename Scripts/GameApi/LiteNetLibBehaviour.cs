@@ -10,7 +10,7 @@ namespace LiteNetLibManager
 {
     public partial class LiteNetLibBehaviour : MonoBehaviour, INetSerializable
     {
-        private struct CachingFieldName
+        private struct CacheFieldInfos
         {
             public List<FieldInfo> syncFields;
             public List<FieldInfo> syncLists;
@@ -35,16 +35,14 @@ namespace LiteNetLibManager
 
         private float lastSentTime;
         
-        private static readonly Dictionary<string, CachingFieldName> CacheFieldNames = new Dictionary<string, CachingFieldName>();
-        private static readonly Dictionary<string, FieldInfo> CacheSyncFieldInfos = new Dictionary<string, FieldInfo>();
-        private static readonly Dictionary<string, FieldInfo> CacheSyncListInfos = new Dictionary<string, FieldInfo>();
+        private static readonly Dictionary<string, CacheFieldInfos> CacheSyncElements = new Dictionary<string, CacheFieldInfos>();
 
         private readonly Dictionary<string, int> netFunctionIds = new Dictionary<string, int>();
 
         // Optimize garbage collector
         private List<FieldInfo> tempSyncFields;
         private List<FieldInfo> tempSyncLists;
-        private CachingFieldName tempCachingFieldName;
+        private CacheFieldInfos tempCachingFieldName;
 
         private Type classType;
         /// <summary>
@@ -155,7 +153,7 @@ namespace LiteNetLibManager
             tempSyncFields = null;
             tempSyncLists = null;
             // Caching field names
-            if (!CacheFieldNames.TryGetValue(TypeName, out tempCachingFieldName))
+            if (!CacheSyncElements.TryGetValue(TypeName, out tempCachingFieldName))
             {
                 tempSyncFields = new List<FieldInfo>();
                 tempSyncLists = new List<FieldInfo>();
@@ -168,7 +166,7 @@ namespace LiteNetLibManager
                     if (field.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
                         tempSyncLists.Add(field);
                 }
-                CacheFieldNames.Add(TypeName, new CachingFieldName()
+                CacheSyncElements.Add(TypeName, new CacheFieldInfos()
                 {
                     syncFields = tempSyncFields,
                     syncLists = tempSyncLists,
