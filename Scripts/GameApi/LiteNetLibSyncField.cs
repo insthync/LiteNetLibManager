@@ -58,8 +58,19 @@ namespace LiteNetLibManager
             CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
             if (CanSetElement)
                 NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
-            if (IsServer)
-                OnChange(true);
+            // Invoke on change function with initial state = true
+            switch (syncMode)
+            {
+                case SyncMode.ServerToClients:
+                case SyncMode.ServerToOwnerClient:
+                    if (IsServer)
+                        OnChange(true);
+                    break;
+                case SyncMode.ClientMulticast:
+                    if (IsOwnerClient)
+                        OnChange(true);
+                    break;
+            }
         }
 
         internal void NetworkUpdate(float time)
@@ -74,7 +85,19 @@ namespace LiteNetLibManager
             // Call `OnChange` if it's not called yet.
             if (HasUpdate() && !onChangeCalled)
             {
-                OnChange(false);
+                // Invoke on change function with initial state = false
+                switch (syncMode)
+                {
+                    case SyncMode.ServerToClients:
+                    case SyncMode.ServerToOwnerClient:
+                        if (IsServer)
+                            OnChange(false);
+                        break;
+                    case SyncMode.ClientMulticast:
+                        if (IsOwnerClient)
+                            OnChange(false);
+                        break;
+                }
                 onChangeCalled = true;
             }
 
