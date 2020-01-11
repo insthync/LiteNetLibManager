@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using LiteNetLibManager.Utils;
 
 namespace LiteNetLibManager
 {
@@ -42,6 +43,7 @@ namespace LiteNetLibManager
                 return new Operation(value);
             }
         }
+
         public delegate void OnChanged(Operation op, int itemIndex);
 
         [Tooltip("If this is TRUE, this will update to owner client only")]
@@ -49,7 +51,7 @@ namespace LiteNetLibManager
         public OnChanged onOperation;
 
         protected bool CanSetElement { get; set; }
-        protected INetSerializableWithElement NetSerializableWithElementInstance { get; set; }
+        protected INetSerializableWithElement tempNetSerializableWithElement;
 
         public abstract int Count { get; }
         public abstract Type GetFieldType();
@@ -67,8 +69,6 @@ namespace LiteNetLibManager
         {
             base.Setup(behaviour, elementId);
             CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
-            if (CanSetElement)
-                NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
             if (Count > 0 && onOperation != null)
             {
                 for (int i = 0; i < Count; ++i)
@@ -320,9 +320,9 @@ namespace LiteNetLibManager
         {
             if (CanSetElement)
             {
-                NetSerializableWithElementInstance.Element = this;
-                NetSerializableWithElementInstance.Deserialize(reader);
-                return (TType)NetSerializableWithElementInstance;
+                tempNetSerializableWithElement = (INetSerializableWithElement)reader.GetValue(typeof(TType));
+                tempNetSerializableWithElement.Element = this;
+                return (TType)tempNetSerializableWithElement;
             }
             return (TType)reader.GetValue(typeof(TType));
         }

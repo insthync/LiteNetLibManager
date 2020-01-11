@@ -41,7 +41,7 @@ namespace LiteNetLibManager
         protected float lastSentTime;
         
         protected bool CanSetElement { get; private set; }
-        protected INetSerializableWithElement NetSerializableWithElementInstance { get; private set; }
+        protected INetSerializableWithElement tempNetSerializableWithElement;
 
         private bool onChangeCalled;
 
@@ -56,8 +56,6 @@ namespace LiteNetLibManager
         {
             base.Setup(behaviour, elementId);
             CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
-            if (CanSetElement)
-                NetSerializableWithElementInstance = (INetSerializableWithElement)Activator.CreateInstance(GetFieldType());
             // Invoke on change function with initial state = true
             switch (syncMode)
             {
@@ -133,9 +131,9 @@ namespace LiteNetLibManager
         {
             if (CanSetElement)
             {
-                NetSerializableWithElementInstance.Element = this;
-                NetSerializableWithElementInstance.Deserialize(reader);
-                SetValue(NetSerializableWithElementInstance);
+                tempNetSerializableWithElement = (INetSerializableWithElement)reader.GetValue(GetFieldType());
+                tempNetSerializableWithElement.Element = this;
+                SetValue(tempNetSerializableWithElement);
                 return;
             }
             SetValue(reader.GetValue(GetFieldType()));
