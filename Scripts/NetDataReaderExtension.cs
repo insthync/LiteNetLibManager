@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using LiteNetLibManager.Utils;
 
 namespace LiteNetLib.Utils
 {
@@ -103,7 +104,7 @@ namespace LiteNetLib.Utils
 
             if (typeof(INetSerializable).IsAssignableFrom(type))
             {
-                object instance = Activator.CreateInstance(type);
+                object instance = Reflection.GetActivator(type).Invoke();
                 (instance as INetSerializable).Deserialize(reader);
                 return instance;
             }
