@@ -13,7 +13,7 @@ namespace LiteNetLibManager.Utils
         public delegate object ObjectActivator();
         public static ObjectActivator GetActivator(Type type)
         {
-            tempTypeName = type.Name;
+            tempTypeName = type.FullName;
             if (!objectActivators.ContainsKey(tempTypeName))
             {
                 if (type.IsClass)
