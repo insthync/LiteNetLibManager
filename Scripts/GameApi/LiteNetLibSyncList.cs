@@ -484,5 +484,30 @@ namespace LiteNetLibManager
     public class SyncListPackedULong : LiteNetLibSyncList<PackedULong>
     {
     }
+
+    [Serializable]
+    public class SyncListPackedShort : LiteNetLibSyncList<PackedShort>
+    {
+    }
+
+    [Serializable]
+    public class SyncListPackedInt : LiteNetLibSyncList<PackedInt>
+    {
+    }
+
+    [Serializable]
+    public class SyncListPackedLong : LiteNetLibSyncList<PackedLong>
+    {
+    }
+
+    [Serializable]
+    public class SyncListDirectionVector2 : LiteNetLibSyncList<DirectionVector2>
+    {
+    }
+
+    [Serializable]
+    public class SyncListDirectionVector3 : LiteNetLibSyncList<DirectionVector3>
+    {
+    }
     #endregion
 }
