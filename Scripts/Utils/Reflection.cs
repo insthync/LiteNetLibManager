@@ -9,7 +9,7 @@ namespace LiteNetLibManager.Utils
     {
         // Improve reflection constructor performance with Linq expression (https://rogerjohansson.blog/2008/02/28/linq-expressions-creating-objects/)
         private static readonly Dictionary<string, Func<object>> expressionActivators = new Dictionary<string, Func<object>>();
-        public static object GetExpressionActivator(Type type)
+        public static object CreateInstanceWithExpression(Type type)
         {
             if (!expressionActivators.ContainsKey(type.FullName))
             {
@@ -23,7 +23,7 @@ namespace LiteNetLibManager.Utils
 
 #if NET_4_6
         private static readonly Dictionary<string, DynamicMethod> dynamicMethodActivators = new Dictionary<string, DynamicMethod>();
-        public static object GetDynamicMethodActivator(Type type)
+        public static object CreateInstanceWithDynamicMethod(Type type)
         {
             if (!dynamicMethodActivators.ContainsKey(type.FullName))
             {
