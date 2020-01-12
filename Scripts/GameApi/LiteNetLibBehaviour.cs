@@ -7,6 +7,7 @@ using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace LiteNetLibManager
 {
@@ -40,6 +41,7 @@ namespace LiteNetLibManager
 
         private static readonly Dictionary<string, CacheFields> CacheSyncElements = new Dictionary<string, CacheFields>();
         private static readonly Dictionary<string, List<MethodInfo>> CacheNetFunctions = new Dictionary<string, List<MethodInfo>>();
+        private static readonly Dictionary<string, MethodInfo> CacheHookFunctions = new Dictionary<string, MethodInfo>();
 
         private readonly Dictionary<string, int> netFunctionIds = new Dictionary<string, int>();
 
@@ -70,7 +72,7 @@ namespace LiteNetLibManager
         /// </summary>
         public string TypeName
         {
-            get { return ClassType.Name; }
+            get { return ClassType.FullName; }
         }
 
         private bool isFoundIdentity;
@@ -226,7 +228,8 @@ namespace LiteNetLibManager
                         // Return type must be `void`
                         if (lookupMethod.ReturnType != typeof(void))
                         {
-                            Debug.LogError("Cannot register net function [" + lookupMethod.Name + "] return type must be void");
+                            if (Manager.LogError)
+                                Debug.LogError("Cannot register net function [" + lookupMethod.Name + "] return type must be void");
                             continue;
                         }
 
@@ -254,7 +257,8 @@ namespace LiteNetLibManager
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogException(ex);
+                    if (Manager.LogFatal)
+                        Debug.LogException(ex);
                 }
             }
         }
@@ -268,14 +272,18 @@ namespace LiteNetLibManager
             LiteNetLibSyncField tempSyncField = null;
             MethodInfo tempOnChangeMethod = null;
             ParameterInfo[] tempOnChangeMethodParams = null;
+            string tempHookFunctionKey = string.Empty;
             foreach (FieldInfo field in fields)
             {
                 try
                 {
                     tempAttribute = field.GetCustomAttribute<SyncFieldAttribute>();
                     tempOnChangeMethod = null;
-                    if (!string.IsNullOrEmpty(tempAttribute.hook))
+                    tempHookFunctionKey = new StringBuilder(TypeName).Append('.').Append(tempAttribute.hook).ToString();
+                    if (!string.IsNullOrEmpty(tempAttribute.hook) && 
+                        !CacheHookFunctions.TryGetValue(tempHookFunctionKey, out tempOnChangeMethod))
                     {
+                        // Not found hook function in cache dictionary, try find the function
                         tempLookupType = ClassType;
                         while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                         {
@@ -311,7 +319,13 @@ namespace LiteNetLibManager
                         }
                         // Tell developers that it can't find the function and clear the function's instance
                         if (tempOnChangeMethod == null)
-                            Debug.LogError("Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
+                        {
+                            if (Manager.LogError)
+                                Debug.LogError("Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
+                        }
+
+                        // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
+                        CacheHookFunctions.Add(tempHookFunctionKey, tempOnChangeMethod);
                     }
                     tempSyncField = new LiteNetLibSyncFieldContainer(field, this, tempOnChangeMethod);
                     tempSyncField.deliveryMethod = tempAttribute.deliveryMethod;
@@ -323,7 +337,8 @@ namespace LiteNetLibManager
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogException(ex);
+                    if (Manager.LogFatal)
+                        Debug.LogException(ex);
                 }
             }
         }
@@ -362,7 +377,8 @@ namespace LiteNetLibManager
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogException(ex);
+                    if (Manager.LogFatal)
+                        Debug.LogException(ex);
                 }
             }
         }
