@@ -641,6 +641,21 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    public class SyncFieldPackedShort : LiteNetLibSyncField<PackedShort>
+    {
+    }
+
+    [Serializable]
+    public class SyncFieldPackedInt : LiteNetLibSyncField<PackedInt>
+    {
+    }
+
+    [Serializable]
+    public class SyncFieldPackedLong : LiteNetLibSyncField<PackedLong>
+    {
+    }
+
+    [Serializable]
     public class SyncFieldDirectionVector2 : LiteNetLibSyncField<DirectionVector2>
     {
         protected override bool IsValueChanged(DirectionVector2 newValue)
