@@ -15,7 +15,7 @@ namespace LiteNetLib.Utils
             #region Generic Values
             if (type.IsEnum)
             {
-                writer.Put((int)value);
+                writer.PutPackedInt((int)value);
                 return;
             }
 
