@@ -9,6 +9,9 @@ namespace LiteNetLib.Utils
         public static object GetValue(this NetDataReader reader, Type type)
         {
             #region Generic Values
+            if (type.IsEnum)
+                return reader.GetPackedInt();
+
             if (type == typeof(bool))
                 return reader.GetBool();
 
@@ -152,7 +155,25 @@ namespace LiteNetLib.Utils
             return new Vector4(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
 
-        #region Packed Unsigned Int (Credit: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
+        #region Packed Signed Int (Ref: https://developers.google.com/protocol-buffers/docs/encoding#signed-integers)
+        public static short GetPackedShort(this NetDataReader reader)
+        {
+            return (short)GetPackedInt(reader);
+        }
+
+        public static int GetPackedInt(this NetDataReader reader)
+        {
+            uint value = GetPackedUInt(reader);
+            return (int)((value >> 1) ^ (-(int)(value & 1)));
+        }
+
+        public static long GetPackedLong(this NetDataReader reader)
+        {
+            return ((long)GetPackedInt(reader)) << 32 | ((uint)GetPackedInt(reader));
+        }
+        #endregion
+
+        #region Packed Unsigned Int (Ref: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
         public static ushort GetPackedUShort(this NetDataReader reader)
         {
             return (ushort)GetPackedULong(reader);

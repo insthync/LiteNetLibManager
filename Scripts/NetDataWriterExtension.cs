@@ -13,6 +13,12 @@ namespace LiteNetLib.Utils
         public static void PutValue(this NetDataWriter writer, Type type, object value)
         {
             #region Generic Values
+            if (type.IsEnum)
+            {
+                writer.Put((int)value);
+                return;
+            }
+
             if (type == typeof(bool))
             {
                 writer.Put((bool)value);
@@ -258,7 +264,25 @@ namespace LiteNetLib.Utils
             writer.Put(value.w);
         }
 
-        #region Packed Unsigned Int (Credit: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
+        #region Packed Signed Int (Ref: https://developers.google.com/protocol-buffers/docs/encoding#signed-integers)
+        public static void PutPackedShort(this NetDataWriter writer, short value)
+        {
+            PutPackedInt(writer, value);
+        }
+
+        public static void PutPackedInt(this NetDataWriter writer, int value)
+        {
+            PutPackedUInt(writer, (uint)((value << 1) ^ (value >> 31)));
+        }
+
+        public static void PutPackedLong(this NetDataWriter writer, long value)
+        {
+            PutPackedInt(writer, (int)(value >> 32));
+            PutPackedInt(writer, (int)(value & uint.MaxValue));
+        }
+        #endregion
+
+        #region Packed Unsigned Int (Ref: https://sqlite.org/src4/doc/trunk/www/varint.wiki)
         public static void PutPackedUShort(this NetDataWriter writer, ushort value)
         {
             PutPackedULong(writer, value);
