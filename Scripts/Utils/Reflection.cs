@@ -7,10 +7,8 @@ namespace LiteNetLibManager.Utils
 {
     public class Reflection
     {
-        private static readonly Dictionary<string, Func<object>> expressionActivators = new Dictionary<string, Func<object>>();
-        private static readonly Dictionary<string, DynamicMethod> dynamicMethodActivators = new Dictionary<string, DynamicMethod>();
-
         // Improve reflection constructor performance with Linq expression (https://rogerjohansson.blog/2008/02/28/linq-expressions-creating-objects/)
+        private static readonly Dictionary<string, Func<object>> expressionActivators = new Dictionary<string, Func<object>>();
         public static object GetExpressionActivator(Type type)
         {
             if (!expressionActivators.ContainsKey(type.FullName))
@@ -23,6 +21,8 @@ namespace LiteNetLibManager.Utils
             return expressionActivators[type.FullName].Invoke();
         }
 
+#if NET_4_6
+        private static readonly Dictionary<string, DynamicMethod> dynamicMethodActivators = new Dictionary<string, DynamicMethod>();
         public static object GetDynamicMethodActivator(Type type)
         {
             if (!dynamicMethodActivators.ContainsKey(type.FullName))
@@ -47,5 +47,6 @@ namespace LiteNetLibManager.Utils
             }
             return dynamicMethodActivators[type.FullName].Invoke(null, null);
         }
+#endif
     }
 }
