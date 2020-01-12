@@ -373,7 +373,7 @@ namespace LiteNetLibManager
                 try
                 {
                     types = method.GetParameters().Select(p => p.ParameterType).ToArray();
-                    RegisterNetFunction(method.Name, new LiteNetLibFunctionDynamic(types, Delegate.CreateDelegate(Expression.GetActionType(types), this, method.Name)));
+                    RegisterNetFunction(method.Name, new LiteNetLibFunctionDynamic(types, this, method));
                 }
                 catch (Exception ex)
                 {
