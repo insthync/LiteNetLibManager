@@ -207,6 +207,9 @@ namespace LiteNetLibManager
 
         public static bool TypeCanBeSyncField(Type type)
         {
+            if (type.IsEnum)
+                return true;
+
             if (type == typeof(bool))
                 return true;
 
