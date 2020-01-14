@@ -208,7 +208,7 @@ namespace LiteNetLib.Utils
                 return;
             }
 
-            throw new ArgumentException("NetDataReader cannot write type " + value.GetType().Name);
+            throw new ArgumentException("NetDataWriter cannot write type " + value.GetType().Name);
         }
 
         public static void Put(this NetDataWriter writer, Color value)
