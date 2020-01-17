@@ -95,7 +95,7 @@ namespace LiteNetLibManager
                 DontDestroyOnLoad(gameObject);
         }
 
-        protected override void Update()
+        protected override void LateUpdate()
         {
             if (loadSceneAsyncOperation == null)
             {
@@ -120,7 +120,7 @@ namespace LiteNetLibManager
                     }
                 }
             }
-            base.Update();
+            base.LateUpdate();
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)

@@ -91,7 +91,7 @@ namespace LiteNetLibManager
 
         protected virtual void Start() { }
 
-        protected virtual void Update()
+        protected virtual void LateUpdate()
         {
             if (IsServer)
                 Server.Update();
