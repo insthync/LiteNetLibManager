@@ -339,10 +339,10 @@ namespace LiteNetLibManager
         {
             float dist = 0f;
             if (CacheRigidbody2D != null)
-                dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).magnitude;
+                dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).sqrMagnitude;
             else
-                dist = (syncingTransform.position - targetPosition).magnitude;
-            return dist > snapThreshold;
+                dist = (syncingTransform.position - targetPosition).sqrMagnitude;
+            return dist > snapThreshold * snapThreshold;
         }
 
         private void Snap(Vector3 position, Quaternion rotation)
