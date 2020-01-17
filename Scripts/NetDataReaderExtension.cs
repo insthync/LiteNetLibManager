@@ -127,7 +127,7 @@ namespace LiteNetLib.Utils
         public static Quaternion GetQuaternion(this NetDataReader reader)
         {
             Vector3 vector3 = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
-            return vector3.magnitude <= 0 ? Quaternion.identity : Quaternion.Euler(vector3);
+            return vector3.sqrMagnitude <= 0 ? Quaternion.identity : Quaternion.Euler(vector3);
         }
 
         public static Vector2 GetVector2(this NetDataReader reader)
