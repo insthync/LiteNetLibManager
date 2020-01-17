@@ -52,10 +52,11 @@ namespace LiteNetLibManager
             if (subscriber.ConnectionId == ConnectionId)
                 return true;
 
+            Vector3 pos;
             foreach (LiteNetLibIdentity spawnedObject in subscriber.SpawnedObjects.Values)
             {
-                Vector3 pos = spawnedObject.transform.position;
-                if ((pos - transform.position).magnitude < range)
+                pos = spawnedObject.transform.position;
+                if ((pos - transform.position).sqrMagnitude < range * range)
                     return true;
             }
             return false;
