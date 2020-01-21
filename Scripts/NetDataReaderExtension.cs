@@ -6,11 +6,16 @@ namespace LiteNetLib.Utils
 {
     public static class NetDataReaderExtension
     {
+        public static TType GetValue<TType>(this NetDataReader reader)
+        {
+            return (TType)GetValue(reader, typeof(TType));
+        }
+
         public static object GetValue(this NetDataReader reader, Type type)
         {
             #region Generic Values
             if (type.IsEnum)
-                return reader.GetPackedInt();
+                type = type.GetEnumUnderlyingType();
 
             if (type == typeof(bool))
                 return reader.GetBool();

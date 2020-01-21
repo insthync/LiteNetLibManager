@@ -14,10 +14,7 @@ namespace LiteNetLib.Utils
         {
             #region Generic Values
             if (type.IsEnum)
-            {
-                writer.PutPackedInt((int)value);
-                return;
-            }
+                type = type.GetEnumUnderlyingType();
 
             if (type == typeof(bool))
             {
