@@ -320,11 +320,11 @@ namespace LiteNetLibManager
         {
             if (CanSetElement)
             {
-                tempNetSerializableWithElement = (INetSerializableWithElement)reader.GetValue(typeof(TType));
+                tempNetSerializableWithElement = (INetSerializableWithElement)reader.GetValue<TType>();
                 tempNetSerializableWithElement.Element = this;
                 return (TType)tempNetSerializableWithElement;
             }
-            return (TType)reader.GetValue(typeof(TType));
+            return reader.GetValue<TType>();
         }
 
         protected virtual void SerializeValue(NetDataWriter writer, TType value)

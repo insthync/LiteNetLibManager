@@ -10,7 +10,7 @@ namespace LiteNetLibManager
 
         public void Deserialize(NetDataReader reader)
         {
-            value = (TType)reader.GetValue(typeof(TType));
+            value = reader.GetValue<TType>();
         }
 
         public void Serialize(NetDataWriter writer)
