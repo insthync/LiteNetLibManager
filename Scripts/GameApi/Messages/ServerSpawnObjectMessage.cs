@@ -17,7 +17,7 @@ namespace LiteNetLibManager
         {
             hashAssetId = reader.GetInt();
             objectId = reader.GetPackedUInt();
-            connectionId = reader.GetLong();
+            connectionId = reader.GetPackedLong();
             position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
             rotation = Quaternion.Euler(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
@@ -26,7 +26,7 @@ namespace LiteNetLibManager
         {
             writer.Put(hashAssetId);
             writer.PutPackedUInt(objectId);
-            writer.Put(connectionId);
+            writer.PutPackedLong(connectionId);
             writer.Put(position.x);
             writer.Put(position.y);
             writer.Put(position.z);
