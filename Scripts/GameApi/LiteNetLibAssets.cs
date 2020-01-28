@@ -247,6 +247,37 @@ namespace LiteNetLibManager
             return false;
         }
 
+        public bool SetObjectOwner(uint objectId, long connectionId)
+        {
+            if (!Manager.IsNetworkActive)
+            {
+                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Network is not active cannot set object owner");
+                return false;
+            }
+            LiteNetLibIdentity spawnedObject;
+            if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
+            {
+                // Remove from player spawned objects dictionary and add to target connection id
+                LiteNetLibPlayer playerA;
+                LiteNetLibPlayer playerB;
+                if (Manager.TryGetPlayer(spawnedObject.ConnectionId, out playerA) &&
+                    Manager.TryGetPlayer(connectionId, out playerB))
+                {
+                    playerA.SpawnedObjects.Remove(objectId);
+                    playerB.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
+                }
+                
+                // If this is server, send message to clients to set object owner
+                if (Manager.IsServer)
+                    Manager.SendServerSetObjectOwner(objectId, connectionId);
+                return true;
+            }
+            else if (Manager.LogWarn)
+                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Object Id: " + objectId + " is not spawned.");
+
+            return false;
+        }
+
         public Vector3 GetPlayerSpawnPosition()
         {
             if (CacheSpawnPoints.Count == 0)

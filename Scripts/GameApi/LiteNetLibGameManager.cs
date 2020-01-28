@@ -506,6 +506,26 @@ namespace LiteNetLibManager
                 return;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.EnterGame, (writer) => { writer.Put(connectionId); });
         }
+
+        public void SendServerSetObjectOwner(uint objectId, long ownerConnectionId)
+        {
+            if (!IsServer)
+                return;
+            foreach (long connectionId in ConnectionIds)
+            {
+                SendServerSetObjectOwner(connectionId, objectId, ownerConnectionId);
+            }
+        }
+
+        public void SendServerSetObjectOwner(long connectionId, uint objectId, long ownerConnectionId)
+        {
+            if (!IsServer)
+                return;
+            ServerSetObjectOwner message = new ServerSetObjectOwner();
+            message.objectId = objectId;
+            message.connectionId = ownerConnectionId;
+            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSetObjectOwner, message);
+        }
         #endregion
 
         #region Message Handlers
@@ -784,8 +804,9 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {
-                // Setup owner client
+                // Set connection id
                 identity.ConnectionId = message.connectionId;
+                // Setup owner client
                 identity.SetOwnerClient(message.connectionId == ClientConnectionId);
             }
         }
