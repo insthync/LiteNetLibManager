@@ -681,8 +681,6 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {
-                // Setup owner client
-                identity.SetOwnerClient(message.connectionId == ClientConnectionId);
                 // If it is not server, read its initial data
                 if (!IsServer)
                     identity.ReadInitialSyncFields(messageHandler.reader);
@@ -801,14 +799,8 @@ namespace LiteNetLibManager
         protected virtual void HandleServerSetObjectOwner(LiteNetLibMessageHandler messageHandler)
         {
             ServerSetObjectOwner message = messageHandler.ReadMessage<ServerSetObjectOwner>();
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(message.objectId, out identity))
-            {
-                // Set connection id
-                identity.ConnectionId = message.connectionId;
-                // Setup owner client
-                identity.SetOwnerClient(message.connectionId == ClientConnectionId);
-            }
+            if (!IsServer)
+                Assets.SetObjectOwner(message.objectId, message.connectionId);
         }
         #endregion
 

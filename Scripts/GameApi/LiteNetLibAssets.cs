@@ -177,6 +177,7 @@ namespace LiteNetLibManager
 
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
+            identity.SetOwnerClient(connectionId == Manager.ClientConnectionId);
             SpawnedObjects[identity.ObjectId] = identity;
 
             // Add to player spawned objects dictionary
@@ -266,7 +267,10 @@ namespace LiteNetLibManager
                     playerA.SpawnedObjects.Remove(objectId);
                     playerB.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
                 }
-                
+                // Set connection id
+                spawnedObject.ConnectionId = connectionId;
+                // Call set owner client event
+                spawnedObject.SetOwnerClient(connectionId == Manager.ClientConnectionId);
                 // If this is server, send message to clients to set object owner
                 if (Manager.IsServer)
                     Manager.SendServerSetObjectOwner(objectId, connectionId);
