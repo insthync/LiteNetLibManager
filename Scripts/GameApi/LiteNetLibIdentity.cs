@@ -60,7 +60,7 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } }
-        public long ConnectionId { get { return connectionId; } }
+        public long ConnectionId { get { return connectionId; } internal set { connectionId = value; } }
         public LiteNetLibGameManager Manager { get { return manager; } }
 
         public LiteNetLibPlayer Player
@@ -89,7 +89,6 @@ namespace LiteNetLibManager
             get { return Manager != null && Manager.ClientConnectionId == ConnectionId; }
         }
 
-        private bool ownerValidated;
         private bool destroyed;
         // Optimize garbage collector
         private int loopCounter;
@@ -399,12 +398,6 @@ namespace LiteNetLibManager
 
         internal void SetOwnerClient(bool isOwnerClient)
         {
-            // Validate owner at client only 1 time each identity
-            if (ownerValidated)
-                return;
-
-            ownerValidated = true;
-            
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
@@ -469,7 +462,7 @@ namespace LiteNetLibManager
             // Only server can manage subscribers
             if (!IsServer)
                 return;
-            
+
             foreach (LiteNetLibPlayer subscriber in Subscribers.Values)
             {
                 subscriber.RemoveSubscribing(this, false);

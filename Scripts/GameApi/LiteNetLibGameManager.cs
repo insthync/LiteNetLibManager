@@ -28,7 +28,8 @@ namespace LiteNetLibManager
             public const ushort ServerError = 12;
             public const ushort ServerSceneChange = 13;
             public const ushort ClientSendTransform = 14;
-            public const ushort Highest = 14;
+            public const ushort ServerSetObjectOwner = 15;
+            public const ushort Highest = 15;
         }
 
         public class DestroyObjectReasons
@@ -60,17 +61,6 @@ namespace LiteNetLibManager
                 if (IsServer)
                     return Timestamp;
                 return Timestamp + ServerUnixTimeOffset;
-            }
-        }
-
-        public float ServerTimeOffset { get; protected set; }
-        public float ServerTime
-        {
-            get
-            {
-                if (IsServer)
-                    return Time.unscaledTime;
-                return Time.unscaledTime + ServerTimeOffset;
             }
         }
 
@@ -267,6 +257,7 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
+            RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
         }
 
         public override void OnPeerConnected(long connectionId)
@@ -378,7 +369,6 @@ namespace LiteNetLibManager
                 return;
             ServerTimeMessage message = new ServerTimeMessage();
             message.serverUnixTime = ServerUnixTime;
-            message.serverTime = ServerTime;
             ServerSendPacket(connectionId, DeliveryMethod.Sequenced, GameMsgTypes.ServerTime, message);
         }
 
@@ -745,7 +735,6 @@ namespace LiteNetLibManager
                 return;
             ServerTimeMessage message = messageHandler.ReadMessage<ServerTimeMessage>();
             ServerUnixTimeOffset = message.serverUnixTime - Timestamp;
-            ServerTimeOffset = message.serverTime - Time.unscaledTime;
         }
 
         protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
@@ -786,6 +775,18 @@ namespace LiteNetLibManager
             {
                 // If scene is difference, load changing scene
                 StartCoroutine(LoadSceneRoutine(serverSceneName, true));
+            }
+        }
+
+        protected virtual void HandleServerSetObjectOwner(LiteNetLibMessageHandler messageHandler)
+        {
+            ServerSetObjectOwner message = messageHandler.ReadMessage<ServerSetObjectOwner>();
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(message.objectId, out identity))
+            {
+                // Setup owner client
+                identity.ConnectionId = message.connectionId;
+                identity.SetOwnerClient(message.connectionId == ClientConnectionId);
             }
         }
         #endregion
