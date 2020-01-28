@@ -7,18 +7,15 @@ namespace LiteNetLibManager
     public struct ServerTimeMessage : INetSerializable
     {
         public int serverUnixTime;
-        public float serverTime;
 
         public void Deserialize(NetDataReader reader)
         {
-            serverUnixTime = reader.GetInt();
-            serverTime = reader.GetFloat();
+            serverUnixTime = reader.GetPackedInt();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(serverUnixTime);
-            writer.Put(serverTime);
+            writer.PutPackedInt(serverUnixTime);
         }
     }
 }
