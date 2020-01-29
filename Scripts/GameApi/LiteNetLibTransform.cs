@@ -57,6 +57,7 @@ namespace LiteNetLibManager
         public CharacterController CacheCharacterController { get; private set; }
         #endregion
 
+        private bool syncingTransformIsIdentity;
         // Interpolation related variables
         private float ownerSendElapsed = 0;
         private float lastClientTimestamp = 0;
@@ -70,7 +71,7 @@ namespace LiteNetLibManager
         private void Awake()
         {
             if (syncingTransform == null)
-                syncingTransform = GetComponent<Transform>();
+                syncingTransform = transform;
             // Nav mesh agent is highest priority, then character controller
             // Then Rigidbodies, that both 3d/2d are same priority
             CacheNavMeshAgent = syncingTransform.GetComponent<NavMeshAgent>();
@@ -88,13 +89,20 @@ namespace LiteNetLibManager
         private void Start()
         {
             InitInterpResults(syncingTransform.position, syncingTransform.rotation);
-            if (IsServer)
-                Teleport(syncingTransform.position, syncingTransform.rotation);
         }
 
         public override void OnSetOwnerClient(bool isOwnerClient)
         {
             InitInterpResults(syncingTransform.position, syncingTransform.rotation);
+        }
+
+        public override void InitTransform(Vector3 position, Quaternion rotation)
+        {
+            if (syncingTransformIsIdentity)
+            {
+                InitInterpResults(position, rotation);
+                Snap(position, rotation);
+            }
         }
 
         private void InitInterpResults(Vector3 position, Quaternion rotation)
@@ -111,6 +119,9 @@ namespace LiteNetLibManager
         {
             base.OnSetup();
             RegisterNetFunction<Vector3, Quaternion>(NetFunction_Teleport);
+            if (syncingTransform == null)
+                syncingTransform = transform;
+            syncingTransformIsIdentity = syncingTransform == Identity.transform;
         }
 
         private void NetFunction_Teleport(Vector3 position, Quaternion rotation)

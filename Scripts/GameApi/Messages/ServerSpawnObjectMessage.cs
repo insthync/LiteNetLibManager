@@ -15,7 +15,7 @@ namespace LiteNetLibManager
 
         public void Deserialize(NetDataReader reader)
         {
-            hashAssetId = reader.GetInt();
+            hashAssetId = reader.GetPackedInt();
             objectId = reader.GetPackedUInt();
             connectionId = reader.GetPackedLong();
             position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
@@ -24,7 +24,7 @@ namespace LiteNetLibManager
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(hashAssetId);
+            writer.PutPackedInt(hashAssetId);
             writer.PutPackedUInt(objectId);
             writer.PutPackedLong(connectionId);
             writer.Put(position.x);

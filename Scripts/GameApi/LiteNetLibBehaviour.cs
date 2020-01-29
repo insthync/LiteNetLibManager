@@ -694,6 +694,13 @@ namespace LiteNetLibManager
         public virtual void OnSetOwnerClient(bool isOwnerClient) { }
 
         /// <summary>
+        /// This function will be called when this client receive spawn object message with position and rotation
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="rotation"></param>
+        public virtual void InitTransform(Vector3 position, Quaternion rotation) { }
+
+        /// <summary>
         /// This function will be called when object destroy from server
         /// </summary>
         /// <param name="reasons"></param>

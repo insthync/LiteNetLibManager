@@ -404,6 +404,14 @@ namespace LiteNetLibManager
             }
         }
 
+        internal void InitTransform(Vector3 position, Quaternion rotation)
+        {
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            {
+                Behaviours[loopCounter].InitTransform(position, rotation);
+            }
+        }
+
         internal void ValidateObjectId()
         {
             if (objectId == 0 || IsSceneObjectExists(objectId))

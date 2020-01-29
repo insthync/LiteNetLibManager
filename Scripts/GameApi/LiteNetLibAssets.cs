@@ -127,6 +127,10 @@ namespace LiteNetLibManager
             }
         }
 
+        /// <summary>
+        /// This function will be called on start server and when network scene loaded to spawn scene objects
+        /// So each scene objects connection id will = -1 (No owning client)
+        /// </summary>
         public void SpawnSceneObjects()
         {
             List<LiteNetLibIdentity> sceneObjects = new List<LiteNetLibIdentity>(SceneObjects.Values);
@@ -137,7 +141,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, Vector3 position, Quaternion rotation)
+        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, Vector3 position, Quaternion rotation, long connectionId = -1)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -149,9 +153,9 @@ namespace LiteNetLibManager
             if (SceneObjects.TryGetValue(objectId, out sceneObject))
             {
                 sceneObject.gameObject.SetActive(true);
-                sceneObject.transform.position = position;
-                sceneObject.transform.rotation = rotation;
-                sceneObject.Initial(Manager, true, objectId);
+                sceneObject.Initial(Manager, true, objectId, connectionId);
+                sceneObject.InitTransform(position, rotation);
+                sceneObject.SetOwnerClient(connectionId == Manager.ClientConnectionId);
                 SpawnedObjects[sceneObject.ObjectId] = sceneObject;
                 return sceneObject;
             }
@@ -177,6 +181,7 @@ namespace LiteNetLibManager
 
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
+            identity.InitTransform(gameObject.transform.position, gameObject.transform.rotation);
             identity.SetOwnerClient(connectionId == Manager.ClientConnectionId);
             SpawnedObjects[identity.ObjectId] = identity;
 

@@ -391,6 +391,7 @@ namespace LiteNetLibManager
                 return;
             ServerSpawnSceneObjectMessage message = new ServerSpawnSceneObjectMessage();
             message.objectId = identity.ObjectId;
+            message.connectionId = identity.ConnectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message, identity.WriteInitialSyncFields);
@@ -660,7 +661,7 @@ namespace LiteNetLibManager
         {
             ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
             if (!IsServer)
-                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation);
+                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation, message.objectId);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {
