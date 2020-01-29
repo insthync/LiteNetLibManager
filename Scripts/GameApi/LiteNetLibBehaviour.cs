@@ -280,7 +280,7 @@ namespace LiteNetLibManager
                     tempAttribute = field.GetCustomAttribute<SyncFieldAttribute>();
                     tempOnChangeMethod = null;
                     tempHookFunctionKey = new StringBuilder(TypeName).Append('.').Append(tempAttribute.hook).ToString();
-                    if (!string.IsNullOrEmpty(tempAttribute.hook) && 
+                    if (!string.IsNullOrEmpty(tempAttribute.hook) &&
                         !CacheHookFunctions.TryGetValue(tempHookFunctionKey, out tempOnChangeMethod))
                     {
                         // Not found hook function in cache dictionary, try find the function
@@ -671,6 +671,11 @@ namespace LiteNetLibManager
         public void Deserialize(NetDataReader reader)
         {
             OnDeserialize(reader);
+        }
+
+        public void SetOwnerClient(long connectionId)
+        {
+            Identity.SetOwnerClient(connectionId);
         }
 
         public void NetworkDestroy()

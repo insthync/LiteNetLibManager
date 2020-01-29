@@ -631,12 +631,20 @@ namespace LiteNetLibManager
             }
         }
 
+        public void SetOwnerClient(long connectionId)
+        {
+            if (!IsServer)
+                return;
+
+            Manager.Assets.SetObjectOwner(ObjectId, connectionId);
+        }
+
         public void NetworkDestroy()
         {
             if (!IsServer)
                 return;
 
-            Manager.StartCoroutine(NetworkDestroyRoutine(0f));
+            NetworkDestroyFunction();
         }
 
         public void NetworkDestroy(float delay)
@@ -644,12 +652,11 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            Manager.StartCoroutine(NetworkDestroyRoutine(delay));
+            Invoke("NetworkDestroyFunction", delay);
         }
 
-        IEnumerator NetworkDestroyRoutine(float delay)
+        private void NetworkDestroyFunction()
         {
-            yield return new WaitForSecondsRealtime(delay);
             if (!destroyed)
             {
                 Manager.Assets.NetworkDestroy(ObjectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
