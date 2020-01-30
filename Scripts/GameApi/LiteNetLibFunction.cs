@@ -70,7 +70,9 @@ namespace LiteNetLibManager
                     case FunctionReceivers.All:
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
-                            if (Identity.IsSubscribedOrOwning(connectionId))
+                            if (Manager.ClientConnectionId == connectionId)
+                                HookCallback();
+                            else if (Identity.IsSubscribedOrOwning(connectionId))
                                 ServerSendCall(connectionId, deliveryMethod, receivers, targetConnectionId);
                         }
                         if (!Manager.IsClientConnected)
