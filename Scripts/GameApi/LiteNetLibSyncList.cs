@@ -471,31 +471,37 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncListPackedUShort : LiteNetLibSyncList<PackedUShort>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncListPackedUInt : LiteNetLibSyncList<PackedUInt>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncListPackedULong : LiteNetLibSyncList<PackedULong>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncListPackedShort : LiteNetLibSyncList<PackedShort>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncListPackedInt : LiteNetLibSyncList<PackedInt>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncListPackedLong : LiteNetLibSyncList<PackedLong>
     {
     }

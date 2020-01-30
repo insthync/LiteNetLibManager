@@ -45,13 +45,13 @@ namespace LiteNetLib.Utils
                 return reader.GetFloatArray();
 
             if (type == typeof(int))
-                return reader.GetInt();
+                return reader.GetPackedInt();
 
             if (type == typeof(int[]))
                 return reader.GetIntArray();
 
             if (type == typeof(long))
-                return reader.GetLong();
+                return reader.GetPackedLong();
 
             if (type == typeof(long[]))
                 return reader.GetLongArray();
@@ -60,7 +60,7 @@ namespace LiteNetLib.Utils
                 return reader.GetSByte();
 
             if (type == typeof(short))
-                return reader.GetShort();
+                return reader.GetPackedShort();
 
             if (type == typeof(short[]))
                 return reader.GetShortArray();
@@ -69,19 +69,19 @@ namespace LiteNetLib.Utils
                 return reader.GetString();
 
             if (type == typeof(uint))
-                return reader.GetUInt();
+                return reader.GetPackedUInt();
 
             if (type == typeof(uint[]))
                 return reader.GetUIntArray();
 
             if (type == typeof(ulong))
-                return reader.GetULong();
+                return reader.GetPackedULong();
 
             if (type == typeof(ulong[]))
                 return reader.GetULongArray();
 
             if (type == typeof(ushort))
-                return reader.GetUShort();
+                return reader.GetPackedUShort();
 
             if (type == typeof(ushort[]))
                 return reader.GetUShortArray();

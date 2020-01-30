@@ -72,7 +72,7 @@ namespace LiteNetLib.Utils
 
             if (type == typeof(int))
             {
-                writer.Put((int)value);
+                writer.PutPackedInt((int)value);
                 return;
             }
 
@@ -84,7 +84,7 @@ namespace LiteNetLib.Utils
 
             if (type == typeof(long))
             {
-                writer.Put((long)value);
+                writer.PutPackedLong((long)value);
                 return;
             }
 
@@ -102,7 +102,7 @@ namespace LiteNetLib.Utils
 
             if (type == typeof(short))
             {
-                writer.Put((short)value);
+                writer.PutPackedShort((short)value);
                 return;
             }
 
@@ -120,7 +120,7 @@ namespace LiteNetLib.Utils
 
             if (type == typeof(uint))
             {
-                writer.Put((uint)value);
+                writer.PutPackedUInt((uint)value);
                 return;
             }
 
@@ -132,7 +132,7 @@ namespace LiteNetLib.Utils
 
             if (type == typeof(ulong))
             {
-                writer.Put((ulong)value);
+                writer.PutPackedULong((ulong)value);
                 return;
             }
 
@@ -144,7 +144,7 @@ namespace LiteNetLib.Utils
 
             if (type == typeof(ushort))
             {
-                writer.Put((ushort)value);
+                writer.PutPackedUShort((ushort)value);
                 return;
             }
 
