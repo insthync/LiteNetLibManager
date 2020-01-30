@@ -526,6 +526,14 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldInt : LiteNetLibSyncField<int>
     {
+        internal sealed override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedInt(Value);
+        }
+        internal sealed override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetPackedInt();
+        }
     }
 
     [Serializable]
@@ -536,6 +544,14 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldLong : LiteNetLibSyncField<long>
     {
+        internal sealed override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedLong(Value);
+        }
+        internal sealed override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetPackedLong();
+        }
     }
 
     [Serializable]
@@ -551,6 +567,14 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldShort : LiteNetLibSyncField<short>
     {
+        internal sealed override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedShort(Value);
+        }
+        internal sealed override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetPackedShort();
+        }
     }
 
     [Serializable]
@@ -566,6 +590,14 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldUInt : LiteNetLibSyncField<uint>
     {
+        internal sealed override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedUInt(Value);
+        }
+        internal sealed override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetPackedUInt();
+        }
     }
 
     [Serializable]
@@ -576,6 +608,14 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldULong : LiteNetLibSyncField<ulong>
     {
+        internal sealed override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedULong(Value);
+        }
+        internal sealed override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetPackedULong();
+        }
     }
 
     [Serializable]
@@ -586,6 +626,14 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldUShort : LiteNetLibSyncField<ushort>
     {
+        internal sealed override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutPackedUShort(Value);
+        }
+        internal sealed override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetPackedUShort();
+        }
     }
 
     [Serializable]
@@ -629,31 +677,37 @@ namespace LiteNetLibManager
     }
 
     [Serializable]
+    [Obsolete("SyncField<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncFieldPackedUShort : LiteNetLibSyncField<PackedUShort>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncField<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncFieldPackedUInt : LiteNetLibSyncField<PackedUInt>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncField<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncFieldPackedULong : LiteNetLibSyncField<PackedULong>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncField<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncFieldPackedShort : LiteNetLibSyncField<PackedShort>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncField<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncFieldPackedInt : LiteNetLibSyncField<PackedInt>
     {
     }
 
     [Serializable]
+    [Obsolete("SyncField<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
     public class SyncFieldPackedLong : LiteNetLibSyncField<PackedLong>
     {
     }
