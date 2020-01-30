@@ -89,6 +89,11 @@ namespace LiteNetLibManager
             get { return Manager != null && Manager.ClientConnectionId == ConnectionId; }
         }
 
+        public bool IsSceneObject
+        {
+            get; private set;
+        }
+
         private bool destroyed;
         // Optimize garbage collector
         private int loopCounter;
@@ -375,7 +380,8 @@ namespace LiteNetLibManager
             destroyed = false;
             if (objectId > HighestObjectId)
                 HighestObjectId = objectId;
-            if (!isSceneObject)
+            IsSceneObject = isSceneObject;
+            if (!IsSceneObject)
                 ValidateObjectId();
 
             if (!isSetupBehaviours)

@@ -122,6 +122,11 @@ namespace LiteNetLibManager
             get { return Identity.IsOwnerClient; }
         }
 
+        public bool IsSceneObject
+        {
+            get { return Identity.IsSceneObject; }
+        }
+
         // Optimize garbage collector
         private int loopCounter;
 
