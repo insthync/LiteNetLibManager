@@ -1,5 +1,6 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace LiteNetLibManager
         public int ServerPort { get; protected set; }
         protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
         protected readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
+        protected readonly Dictionary<uint, long> ackTimes = new Dictionary<uint, long>();
         protected uint nextAckId = 1;
         protected TransportEventData tempEventData;
         protected bool isClientActive;
@@ -48,6 +50,17 @@ namespace LiteNetLibManager
                     OnClientReceive(tempEventData);
                 }
             }
+            if ((isServerActive || isClientActive) && AckCallbacksCount > 0)
+            {
+                foreach (uint ackId in ackTimes.Keys)
+                {
+                    if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - ackTimes[ackId] >= 30)
+                    {
+                        // Timeout
+                        TriggerAck(ackId, AckResponseCode.Timeout, new BaseAckMessage());
+                    }
+                }
+            }
         }
 
         public bool StartClient(string address, int port)
@@ -60,6 +73,7 @@ namespace LiteNetLibManager
             isClientActive = true;
             // Reset acks
             ackCallbacks.Clear();
+            ackTimes.Clear();
             nextAckId = 1;
             return Transport.StartClient(address, port);
         }
@@ -80,6 +94,7 @@ namespace LiteNetLibManager
             isServerActive = true;
             // Reset acks
             ackCallbacks.Clear();
+            ackTimes.Clear();
             nextAckId = 1;
             ServerPort = port;
             return Transport.StartServer(port, maxConnections);
@@ -118,10 +133,12 @@ namespace LiteNetLibManager
             uint ackId = nextAckId++;
             lock (ackCallbacks)
                 ackCallbacks.Add(ackId, callback);
+            lock (ackTimes)
+                ackTimes.Add(ackId, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             return ackId;
         }
 
-        public uint ClientSendAckPacket<T>(DeliveryMethod deliveryMethod, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        public uint ClientSendAckPacket<T>(DeliveryMethod deliveryMethod, ushort msgType, T messageData, AckMessageCallback callback, Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
         {
             messageData.ackId = AddAckCallback(callback);
             ClientSendPacket(deliveryMethod, msgType, (writer) =>
@@ -133,7 +150,7 @@ namespace LiteNetLibManager
             return messageData.ackId;
         }
 
-        public uint ServerSendAckPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        public uint ServerSendAckPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, AckMessageCallback callback, Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
         {
             messageData.ackId = AddAckCallback(callback);
             ServerSendPacket(connectionId, deliveryMethod, msgType, (writer) =>
@@ -156,9 +173,13 @@ namespace LiteNetLibManager
                     ackCallback(responseCode, messageData);
                 }
             }
+            lock (ackTimes)
+            {
+                ackTimes.Remove(ackId);
+            }
         }
 
-        public void ClientSendPacket(DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ClientSendPacket(DeliveryMethod deliveryMethod, ushort msgType, Action<NetDataWriter> serializer)
         {
             writer.Reset();
             writer.PutPackedUShort(msgType);
@@ -167,7 +188,7 @@ namespace LiteNetLibManager
             Transport.ClientSend(deliveryMethod, writer);
         }
 
-        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, Action<NetDataWriter> serializer)
         {
             writer.Reset();
             writer.PutPackedUShort(msgType);
