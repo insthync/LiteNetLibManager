@@ -12,15 +12,17 @@ To make networking object be able to creating at runtime, developer have to make
 
 ## About networking object subscribing
 
-An networking objects can be subscribed or unsubscribed by player (LiteNetLibPlayer) to sync data to subscribed player. Subcribing will be managed by server, its conditions to subscribe/unsubscribe can be defined to behaviour classes (Classes which derived from `LiteNetLibBehaviour`) by override function `ShouldAddSubscriber()` function which will return `true` if object should add player as subscriber and `OnRebuildSubscribers()` function which will add players that should be subscriber to `subscribers` hashset and return `true` if there is any player that can subscribing networking object.
+An networking objects can be subscribed or unsubscribed by player (`LiteNetLibPlayer`) to sync data to subscribed players. Subcribing will be managed by server, its conditions to subscribe/unsubscribe can be defined to behaviour classes (Classes which derived from `LiteNetLibBehaviour`) by override function `ShouldAddSubscriber()` function which will return `true` if object should add player as subscriber and `OnRebuildSubscribers()` function which will add players that should be subscriber to `subscribers` hashset and return `true` if there is any player that can subscribing networking object.
 
 When player subscribing the object, server will send spawn message to the client and when player unsubscribing the object, server will send destroy message to the client.
 
 ## Spawn networking object workflow
 
-When `NetworkSpawn()` function called at server, it will prepare object data such as object ID, connection ID, type of object (is scene object or not). Then it will add player as subscriber. And the object added player (`LiteNetLibAssets`) as subscriber, server will send `ServerSpawnObject (Id = 5)` to client with data including with Sync Field, Sync List data.
+When `NetworkSpawn()` function called at server, it will prepare object data such as object ID, connection ID, type of object (is scene object or not).
 
-Then when client receive the message, client will spawn the networking object and set included data.
+Then when the object was added to player(`LiteNetLibPlayer`)'s subscribing list, server will send `ServerSpawnObject (Id = 5)` to client with data including with Sync Field, Sync List data.
+
+After that when client receive the message, client will spawn the networking object and set included data.
 
 ![](../images/seq_spawn-and-add-subscriber-to-networking-object.png)
 
@@ -28,9 +30,9 @@ Then when client receive the message, client will spawn the networking object an
 
 When client or server started and loaded scene it will deactivate scene networking objects. Then server spawn scene networking objects and activate them later. 
 
-After that when client connect to the server. And the object added player (`LiteNetLibAssets`) as subscriber, server will send `ServerSpawnSceneObject (Id = 4)` to client with data including with Sync Field, Sync List data.
+Then when the object was added to player(`LiteNetLibPlayer`)'s subscribing list, server will send `ServerSpawnSceneObject (Id = 4)` to client with data including with Sync Field, Sync List data.
 
-Then when client receive the message, client will activate the scene networking object and set included data.
+After that when client receive the message, client will activate the scene networking object and set included data.
 
 ![](../images/seq_spawn-scene-networking-object.png)
 
