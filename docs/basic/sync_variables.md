@@ -30,6 +30,19 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 }
 ```
 
+You also can use [SyncField] attribute to define **Sync Field**, it's similar with UNET u[SyncVar] attribute
+
+```
+using LiteNetLibManager;
+public class CustomNetBehaviour : LiteNetLibBehaviour {
+    [SyncField(sendInterval = 0.1f, syncMode = LiteNetLibSyncField.SyncMode.ServerToClients)]
+    private int hp;
+    [SyncField(sendInterval = 0.1f, syncMode = LiteNetLibSyncField.SyncMode.ServerToClients)]
+    private int mp;
+}
+
+```
+
 About configs there are:
 
 - `sendOptions`, how it sync to clients. For some data such as character position may sync as `Sequenced` to send data in order but not have to confirm that all data that client will receive. For some data such as character health may sync as `ReliableOrdered` so send data in order and confirm that client will receives them.

@@ -17,6 +17,19 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 }
 ```
 
+You also can use [NetFunction] attribute to define **Net Function**, it's more convenience becuase you won't have to register the function
+
+```
+using LiteNetLibManager;
+public class CustomNetBehaviour : LiteNetLibBehaviour {
+    [NetFunction]
+    private void Shoot(int bulletType)
+    {
+        // Received `bulletType` to do anything
+    }
+}
+```
+
 Then you can call it to invoke callback with parameters on target like this:
 
 ```
