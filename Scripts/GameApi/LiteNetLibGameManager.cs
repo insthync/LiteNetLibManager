@@ -59,7 +59,7 @@ namespace LiteNetLibManager
         public long ClientConnectionId { get; protected set; }
         
         public long Rtt { get; private set; }
-        public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeSeconds(); } }
+        public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); } }
         public long ServerUnixTimeOffset { get; protected set; }
         public long ServerUnixTime
         {
@@ -784,7 +784,7 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             ServerTimeMessage message = messageHandler.ReadMessage<ServerTimeMessage>();
-            ServerUnixTimeOffset = message.serverUnixTime - Timestamp;
+            ServerUnixTimeOffset = message.serverUnixTime - Timestamp - Rtt;
         }
 
         protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
