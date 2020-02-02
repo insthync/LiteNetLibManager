@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
+using System.Threading.Tasks;
 
 namespace LiteNetLibManager
 {
@@ -73,7 +74,7 @@ namespace LiteNetLibManager
                 return string.Empty;
             }
         }
-        
+
         public LiteNetLibAssets Assets { get; private set; }
 
         protected override void Awake()
@@ -141,7 +142,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            StartCoroutine(LoadSceneRoutine(sceneName, true));
+            LoadSceneRoutine(sceneName, true);
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace LiteNetLibManager
         /// <param name="sceneName"></param>
         /// <param name="online"></param>
         /// <returns></returns>
-        private IEnumerator LoadSceneRoutine(string sceneName, bool online)
+        private async void LoadSceneRoutine(string sceneName, bool online)
         {
             if (loadSceneAsyncOperation == null)
             {
@@ -174,48 +175,42 @@ namespace LiteNetLibManager
                 if (Assets.onLoadSceneStart != null)
                     Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
 
-                yield return null;
                 loadSceneAsyncOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
                 while (loadSceneAsyncOperation != null && !loadSceneAsyncOperation.isDone)
                 {
                     if (Assets.onLoadSceneProgress != null)
                         Assets.onLoadSceneProgress.Invoke(sceneName, online, loadSceneAsyncOperation.progress);
-                    yield return null;
+                    await Task.Yield();
                 }
                 loadSceneAsyncOperation = null;
-                yield return null;
 
                 if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " is online: " + online);
                 if (Assets.onLoadSceneFinish != null)
                     Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
-                yield return null;
 
                 if (online)
                 {
                     Assets.Initialize();
                     if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> Assets.Initialize()");
-                    yield return null;
                     if (IsClient)
                     {
                         OnClientOnlineSceneLoaded();
                         if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
                     }
-                    yield return null;
                     if (IsServer)
                     {
+                        Debug.LogError("Server Loaded");
                         serverSceneName = sceneName;
                         Assets.SpawnSceneObjects();
                         if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
                         OnServerOnlineSceneLoaded();
                         if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> OnServerOnlineSceneLoaded()");
                     }
-                    yield return null;
                     if (IsServer)
                     {
                         SendServerSceneChange(sceneName);
                         if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> SendServerSceneChange()");
                     }
-                    yield return null;
                     if (IsClient)
                     {
                         SendClientReady();
@@ -306,7 +301,7 @@ namespace LiteNetLibManager
             else
             {
                 serverSceneName = Assets.onlineScene.SceneName;
-                StartCoroutine(LoadSceneRoutine(Assets.onlineScene.SceneName, true));
+                LoadSceneRoutine(Assets.onlineScene.SceneName, true);
             }
         }
 
@@ -316,7 +311,7 @@ namespace LiteNetLibManager
             Players.Clear();
             Assets.Clear();
             if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
-                StartCoroutine(LoadSceneRoutine(Assets.offlineScene.SceneName, false));
+                LoadSceneRoutine(Assets.offlineScene.SceneName, false);
         }
 
         public override void OnStopClient()
@@ -327,7 +322,7 @@ namespace LiteNetLibManager
                 Players.Clear();
                 Assets.Clear();
                 if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
-                    StartCoroutine(LoadSceneRoutine(Assets.offlineScene.SceneName, false));
+                    LoadSceneRoutine(Assets.offlineScene.SceneName, false);
             }
         }
 
@@ -793,7 +788,7 @@ namespace LiteNetLibManager
             else
             {
                 // If scene is difference, load changing scene
-                StartCoroutine(LoadSceneRoutine(serverSceneName, true));
+                LoadSceneRoutine(serverSceneName, true);
             }
         }
 
