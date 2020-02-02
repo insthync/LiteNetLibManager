@@ -6,16 +6,16 @@ namespace LiteNetLibManager
 {
     public struct ServerTimeMessage : INetSerializable
     {
-        public int serverUnixTime;
+        public long serverUnixTime;
 
         public void Deserialize(NetDataReader reader)
         {
-            serverUnixTime = reader.GetPackedInt();
+            serverUnixTime = reader.GetPackedLong();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.PutPackedInt(serverUnixTime);
+            writer.PutPackedLong(serverUnixTime);
         }
     }
 }
