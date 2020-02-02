@@ -129,6 +129,11 @@ namespace LiteNetLibManager
             base.LateUpdate();
         }
 
+        public virtual uint PacketVersion()
+        {
+            return 1;
+        }
+
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
         {
             return Players.TryGetValue(connectionId, out player);
