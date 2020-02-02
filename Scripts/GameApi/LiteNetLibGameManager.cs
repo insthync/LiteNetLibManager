@@ -30,7 +30,8 @@ namespace LiteNetLibManager
             public const ushort ServerSceneChange = 13;
             public const ushort ClientSendTransform = 14;
             public const ushort ServerSetObjectOwner = 15;
-            public const ushort Highest = 15;
+            public const ushort Ping = 16;
+            public const ushort Highest = 16;
         }
 
         public class DestroyObjectReasons
@@ -41,6 +42,7 @@ namespace LiteNetLibManager
         }
 
         public float updateServerTimeDuration = 5f;
+        public float pingDuration = 1f;
         public bool doNotEnterGameOnConnect;
         public bool doNotDestroyOnSceneChanges;
 
@@ -48,14 +50,18 @@ namespace LiteNetLibManager
 
         private float tempUpdateTime;
         private float lastSendServerTime;
+        private float lastSendPingTime;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
+        private bool isPinging;
+        private long pingTime;
 
         public long ClientConnectionId { get; protected set; }
-
-        public int Timestamp { get { return (int)System.DateTime.UtcNow.Subtract(new System.DateTime(1970, 1, 1)).TotalSeconds; } }
-        public int ServerUnixTimeOffset { get; protected set; }
-        public int ServerUnixTime
+        
+        public long Rtt { get; private set; }
+        public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeSeconds(); } }
+        public long ServerUnixTimeOffset { get; protected set; }
+        public long ServerUnixTime
         {
             get
             {
@@ -108,6 +114,15 @@ namespace LiteNetLibManager
                     {
                         SendServerTime();
                         lastSendServerTime = tempUpdateTime;
+                    }
+                }
+
+                if (IsClientConnected)
+                {
+                    if (tempUpdateTime - lastSendPingTime > pingDuration)
+                    {
+                        SendClientPing();
+                        lastSendPingTime = tempUpdateTime;
                     }
                 }
             }
@@ -199,7 +214,6 @@ namespace LiteNetLibManager
                     }
                     if (IsServer)
                     {
-                        Debug.LogError("Server Loaded");
                         serverSceneName = sceneName;
                         Assets.SpawnSceneObjects();
                         if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
@@ -235,6 +249,7 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
+            RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
         }
 
         protected override void RegisterClientMessages()
@@ -253,6 +268,7 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
+            RegisterClientMessage(GameMsgTypes.Ping, HandleServerPing);
         }
 
         public override void OnPeerConnected(long connectionId)
@@ -282,6 +298,8 @@ namespace LiteNetLibManager
             base.OnClientConnected();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
+            isPinging = false;
+            Rtt = 0;
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
         }
@@ -291,6 +309,8 @@ namespace LiteNetLibManager
             base.OnStartServer();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
+            isPinging = false;
+            Rtt = 0;
             if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
             {
                 serverSceneName = SceneManager.GetActiveScene().name;
@@ -346,6 +366,17 @@ namespace LiteNetLibManager
             if (!IsClientConnected)
                 return;
             ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.ClientNotReady);
+        }
+
+        public void SendClientPing()
+        {
+            if (!IsClientConnected)
+                return;
+            if (isPinging)
+                return;
+            isPinging = true;
+            pingTime = Timestamp;
+            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping);
         }
 
         public void SendServerTime()
@@ -647,6 +678,11 @@ namespace LiteNetLibManager
             }
         }
 
+        protected void HandleClientPing(LiteNetLibMessageHandler messageHandler)
+        {
+            ServerSendPacket(messageHandler.connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping);
+        }
+
         protected virtual void HandleServerEnterGame(LiteNetLibMessageHandler messageHandler)
         {
             ClientConnectionId = messageHandler.reader.GetLong();
@@ -797,6 +833,13 @@ namespace LiteNetLibManager
             ServerSetObjectOwner message = messageHandler.ReadMessage<ServerSetObjectOwner>();
             if (!IsServer)
                 Assets.SetObjectOwner(message.objectId, message.connectionId);
+        }
+
+        protected void HandleServerPing(LiteNetLibMessageHandler messageHandler)
+        {
+            isPinging = false;
+            Rtt = Timestamp - pingTime;
+            if (LogDev) Debug.Log("[LiteNetLibGameManager] Rtt: " + Rtt);
         }
         #endregion
 
