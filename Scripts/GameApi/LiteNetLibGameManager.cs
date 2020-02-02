@@ -119,7 +119,7 @@ namespace LiteNetLibManager
 
                 if (IsClientConnected)
                 {
-                    if (tempUpdateTime - lastSendPingTime > pingDuration)
+                    if (tempUpdateTime - lastSendPingTime > pingDuration && !isPinging)
                     {
                         SendClientPing();
                         lastSendPingTime = tempUpdateTime;
