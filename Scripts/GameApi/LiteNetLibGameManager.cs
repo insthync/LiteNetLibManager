@@ -204,10 +204,6 @@ namespace LiteNetLibManager
                 }
                 loadSceneAsyncOperation = null;
 
-                if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " is online: " + online);
-                if (Assets.onLoadSceneFinish != null)
-                    Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
-
                 if (online)
                 {
                     Assets.Initialize();
@@ -241,6 +237,10 @@ namespace LiteNetLibManager
                     // Destroy manager's game object if loaded scene is not online scene
                     Destroy(gameObject);
                 }
+
+                if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " is online: " + online);
+                if (Assets.onLoadSceneFinish != null)
+                    Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
             }
         }
 
