@@ -23,7 +23,11 @@ public int int1;
 ```
 public LiteNetLibSyncField<int> int1 = new LiteNetLibSyncField<int>();
 ```
-
+Or
+```
+[SyncField]
+public int int1;
+```
 
 ## Sync List
 **UNET**
@@ -76,6 +80,24 @@ private void Alert() {
 }
 ```
 
+Or
+
+```
+[NetFunction]
+private void Shoot(int bulletType) {
+
+}
+
+[NetFunction]
+private void ShowDamage(int damage) {
+
+}
+
+[NetFunction]
+private void Alert() {
+
+}
+```
 
 ## Call Command, ClientRpc, TargetRpc
 **UNET**
