@@ -81,7 +81,7 @@ namespace LiteNetLibManager
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
     {
-        protected readonly List<TType> list = new List<TType>();
+        protected List<TType> list = new List<TType>();
 
         public TType this[int index]
         {
