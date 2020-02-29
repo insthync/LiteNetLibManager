@@ -3,12 +3,12 @@
 namespace LiteNetLibManager
 {
     [System.Serializable]
-    public class LiteNetLibScene
+    public struct LiteNetLibScene
     {
         [SerializeField]
         private Object sceneAsset;
         [SerializeField]
-        private string sceneName = string.Empty;
+        private string sceneName;
 
         public string SceneName
         {
