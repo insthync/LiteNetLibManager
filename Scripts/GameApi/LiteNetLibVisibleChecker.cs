@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace LiteNetLibManager
 {
@@ -97,6 +98,8 @@ namespace LiteNetLibManager
         public override void OnServerSubscribingAdded()
         {
             base.OnServerSubscribingAdded();
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                return;
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
             for (int i = 0; i < renderers.Length; ++i)
             {
@@ -107,6 +110,8 @@ namespace LiteNetLibManager
         public override void OnServerSubscribingRemoved()
         {
             base.OnServerSubscribingRemoved();
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                return;
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
             for (int i = 0; i < renderers.Length; ++i)
             {
