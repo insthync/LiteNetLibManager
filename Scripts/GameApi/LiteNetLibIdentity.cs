@@ -95,8 +95,6 @@ namespace LiteNetLibManager
         }
 
         private bool destroyed;
-        // Optimize garbage collector
-        private int loopCounter;
 
         internal void NetworkUpdate(float time)
         {
@@ -104,6 +102,7 @@ namespace LiteNetLibManager
                 return;
 
             Profiler.BeginSample("LiteNetLibIdentity - Network Update");
+            int loopCounter;
             for (loopCounter = 0; loopCounter < syncFields.Count; ++loopCounter)
             {
                 syncFields[loopCounter].NetworkUpdate(time);
@@ -388,6 +387,7 @@ namespace LiteNetLibManager
             {
                 // Setup behaviours index, we will use this as reference for network functions
                 Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
+                int loopCounter;
                 for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
                     Behaviours[loopCounter].Setup(Convert.ToByte(loopCounter));
@@ -404,6 +404,7 @@ namespace LiteNetLibManager
 
         internal void SetOwnerClient(bool isOwnerClient)
         {
+            int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
@@ -412,6 +413,7 @@ namespace LiteNetLibManager
 
         internal void InitTransform(Vector3 position, Quaternion rotation)
         {
+            int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].InitTransform(position, rotation);
@@ -529,9 +531,10 @@ namespace LiteNetLibManager
 
         public bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
         {
-            for (int i = 0; i < Behaviours.Length; ++i)
+            int loopCounter;
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                if (!Behaviours[i].ShouldAddSubscriber(subscriber))
+                if (!Behaviours[loopCounter].ShouldAddSubscriber(subscriber))
                     return false;
             }
             return true;
@@ -557,6 +560,7 @@ namespace LiteNetLibManager
             HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
             HashSet<LiteNetLibPlayer> oldSubscribers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
 
+            int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 shouldRebuild |= Behaviours[loopCounter].OnRebuildSubscribers(newSubscribers, initialize);
@@ -631,6 +635,7 @@ namespace LiteNetLibManager
 
         public void OnServerSubscribingAdded()
         {
+            int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnServerSubscribingAdded();
@@ -639,6 +644,7 @@ namespace LiteNetLibManager
 
         public void OnServerSubscribingRemoved()
         {
+            int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnServerSubscribingRemoved();
@@ -680,6 +686,7 @@ namespace LiteNetLibManager
 
         public void OnNetworkDestroy(byte reasons)
         {
+            int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnNetworkDestroy(reasons);
