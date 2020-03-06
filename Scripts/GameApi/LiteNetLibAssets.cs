@@ -40,14 +40,15 @@ namespace LiteNetLibManager
             RegisterSceneObjects();
         }
 
-        public void Clear()
+        public void Clear(bool doNotResetObjectId = false)
         {
             ClearSpawnedObjects();
             CacheSpawnPoints.Clear();
             GuidToPrefabs.Clear();
             SceneObjects.Clear();
-            LiteNetLibIdentity.ResetObjectId();
             ResetSpawnPositionCounter();
+            if (!doNotResetObjectId)
+                LiteNetLibIdentity.ResetObjectId();
         }
 
         public void RegisterSpawnPoints()

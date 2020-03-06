@@ -188,7 +188,7 @@ namespace LiteNetLibManager
                         player.SubscribingObjects.Clear();
                         player.SpawnedObjects.Clear();
                     }
-                    Assets.Clear();
+                    Assets.Clear(true);
                 }
 
                 if (LogDev) Debug.Log("[LiteNetLibGameManager] Loading Scene: " + sceneName + " is online: " + online);
