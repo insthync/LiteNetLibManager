@@ -55,7 +55,7 @@ namespace LiteNetLibManager
         {
             get
             {
-                if (isOffline)
+                if (isOfflineConnection)
                     return offlineTransport;
                 return transport;
             }
@@ -63,7 +63,7 @@ namespace LiteNetLibManager
 
         protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
 
-        private bool isOffline;
+        private bool isOfflineConnection;
 
         protected virtual void Awake()
         {
@@ -160,10 +160,10 @@ namespace LiteNetLibManager
             return Client;
         }
 
-        public virtual LiteNetLibClient StartHost(bool isOffline = false)
+        public virtual LiteNetLibClient StartHost(bool isOfflineConnection = false)
         {
             OnStartHost();
-            this.isOffline = isOffline;
+            this.isOfflineConnection = isOfflineConnection;
             if (StartServer())
                 return ConnectLocalClient();
             return null;
@@ -190,6 +190,7 @@ namespace LiteNetLibManager
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
             Server.StopServer();
             Server = null;
+            isOfflineConnection = false;
 
             OnStopServer();
         }
@@ -202,6 +203,7 @@ namespace LiteNetLibManager
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
             Client.StopClient();
             Client = null;
+            isOfflineConnection = false;
 
             OnStopClient();
         }
