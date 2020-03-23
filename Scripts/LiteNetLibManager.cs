@@ -231,7 +231,7 @@ namespace LiteNetLibManager
 #region Packets send / read
         public void ClientSendPacket(DeliveryMethod options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
-            Client.ClientSendPacket(options, msgType, serializer);
+            Client.SendPacket(options, msgType, serializer);
         }
 
         public void ClientSendPacket<T>(DeliveryMethod options, ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : INetSerializable
@@ -251,7 +251,7 @@ namespace LiteNetLibManager
 
         public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
         {
-            Server.ServerSendPacket(connectionId, deliveryMethod, msgType, serializer);
+            Server.SendPacket(connectionId, deliveryMethod, msgType, serializer);
         }
 
         public void ServerSendPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : INetSerializable
@@ -268,9 +268,39 @@ namespace LiteNetLibManager
         {
             ServerSendPacket(connectionId, options, msgType, null);
         }
-#endregion
 
-#region Relates components functions
+        public uint ClientSendRequest<T>(ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        {
+            return Client.SendRequest(msgType, messageData, callback, extraSerializer);
+        }
+
+        public void ClientSendResponse<T>(ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        {
+            Client.SendResponse(msgType, messageData, extraSerializer);
+        }
+
+        public uint ServerSendRequest<T>(long connectionId, ushort msgType, T messageData, AckMessageCallback callback, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        {
+            return Server.SendRequest(connectionId, msgType, messageData, callback, extraSerializer);
+        }
+
+        public void ServerSendResponse<T>(long connectionId, ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        {
+            Server.SendResponse(connectionId, msgType, messageData, extraSerializer);
+        }
+
+        public void ClientReadResponse<T>(uint ackId, AckResponseCode responseCode, T messageData) where T : BaseAckMessage
+        {
+            Client.ReadResponse(ackId, responseCode, messageData);
+        }
+
+        public void ServerReadResponse<T>(uint ackId, AckResponseCode responseCode, T messageData) where T : BaseAckMessage
+        {
+            Server.ReadResponse(ackId, responseCode, messageData);
+        }
+        #endregion
+
+        #region Relates components functions
         public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             foreach (long connectionId in ConnectionIds)

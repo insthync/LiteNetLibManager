@@ -1,17 +1,61 @@
-﻿using UnityEngine;
+﻿using LiteNetLib;
+using LiteNetLib.Utils;
+using System;
+using UnityEngine;
 
 namespace LiteNetLibManager
 {
     public class LiteNetLibServer : TransportHandler
     {
         public LiteNetLibManager Manager { get; protected set; }
+        public bool IsServerStarted { get { return Transport.IsServerStarted(); } }
+        public int ServerPort { get; protected set; }
 
         public LiteNetLibServer(LiteNetLibManager manager) : base(manager.Transport)
         {
             Manager = manager;
         }
 
-        public override void OnServerReceive(TransportEventData eventData)
+        public LiteNetLibServer(ITransport transport) : base(transport)
+        {
+
+        }
+
+        public override void Update()
+        {
+            if (!isNetworkActive)
+                return;
+            base.Update();
+            while (Transport.ServerReceive(out tempEventData))
+            {
+                OnServerReceive(tempEventData);
+            }
+        }
+
+        public bool StartServer(int port, int maxConnections)
+        {
+            if (isNetworkActive)
+            {
+                Debug.LogWarning("[TransportHandler] Cannot Start Server, network already active");
+                return false;
+            }
+            isNetworkActive = true;
+            // Reset acks
+            ackCallbacks.Clear();
+            ackTimes.Clear();
+            nextAckId = 1;
+            ServerPort = port;
+            return Transport.StartServer(port, maxConnections);
+        }
+
+        public void StopServer()
+        {
+            isNetworkActive = false;
+            Transport.StopServer();
+            ServerPort = 0;
+        }
+
+        public virtual void OnServerReceive(TransportEventData eventData)
         {
             switch (eventData.type)
             {
@@ -33,6 +77,37 @@ namespace LiteNetLibManager
                     Manager.OnPeerNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }
+        }
+
+        public uint SendRequest<T>(long connectionId, ushort msgType, T messageData, AckMessageCallback callback, Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        {
+            messageData.ackId = AddAckCallback(callback);
+            SendPacket(connectionId, DeliveryMethod.ReliableOrdered, msgType, (writer) =>
+            {
+                messageData.Serialize(writer);
+                if (extraSerializer != null)
+                    extraSerializer.Invoke(writer);
+            });
+            return messageData.ackId;
+        }
+
+        public void SendResponse<T>(long connectionId, ushort msgType, T messageData, Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        {
+            writer.Reset();
+            writer.PutPackedUShort(msgType);
+            messageData.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
+            Transport.ServerSend(connectionId, DeliveryMethod.ReliableOrdered, writer);
+        }
+
+        public void SendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, Action<NetDataWriter> serializer)
+        {
+            writer.Reset();
+            writer.PutPackedUShort(msgType);
+            if (serializer != null)
+                serializer.Invoke(writer);
+            Transport.ServerSend(connectionId, deliveryMethod, writer);
         }
     }
 }
