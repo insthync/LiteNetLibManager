@@ -694,6 +694,21 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
+        /// This function will be called when this behaviour spawned at server
+        /// </summary>
+        public virtual void OnStartServer() { }
+
+        /// <summary>
+        /// This function will be called when this behaviour spawned at client (all client types `non-owner and owner`)
+        /// </summary>
+        public virtual void OnStartClient() { }
+
+        /// <summary>
+        /// This function will be called when this behaviour spawned at owner-client
+        /// </summary>
+        public virtual void OnStartOwnerClient() { }
+
+        /// <summary>
         /// This function will be called when this client has been verified as owner client
         /// </summary>
         public virtual void OnSetOwnerClient(bool isOwnerClient) { }

@@ -420,6 +420,33 @@ namespace LiteNetLibManager
             }
         }
 
+        internal void OnStartServer()
+        {
+            int loopCounter;
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            {
+                Behaviours[loopCounter].OnStartServer();
+            }
+        }
+
+        internal void OnStartClient()
+        {
+            int loopCounter;
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            {
+                Behaviours[loopCounter].OnStartClient();
+            }
+        }
+
+        internal void OnStartOwnerClient()
+        {
+            int loopCounter;
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            {
+                Behaviours[loopCounter].OnStartOwnerClient();
+            }
+        }
+
         internal void ValidateObjectId()
         {
             if (objectId == 0 || IsSceneObjectExists(objectId))
