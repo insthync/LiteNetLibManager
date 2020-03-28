@@ -51,10 +51,34 @@ namespace LiteNetLibManager
         /// </summary>
         internal void DestroyAllObjects()
         {
-            List<uint> objectIds = new List<uint>(SpawnedObjects.Keys);
-            foreach (uint objectId in objectIds)
+            foreach (uint objectId in SpawnedObjects.Keys)
                 Manager.Assets.NetworkDestroy(objectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
             SpawnedObjects.Clear();
+        }
+
+        public bool TryGetSpawnedObject(uint objectId, out LiteNetLibIdentity identity)
+        {
+            return SpawnedObjects.TryGetValue(objectId, out identity);
+        }
+
+        public bool ContainsSpawnedObject(uint objectId)
+        {
+            return SpawnedObjects.ContainsKey(objectId);
+        }
+
+        public LiteNetLibIdentity GetSpawnedObject(uint objectId)
+        {
+            return SpawnedObjects[objectId];
+        }
+
+        public Dictionary<uint, LiteNetLibIdentity>.ValueCollection GetSpawnedObjects()
+        {
+            return SpawnedObjects.Values;
+        }
+
+        public int SpawnedObjectsCount
+        {
+            get { return SpawnedObjects.Count; }
         }
     }
 }
