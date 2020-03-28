@@ -127,7 +127,7 @@ namespace LiteNetLibManager
         {
             if (Server != null)
                 return true;
-            
+
             Server = new LiteNetLibServer(this);
             RegisterServerMessages();
             if (!Server.StartServer(networkPort, maxConnections))
@@ -228,7 +228,7 @@ namespace LiteNetLibManager
             return ConnectionIds;
         }
 
-#region Packets send / read
+        #region Packets send / read
         public void ClientSendPacket(DeliveryMethod options, ushort msgType, System.Action<NetDataWriter> serializer)
         {
             Client.SendPacket(options, msgType, serializer);
@@ -383,9 +383,9 @@ namespace LiteNetLibManager
         /// This event will be called at client when disconnected from server
         /// </summary>
         public virtual void OnClientDisconnected(DisconnectInfo disconnectInfo) { }
-#endregion
+        #endregion
 
-#region Start / Stop Callbacks
+        #region Start / Stop Callbacks
         // Since there are multiple versions of StartServer, StartClient and StartHost, to reliably customize
         // their functionality, users would need override all the versions. Instead these callbacks are invoked
         // from all versions, so users only need to implement this one case.
@@ -437,6 +437,6 @@ namespace LiteNetLibManager
         {
             if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
         }
-#endregion
+        #endregion
     }
 }
