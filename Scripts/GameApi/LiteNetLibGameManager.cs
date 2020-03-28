@@ -57,7 +57,7 @@ namespace LiteNetLibManager
         private long pingTime;
 
         public long ClientConnectionId { get; protected set; }
-        
+
         public long Rtt { get; private set; }
         public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); } }
         public long ServerUnixTimeOffset { get; protected set; }
@@ -233,6 +233,11 @@ namespace LiteNetLibManager
                     }
                     if (IsClient)
                     {
+                        while (ClientConnectionId < 0)
+                        {
+                            // Wait for client connection Id from server
+                            await Task.Yield();
+                        }
                         SendClientReady();
                         if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> SendClientReady()");
                     }
@@ -570,9 +575,6 @@ namespace LiteNetLibManager
         {
             SendServerEnterGame(messageHandler.connectionId);
             SendServerSceneChange(messageHandler.connectionId, ServerSceneName);
-            // If it is host (both client and server) it will send ready state to spawn player
-            if (IsClient && (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name)))
-                SendClientReady();
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
@@ -819,12 +821,17 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSceneChange(LiteNetLibMessageHandler messageHandler)
         {
-            // Server scene changes made from server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
             // Scene name sent from server
             ServerSceneChangeMessage message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             string serverSceneName = message.serverSceneName;
+            if (IsServer)
+            {
+                // If it is host (both client and server) it will send ready state to spawn player's character without scene load
+                if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
+                    SendClientReady();
+                return;
+            }
+
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
             {
                 Assets.Initialize();
