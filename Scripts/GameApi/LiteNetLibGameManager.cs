@@ -154,6 +154,11 @@ namespace LiteNetLibManager
             return Players.Values;
         }
 
+        public int PlayersCount
+        {
+            get { return Players.Count; }
+        }
+
         /// <summary>
         /// Call this function to change gameplay scene at server, then the server will tell clients to change scene
         /// </summary>
