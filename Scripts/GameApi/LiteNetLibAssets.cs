@@ -156,7 +156,13 @@ namespace LiteNetLibManager
                 sceneObject.gameObject.SetActive(true);
                 sceneObject.Initial(Manager, true, objectId, connectionId);
                 sceneObject.InitTransform(position, rotation);
-                sceneObject.SetOwnerClient(connectionId == Manager.ClientConnectionId);
+                sceneObject.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+                if (Manager.IsServer)
+                    sceneObject.OnStartServer();
+                if (Manager.IsClient)
+                    sceneObject.OnStartClient();
+                if (connectionId >= 0 && connectionId == Manager.ClientConnectionId)
+                    sceneObject.OnStartOwnerClient();
                 SpawnedObjects[sceneObject.ObjectId] = sceneObject;
                 return sceneObject;
             }
@@ -183,7 +189,13 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(gameObject.transform.position, gameObject.transform.rotation);
-            identity.SetOwnerClient(connectionId == Manager.ClientConnectionId);
+            identity.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+            if (Manager.IsServer)
+                identity.OnStartServer();
+            if (Manager.IsClient)
+                identity.OnStartClient();
+            if (connectionId >= 0 && connectionId == Manager.ClientConnectionId)
+                identity.OnStartOwnerClient();
             SpawnedObjects[identity.ObjectId] = identity;
 
             // Add to player spawned objects dictionary
@@ -276,7 +288,7 @@ namespace LiteNetLibManager
                 // Set connection id
                 spawnedObject.ConnectionId = connectionId;
                 // Call set owner client event
-                spawnedObject.SetOwnerClient(connectionId == Manager.ClientConnectionId);
+                spawnedObject.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
                 // If this is server, send message to clients to set object owner
                 if (Manager.IsServer)
                     Manager.SendServerSetObjectOwner(objectId, connectionId);
