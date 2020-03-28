@@ -10,10 +10,10 @@ namespace LiteNetLibManager
         public long connectionId { get; private set; }
         public NetDataReader reader { get; private set; }
 
-        public LiteNetLibMessageHandler(ushort msgType, TransportHandler peerHandler, long connectionId, NetDataReader reader)
+        public LiteNetLibMessageHandler(ushort msgType, TransportHandler transportHandler, long connectionId, NetDataReader reader)
         {
             this.msgType = msgType;
-            this.transportHandler = peerHandler;
+            this.transportHandler = transportHandler;
             this.connectionId = connectionId;
             this.reader = reader;
         }
