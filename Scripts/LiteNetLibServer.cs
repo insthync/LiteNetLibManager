@@ -8,6 +8,7 @@ namespace LiteNetLibManager
     public class LiteNetLibServer : TransportHandler
     {
         public LiteNetLibManager Manager { get; protected set; }
+        public string LogTag { get { return Manager.LogTag + "::LiteNetLibServer"; } }
         public bool IsServerStarted { get { return Transport.IsServerStarted(); } }
         public int ServerPort { get; protected set; }
 
@@ -36,7 +37,7 @@ namespace LiteNetLibManager
         {
             if (isNetworkActive)
             {
-                Debug.LogWarning("[TransportHandler] Cannot Start Server, network already active");
+                Logging.LogWarning(LogTag, "Cannot Start Server, network already active");
                 return false;
             }
             isNetworkActive = true;
@@ -60,7 +61,7 @@ namespace LiteNetLibManager
             switch (eventData.type)
             {
                 case ENetworkEvent.ConnectEvent:
-                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerConnected peer.ConnectionId: " + eventData.connectionId);
+                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerConnected peer.ConnectionId: " + eventData.connectionId);
                     Manager.AddConnectionId(eventData.connectionId);
                     Manager.OnPeerConnected(eventData.connectionId);
                     break;
@@ -68,12 +69,12 @@ namespace LiteNetLibManager
                     ReadPacket(eventData.connectionId, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
-                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibServer::OnPeerDisconnected peer.ConnectionId: " + eventData.connectionId + " disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
+                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerDisconnected peer.ConnectionId: " + eventData.connectionId + " disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
                     Manager.RemoveConnectionId(eventData.connectionId);
                     Manager.OnPeerDisconnected(eventData.connectionId, eventData.disconnectInfo);
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibServer::OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError);
+                    if (Manager.LogError) Logging.LogError(LogTag, "OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError);
                     Manager.OnPeerNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }

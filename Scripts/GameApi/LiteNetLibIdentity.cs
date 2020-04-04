@@ -62,6 +62,7 @@ namespace LiteNetLibManager
         public uint ObjectId { get { return objectId; } }
         public long ConnectionId { get { return connectionId; } internal set { connectionId = value; } }
         public LiteNetLibGameManager Manager { get { return manager; } }
+        public string LogTag { get { return Manager.LogTag + "::" + ToString(); } }
 
         public LiteNetLibPlayer Player
         {
@@ -164,7 +165,7 @@ namespace LiteNetLibManager
 #endif
             if (prefab == null)
             {
-                Debug.LogError("Failed to find prefab parent for scene object [name:" + gameObject.name + "]");
+                Logging.LogError(LogTag, "Failed to find prefab parent for scene object [name:" + gameObject.name + "]");
                 return false;
             }
             return true;
@@ -224,7 +225,7 @@ namespace LiteNetLibManager
             if (syncField == null)
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] cannot process sync field, fieldId [" + info.elementId + "] not found.");
+                    Logging.LogError(LogTag, "Cannot process sync field, fieldId [" + info.elementId + "] not found.");
                 return null;
             }
             syncField.Deserialize(reader, isInitial);
@@ -248,7 +249,7 @@ namespace LiteNetLibManager
             if (netFunction == null)
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] cannot process net function, functionId [" + info.elementId + "] not found.");
+                    Logging.LogError(LogTag, "Cannot process net function, functionId [" + info.elementId + "] not found.");
                 return null;
             }
             netFunction.DeserializeParameters(reader);
@@ -274,7 +275,7 @@ namespace LiteNetLibManager
             if (syncList == null)
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] cannot process sync list, fieldId [" + info.elementId + "] not found.");
+                    Logging.LogError(LogTag, "Cannot process sync list, fieldId [" + info.elementId + "] not found.");
                 return null;
             }
             syncList.DeserializeOperation(reader);
@@ -525,7 +526,7 @@ namespace LiteNetLibManager
             if (Subscribers.ContainsKey(subscriber.ConnectionId))
             {
                 if (Manager.LogDebug)
-                    Debug.Log("Subscriber [" + subscriber.ConnectionId + "] already added to [" + gameObject + "]");
+                    Logging.Log(LogTag, "Subscriber [" + subscriber.ConnectionId + "] already added to [" + gameObject + "]");
                 return;
             }
 
@@ -620,7 +621,7 @@ namespace LiteNetLibManager
                 if (!subscriber.IsReady)
                 {
                     if (Manager.LogWarn)
-                        Debug.Log("Subscriber [" + subscriber.ConnectionId + "] is not ready");
+                        Logging.Log(LogTag, "Subscriber [" + subscriber.ConnectionId + "] is not ready");
                     continue;
                 }
 
@@ -628,7 +629,7 @@ namespace LiteNetLibManager
                 {
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)
-                        Debug.Log("Add subscriber [" + subscriber.ConnectionId + "] to [" + gameObject + "]");
+                        Logging.Log(LogTag, "Add subscriber [" + subscriber.ConnectionId + "] to [" + gameObject + "]");
                     hasChanges = true;
                 }
             }
@@ -640,7 +641,7 @@ namespace LiteNetLibManager
                 {
                     subscriber.RemoveSubscribing(this, true);
                     if (Manager.LogDebug)
-                        Debug.Log("Remove subscriber [" + subscriber.ConnectionId + "] from [" + gameObject + "]");
+                        Logging.Log(LogTag, "Remove subscriber [" + subscriber.ConnectionId + "] from [" + gameObject + "]");
                     hasChanges = true;
                 }
             }

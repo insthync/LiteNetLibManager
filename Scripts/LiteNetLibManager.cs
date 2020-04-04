@@ -61,6 +61,8 @@ namespace LiteNetLibManager
             }
         }
 
+        public virtual string LogTag { get { return ToString(); } }
+
         protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
 
         private bool isOfflineConnection;
@@ -132,7 +134,7 @@ namespace LiteNetLibManager
             RegisterServerMessages();
             if (!Server.StartServer(networkPort, maxConnections))
             {
-                if (LogError) Debug.LogError("[" + name + "] LiteNetLibManager::StartServer cannot start server at port: " + networkPort);
+                if (LogError) Logging.LogError(LogTag, "StartServer cannot start server at port: " + networkPort);
                 Server = null;
                 return false;
             }
@@ -152,7 +154,7 @@ namespace LiteNetLibManager
 
             this.networkAddress = networkAddress;
             this.networkPort = networkPort;
-            if (LogDev) Debug.Log("Client connecting to " + networkAddress + ":" + networkPort);
+            if (LogDev) Logging.Log(LogTag, "Client connecting to " + networkAddress + ":" + networkPort);
             Client = new LiteNetLibClient(this);
             RegisterClientMessages();
             Client.StartClient(networkAddress, networkPort);
@@ -187,7 +189,7 @@ namespace LiteNetLibManager
             if (Server == null)
                 return;
 
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopServer");
+            if (LogInfo) Logging.Log(LogTag, "StopServer");
             Server.StopServer();
             Server = null;
             isOfflineConnection = false;
@@ -200,7 +202,7 @@ namespace LiteNetLibManager
             if (Client == null)
                 return;
 
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::StopClient");
+            if (LogInfo) Logging.Log(LogTag, "StopClient");
             Client.StopClient();
             Client = null;
             isOfflineConnection = false;
@@ -394,7 +396,7 @@ namespace LiteNetLibManager
         /// </summary>
         public virtual void OnStartHost()
         {
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStartHost");
+            if (LogInfo) Logging.Log(LogTag, "OnStartHost");
         }
 
         /// <summary>
@@ -402,7 +404,7 @@ namespace LiteNetLibManager
         /// </summary>
         public virtual void OnStartServer()
         {
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStartServer");
+            if (LogInfo) Logging.Log(LogTag, "OnStartServer");
         }
 
         /// <summary>
@@ -411,7 +413,7 @@ namespace LiteNetLibManager
         /// <param name="client"></param>
         public virtual void OnStartClient(LiteNetLibClient client)
         {
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStartClient");
+            if (LogInfo) Logging.Log(LogTag, "OnStartClient");
         }
 
         /// <summary>
@@ -419,7 +421,7 @@ namespace LiteNetLibManager
         /// </summary>
         public virtual void OnStopServer()
         {
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopServer");
+            if (LogInfo) Logging.Log(LogTag, "OnStopServer");
         }
 
         /// <summary>
@@ -427,7 +429,7 @@ namespace LiteNetLibManager
         /// </summary>
         public virtual void OnStopClient()
         {
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopClient");
+            if (LogInfo) Logging.Log(LogTag, "OnStopClient");
         }
 
         /// <summary>
@@ -435,7 +437,7 @@ namespace LiteNetLibManager
         /// </summary>
         public virtual void OnStopHost()
         {
-            if (LogInfo) Debug.Log("[" + name + "] LiteNetLibManager::OnStopHost");
+            if (LogInfo) Logging.Log(LogTag, "OnStopHost");
         }
         #endregion
     }

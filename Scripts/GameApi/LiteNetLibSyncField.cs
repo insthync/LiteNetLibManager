@@ -150,7 +150,7 @@ namespace LiteNetLibManager
         {
             if (!ValidateBeforeAccess())
             {
-                Debug.LogError("[LiteNetLibSyncField] Error while set value, behaviour is empty");
+                Logging.LogError(LogTag, "Error while set value, behaviour is empty");
                 return;
             }
 

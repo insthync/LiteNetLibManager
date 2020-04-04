@@ -8,6 +8,7 @@ namespace LiteNetLibManager
     public class LiteNetLibClient : TransportHandler
     {
         public LiteNetLibManager Manager { get; protected set; }
+        public string LogTag { get { return Manager.LogTag + "::LiteNetLibClient"; } }
         public bool IsClientStarted { get { return Transport.IsClientStarted(); } }
 
         public LiteNetLibClient(LiteNetLibManager manager) : base(manager.Transport)
@@ -35,7 +36,7 @@ namespace LiteNetLibManager
         {
             if (isNetworkActive)
             {
-                Debug.LogWarning("[TransportHandler] Cannot Start Client, network already active");
+                Logging.LogWarning(LogTag, "Cannot Start Client, network already active");
                 return false;
             }
             isNetworkActive = true;
@@ -57,19 +58,19 @@ namespace LiteNetLibManager
             switch (eventData.type)
             {
                 case ENetworkEvent.ConnectEvent:
-                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibClient::OnPeerConnected");
+                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerConnected");
                     Manager.OnClientConnected();
                     break;
                 case ENetworkEvent.DataEvent:
                     ReadPacket(eventData.connectionId, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
-                    if (Manager.LogInfo) Debug.Log("[" + Manager.name + "] LiteNetLibClient::OnPeerDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
+                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
                     Manager.StopClient();
                     Manager.OnClientDisconnected(eventData.disconnectInfo);
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Debug.LogError("[" + Manager.name + "] LiteNetLibClient::OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError);
+                    if (Manager.LogError) Logging.LogError(LogTag, "OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError);
                     Manager.OnClientNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }

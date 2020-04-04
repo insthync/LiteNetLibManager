@@ -196,7 +196,7 @@ namespace LiteNetLibManager
                     Assets.Clear(true);
                 }
 
-                if (LogDev) Debug.Log("[LiteNetLibGameManager] Loading Scene: " + sceneName + " is online: " + online);
+                if (LogDev) Logging.Log(LogTag, "Loading Scene: " + sceneName + " is online: " + online);
                 if (Assets.onLoadSceneStart != null)
                     Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
 
@@ -212,24 +212,24 @@ namespace LiteNetLibManager
                 if (online)
                 {
                     Assets.Initialize();
-                    if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> Assets.Initialize()");
+                    if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.Initialize()");
                     if (IsClient)
                     {
                         OnClientOnlineSceneLoaded();
-                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
+                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
                     }
                     if (IsServer)
                     {
                         serverSceneName = sceneName;
                         Assets.SpawnSceneObjects();
-                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
+                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
                         OnServerOnlineSceneLoaded();
-                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> OnServerOnlineSceneLoaded()");
+                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnServerOnlineSceneLoaded()");
                     }
                     if (IsServer)
                     {
                         SendServerSceneChange(sceneName);
-                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> SendServerSceneChange()");
+                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> SendServerSceneChange()");
                     }
                     if (IsClient)
                     {
@@ -239,7 +239,7 @@ namespace LiteNetLibManager
                             await Task.Yield();
                         }
                         SendClientReady();
-                        if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " -> SendClientReady()");
+                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> SendClientReady()");
                     }
                 }
                 else if (!doNotDestroyOnSceneChanges)
@@ -248,7 +248,7 @@ namespace LiteNetLibManager
                     Destroy(gameObject);
                 }
 
-                if (LogDev) Debug.Log("[LiteNetLibGameManager] Loaded Scene: " + sceneName + " is online: " + online);
+                if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " is online: " + online);
                 if (Assets.onLoadSceneFinish != null)
                     Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
             }
@@ -856,7 +856,7 @@ namespace LiteNetLibManager
         {
             isPinging = false;
             Rtt = Timestamp - pingTime;
-            if (LogDev) Debug.Log("[LiteNetLibGameManager] Rtt: " + Rtt);
+            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt);
         }
         #endregion
 

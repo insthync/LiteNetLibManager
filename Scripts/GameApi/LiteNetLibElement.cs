@@ -56,6 +56,11 @@ namespace LiteNetLibManager
             get { return Behaviour.Manager; }
         }
 
+        public virtual string LogTag
+        {
+            get { return Behaviour.Manager + "::" + ToString(); }
+        }
+
         public bool IsServer
         {
             get { return Behaviour.IsServer; }

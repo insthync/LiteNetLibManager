@@ -127,6 +127,8 @@ namespace LiteNetLibManager
             get { return Identity.IsSceneObject; }
         }
 
+        public virtual string LogTag { get { return Manager.LogTag + "::" + ToString(); } }
+
         // Optimize garbage collector
         private int loopCounter;
 
@@ -234,7 +236,7 @@ namespace LiteNetLibManager
                         if (lookupMethod.ReturnType != typeof(void))
                         {
                             if (Manager.LogError)
-                                Debug.LogError("Cannot register net function [" + lookupMethod.Name + "] return type must be void");
+                                Logging.LogError(LogTag, "Cannot register net function [" + lookupMethod.Name + "] return type must be void");
                             continue;
                         }
 
@@ -263,7 +265,7 @@ namespace LiteNetLibManager
                 catch (Exception ex)
                 {
                     if (Manager.LogFatal)
-                        Debug.LogException(ex);
+                        Logging.LogException(LogTag, ex);
                 }
             }
         }
@@ -326,7 +328,7 @@ namespace LiteNetLibManager
                         if (tempOnChangeMethod == null)
                         {
                             if (Manager.LogError)
-                                Debug.LogError("Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
+                                Logging.LogError(LogTag, "Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
                         }
 
                         // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
@@ -343,7 +345,7 @@ namespace LiteNetLibManager
                 catch (Exception ex)
                 {
                     if (Manager.LogFatal)
-                        Debug.LogException(ex);
+                        Logging.LogException(LogTag, ex);
                 }
             }
         }
@@ -383,7 +385,7 @@ namespace LiteNetLibManager
                 catch (Exception ex)
                 {
                     if (Manager.LogFatal)
-                        Debug.LogException(ex);
+                        Logging.LogException(LogTag, ex);
                 }
             }
         }
@@ -449,13 +451,13 @@ namespace LiteNetLibManager
             if (netFunctionIds.ContainsKey(id))
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function with existed id [" + id + "].");
+                    Logging.LogError(LogTag, "[" + TypeName + "] cannot register net function with existed id [" + id + "].");
                 return;
             }
             if (Identity.netFunctions.Count >= int.MaxValue)
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot register net function it's exceeds limit.");
+                    Logging.LogError(LogTag, "[" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
             int elementId = Identity.netFunctions.Count;
@@ -588,7 +590,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot call function, function [" + id + "] not found.");
+                    Logging.LogError(LogTag, "[" + TypeName + "] cannot call function, function [" + id + "] not found.");
             }
         }
 
@@ -659,7 +661,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Debug.LogError("[" + name + "] [" + TypeName + "] cannot call function, function [" + id + "] not found.");
+                    Logging.LogError(LogTag, "[" + TypeName + "] cannot call function, function [" + id + "] not found.");
             }
         }
 

@@ -223,7 +223,7 @@ namespace LiteNetLibManager
         {
             if (!ValidateBeforeAccess())
             {
-                Debug.LogError("[LiteNetLibSyncList] Error while send operation, behaviour is empty or not the server");
+                Logging.LogError(LogTag, "Error while send operation, behaviour is empty or not the server");
                 return;
             }
 

@@ -56,7 +56,7 @@ namespace LiteNetLibManager
             if (!_server.Start(broadcastPort))
             {
                 _server = null;
-                Debug.LogError("Cannot start discovery server");
+                Logging.LogError("Cannot start discovery server");
                 return false;
             }
             return true;
@@ -68,7 +68,7 @@ namespace LiteNetLibManager
             if (!_client.Start())
             {
                 _client = null;
-                Debug.LogError("Cannot start discovery client");
+                Logging.LogError("Cannot start discovery client");
                 return false;
             }
 

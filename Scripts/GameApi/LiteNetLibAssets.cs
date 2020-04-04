@@ -27,6 +27,7 @@ namespace LiteNetLibManager
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
         
         public LiteNetLibGameManager Manager { get; private set; }
+        public string LogTag { get { return Manager.LogTag + "::LiteNetLibAssets"; } }
 
         private void Awake()
         {
@@ -76,10 +77,10 @@ namespace LiteNetLibManager
         {
             if (prefab == null)
             {
-                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::RegisterPrefab - prefab is null.");
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterPrefab - prefab is null.");
                 return;
             }
-            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::RegisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
+            if (Manager.LogDev) Logging.Log(LogTag, "RegisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
             GuidToPrefabs[prefab.HashAssetId] = prefab;
         }
 
@@ -87,10 +88,10 @@ namespace LiteNetLibManager
         {
             if (prefab == null)
             {
-                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::UnregisterPrefab - prefab is null.");
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterPrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Debug.Log("[" + name + "] LiteNetLibAssets::UnregisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
+            if (Manager.LogDev) Logging.Log(LogTag, "UnregisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
@@ -146,7 +147,7 @@ namespace LiteNetLibManager
         {
             if (!Manager.IsNetworkActive)
             {
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawnScene - Network is not active cannot spawn");
+                Logging.LogWarning(LogTag, "NetworkSpawnScene - Network is not active cannot spawn");
                 return null;
             }
 
@@ -167,7 +168,7 @@ namespace LiteNetLibManager
                 return sceneObject;
             }
             else if (Manager.LogWarn)
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawnScene - Object Id: " + objectId + " is not registered.");
+                Logging.LogWarning(LogTag, "NetworkSpawnScene - Object Id: " + objectId + " is not registered.");
             return null;
         }
 
@@ -175,14 +176,14 @@ namespace LiteNetLibManager
         {
             if (gameObject == null)
             {
-                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - gameObject is null.");
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - gameObject is null.");
                 return null;
             }
 
             LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
             if (identity == null)
             {
-                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - identity is null.");
                 return null;
             }
 
@@ -213,7 +214,7 @@ namespace LiteNetLibManager
                 return NetworkSpawn(Instantiate(spawningObject.gameObject, position, rotation), objectId, connectionId);
             // If object with hash asset id not exists
             if (Manager.LogWarn)
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - Asset Id: " + hashAssetId + " is not registered.");
+                Logging.LogWarning(LogTag, "NetworkSpawn - Asset Id: " + hashAssetId + " is not registered.");
             return null;
         }
 
@@ -221,13 +222,13 @@ namespace LiteNetLibManager
         {
             if (gameObject == null)
             {
-                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - gameObject is null.");
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkDestroy - gameObject is null.");
                 return false;
             }
             LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
             if (identity == null)
             {
-                if (Manager.LogWarn) Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkSpawn - identity is null.");
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - identity is null.");
                 return false;
             }
             return NetworkDestroy(identity.ObjectId, reasons);
@@ -237,7 +238,7 @@ namespace LiteNetLibManager
         {
             if (!Manager.IsNetworkActive)
             {
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Network is not active cannot destroy");
+                Logging.LogWarning(LogTag, "NetworkDestroy - Network is not active cannot destroy");
                 return false;
             }
 
@@ -262,7 +263,7 @@ namespace LiteNetLibManager
                 return true;
             }
             else if (Manager.LogWarn)
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Object Id: " + objectId + " is not spawned.");
+                Logging.LogWarning(LogTag, "NetworkDestroy - Object Id: " + objectId + " is not spawned.");
             return false;
         }
 
@@ -270,7 +271,7 @@ namespace LiteNetLibManager
         {
             if (!Manager.IsNetworkActive)
             {
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Network is not active cannot set object owner");
+                Logging.LogWarning(LogTag, "NetworkDestroy - Network is not active cannot set object owner");
                 return false;
             }
             LiteNetLibIdentity spawnedObject;
@@ -295,7 +296,7 @@ namespace LiteNetLibManager
                 return true;
             }
             else if (Manager.LogWarn)
-                Debug.LogWarning("[" + name + "] LiteNetLibAssets::NetworkDestroy - Object Id: " + objectId + " is not spawned.");
+                Logging.LogWarning(LogTag, "NetworkDestroy - Object Id: " + objectId + " is not spawned.");
 
             return false;
         }
