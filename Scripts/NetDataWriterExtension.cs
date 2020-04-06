@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LiteNetLib.Utils
@@ -259,6 +260,49 @@ namespace LiteNetLib.Utils
             writer.Put(value.y);
             writer.Put(value.z);
             writer.Put(value.w);
+        }
+
+        public static void Put<TValue>(this NetDataWriter writer, TValue[] array)
+        {
+            if (array == null)
+            {
+                writer.Put(0);
+                return;
+            }
+            writer.Put(array.Length);
+            foreach (var value in array)
+            {
+                writer.PutValue(value);
+            }
+        }
+
+        public static void Put<TValue>(this NetDataWriter writer, List<TValue> list)
+        {
+            if (list == null)
+            {
+                writer.Put(0);
+                return;
+            }
+            writer.Put(list.Count);
+            foreach (var value in list)
+            {
+                writer.PutValue(value);
+            }
+        }
+
+        public static void Put<TKey, TValue>(this NetDataWriter writer, Dictionary<TKey, TValue> dict)
+        {
+            if (dict == null)
+            {
+                writer.Put(0);
+                return;
+            }
+            writer.Put(dict.Count);
+            foreach (var keyValuePair in dict)
+            {
+                writer.PutValue(keyValuePair.Key);
+                writer.PutValue(keyValuePair.Value);
+            }
         }
 
         #region Packed Signed Int (Ref: https://developers.google.com/protocol-buffers/docs/encoding#signed-integers)

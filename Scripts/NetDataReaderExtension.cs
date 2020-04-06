@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
-using LiteNetLibManager.Utils;
 
 namespace LiteNetLib.Utils
 {
@@ -158,6 +158,39 @@ namespace LiteNetLib.Utils
         public static Vector4 GetVector4(this NetDataReader reader)
         {
             return new Vector4(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+        }
+
+        public static TValue[] GetArray<TValue>(this NetDataReader reader)
+        {
+            int count = reader.GetInt();
+            TValue[] result = new TValue[count];
+            for (int i = 0; i < count; ++i)
+            {
+                result[i] = reader.GetValue<TValue>();
+            }
+            return result;
+        }
+
+        public static List<TValue> GetList<TValue>(this NetDataReader reader)
+        {
+            int count = reader.GetInt();
+            List<TValue> result = new List<TValue>();
+            for (int i = 0; i < count; ++i)
+            {
+                result.Add(reader.GetValue<TValue>());
+            }
+            return result;
+        }
+
+        public static Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(this NetDataReader reader)
+        {
+            int count = reader.GetInt();
+            Dictionary<TKey, TValue> result = new Dictionary<TKey, TValue>();
+            for (int i = 0; i < count; ++i)
+            {
+                result.Add(reader.GetValue<TKey>(), reader.GetValue<TValue>());
+            }
+            return result;
         }
 
         #region Packed Signed Int (Ref: https://developers.google.com/protocol-buffers/docs/encoding#signed-integers)
