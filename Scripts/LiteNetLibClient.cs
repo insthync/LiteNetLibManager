@@ -8,7 +8,7 @@ namespace LiteNetLibManager
     public class LiteNetLibClient : TransportHandler
     {
         public LiteNetLibManager Manager { get; protected set; }
-        public string LogTag { get { return Manager.LogTag + "::LiteNetLibClient"; } }
+        public string LogTag { get { return (Manager == null ? "(None)" : Manager.LogTag) + "::LiteNetLibClient"; } }
         public bool IsClientStarted { get { return Transport.IsClientStarted(); } }
 
         public LiteNetLibClient(LiteNetLibManager manager) : base(manager.Transport)
