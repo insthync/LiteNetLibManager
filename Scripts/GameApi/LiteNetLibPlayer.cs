@@ -51,7 +51,8 @@ namespace LiteNetLibManager
         /// </summary>
         internal void DestroyAllObjects()
         {
-            foreach (uint objectId in SpawnedObjects.Keys)
+            List<uint> objectIds = new List<uint>(SpawnedObjects.Keys);
+            foreach (uint objectId in objectIds)
                 Manager.Assets.NetworkDestroy(objectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
             SpawnedObjects.Clear();
         }
