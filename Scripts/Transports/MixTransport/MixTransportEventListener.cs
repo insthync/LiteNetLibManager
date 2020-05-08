@@ -29,7 +29,7 @@ namespace LiteNetLibManager
 
         public void OnConnectionRequest(ConnectionRequest request)
         {
-            if (mixTransport.server.PeersCount < mixTransport.maxConnections)
+            if (mixTransport.server.ConnectedPeersCount < mixTransport.maxConnections)
                 request.AcceptIfKey(mixTransport.connectKey);
             else
                 request.Reject();

@@ -287,7 +287,7 @@ namespace LiteNetLibManager
 
         public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
         {
-            writer.Put(operation);
+            writer.Put((byte)operation);
             switch (operation)
             {
                 case Operation.Add:

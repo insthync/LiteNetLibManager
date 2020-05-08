@@ -25,7 +25,7 @@ namespace LiteNetLibManager
 
         public void OnConnectionRequest(ConnectionRequest request)
         {
-            if (transport.server.PeersCount < transport.maxConnections)
+            if (transport.server.ConnectedPeersCount < transport.maxConnections)
                 request.AcceptIfKey(transport.connectKey);
             else
                 request.Reject();

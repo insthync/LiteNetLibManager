@@ -6,6 +6,7 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibDiscovery : MonoBehaviour
     {
+        public float broadcastDelay = 3f;
         public int broadcastPort = 19050;
         public ushort broadcastKey = 1;
         [Tooltip("Will send this manager's address and port to discovery clients")]
@@ -21,6 +22,7 @@ namespace LiteNetLibManager
         private NetManager _client;
         private NetDataWriter _serverWriter;
         private NetDataWriter _clientWriter;
+        private float _broadcastElapsed;
 
         public delegate void ReceiveBroadcastDelegate(System.Net.IPEndPoint remoteEndPoint, string data);
         public ReceiveBroadcastDelegate onReceivedBroadcast;
@@ -52,7 +54,7 @@ namespace LiteNetLibManager
         public bool StartServer()
         {
             _server = new NetManager(_serverListener);
-            _server.DiscoveryEnabled = true;
+            _server.BroadcastReceiveEnabled = true;
             if (!_server.Start(broadcastPort))
             {
                 _server = null;
@@ -65,6 +67,7 @@ namespace LiteNetLibManager
         public bool StartClient()
         {
             _client = new NetManager(_clientListener);
+            _client.UnconnectedMessagesEnabled = true;
             if (!_client.Start())
             {
                 _client = null;
@@ -96,9 +99,14 @@ namespace LiteNetLibManager
             if (IsClient)
             {
                 _client.PollEvents();
-                _clientWriter.Reset();
-                _clientWriter.Put(broadcastKey);
-                _client.SendDiscoveryRequest(_clientWriter, broadcastPort);
+                _broadcastElapsed -= Time.deltaTime;
+                if (_broadcastElapsed <= 0f)
+                {
+                    _clientWriter.Reset();
+                    _clientWriter.Put(broadcastKey);
+                    _client.SendBroadcast(_clientWriter, broadcastPort);
+                    _broadcastElapsed = broadcastDelay;
+                }
             }
 
             if (IsServer)
@@ -120,8 +128,7 @@ namespace LiteNetLibManager
         private void _clientListener_NetworkReceiveUnconnectedEvent(System.Net.IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
             // Receive server data
-            if (messageType == UnconnectedMessageType.DiscoveryResponse &&
-                reader.GetUShort() == broadcastKey)
+            if (reader.GetUShort() == broadcastKey)
             {
                 if (onReceivedBroadcast != null)
                     onReceivedBroadcast.Invoke(remoteEndPoint, reader.GetString());
@@ -161,13 +168,12 @@ namespace LiteNetLibManager
         private void _serverListener_NetworkReceiveUnconnectedEvent(System.Net.IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
             // Send back server data
-            if (messageType == UnconnectedMessageType.DiscoveryRequest &&
-                reader.GetUShort() == broadcastKey)
+            if (reader.GetUShort() == broadcastKey)
             {
                 _serverWriter.Reset();
                 _serverWriter.Put(broadcastKey);
                 _serverWriter.Put(data);
-                _server.SendDiscoveryResponse(_serverWriter, remoteEndPoint);
+                _server.SendUnconnectedMessage(_serverWriter, remoteEndPoint);
             }
         }
 

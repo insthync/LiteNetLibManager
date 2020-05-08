@@ -125,7 +125,7 @@ namespace LiteNetLibManager
         public int GetServerPeersCount()
         {
             if (server != null)
-                return server.PeersCount;
+                return server.ConnectedPeersCount;
             return 0;
         }
     }

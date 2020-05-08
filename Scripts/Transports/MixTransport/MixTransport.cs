@@ -263,7 +263,7 @@ namespace LiteNetLibManager
         {
             int result = 0;
             if (server != null)
-                result += server.PeersCount;
+                result += server.ConnectedPeersCount;
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (wsServer != null)
             {
