@@ -364,14 +364,14 @@ namespace LiteNetLibManager
                 CacheNavMeshAgent.Warp(position);
                 syncingTransform.rotation = rotation;
             }
-            else if (CacheRigidbody3D != null)
+            else if (CacheRigidbody3D != null && !CacheRigidbody3D.isKinematic)
             {
                 syncingTransform.position = position;
                 syncingTransform.rotation = rotation;
                 CacheRigidbody3D.position = position;
                 CacheRigidbody3D.rotation = rotation;
             }
-            else if (CacheRigidbody2D != null)
+            else if (CacheRigidbody2D != null && !CacheRigidbody2D.isKinematic)
             {
                 syncingTransform.position = position;
                 syncingTransform.rotation = rotation;
@@ -397,7 +397,7 @@ namespace LiteNetLibManager
                 CacheCharacterController.Move(position - syncingTransform.position);
                 syncingTransform.rotation = rotation;
             }
-            else if (CacheRigidbody3D != null)
+            else if (CacheRigidbody3D != null && !CacheRigidbody3D.isKinematic)
             {
                 if (Vector3.Distance(position, CacheRigidbody3D.position) >= movementTheshold)
                     CacheRigidbody3D.MovePosition(position);
@@ -408,7 +408,7 @@ namespace LiteNetLibManager
                 }
                 syncingTransform.rotation = rotation;
             }
-            else if (CacheRigidbody2D != null)
+            else if (CacheRigidbody2D != null && !CacheRigidbody2D.isKinematic)
             {
                 if (Vector2.Distance(position, CacheRigidbody2D.position) >= movementTheshold)
                     CacheRigidbody2D.MovePosition(position);
