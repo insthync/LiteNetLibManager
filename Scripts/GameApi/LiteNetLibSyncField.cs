@@ -39,9 +39,6 @@ namespace LiteNetLibManager
         [Tooltip("How data changes handle and sync")]
         public SyncMode syncMode;
         protected float lastSentTime;
-        
-        protected bool CanSetElement { get; private set; }
-        protected INetSerializableWithElement tempNetSerializableWithElement;
 
         private bool onChangeCalled;
 
@@ -55,7 +52,6 @@ namespace LiteNetLibManager
         internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
-            CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
             // Invoke on change function with initial state = true
             switch (syncMode)
             {
@@ -129,20 +125,11 @@ namespace LiteNetLibManager
 
         internal virtual void DeserializeValue(NetDataReader reader)
         {
-            if (CanSetElement)
-            {
-                tempNetSerializableWithElement = (INetSerializableWithElement)reader.GetValue(GetFieldType());
-                tempNetSerializableWithElement.Element = this;
-                SetValue(tempNetSerializableWithElement);
-                return;
-            }
             SetValue(reader.GetValue(GetFieldType()));
         }
 
         internal virtual void SerializeValue(NetDataWriter writer)
         {
-            if (CanSetElement)
-                (GetValue() as INetSerializableWithElement).Element = this;
             writer.PutValue(GetFieldType(), GetValue());
         }
 
@@ -203,107 +190,6 @@ namespace LiteNetLibManager
         {
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             Serialize(writer);
-        }
-
-        public static bool TypeCanBeSyncField(Type type)
-        {
-            if (type.IsEnum)
-                return true;
-
-            if (type == typeof(bool))
-                return true;
-
-            if (type == typeof(bool[]))
-                return true;
-
-            if (type == typeof(byte))
-                return true;
-
-            if (type == typeof(byte[]))
-                return true;
-
-            if (type == typeof(char))
-                return true;
-
-            if (type == typeof(double))
-                return true;
-
-            if (type == typeof(double[]))
-                return true;
-
-            if (type == typeof(float))
-                return true;
-
-            if (type == typeof(float[]))
-                return true;
-
-            if (type == typeof(int))
-                return true;
-
-            if (type == typeof(int[]))
-                return true;
-
-            if (type == typeof(long))
-                return true;
-
-            if (type == typeof(long[]))
-                return true;
-
-            if (type == typeof(sbyte))
-                return true;
-
-            if (type == typeof(short))
-                return true;
-
-            if (type == typeof(short[]))
-                return true;
-
-            if (type == typeof(string))
-                return true;
-
-            if (type == typeof(uint))
-                return true;
-
-            if (type == typeof(uint[]))
-                return true;
-
-            if (type == typeof(ulong))
-                return true;
-
-            if (type == typeof(ulong[]))
-                return true;
-
-            if (type == typeof(ushort))
-                return true;
-
-            if (type == typeof(ushort[]))
-                return true;
-
-            if (type == typeof(Color))
-                return true;
-
-            if (type == typeof(Quaternion))
-                return true;
-
-            if (type == typeof(Vector2))
-                return true;
-
-            if (type == typeof(Vector2Int))
-                return true;
-
-            if (type == typeof(Vector3))
-                return true;
-
-            if (type == typeof(Vector3Int))
-                return true;
-
-            if (type == typeof(Vector4))
-                return true;
-
-            if (typeof(INetSerializable).IsAssignableFrom(type))
-                return true;
-
-            return false;
         }
     }
 
@@ -384,7 +270,7 @@ namespace LiteNetLibManager
                 onChangeMethod.Invoke(instance, new object[] { GetValue() });
         }
     }
-    
+
     public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
         /// <summary>
@@ -461,7 +347,21 @@ namespace LiteNetLibManager
         }
     }
 
-    #region Implement for general usages and serializable
+    [Serializable]
+    public class LiteNetLibSyncFieldWithElement<TType> : LiteNetLibSyncField<TType>
+        where TType : INetSerializableWithElement, new()
+    {
+        internal override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetValue<TType>(this);
+        }
+
+        internal override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutValue(this, value);
+        }
+    }
+
     [Serializable]
     public class SyncFieldArray<TType> : LiteNetLibSyncField<TType[]>
     {
@@ -488,6 +388,7 @@ namespace LiteNetLibManager
         public int Length { get { return Value.Length; } }
     }
 
+    #region Implement for general usages and serializable
     [Serializable]
     public class SyncFieldBool : LiteNetLibSyncField<bool>
     {

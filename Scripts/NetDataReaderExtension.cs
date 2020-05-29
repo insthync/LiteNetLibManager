@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using LiteNetLibManager;
 
 namespace LiteNetLib.Utils
 {
@@ -118,6 +119,14 @@ namespace LiteNetLib.Utils
             }
 
             throw new ArgumentException("NetDataReader cannot read type " + type.Name);
+        }
+
+        public static TType GetValue<TType>(this NetDataReader reader, LiteNetLibElement element)
+            where TType : INetSerializableWithElement, new()
+        {
+            TType obj = new TType();
+            obj.Deserialize(reader, element);
+            return obj;
         }
 
         public static Color GetColor(this NetDataReader reader)

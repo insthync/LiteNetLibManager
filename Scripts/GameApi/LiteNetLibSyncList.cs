@@ -20,18 +20,16 @@ namespace LiteNetLibManager
             public const byte Dirty = 5;
             public const byte RemoveFirst = 6;
             public const byte RemoveLast = 7;
+            public const byte AddRangeStart = 8;
+            public const byte AddRangeItem = 9;
+            public const byte AddRangeEnd = 10;
 
             public Operation(byte value)
             {
-                this.value = value;
+                Value = value;
             }
 
-            private byte value;
-            public byte Value
-            {
-                get { return value; }
-                set { this.value = value; }
-            }
+            public byte Value { get; private set; }
 
             public static implicit operator byte(Operation operation)
             {
@@ -50,9 +48,6 @@ namespace LiteNetLibManager
         public bool forOwnerOnly;
         public OnChanged onOperation;
 
-        protected bool CanSetElement { get; set; }
-        protected INetSerializableWithElement tempNetSerializableWithElement;
-
         public abstract int Count { get; }
         public abstract Type GetFieldType();
         public abstract void SendOperation(Operation operation, int index);
@@ -68,20 +63,17 @@ namespace LiteNetLibManager
         internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
-            CanSetElement = typeof(INetSerializableWithElement).IsAssignableFrom(GetFieldType());
             if (Count > 0 && onOperation != null)
             {
-                for (int i = 0; i < Count; ++i)
-                {
-                    onOperation.Invoke(Operation.Add, i);
-                }
+                onOperation.Invoke(Operation.AddRangeStart, 0);
+                onOperation.Invoke(Operation.AddRangeEnd, Count - 1);
             }
         }
     }
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
     {
-        protected List<TType> list = new List<TType>();
+        protected readonly List<TType> list = new List<TType>();
 
         public TType this[int index]
         {
@@ -117,6 +109,17 @@ namespace LiteNetLibManager
         {
             list.Add(item);
             SendOperation(Operation.Add, list.Count - 1);
+        }
+
+        public void AddRange(IEnumerable<TType> collection)
+        {
+            SendOperation(Operation.AddRangeStart, list.Count - 1);
+            foreach (TType item in collection)
+            {
+                list.Add(item);
+                SendOperation(Operation.AddRangeItem, list.Count - 1);
+            }
+            SendOperation(Operation.AddRangeEnd, list.Count - 1);
         }
 
         public void Insert(int index, TType item)
@@ -156,7 +159,7 @@ namespace LiteNetLibManager
             else if (index == list.Count - 1)
             {
                 list.RemoveAt(index);
-                SendOperation(Operation.RemoveLast, 0);
+                SendOperation(Operation.RemoveLast, index);
             }
             else
             {
@@ -248,41 +251,66 @@ namespace LiteNetLibManager
                     index = list.Count;
                     item = DeserializeValueForAddOrInsert(index, reader);
                     list.Add(item);
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
+                    break;
+                case Operation.AddRangeStart:
+                case Operation.AddRangeEnd:
+                    index = list.Count - 1;
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
+                    break;
+                case Operation.AddRangeItem:
+                    index = list.Count;
+                    item = DeserializeValueForAddOrInsert(index, reader);
+                    list.Add(item);
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
                     item = DeserializeValueForAddOrInsert(index, reader);
                     list.Insert(index, item);
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
                     item = DeserializeValueForSetOrDirty(index, reader);
                     list[index] = item;
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.RemoveAt:
                     index = reader.GetInt();
                     list.RemoveAt(index);
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.RemoveFirst:
                     index = 0;
                     list.RemoveAt(index);
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.RemoveLast:
                     index = list.Count - 1;
                     list.RemoveAt(index);
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.Clear:
                     list.Clear();
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
                     break;
                 default:
                     index = reader.GetInt();
                     item = DeserializeValueForCustomDirty(index, operation, reader);
                     list[index] = item;
+                    if (onOperation != null)
+                        onOperation.Invoke(operation, index);
                     break;
             }
-            if (onOperation != null)
-                onOperation.Invoke(operation, index);
         }
 
         public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
@@ -291,6 +319,7 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
+                case Operation.AddRangeItem:
                     SerializeValueForAddOrInsert(index, writer, list[index]);
                     break;
                 case Operation.Insert:
@@ -308,6 +337,8 @@ namespace LiteNetLibManager
                 case Operation.RemoveFirst:
                 case Operation.RemoveLast:
                 case Operation.Clear:
+                case Operation.AddRangeStart:
+                case Operation.AddRangeEnd:
                     break;
                 default:
                     writer.Put(index);
@@ -318,19 +349,11 @@ namespace LiteNetLibManager
 
         protected virtual TType DeserializeValue(NetDataReader reader)
         {
-            if (CanSetElement)
-            {
-                tempNetSerializableWithElement = (INetSerializableWithElement)reader.GetValue<TType>();
-                tempNetSerializableWithElement.Element = this;
-                return (TType)tempNetSerializableWithElement;
-            }
             return reader.GetValue<TType>();
         }
 
         protected virtual void SerializeValue(NetDataWriter writer, TType value)
         {
-            if (CanSetElement)
-                (value as INetSerializableWithElement).Element = this;
             writer.PutValue(value);
         }
 
@@ -362,6 +385,21 @@ namespace LiteNetLibManager
         protected virtual TType DeserializeValueForCustomDirty(int index, byte customOperation, NetDataReader reader)
         {
             return DeserializeValue(reader);
+        }
+    }
+
+    [Serializable]
+    public class LiteNetLibSyncListWithElement<TType> : LiteNetLibSyncList<TType>
+        where TType : INetSerializableWithElement, new()
+    {
+        protected override TType DeserializeValue(NetDataReader reader)
+        {
+            return reader.GetValue<TType>(this);
+        }
+
+        protected override void SerializeValue(NetDataWriter writer, TType value)
+        {
+            writer.PutValue(this, value);
         }
     }
 

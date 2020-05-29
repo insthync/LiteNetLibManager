@@ -4,6 +4,7 @@ namespace LiteNetLibManager
 {
     public interface INetSerializableWithElement : INetSerializable
     {
-        LiteNetLibElement Element { get; set; }
+        void Deserialize(NetDataReader reader, LiteNetLibElement element);
+        void Serialize(NetDataWriter writer, LiteNetLibElement element);
     }
 }
