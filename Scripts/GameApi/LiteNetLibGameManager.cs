@@ -657,7 +657,7 @@ namespace LiteNetLibManager
             FunctionReceivers receivers = (FunctionReceivers)reader.GetByte();
             long connectionId = -1;
             if (receivers == FunctionReceivers.Target)
-                connectionId = (long)reader.GetPackedULong();
+                connectionId = reader.GetPackedLong();
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
