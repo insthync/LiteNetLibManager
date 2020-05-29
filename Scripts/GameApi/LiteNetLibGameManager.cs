@@ -662,10 +662,19 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
+                if (messageHandler.connectionId != identity.ConnectionId)
+                {
+                    // Allow only owner client can request call function
+                    return;
+                }
                 if (receivers == FunctionReceivers.Server)
+                {
+                    // Request from client to server, so hook callback at server immediately
                     identity.ProcessNetFunction(info, reader, true);
+                }
                 else
                 {
+                    // Request from client to other clients, so hook callback later
                     LiteNetLibFunction netFunction = identity.ProcessNetFunction(info, reader, false);
                     // Use call with out parameters set because parameters already set while process net function
                     if (receivers == FunctionReceivers.Target)
