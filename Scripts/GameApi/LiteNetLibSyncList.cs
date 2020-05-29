@@ -201,8 +201,7 @@ namespace LiteNetLibManager
 
         public override sealed void SendOperation(Operation operation, int index)
         {
-            if (onOperation != null)
-                onOperation.Invoke(operation, index);
+            OnOperation(operation, index);
 
             if (!ValidateBeforeAccess())
                 return;
@@ -251,14 +250,10 @@ namespace LiteNetLibManager
                     index = list.Count;
                     item = DeserializeValueForAddOrInsert(index, reader);
                     list.Add(item);
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.AddRangeStart:
                 case Operation.AddRangeEnd:
                     index = list.Count - 1;
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.AddRangeItem:
                     index = list.Count;
@@ -269,48 +264,35 @@ namespace LiteNetLibManager
                     index = reader.GetInt();
                     item = DeserializeValueForAddOrInsert(index, reader);
                     list.Insert(index, item);
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
                     index = reader.GetInt();
                     item = DeserializeValueForSetOrDirty(index, reader);
                     list[index] = item;
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.RemoveAt:
                     index = reader.GetInt();
                     list.RemoveAt(index);
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.RemoveFirst:
                     index = 0;
                     list.RemoveAt(index);
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.RemoveLast:
                     index = list.Count - 1;
                     list.RemoveAt(index);
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 case Operation.Clear:
                     list.Clear();
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
                 default:
                     index = reader.GetInt();
                     item = DeserializeValueForCustomDirty(index, operation, reader);
                     list[index] = item;
-                    if (onOperation != null)
-                        onOperation.Invoke(operation, index);
                     break;
             }
+            OnOperation(operation, index);
         }
 
         public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
@@ -385,6 +367,15 @@ namespace LiteNetLibManager
         protected virtual TType DeserializeValueForCustomDirty(int index, byte customOperation, NetDataReader reader)
         {
             return DeserializeValue(reader);
+        }
+
+        protected void OnOperation(Operation operation, int index)
+        {
+            if (operation.Value == Operation.AddRangeItem)
+                return;
+
+            if (onOperation != null)
+                onOperation.Invoke(operation, index);
         }
     }
 
