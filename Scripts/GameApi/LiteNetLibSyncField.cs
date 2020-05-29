@@ -475,6 +475,16 @@ namespace LiteNetLibManager
             }
         }
 
+        internal override void DeserializeValue(NetDataReader reader)
+        {
+            Value = reader.GetArray<TType>();
+        }
+
+        internal override void SerializeValue(NetDataWriter writer)
+        {
+            writer.PutArray(Value);
+        }
+
         public int Length { get { return Value.Length; } }
     }
 
