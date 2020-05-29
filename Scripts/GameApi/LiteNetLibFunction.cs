@@ -39,6 +39,11 @@ namespace LiteNetLibManager
             this.callback = callback;
         }
 
+        protected override bool ValidateBeforeAccess()
+        {
+            return Behaviour != null && (IsServer || IsOwnerClient);
+        }
+
         internal virtual void HookCallback()
         {
             callback.Invoke();
