@@ -191,6 +191,11 @@ namespace LiteNetLibManager
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             Serialize(writer);
         }
+
+        public override string ToString()
+        {
+            return GetValue().ToString();
+        }
     }
 
     public class LiteNetLibSyncFieldContainer : LiteNetLibSyncField
