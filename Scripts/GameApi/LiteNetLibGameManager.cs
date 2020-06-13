@@ -24,7 +24,6 @@ namespace LiteNetLibManager
             public const ushort UpdateSyncField = 7;
             public const ushort InitialSyncField = 8;
             public const ushort OperateSyncList = 9;
-            public const ushort ServerTime = 10;
             public const ushort ServerSyncBehaviour = 11;
             public const ushort ServerError = 12;
             public const ushort ServerSceneChange = 13;
@@ -41,16 +40,14 @@ namespace LiteNetLibManager
             public const byte Highest = 1;
         }
 
-        public float updateServerTimeDuration = 5f;
         public float pingDuration = 1f;
         public bool doNotEnterGameOnConnect;
         public bool doNotDestroyOnSceneChanges;
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
-        private float tempUpdateTime;
-        private float lastSendServerTime;
-        private float lastSendPingTime;
+        private float tempDeltaTime;
+        private float sendPingCountDown;
         private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
         private bool isPinging;
@@ -96,33 +93,25 @@ namespace LiteNetLibManager
         {
             if (loadSceneAsyncOperation == null)
             {
-                tempUpdateTime = Time.unscaledTime;
+                tempDeltaTime = Time.unscaledDeltaTime;
                 // Update Spawned Objects
                 Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
                 foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
                 {
                     if (spawnedObject == null)
                         continue;
-                    spawnedObject.NetworkUpdate(tempUpdateTime);
+                    spawnedObject.NetworkUpdate(tempDeltaTime);
                 }
                 Profiler.EndSample();
 
-                if (IsServer)
-                {
-                    // Send server time from server
-                    if (tempUpdateTime - lastSendServerTime > updateServerTimeDuration)
-                    {
-                        SendServerTime();
-                        lastSendServerTime = tempUpdateTime;
-                    }
-                }
-
                 if (IsClientConnected)
                 {
-                    if (tempUpdateTime - lastSendPingTime > pingDuration && !isPinging)
+                    // Send ping from client
+                    sendPingCountDown -= tempDeltaTime;
+                    if (sendPingCountDown <= 0f && !isPinging)
                     {
                         SendClientPing();
-                        lastSendPingTime = tempUpdateTime;
+                        sendPingCountDown = pingDuration;
                     }
                 }
             }
@@ -278,7 +267,6 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.UpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.InitialSyncField, HandleServerInitialSyncField);
             RegisterClientMessage(GameMsgTypes.OperateSyncList, HandleServerUpdateSyncList);
-            RegisterClientMessage(GameMsgTypes.ServerTime, HandleServerTime);
             RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
@@ -290,10 +278,7 @@ namespace LiteNetLibManager
         {
             base.OnPeerConnected(connectionId);
             if (!Players.ContainsKey(connectionId))
-            {
-                SendServerTime(connectionId);
                 Players[connectionId] = new LiteNetLibPlayer(this, connectionId);
-            }
         }
 
         public override void OnPeerDisconnected(long connectionId, DisconnectInfo disconnectInfo)
@@ -392,25 +377,6 @@ namespace LiteNetLibManager
             isPinging = true;
             pingTime = Timestamp;
             ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping);
-        }
-
-        public void SendServerTime()
-        {
-            if (!IsServer)
-                return;
-            foreach (long connectionId in ConnectionIds)
-            {
-                SendServerTime(connectionId);
-            }
-        }
-
-        public void SendServerTime(long connectionId)
-        {
-            if (!IsServer)
-                return;
-            ServerTimeMessage message = new ServerTimeMessage();
-            message.serverUnixTime = ServerUnixTime;
-            ServerSendPacket(connectionId, DeliveryMethod.Sequenced, GameMsgTypes.ServerTime, message);
         }
 
         public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
@@ -701,7 +667,11 @@ namespace LiteNetLibManager
 
         protected void HandleClientPing(LiteNetLibMessageHandler messageHandler)
         {
-            ServerSendPacket(messageHandler.connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping);
+            ServerSendPacket(messageHandler.connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, (writer) =>
+            {
+                // Send server time
+                writer.PutPackedLong(ServerUnixTime);
+            });
         }
 
         protected virtual void HandleServerEnterGame(LiteNetLibMessageHandler messageHandler)
@@ -799,15 +769,6 @@ namespace LiteNetLibManager
                 identity.ProcessSyncList(info, reader);
         }
 
-        protected virtual void HandleServerTime(LiteNetLibMessageHandler messageHandler)
-        {
-            // Server time updated at server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
-            ServerTimeMessage message = messageHandler.ReadMessage<ServerTimeMessage>();
-            ServerUnixTimeOffset = message.serverUnixTime - Timestamp - Rtt;
-        }
-
         protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
         {
             // Behaviour sync from server, if this is host (client and server) then skip it.
@@ -865,7 +826,9 @@ namespace LiteNetLibManager
         {
             isPinging = false;
             Rtt = Timestamp - pingTime;
-            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt);
+            // Time offset = server time - current timestamp - rtt
+            ServerUnixTimeOffset = messageHandler.reader.GetPackedLong() - Timestamp - Rtt;
+            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerUnixTimeOffset: " + ServerUnixTimeOffset);
         }
         #endregion
 
