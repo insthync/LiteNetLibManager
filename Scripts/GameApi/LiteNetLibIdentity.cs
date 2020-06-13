@@ -97,7 +97,7 @@ namespace LiteNetLibManager
 
         private bool destroyed;
 
-        internal void NetworkUpdate(float time)
+        internal void NetworkUpdate(float deltaTime)
         {
             if (Manager == null)
                 return;
@@ -106,12 +106,12 @@ namespace LiteNetLibManager
             int loopCounter;
             for (loopCounter = 0; loopCounter < syncFields.Count; ++loopCounter)
             {
-                syncFields[loopCounter].NetworkUpdate(time);
+                syncFields[loopCounter].NetworkUpdate(deltaTime);
             }
 
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                Behaviours[loopCounter].NetworkUpdate(time);
+                Behaviours[loopCounter].NetworkUpdate(deltaTime);
             }
             Profiler.EndSample();
         }

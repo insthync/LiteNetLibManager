@@ -37,7 +37,7 @@ namespace LiteNetLibManager
             get { return 1f / sendInterval; }
         }
 
-        private float lastSentTime;
+        private float sendCountDown;
 
         private static readonly Dictionary<string, CacheFields> CacheSyncElements = new Dictionary<string, CacheFields>();
         private static readonly Dictionary<string, List<MethodInfo>> CacheNetFunctions = new Dictionary<string, List<MethodInfo>>();
@@ -129,20 +129,20 @@ namespace LiteNetLibManager
 
         public virtual string LogTag { get { return Manager.LogTag + "::" + ToString(); } }
 
-        // Optimize garbage collector
-        private int loopCounter;
-
-        internal void NetworkUpdate(float time)
+        internal void NetworkUpdate(float deltaTime)
         {
             // Sync behaviour
             // TODO: For now, it's able to sync behaviour from server to clients only
             if (!IsServer)
                 return;
 
-            if (time - lastSentTime < sendInterval)
+            // It's time to send update?
+            sendCountDown -= deltaTime;
+            if (sendCountDown > 0)
                 return;
 
-            lastSentTime = time;
+            // Set count down
+            sendCountDown = sendInterval;
 
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
             if (ShouldSyncBehaviour())

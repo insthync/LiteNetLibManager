@@ -38,7 +38,7 @@ namespace LiteNetLibManager
         public bool doNotSyncInitialDataImmediately;
         [Tooltip("How data changes handle and sync")]
         public SyncMode syncMode;
-        protected float lastSentTime;
+        protected float sendCountDown;
 
         private bool onChangeCalled;
 
@@ -67,7 +67,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void NetworkUpdate(float time)
+        internal void NetworkUpdate(float deltaTime)
         {
             if (!ValidateBeforeAccess())
                 return;
@@ -96,11 +96,12 @@ namespace LiteNetLibManager
             }
 
             // It's time to send update?
-            if (time - lastSentTime < sendInterval)
+            sendCountDown -= deltaTime;
+            if (sendCountDown > 0)
                 return;
 
-            // Set last send update time
-            lastSentTime = time;
+            // Set count down
+            sendCountDown = sendInterval;
 
             // Send the update
             SendUpdate(false);
