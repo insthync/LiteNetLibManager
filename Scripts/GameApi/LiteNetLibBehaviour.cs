@@ -132,8 +132,7 @@ namespace LiteNetLibManager
         internal void NetworkUpdate(float deltaTime)
         {
             // Sync behaviour
-            // TODO: For now, it's able to sync behaviour from server to clients only
-            if (!IsServer)
+            if (!IsServer || !CanSyncBehaviour())
                 return;
 
             // It's time to send update?
@@ -207,8 +206,8 @@ namespace LiteNetLibManager
                 tempCacheFields.syncLists.Sort((a, b) => a.Name.CompareTo(b.Name));
                 CacheSyncElements.Add(TypeName, tempCacheFields);
             }
-            SetupSyncElements(tempCacheFields.syncFields, Identity.syncFields);
-            SetupSyncElements(tempCacheFields.syncLists, Identity.syncLists);
+            SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields);
+            SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists);
             SetupSyncFieldsWithAttribute(tempCacheFields.syncFieldsWithAttribute);
             // Setup net functions
             if (!CacheNetFunctions.TryGetValue(TypeName, out tempCacheMethods))
@@ -340,7 +339,7 @@ namespace LiteNetLibManager
                     tempSyncField.alwaysSync = tempAttribute.alwaysSync;
                     tempSyncField.doNotSyncInitialDataImmediately = tempAttribute.doNotSyncInitialDataImmediately;
                     tempSyncField.syncMode = tempAttribute.syncMode;
-                    RegisterSyncElement(tempSyncField, Identity.syncFields);
+                    RegisterSyncElement(tempSyncField, Identity.SyncFields);
                 }
                 catch (Exception ex)
                 {
@@ -359,12 +358,12 @@ namespace LiteNetLibManager
 
         public void RegisterSyncField<T>(T syncField) where T : LiteNetLibSyncField
         {
-            RegisterSyncElement(syncField, Identity.syncFields);
+            RegisterSyncElement(syncField, Identity.SyncFields);
         }
 
         public void RegisterSyncList<T>(T syncList) where T : LiteNetLibSyncList
         {
-            RegisterSyncElement(syncList, Identity.syncLists);
+            RegisterSyncElement(syncList, Identity.SyncLists);
         }
         #endregion
 
@@ -454,15 +453,15 @@ namespace LiteNetLibManager
                     Logging.LogError(LogTag, "[" + TypeName + "] cannot register net function with existed id [" + id + "].");
                 return;
             }
-            if (Identity.netFunctions.Count >= int.MaxValue)
+            if (Identity.NetFunctions.Count >= int.MaxValue)
             {
                 if (Manager.LogError)
                     Logging.LogError(LogTag, "[" + TypeName + "] cannot register net function it's exceeds limit.");
                 return;
             }
-            int elementId = Identity.netFunctions.Count;
+            int elementId = Identity.NetFunctions.Count;
             netFunction.Setup(this, elementId);
-            Identity.netFunctions.Add(netFunction);
+            Identity.NetFunctions.Add(netFunction);
             netFunctionIds[id] = elementId;
         }
 
@@ -585,7 +584,7 @@ namespace LiteNetLibManager
             int elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                Identity.netFunctions[elementId].Call(deliveryMethod, receivers, parameters);
+                Identity.NetFunctions[elementId].Call(deliveryMethod, receivers, parameters);
             }
             else
             {
@@ -656,7 +655,7 @@ namespace LiteNetLibManager
             int elementId;
             if (netFunctionIds.TryGetValue(id, out elementId))
             {
-                Identity.netFunctions[elementId].Call(connectionId, parameters);
+                Identity.NetFunctions[elementId].Call(connectionId, parameters);
             }
             else
             {
@@ -757,7 +756,16 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// Override this function to make condition to write custom data to client
+        /// Override this function to define condition to sync behaviour data to client or not
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool CanSyncBehaviour()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Override this function to define condition to sync behaviour data to client when it should
         /// </summary>
         /// <returns></returns>
         public virtual bool ShouldSyncBehaviour()
