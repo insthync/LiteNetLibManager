@@ -178,6 +178,11 @@ namespace LiteNetLibManager
             }
         }
 
+        public override bool CanSyncBehaviour()
+        {
+            return true;
+        }
+
         public override bool ShouldSyncBehaviour()
         {
             if (Vector3.Distance(syncResult.position, syncingTransform.position) >= movementTheshold || Quaternion.Angle(syncResult.rotation, syncingTransform.rotation) >= rotateTheshold)

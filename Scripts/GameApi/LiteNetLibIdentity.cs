@@ -30,13 +30,32 @@ namespace LiteNetLibManager
         private List<long> subscriberIds = new List<long>();
 #endif
 
-        internal readonly List<LiteNetLibSyncField> syncFields = new List<LiteNetLibSyncField>();
-        internal readonly List<LiteNetLibFunction> netFunctions = new List<LiteNetLibFunction>();
-        internal readonly List<LiteNetLibSyncList> syncLists = new List<LiteNetLibSyncList>();
-
+        /// <summary>
+        /// This will be true when identity setup
+        /// </summary>
         private bool isSetupBehaviours;
+        /// <summary>
+        /// List of sync fields from all behaviours (include children behaviours)
+        /// </summary>
+        internal readonly List<LiteNetLibSyncField> SyncFields = new List<LiteNetLibSyncField>();
+        /// <summary>
+        /// List of net functions from all behaviours (include children behaviours)
+        /// </summary>
+        internal readonly List<LiteNetLibFunction> NetFunctions = new List<LiteNetLibFunction>();
+        /// <summary>
+        /// List of sync lists from all behaviours (include children behaviours)
+        /// </summary>
+        internal readonly List<LiteNetLibSyncList> SyncLists = new List<LiteNetLibSyncList>();
+        /// <summary>
+        /// List of sync behaviours
+        /// </summary>
+        internal readonly List<LiteNetLibBehaviour> SyncBehaviours = new List<LiteNetLibBehaviour>();
+        /// <summary>
+        /// Array of all behaviours
+        /// </summary>
         internal LiteNetLibBehaviour[] Behaviours { get; private set; }
         internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
+
         public string AssetId { get { return assetId; } }
         public int HashAssetId
         {
@@ -104,14 +123,14 @@ namespace LiteNetLibManager
 
             Profiler.BeginSample("LiteNetLibIdentity - Network Update");
             int loopCounter;
-            for (loopCounter = 0; loopCounter < syncFields.Count; ++loopCounter)
+            for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
             {
-                syncFields[loopCounter].NetworkUpdate(deltaTime);
+                SyncFields[loopCounter].NetworkUpdate(deltaTime);
             }
 
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            for (loopCounter = 0; loopCounter < SyncBehaviours.Count; ++loopCounter)
             {
-                Behaviours[loopCounter].NetworkUpdate(deltaTime);
+                SyncBehaviours[loopCounter].NetworkUpdate(deltaTime);
             }
             Profiler.EndSample();
         }
@@ -236,8 +255,8 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.elementId >= 0 && info.elementId < syncFields.Count)
-                return syncFields[info.elementId];
+            if (info.elementId >= 0 && info.elementId < SyncFields.Count)
+                return SyncFields[info.elementId];
             return null;
         }
 
@@ -262,8 +281,8 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.elementId >= 0 && info.elementId < netFunctions.Count)
-                return netFunctions[info.elementId];
+            if (info.elementId >= 0 && info.elementId < NetFunctions.Count)
+                return NetFunctions[info.elementId];
             return null;
         }
 
@@ -286,8 +305,8 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.elementId >= 0 && info.elementId < syncLists.Count)
-                return syncLists[info.elementId];
+            if (info.elementId >= 0 && info.elementId < SyncLists.Count)
+                return SyncLists[info.elementId];
             return null;
         }
 
@@ -312,7 +331,7 @@ namespace LiteNetLibManager
 
         internal void WriteInitialSyncFields(NetDataWriter writer)
         {
-            foreach (LiteNetLibSyncField field in syncFields)
+            foreach (LiteNetLibSyncField field in SyncFields)
             {
                 if (field.doNotSyncInitialDataImmediately)
                     continue;
@@ -322,7 +341,7 @@ namespace LiteNetLibManager
 
         internal void ReadInitialSyncFields(NetDataReader reader)
         {
-            foreach (LiteNetLibSyncField field in syncFields)
+            foreach (LiteNetLibSyncField field in SyncFields)
             {
                 if (field.doNotSyncInitialDataImmediately)
                     continue;
@@ -332,7 +351,7 @@ namespace LiteNetLibManager
 
         internal void SendInitSyncFields(long connectionId)
         {
-            foreach (LiteNetLibSyncField field in syncFields)
+            foreach (LiteNetLibSyncField field in SyncFields)
             {
                 if (!field.doNotSyncInitialDataImmediately)
                     continue;
@@ -342,7 +361,7 @@ namespace LiteNetLibManager
 
         internal void SendInitSyncLists(long connectionId)
         {
-            foreach (LiteNetLibSyncList list in syncLists)
+            foreach (LiteNetLibSyncList list in SyncLists)
             {
                 for (int i = 0; i < list.Count; ++i)
                     list.SendOperation(connectionId, LiteNetLibSyncList.Operation.Insert, i);
@@ -387,11 +406,15 @@ namespace LiteNetLibManager
             if (!isSetupBehaviours)
             {
                 // Setup behaviours index, we will use this as reference for network functions
+                // NOTE: Maximum network behaviour for a identity is 255 (included children)
                 Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
-                int loopCounter;
+                SyncBehaviours.Clear();
+                byte loopCounter;
                 for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
-                    Behaviours[loopCounter].Setup(Convert.ToByte(loopCounter));
+                    Behaviours[loopCounter].Setup(loopCounter);
+                    if (Behaviours[loopCounter].CanSyncBehaviour())
+                        SyncBehaviours.Add(Behaviours[loopCounter]);
                 }
                 isSetupBehaviours = true;
             }
