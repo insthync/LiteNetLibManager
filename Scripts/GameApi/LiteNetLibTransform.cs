@@ -132,9 +132,16 @@ namespace LiteNetLibManager
                 onTeleport.Invoke(position, rotation);
         }
 
+        /// <summary>
+        /// This function will be called at server after receive transform from clients 
+        /// to interpolate and sync position to other clients
+        /// </summary>
+        /// <param name="reader"></param>
         internal void HandleClientSendTransform(NetDataReader reader)
         {
-            // Don't update transform follow client's request if not set "canClientSendResult" to TRUE or it's the server
+            // Don't update transform follow client's request 
+            // if not set "ownerClientCanSendTransform" to `TRUE`
+            // or it's this is owned by host
             if (!ownerClientCanSendTransform || IsOwnerClient)
                 return;
             TransformResult result = DeserializeResult(reader);
@@ -147,6 +154,10 @@ namespace LiteNetLibManager
             endInterpResult = result;
         }
 
+        /// <summary>
+        /// This function will be called at client to send transform
+        /// </summary>
+        /// <param name="transformResult"></param>
         private void ClientSendTransform(TransformResult transformResult)
         {
             // Don't request to set transform if not set "canClientSendResult" to TRUE
@@ -328,7 +339,8 @@ namespace LiteNetLibManager
             if (IsServer)
             {
                 // Interpolate transform that receives from clients
-                if (ownerClientCanSendTransform && !IsOwnerClient)
+                // So if this is no owning client (ConnectionId < 0), it won't interpolate
+                if (ownerClientCanSendTransform && !IsOwnerClient && ConnectionId >= 0)
                     Interpolate(deltaTime);
             }
             // Interpolating results for non-owner client objects on clients
