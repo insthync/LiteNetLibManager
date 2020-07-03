@@ -24,21 +24,9 @@ namespace LiteNetLib.Utils
                 return;
             }
 
-            if (type == typeof(bool[]))
-            {
-                writer.PutArray((bool[])value);
-                return;
-            }
-
             if (type == typeof(byte))
             {
                 writer.Put((byte)value);
-                return;
-            }
-
-            if (type == typeof(byte[]))
-            {
-                writer.PutBytesWithLength((byte[])value);
                 return;
             }
 
@@ -54,21 +42,9 @@ namespace LiteNetLib.Utils
                 return;
             }
 
-            if (type == typeof(double[]))
-            {
-                writer.PutArray((double[])value);
-                return;
-            }
-
             if (type == typeof(float))
             {
                 writer.Put((float)value);
-                return;
-            }
-
-            if (type == typeof(float[]))
-            {
-                writer.PutArray((float[])value);
                 return;
             }
 
@@ -78,21 +54,9 @@ namespace LiteNetLib.Utils
                 return;
             }
 
-            if (type == typeof(int[]))
-            {
-                writer.PutArray((int[])value);
-                return;
-            }
-
             if (type == typeof(long))
             {
                 writer.PutPackedLong((long)value);
-                return;
-            }
-
-            if (type == typeof(long[]))
-            {
-                writer.PutArray((long[])value);
                 return;
             }
 
@@ -108,12 +72,6 @@ namespace LiteNetLib.Utils
                 return;
             }
 
-            if (type == typeof(short[]))
-            {
-                writer.PutArray((short[])value);
-                return;
-            }
-
             if (type == typeof(string))
             {
                 writer.Put((string)value);
@@ -126,33 +84,15 @@ namespace LiteNetLib.Utils
                 return;
             }
 
-            if (type == typeof(uint[]))
-            {
-                writer.PutArray((uint[])value);
-                return;
-            }
-
             if (type == typeof(ulong))
             {
                 writer.PutPackedULong((ulong)value);
                 return;
             }
 
-            if (type == typeof(ulong[]))
-            {
-                writer.PutArray((ulong[])value);
-                return;
-            }
-
             if (type == typeof(ushort))
             {
                 writer.PutPackedUShort((ushort)value);
-                return;
-            }
-
-            if (type == typeof(ushort[]))
-            {
-                writer.PutArray((ushort[])value);
                 return;
             }
             #endregion
@@ -277,9 +217,24 @@ namespace LiteNetLib.Utils
                 return;
             }
             writer.Put(array.Length);
-            foreach (var value in array)
+            foreach (TValue value in array)
             {
                 writer.PutValue(value);
+            }
+        }
+
+        public static void PutArray(this NetDataWriter writer, Type type, object array)
+        {
+            if (array == null)
+            {
+                writer.Put(0);
+                return;
+            }
+            Array castedArray = array as Array;
+            writer.Put(castedArray.Length);
+            foreach (object value in castedArray)
+            {
+                writer.PutValue(type, value);
             }
         }
 
