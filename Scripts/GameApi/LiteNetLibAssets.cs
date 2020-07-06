@@ -60,7 +60,6 @@ namespace LiteNetLibManager
 
         public void RegisterPrefabs()
         {
-            GuidToPrefabs.Clear();
             for (int i = 0; i < spawnablePrefabs.Length; ++i)
             {
                 LiteNetLibIdentity registeringPrefab = spawnablePrefabs[i];
