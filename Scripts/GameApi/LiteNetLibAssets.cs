@@ -150,7 +150,7 @@ namespace LiteNetLibManager
                 return null;
             }
 
-            LiteNetLibIdentity sceneObject = null;
+            LiteNetLibIdentity sceneObject;
             if (SceneObjects.TryGetValue(objectId, out sceneObject))
             {
                 sceneObject.gameObject.SetActive(true);
@@ -208,7 +208,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
         {
-            LiteNetLibIdentity spawningObject = null;
+            LiteNetLibIdentity spawningObject;
             if (GuidToPrefabs.TryGetValue(hashAssetId, out spawningObject))
                 return NetworkSpawn(Instantiate(spawningObject.gameObject, position, rotation), objectId, connectionId);
             // If object with hash asset id not exists
