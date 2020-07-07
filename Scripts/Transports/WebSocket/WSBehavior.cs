@@ -11,14 +11,15 @@ namespace LiteNetLibManager
 #if !UNITY_WEBGL || UNITY_EDITOR
     public class WSBehavior : WebSocketBehavior
     {
-        public long connectionId { get; }
-        private readonly Queue<TransportEventData> eventQueue;
+        public long connectionId { get; private set; }
+        private Queue<TransportEventData> eventQueue;
 
-        public WSBehavior(long connectionId, Queue<TransportEventData> eventQueue)
+        public void Initialize(long connectionId, Queue<TransportEventData> eventQueue)
         {
             this.connectionId = connectionId;
             this.eventQueue = eventQueue;
         }
+
 
         protected override void OnOpen()
         {

@@ -108,12 +108,11 @@ namespace LiteNetLibManager
 #if !UNITY_WEBGL || UNITY_EDITOR
             serverPeers.Clear();
             server = new WebSocketServer(port);
-            server.AddWebSocketService("/", () =>
+            server.AddWebSocketService<WSBehavior>("/", (behavior) =>
             {
                 tempConnectionId = nextConnectionId++;
-                WSBehavior behavior = new WSBehavior(tempConnectionId, serverEventQueue);
+                behavior.Initialize(tempConnectionId, serverEventQueue);
                 serverPeers[tempConnectionId] = behavior;
-                return behavior;
             });
             server.Start();
             return true;
