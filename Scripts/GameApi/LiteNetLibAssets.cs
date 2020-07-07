@@ -45,7 +45,6 @@ namespace LiteNetLibManager
         {
             ClearSpawnedObjects();
             CacheSpawnPoints.Clear();
-            GuidToPrefabs.Clear();
             SceneObjects.Clear();
             ResetSpawnPositionCounter();
             if (!doNotResetObjectId)
