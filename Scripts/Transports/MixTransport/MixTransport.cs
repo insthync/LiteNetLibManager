@@ -167,12 +167,11 @@ namespace LiteNetLibManager
             wsServerPeers.Clear();
             int wsPort = port + webSocketPortOffset;
             wsServer = new WebSocketServer(wsPort);
-            wsServer.AddWebSocketService("/", () =>
+            wsServer.AddWebSocketService<WSBehavior>("/", (behavior) =>
             {
-                tempConnectionId = GetNewConnectionID();
-                WSBehavior behavior = new WSBehavior(tempConnectionId, serverEventQueue);
+                tempConnectionId = nextConnectionId++;
+                behavior.Initialize(tempConnectionId, serverEventQueue);
                 wsServerPeers[tempConnectionId] = behavior;
-                return behavior;
             });
             wsServer.Start();
 
