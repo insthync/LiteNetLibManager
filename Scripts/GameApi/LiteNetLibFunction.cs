@@ -49,7 +49,7 @@ namespace LiteNetLibManager
             callback.Invoke();
         }
 
-        protected void ServerSendCall(long connectionId, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
+        protected void ServerSendCall(long connectionId, DeliveryMethod deliveryMethod)
         {
             SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, deliveryMethod, LiteNetLibGameManager.GameMsgTypes.CallFunction, (writer) => SerializeForSend(writer));
@@ -70,26 +70,46 @@ namespace LiteNetLibManager
                 {
                     case FunctionReceivers.Target:
                         if (Identity.IsSubscribedOrOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
-                            ServerSendCall(targetConnectionId, deliveryMethod, receivers, targetConnectionId);
+                        {
+                            // Send function call message from server to target client by target connection Id
+                            ServerSendCall(targetConnectionId, deliveryMethod);
+                        }
                         break;
                     case FunctionReceivers.All:
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
                             if (Manager.ClientConnectionId == connectionId)
+                            {
+                                // This is host's networking oject, so hook callback immediately
+                                // Don't have to send message to the client, because it is currently run as both server and client
                                 HookCallback();
+                            }
                             else if (Identity.IsSubscribedOrOwning(connectionId))
-                                ServerSendCall(connectionId, deliveryMethod, receivers, targetConnectionId);
+                            {
+                                // Send message to subscribing clients
+                                ServerSendCall(connectionId, deliveryMethod);
+                            }
                         }
                         if (!Manager.IsClientConnected)
+                        {
+                            // It's not a host(client+host), it's just a server
+                            // So hook callback immediately to do the function at server
                             HookCallback();
+                        }
                         break;
                     case FunctionReceivers.Server:
+                        // Call server function at server
+                        // So hook callback immediately to do the function at server
                         HookCallback();
                         break;
                 }
             }
             else if (manager.IsClientConnected)
+            {
+                // Client send net function call to server
+                // Then the server will hook callback or forward message to other clients
                 ClientSendCall(deliveryMethod, receivers, targetConnectionId);
+            }
         }
 
         public void SetParameters(params object[] parameterValues)
