@@ -16,6 +16,7 @@ namespace LiteNetLibManager
     {
         public readonly Type[] ParameterTypes;
         public readonly object[] Parameters;
+        public bool CanCallByEveryone { get; set; }
         private NetFunctionDelegate callback;
 
         protected LiteNetLibFunction() : this(0)
@@ -41,7 +42,7 @@ namespace LiteNetLibManager
 
         protected override bool ValidateBeforeAccess()
         {
-            return Behaviour != null && (IsServer || IsOwnerClient);
+            return Behaviour != null && (IsServer || IsOwnerClient || CanCallByEveryone);
         }
 
         internal virtual void HookCallback()

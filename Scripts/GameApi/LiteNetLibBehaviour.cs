@@ -20,6 +20,12 @@ namespace LiteNetLibManager
             public List<FieldInfo> syncFieldsWithAttribute;
         }
 
+        private struct CacheFunctions
+        {
+            public List<MethodInfo> functions;
+            public List<MethodInfo> functionsCanCallByEveryone;
+        }
+
         [LiteNetLibReadOnly, SerializeField]
         private byte behaviourIndex;
         public byte BehaviourIndex
@@ -40,14 +46,14 @@ namespace LiteNetLibManager
         private float sendCountDown;
 
         private static readonly Dictionary<string, CacheFields> CacheSyncElements = new Dictionary<string, CacheFields>();
-        private static readonly Dictionary<string, List<MethodInfo>> CacheNetFunctions = new Dictionary<string, List<MethodInfo>>();
+        private static readonly Dictionary<string, CacheFunctions> CacheNetFunctions = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, MethodInfo> CacheHookFunctions = new Dictionary<string, MethodInfo>();
 
         private readonly Dictionary<string, int> netFunctionIds = new Dictionary<string, int>();
 
         // Optimize garbage collector
         private CacheFields tempCacheFields;
-        private List<MethodInfo> tempCacheMethods;
+        private CacheFunctions tempCacheFunctions;
         private Type tempLookupType;
         private HashSet<string> tempLookupNames = new HashSet<string>();
         private FieldInfo[] tempLookupFields;
@@ -210,9 +216,13 @@ namespace LiteNetLibManager
             SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists);
             SetupSyncFieldsWithAttribute(tempCacheFields.syncFieldsWithAttribute);
             // Setup net functions
-            if (!CacheNetFunctions.TryGetValue(TypeName, out tempCacheMethods))
+            if (!CacheNetFunctions.TryGetValue(TypeName, out tempCacheFunctions))
             {
-                tempCacheMethods = new List<MethodInfo>();
+                tempCacheFunctions = new CacheFunctions()
+                {
+                    functions = new List<MethodInfo>(),
+                    functionsCanCallByEveryone = new List<MethodInfo>()
+                };
                 tempLookupNames.Clear();
                 tempLookupType = ClassType;
                 NetFunctionAttribute tempAttribute = null;
@@ -239,14 +249,18 @@ namespace LiteNetLibManager
                             continue;
                         }
 
-                        tempCacheMethods.Add(lookupMethod);
+                        if (!tempAttribute.canCallByEveryone)
+                            tempCacheFunctions.functions.Add(lookupMethod);
+                        else
+                            tempCacheFunctions.functionsCanCallByEveryone.Add(lookupMethod);
                         tempLookupNames.Add(lookupMethod.Name);
                     }
                     tempLookupType = tempLookupType.BaseType;
                 }
-                CacheNetFunctions.Add(TypeName, tempCacheMethods);
+                CacheNetFunctions.Add(TypeName, tempCacheFunctions);
             }
-            SetupNetFunctions(tempCacheMethods);
+            SetupNetFunctions(tempCacheFunctions.functions, false);
+            SetupNetFunctions(tempCacheFunctions.functionsCanCallByEveryone, true);
         }
 
         #region RegisterSyncElements
@@ -368,7 +382,7 @@ namespace LiteNetLibManager
         #endregion
 
         #region RegisterNetFunction
-        private void SetupNetFunctions(List<MethodInfo> methods)
+        private void SetupNetFunctions(List<MethodInfo> methods, bool canCallByEveryone)
         {
             if (methods == null || methods.Count == 0)
                 return;
@@ -379,7 +393,7 @@ namespace LiteNetLibManager
                 try
                 {
                     types = method.GetParameters().Select(p => p.ParameterType).ToArray();
-                    RegisterNetFunction(method.Name, new LiteNetLibFunctionDynamic(types, this, method));
+                    RegisterNetFunction(method.Name, new LiteNetLibFunctionDynamic(types, this, method), canCallByEveryone);
                 }
                 catch (Exception ex)
                 {
@@ -445,7 +459,7 @@ namespace LiteNetLibManager
         }
         #endregion
 
-        public void RegisterNetFunction(string id, LiteNetLibFunction netFunction)
+        public void RegisterNetFunction(string id, LiteNetLibFunction netFunction, bool canCallByEveryone = false)
         {
             if (netFunctionIds.ContainsKey(id))
             {
@@ -461,6 +475,7 @@ namespace LiteNetLibManager
             }
             int elementId = Identity.NetFunctions.Count;
             netFunction.Setup(this, elementId);
+            netFunction.CanCallByEveryone = canCallByEveryone;
             Identity.NetFunctions.Add(netFunction);
             netFunctionIds[id] = elementId;
         }

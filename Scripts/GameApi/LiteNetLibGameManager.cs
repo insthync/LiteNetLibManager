@@ -628,20 +628,27 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
-                if (messageHandler.connectionId != identity.ConnectionId)
+                LiteNetLibFunction netFunction = identity.GetNetFunction(info);
+                if (netFunction == null)
                 {
-                    // Allow only owner client can request call function
+                    // There is no net function that player try to call (player may try to hack)
+                    return;
+                }
+                if (!netFunction.CanCallByEveryone && messageHandler.connectionId != identity.ConnectionId)
+                {
+                    // The function not allowed anyone except owner client to call this net function
+                    // And the client is also not the owner client
                     return;
                 }
                 if (receivers == FunctionReceivers.Server)
                 {
                     // Request from client to server, so hook callback at server immediately
-                    identity.ProcessNetFunction(info, reader, true);
+                    identity.ProcessNetFunction(netFunction, reader, true);
                 }
                 else
                 {
                     // Request from client to other clients, so hook callback later
-                    LiteNetLibFunction netFunction = identity.ProcessNetFunction(info, reader, false);
+                    identity.ProcessNetFunction(netFunction, reader, false);
                     // Use call with out parameters set because parameters already set while process net function
                     if (receivers == FunctionReceivers.Target)
                         netFunction.CallWithoutParametersSet(connectionId);
@@ -754,7 +761,10 @@ namespace LiteNetLibManager
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
+            {
+                // All function from server will be processed (because it's always trust server)
                 identity.ProcessNetFunction(info, reader, true);
+            }
         }
 
         protected virtual void HandleServerUpdateSyncList(LiteNetLibMessageHandler messageHandler)
