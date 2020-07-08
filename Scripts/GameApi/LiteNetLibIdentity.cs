@@ -236,17 +236,16 @@ namespace LiteNetLibManager
 #endif
         #endregion
 
+        #region SyncField Functions
         internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader, bool isInitial)
         {
-            if (info.objectId != ObjectId)
-                return null;
-            LiteNetLibSyncField syncField = GetSyncField(info);
+            return ProcessSyncField(GetSyncField(info), reader, isInitial);
+        }
+
+        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibSyncField syncField, NetDataReader reader, bool isInitial)
+        {
             if (syncField == null)
-            {
-                if (Manager.LogError)
-                    Logging.LogError(LogTag, "Cannot process sync field, fieldId [" + info.elementId + "] not found.");
                 return null;
-            }
             syncField.Deserialize(reader, isInitial);
             return syncField;
         }
@@ -257,20 +256,22 @@ namespace LiteNetLibManager
                 return null;
             if (info.elementId >= 0 && info.elementId < SyncFields.Count)
                 return SyncFields[info.elementId];
+            if (Manager.LogError)
+                Logging.LogError(LogTag, "Cannot find sync field [" + info.elementId + "].");
             return null;
         }
+        #endregion
 
+        #region NetFunction Functions
         internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
-            if (info.objectId != ObjectId)
-                return null;
-            LiteNetLibFunction netFunction = GetNetFunction(info);
+            return ProcessNetFunction(GetNetFunction(info), reader, hookCallback);
+        }
+
+        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibFunction netFunction, NetDataReader reader, bool hookCallback)
+        {
             if (netFunction == null)
-            {
-                if (Manager.LogError)
-                    Logging.LogError(LogTag, "Cannot process net function, functionId [" + info.elementId + "] not found.");
                 return null;
-            }
             netFunction.DeserializeParameters(reader);
             if (hookCallback)
                 netFunction.HookCallback();
@@ -283,20 +284,22 @@ namespace LiteNetLibManager
                 return null;
             if (info.elementId >= 0 && info.elementId < NetFunctions.Count)
                 return NetFunctions[info.elementId];
+            if (Manager.LogError)
+                Logging.LogError(LogTag, "Cannot find net function [" + info.elementId + "].");
             return null;
         }
+        #endregion
 
+        #region SyncList Functions
         internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
         {
-            if (info.objectId != ObjectId)
-                return null;
-            LiteNetLibSyncList syncList = GetSyncList(info);
+            return ProcessSyncList(GetSyncList(info), reader);
+        }
+
+        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibSyncList syncList, NetDataReader reader)
+        {
             if (syncList == null)
-            {
-                if (Manager.LogError)
-                    Logging.LogError(LogTag, "Cannot process sync list, fieldId [" + info.elementId + "] not found.");
                 return null;
-            }
             syncList.DeserializeOperation(reader);
             return syncList;
         }
@@ -307,8 +310,11 @@ namespace LiteNetLibManager
                 return null;
             if (info.elementId >= 0 && info.elementId < SyncLists.Count)
                 return SyncLists[info.elementId];
+            if (Manager.LogError)
+                Logging.LogError(LogTag, "Cannot find sync list [" + info.elementId + "].");
             return null;
         }
+        #endregion
 
         internal LiteNetLibBehaviour ProcessSyncBehaviour(byte behaviourIndex, NetDataReader reader)
         {
