@@ -304,12 +304,12 @@ namespace LiteNetLibManager
             if (CacheSpawnPoints.Count == 0)
                 return Vector3.zero;
             if (playerSpawnRandomly)
-                return CacheSpawnPoints[Random.Range(0, CacheSpawnPoints.Count)].Position;
+                return CacheSpawnPoints[Random.Range(0, CacheSpawnPoints.Count)].GetRandomPosition();
             else
             {
                 if (spawnPositionCounter >= CacheSpawnPoints.Count)
                     spawnPositionCounter = 0;
-                return CacheSpawnPoints[spawnPositionCounter++].Position;
+                return CacheSpawnPoints[spawnPositionCounter++].GetRandomPosition();
             }
         }
 
