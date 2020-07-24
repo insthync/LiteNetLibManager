@@ -33,7 +33,7 @@ namespace LiteNetLibManager
             get { return behaviourIndex; }
         }
 
-        [Header("Behaviour sync options")]
+        [Header("Behaviour Sync Options")]
         public DeliveryMethod sendOptions;
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]

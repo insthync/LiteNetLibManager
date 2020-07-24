@@ -32,16 +32,16 @@ namespace LiteNetLibManager
         public bool LogError { get { return currentLogLevel <= LogLevel.Error; } }
         public bool LogFatal { get { return currentLogLevel <= LogLevel.Fatal; } }
 
-        [Header("Client & Server Configs")]
+        [Header("Client & Server Settings")]
         public LogLevel currentLogLevel = LogLevel.Info;
         public string networkAddress = "localhost";
         public int networkPort = 7770;
         public bool useWebSocket = false;
 
-        [Header("Server Only Configs")]
+        [Header("Server Only Settings")]
         public int maxConnections = 4;
 
-        [Header("Other Configs")]
+        [Header("Transport Layer Settings")]
         [SerializeField]
         private BaseTransportFactory transportFactory;
         public BaseTransportFactory TransportFactory
