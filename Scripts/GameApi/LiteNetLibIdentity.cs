@@ -208,12 +208,15 @@ namespace LiteNetLibManager
                 if (gameObject.scene == SceneManager.GetActiveScene())
                 {
                     // Assign object id if it is in scene
-                    ValidateObjectId();
+                    AssignSceneObjectId();
                     if (!Application.isPlaying)
                         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
                 }
                 else
+                {
+                    // Difference working scene?, clear object Id
                     objectId = 0;
+                }
             }
             else
             {
@@ -222,12 +225,15 @@ namespace LiteNetLibManager
                 if (gameObject.scene == SceneManager.GetActiveScene())
                 {
                     // Assign object id if it is in scene
-                    ValidateObjectId();
+                    AssignSceneObjectId();
                     if (!Application.isPlaying)
                         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
                 }
                 else
+                {
+                    // Difference working scene?, clear object Id
                     objectId = 0;
+                }
             }
             // Do not mark dirty while playing
             if (!Application.isPlaying && (oldAssetId != assetId || oldObjectId != objectId))
@@ -407,7 +413,7 @@ namespace LiteNetLibManager
                 HighestObjectId = objectId;
             IsSceneObject = isSceneObject;
             if (!IsSceneObject)
-                ValidateObjectId();
+                AssignSceneObjectId();
 
             if (!isSetupBehaviours)
             {
@@ -477,7 +483,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void ValidateObjectId()
+        internal void AssignSceneObjectId()
         {
             if (objectId == 0 || IsSceneObjectExists(objectId))
                 objectId = GetNewObjectId();
