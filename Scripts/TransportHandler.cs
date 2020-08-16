@@ -31,7 +31,8 @@ namespace LiteNetLibManager
                 return;
             if (AckCallbacksCount > 0)
             {
-                foreach (uint ackId in ackTimes.Keys)
+                List<uint> ackIds = new List<uint>(ackTimes.Keys);
+                foreach (uint ackId in ackIds)
                 {
                     if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - ackTimes[ackId] >= 30)
                     {
