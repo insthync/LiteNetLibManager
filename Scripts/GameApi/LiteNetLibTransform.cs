@@ -411,7 +411,7 @@ namespace LiteNetLibManager
             }
             else if (CacheCharacterController != null)
             {
-                CacheCharacterController.Move(position - syncingTransform.position);
+                syncingTransform.position = position;
                 syncingTransform.rotation = rotation;
             }
             else if (CacheRigidbody3D != null && !CacheRigidbody3D.isKinematic)
