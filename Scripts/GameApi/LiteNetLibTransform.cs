@@ -86,7 +86,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void Start()
+        private void OnEnable()
         {
             InitInterpResults(syncingTransform.position, syncingTransform.rotation);
         }
