@@ -81,7 +81,17 @@ namespace LiteNetLibManager
         public uint ObjectId { get { return objectId; } }
         public long ConnectionId { get { return connectionId; } internal set { connectionId = value; } }
         public LiteNetLibGameManager Manager { get { return manager; } }
-        public string LogTag { get { return Manager.LogTag + "::" + ToString(); } }
+
+        private string logTag;
+        public string LogTag
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(logTag))
+                    logTag = $"{Manager.LogTag}->{name}(LiteNetLibIdentity)";
+                return logTag;
+            }
+        }
 
         public LiteNetLibPlayer Player
         {

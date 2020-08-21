@@ -61,7 +61,16 @@ namespace LiteNetLibManager
             }
         }
 
-        public virtual string LogTag { get { return ToString(); } }
+        private string logTag;
+        public virtual string LogTag
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(logTag))
+                    logTag = $"{name}({GetType().Name})";
+                return logTag;
+            }
+        }
 
         protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
 
