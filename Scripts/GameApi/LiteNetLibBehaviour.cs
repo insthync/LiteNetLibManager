@@ -6,7 +6,6 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace LiteNetLibManager
@@ -133,7 +132,16 @@ namespace LiteNetLibManager
             get { return Identity.IsSceneObject; }
         }
 
-        public virtual string LogTag { get { return Manager.LogTag + "::" + ToString(); } }
+        private string logTag;
+        public virtual string LogTag
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(logTag))
+                    logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                return logTag;
+            }
+        }
 
         internal void NetworkUpdate(float deltaTime)
         {

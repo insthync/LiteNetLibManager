@@ -88,7 +88,7 @@ namespace LiteNetLibManager
             get
             {
                 if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{Manager.LogTag}->{name}(LiteNetLibIdentity)";
+                    logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
                 return logTag;
             }
         }
