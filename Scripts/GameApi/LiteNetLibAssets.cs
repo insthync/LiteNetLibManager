@@ -20,6 +20,7 @@ namespace LiteNetLibManager
         public LiteNetLibLoadSceneEvent onLoadSceneStart;
         public LiteNetLibLoadSceneEvent onLoadSceneProgress;
         public LiteNetLibLoadSceneEvent onLoadSceneFinish;
+        public UnityEvent onInitialize;
 
         internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
@@ -27,7 +28,16 @@ namespace LiteNetLibManager
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
         
         public LiteNetLibGameManager Manager { get; private set; }
-        public string LogTag { get { return Manager.LogTag + "::LiteNetLibAssets"; } }
+        private string logTag;
+        public string LogTag
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(logTag))
+                    logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                return logTag;
+            }
+        }
 
         private void Awake()
         {
@@ -36,6 +46,8 @@ namespace LiteNetLibManager
 
         public void Initialize()
         {
+            if (onInitialize != null)
+                onInitialize.Invoke();
             RegisterPrefabs();
             RegisterSpawnPoints();
             RegisterSceneObjects();
