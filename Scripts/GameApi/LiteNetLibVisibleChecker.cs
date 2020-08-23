@@ -20,14 +20,12 @@ namespace LiteNetLibManager
         private Collider[] colliders = new Collider[5000];
         private Collider2D[] colliders2D = new Collider2D[5000];
         private int colliderLength;
-        private float tempUpdateTime;
-        private float lastUpdateTime;
+        private float updateCountDown;
         private LiteNetLibIdentity tempIdentity;
 
         void Start()
         {
-            tempUpdateTime = Time.unscaledTime;
-            lastUpdateTime = tempUpdateTime + Random.value;
+            updateCountDown = updateInterval + Random.value;
         }
 
         void Update()
@@ -35,11 +33,11 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            tempUpdateTime = Time.unscaledTime;
+            updateCountDown -= Time.unscaledDeltaTime;
 
-            if (tempUpdateTime - lastUpdateTime > updateInterval)
+            if (updateCountDown <= 0f)
             {
-                lastUpdateTime = tempUpdateTime;
+                updateCountDown = updateInterval;
                 // Request identity to rebuild subscribers
                 Identity.RebuildSubscribers(false);
             }
@@ -54,7 +52,7 @@ namespace LiteNetLibManager
                 return true;
 
             Vector3 pos;
-            foreach (LiteNetLibIdentity spawnedObject in subscriber.SpawnedObjects.Values)
+            foreach (LiteNetLibIdentity spawnedObject in subscriber.GetSpawnedObjects())
             {
                 pos = spawnedObject.transform.position;
                 if ((pos - transform.position).sqrMagnitude < range * range)
@@ -103,7 +101,7 @@ namespace LiteNetLibManager
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
             for (int i = 0; i < renderers.Length; ++i)
             {
-                renderers[i].enabled = true;
+                renderers[i].forceRenderingOff = false;
             }
         }
 
@@ -115,7 +113,7 @@ namespace LiteNetLibManager
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
             for (int i = 0; i < renderers.Length; ++i)
             {
-                renderers[i].enabled = false;
+                renderers[i].forceRenderingOff = true;
             }
         }
     }
