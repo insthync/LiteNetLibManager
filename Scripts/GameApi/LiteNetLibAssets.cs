@@ -17,10 +17,12 @@ namespace LiteNetLibManager
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         public LiteNetLibScene offlineScene;
         public LiteNetLibScene onlineScene;
+        public UnityEvent onInitialize;
         public LiteNetLibLoadSceneEvent onLoadSceneStart;
         public LiteNetLibLoadSceneEvent onLoadSceneProgress;
         public LiteNetLibLoadSceneEvent onLoadSceneFinish;
-        public UnityEvent onInitialize;
+        public LiteNetLibIdentityEvent onObjectSpawn;
+        public LiteNetLibIdentityEvent onObjectDestroy;
 
         internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
@@ -201,6 +203,8 @@ namespace LiteNetLibManager
             identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(gameObject.transform.position, gameObject.transform.rotation);
             identity.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+            if (onObjectSpawn != null)
+                onObjectSpawn.Invoke(identity);
             if (Manager.IsServer)
                 identity.OnStartServer();
             if (Manager.IsClient)
@@ -262,6 +266,8 @@ namespace LiteNetLibManager
                 // Remove from asset spawned objects dictionary
                 SpawnedObjects.Remove(objectId);
                 spawnedObject.OnNetworkDestroy(reasons);
+                if (onObjectDestroy != null)
+                    onObjectDestroy.Invoke(spawnedObject);
                 // If the object is scene object, don't destroy just hide it, else destroy
                 if (SceneObjects.ContainsKey(objectId))
                     spawnedObject.gameObject.SetActive(false);
