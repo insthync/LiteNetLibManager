@@ -96,7 +96,7 @@ namespace LiteNetLibManager
                 tempDeltaTime = Time.unscaledDeltaTime;
                 // Update Spawned Objects
                 Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
-                foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
+                foreach (LiteNetLibIdentity spawnedObject in Assets.GetSpawnedObjects())
                 {
                     if (spawnedObject == null)
                         continue;
@@ -202,11 +202,6 @@ namespace LiteNetLibManager
                 {
                     Assets.Initialize();
                     if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.Initialize()");
-                    if (IsClient)
-                    {
-                        OnClientOnlineSceneLoaded();
-                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
-                    }
                     if (IsServer)
                     {
                         serverSceneName = sceneName;
@@ -214,9 +209,6 @@ namespace LiteNetLibManager
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
                         OnServerOnlineSceneLoaded();
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnServerOnlineSceneLoaded()");
-                    }
-                    if (IsServer)
-                    {
                         SendServerSceneChange(sceneName);
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> SendServerSceneChange()");
                     }
@@ -227,6 +219,8 @@ namespace LiteNetLibManager
                             // Wait for client connection Id from server
                             await UniTask.Yield();
                         }
+                        OnClientOnlineSceneLoaded();
+                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
                         SendClientReady();
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> SendClientReady()");
                     }
@@ -801,14 +795,17 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSceneChange(LiteNetLibMessageHandler messageHandler)
         {
-            // Scene name sent from server
+            // Received scene name from server
             ServerSceneChangeMessage message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
             string serverSceneName = message.serverSceneName;
             if (IsServer)
             {
                 // If it is host (both client and server) it will send ready state to spawn player's character without scene load
                 if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
+                {
+                    OnClientOnlineSceneLoaded();
                     SendClientReady();
+                }
                 return;
             }
 

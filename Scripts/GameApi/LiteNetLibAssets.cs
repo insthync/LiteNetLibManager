@@ -353,7 +353,7 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public Dictionary<uint, LiteNetLibIdentity>.ValueCollection GetSceneObjects()
+        public IEnumerable<LiteNetLibIdentity> GetSceneObjects()
         {
             return SceneObjects.Values;
         }
@@ -380,7 +380,7 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public Dictionary<uint, LiteNetLibIdentity>.ValueCollection GetSpawnedObjects()
+        public IEnumerable<LiteNetLibIdentity> GetSpawnedObjects()
         {
             return SpawnedObjects.Values;
         }
