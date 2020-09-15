@@ -670,7 +670,7 @@ namespace LiteNetLibManager
                     continue;
                 }
 
-                if (initialize || !oldSubscribers.Contains(subscriber))
+                if ((ownerPlayer == null || subscriber.ConnectionId != ownerPlayer.ConnectionId) && (initialize || !oldSubscribers.Contains(subscriber)))
                 {
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)
