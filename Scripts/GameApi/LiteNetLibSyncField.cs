@@ -97,7 +97,7 @@ namespace LiteNetLibManager
 
             // It's time to send update?
             sendCountDown -= deltaTime;
-            if (sendCountDown > 0)
+            if (sendCountDown > 0f)
                 return;
 
             // Set count down
@@ -111,6 +111,12 @@ namespace LiteNetLibManager
 
             // Reset on change called state to call `OnChange` later when has update
             onChangeCalled = false;
+        }
+
+        public void UpdateImmediately()
+        {
+            sendCountDown = 0f;
+            NetworkUpdate(0f);
         }
 
         internal void Deserialize(NetDataReader reader, bool isInitial)
