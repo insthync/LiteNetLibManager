@@ -50,8 +50,7 @@ namespace LiteNetLibManager
         private static readonly Dictionary<string, CacheFunctions> CacheAllRpcs = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, CacheFunctions> CacheServerRpcs = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, MethodInfo> CacheHookFunctions = new Dictionary<string, MethodInfo>();
-        private static readonly Dictionary<string, LiteNetLibFunction> CacheNetFunctions = new Dictionary<string, LiteNetLibFunction>();
-        private static readonly Dictionary<string, LiteNetLibFunctionDynamic> CacheNetFunctionDynamics = new Dictionary<string, LiteNetLibFunctionDynamic>();
+        private static readonly Dictionary<string, Type[]> CacheDyncnamicFunctionTypes = new Dictionary<string, Type[]>();
 
         private readonly Dictionary<string, int> targetRpcIds = new Dictionary<string, int>();
         private readonly Dictionary<string, int> allRpcIds = new Dictionary<string, int>();
@@ -394,27 +393,17 @@ namespace LiteNetLibManager
             if (methodInfos == null || methodInfos.Count == 0)
                 return;
 
-            string tempCacheId;
-            LiteNetLibFunctionDynamic tempNetFunction;
+            string tempFunctionId;
             Type[] tempParamTypes;
             foreach (MethodInfo methodInfo in methodInfos)
             {
-                tempCacheId = MakeNetFunctionId(methodInfo);
-                if (!CacheNetFunctionDynamics.TryGetValue(tempCacheId, out tempNetFunction))
+                tempFunctionId = MakeNetFunctionId(methodInfo);
+                if (!CacheDyncnamicFunctionTypes.TryGetValue(tempFunctionId, out tempParamTypes))
                 {
-                    try
-                    {
-                        tempParamTypes = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
-                        tempNetFunction = new LiteNetLibFunctionDynamic(tempParamTypes, this, methodInfo);
-                        CacheNetFunctionDynamics[tempCacheId] = tempNetFunction;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (Manager.LogFatal)
-                            Logging.LogException(LogTag, ex);
-                    }
+                    tempParamTypes = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
+                    CacheDyncnamicFunctionTypes[tempFunctionId] = tempParamTypes;
                 }
-                RegisterRPC(ids, tempCacheId, tempNetFunction, canCallByEveryone);
+                RegisterRPC(ids, tempFunctionId, new LiteNetLibFunctionDynamic(tempParamTypes, this, methodInfo), canCallByEveryone);
             }
         }
 
@@ -771,134 +760,57 @@ namespace LiteNetLibManager
 
         private void RegisterRPC(Dictionary<string, int> dict, NetFunctionDelegate func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1>(Dictionary<string, int> dict, NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3, T4>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3, T4>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3, T4, T5>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3, T4, T5>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3, T4, T5, T6>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3, T4, T5, T6>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(func), canCallByEveryone);
         }
 
         private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
-            string cacheId = MakeNetFunctionId(func.Method);
-            LiteNetLibFunction netFunction;
-            if (!CacheNetFunctions.TryGetValue(cacheId, out netFunction))
-            {
-                netFunction = new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(func);
-                CacheNetFunctions[cacheId] = netFunction;
-            }
-            RegisterRPC(dict, cacheId, netFunction, canCallByEveryone);
+            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(func), canCallByEveryone);
         }
 
         private void RegisterRPC(Dictionary<string, int> dict, string id, LiteNetLibFunction netFunction, bool canCallByEveryone)
