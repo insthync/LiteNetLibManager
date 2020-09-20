@@ -3,7 +3,7 @@
 namespace LiteNetLibManager
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class NetFunctionAttribute : ElasticRpcAttribute
+    public class TargetRpcAttribute : RpcAttribute
     {
     }
 }
