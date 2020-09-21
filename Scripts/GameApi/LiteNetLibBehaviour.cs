@@ -1181,6 +1181,63 @@ namespace LiteNetLibManager
         }
         #endregion
 
+        #region All RPC or Server RPC with delivery method and parameters
+        public void RPC(NetFunctionDelegate func, DeliveryMethod deliveryMethod)
+        {
+            RPC(func.Method.Name, deliveryMethod);
+        }
+
+        public void RPC<T1>(NetFunctionDelegate<T1> func, DeliveryMethod deliveryMethod, T1 param1)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1);
+        }
+
+        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2);
+        }
+
+        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3);
+        }
+
+        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4);
+        }
+
+        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5);
+        }
+
+        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6);
+        }
+
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7);
+        }
+
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8);
+        }
+
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+        }
+
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        {
+            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+        }
+        #endregion
+
         #region Target RPC with connectionId and parameters
         /// <summary>
         /// This is another synonym of `RPC` which contain `connectionId`
@@ -1401,14 +1458,24 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, params object[] parameters)
         {
+            RPC(methodName, DeliveryMethod.ReliableOrdered, parameters);
+        }
+
+        /// <summary>
+        /// Call `All RPC` or `Server RPC`, if it's elastic RPC, it will call `All RPC`
+        /// </summary>
+        /// <param name="methodName"></param>
+        /// <param name="parameters"></param>
+        public void RPC(string methodName, DeliveryMethod deliveryMethod, params object[] parameters)
+        {
             int elementId;
             if (allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
-                Identity.NetFunctions[elementId].Call(DeliveryMethod.ReliableOrdered, FunctionReceivers.All, parameters);
+                Identity.NetFunctions[elementId].Call(deliveryMethod, FunctionReceivers.All, parameters);
             }
             else if (serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
-                Identity.NetFunctions[elementId].Call(DeliveryMethod.ReliableOrdered, FunctionReceivers.Server, parameters);
+                Identity.NetFunctions[elementId].Call(deliveryMethod, FunctionReceivers.Server, parameters);
             }
             else
             {
