@@ -428,164 +428,164 @@ namespace LiteNetLibManager
 
         #region RPCs Registration
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction(NetFunctionDelegate func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
         /// <summary>
-        /// This is another synonym of `RegisterElasticRpc`
+        /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
         public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
-            RegisterElasticRpc(func, canCallByEveryone);
+            RegisterElasticRPC(func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc(NetFunctionDelegate func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC(NetFunctionDelegate func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
             RegisterRPC(targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
             RegisterRPC(serverRpcIds, func, canCallByEveryone);
             RegisterRPC(allRpcIds, func, canCallByEveryone);
