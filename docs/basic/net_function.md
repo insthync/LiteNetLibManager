@@ -1,13 +1,40 @@
-# Net Function
+# Net Function (RPC)
 
-`LiteNetLibNetFunction` is way to perform actions across the network. to declare / regoster `LiteNetLibNetFunction` you should do it in overrided `OnSetup()` function like this:
+`RPC` is way to perform actions across the network. 
+
+There are 4 types of RPCs:
+- ServerRpc, it will be called from client to do something at server.
+- AllRpc, it will be called from server to do something at server and all clients.
+- TargetRpc, it will be called from server or client to do something at target client by connection ID.
+- ElasticRpc/NetFunction, it can be any RPC up to how you call set receivers type when call it with `RPC()` or `CallNetFunction()` functions.
+
+## Declaring RPC functions
+
+### Declaring RPC functions by attributes
+
+To declare `RPC` functions you can use attributes (`[ServerRpc]`, `[AllRpc]`, `[TargetRpc]`, `[ElasticRpc]`, `[NetFunction]`).
+
+```
+using LiteNetLibManager;
+public class CustomNetBehaviour : LiteNetLibBehaviour {
+    [ElasticRpc]
+    private void Shoot(int bulletType)
+    {
+        // Received `bulletType` to do anything
+    }
+}
+```
+
+### Declaring RPC functions by functions
+
+Or use register functions (`RegisterElasticRPC`, `RegisterElasticRPC`, `RegisterElasticRPC`, `RegisterElasticRPC`, `RegisterNetFunction`) which you should do it in overrided `OnSetup()` function like this:
 
 ```
 using LiteNetLibManager;
 public class CustomNetBehaviour : LiteNetLibBehaviour {
     public override void OnSetup() {
         base.OnSetup();
-        RegisterNetFunction<int>(Shoot);
+        RegisterElasticRPC<int>(Shoot);
     }
 
     private void Shoot(int bulletType)
@@ -17,20 +44,9 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 }
 ```
 
-You also can use [NetFunction] attribute to define **Net Function**, it's more convenience becuase you won't have to register the function
+## Calling RPC functions
 
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    [NetFunction]
-    private void Shoot(int bulletType)
-    {
-        // Received `bulletType` to do anything
-    }
-}
-```
-
-Then you can call it to invoke callback with parameters on target like this:
+Then you can call `RPC` by `RPC()` or `CallNetFunction()` functions it to invoke callback with parameters on target like this:
 
 ```
 using LiteNetLibManager;
@@ -53,7 +69,36 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 }
 ```
 
-There are 3 types of net function calls:
-- `CallNetFunction(Shoot, FunctionReceivers.Server, bulletType)`, call `Shoot` function from client to server
-- `CallNetFunction(Shoot, FunctionReceivers.All, bulletType)`, call `Shoot` function from client or server to all clients, if it is call from client it will send data to server with parameters then server pass received data to all clients
-- `CallNetFunction(Shoot, targetConnectionId, bulletType)`, call `Shoot` function from client or server to target client, if it is call from client it will send data to server with parameters then server pass received data to target clients
+To call `ServerRpc` or `ClientRpc`, you can use `RPC()` function by set function which you want to call to first parameter following with parameters values to later parameters like this:
+
+```
+public void CallShootAll(int bulletType)
+{
+    RPC(Shoot, bulletType);
+}
+```
+
+To call `TargetRpc` it's similar but you have to set target connection ID to second paramter like this:
+
+```
+public void CallShootAtOwnerClient(int bulletType)
+{
+    RPC(Shoot, ConnectionId, bulletType);
+}
+```
+
+For elastic RPCs if you use `RPC()` function it will call all RPC by default, if you want to change receivers target you have to set receivers target to second parameter like this:
+
+```
+public void CallShootAll(int bulletType)
+{
+    RPC(Shoot, FunctionReceivers.All, bulletType);
+}
+
+public void CallShootAtServer(int bulletType)
+{
+    RPC(Shoot, FunctionReceivers.Server, bulletType);
+}
+```
+
+**A word `NetFunction` had the same meaning with `ElasticRPC` and do the same thing, so: `[NetFunction]` == `[ElasticRpc]`, `RegisterNetFunction()` == `RegisterElasticRPC()` and `CallNetFunction()` == `RPC()`**
