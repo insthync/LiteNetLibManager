@@ -83,17 +83,17 @@ private void Alert() {
 Or
 
 ```
-[NetFunction]
+[ServerRpc]
 private void Shoot(int bulletType) {
 
 }
 
-[NetFunction]
+[AllRpc]
 private void ShowDamage(int damage) {
 
 }
 
-[NetFunction]
+[TargetRpc]
 private void Alert() {
 
 }
@@ -108,9 +108,9 @@ TargetAlert(connectionToClient);
 ```
 **LiteNetLibManager**
 ```
-CallNetFunction(Shoot, FunctionReceivers.Server, bulletType);
-CallNetFunction(ShowDamage, FunctionReceivers.All, damage);
-CallNetFunction(Alert, ConnectionId);
+RPC(Shoot, bulletType);
+RPC(ShowDamage, damage);
+RPC(Alert, ConnectionId);
 ```
 
 ## Autority Checking
