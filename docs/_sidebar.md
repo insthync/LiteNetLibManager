@@ -6,7 +6,7 @@
   - [Game Manager](/basic/network_manager.md)
   - [Identity / Behaviour](/basic/network_object.md)
   - [Sync Field / Sync List](/basic/sync_variables.md)
-  - [Net Function](/basic/net_function.md)
+  - [Net Function (RPC)](/basic/net_function.md)
   - [Code Comparison to UNET](/basic/vs_unet.md)
 - How does it work?
   - [Part 1 - LiteNetLibManager](/how_does_it_work/part001.md)
