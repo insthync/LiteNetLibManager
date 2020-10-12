@@ -29,6 +29,8 @@ namespace LiteNetLibManager
 
         public bool StartClient(string address, int port)
         {
+            if (IsClientStarted())
+                return false;
             clientEventQueue.Clear();
             client = new NetManager(new LiteNetLibTransportEventListener(this, clientEventQueue));
             return client.Start() && client.Connect(address, port, connectKey) != null;
@@ -70,6 +72,8 @@ namespace LiteNetLibManager
 
         public bool StartServer(int port, int maxConnections)
         {
+            if (IsServerStarted())
+                return false;
             serverPeers.Clear();
             serverEventQueue.Clear();
             server = new NetManager(new LiteNetLibTransportEventListener(this, serverEventQueue, serverPeers));
@@ -91,7 +95,7 @@ namespace LiteNetLibManager
 
         public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
+            if (IsServerStarted() && serverPeers.ContainsKey(connectionId) && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
                 serverPeers[connectionId].Send(writer, deliveryMethod);
                 return true;
@@ -104,6 +108,7 @@ namespace LiteNetLibManager
             if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
             {
                 server.DisconnectPeer(serverPeers[connectionId]);
+                serverPeers.Remove(connectionId);
                 return true;
             }
             return false;

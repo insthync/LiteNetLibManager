@@ -1,5 +1,4 @@
 ﻿using LiteNetLib;
-using LiteNetLib.Utils;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -10,7 +9,7 @@ namespace LiteNetLibManager
     {
         private LiteNetLibTransport transport;
         private Queue<TransportEventData> eventQueue;
-        private Dictionary<long, NetPeer> peersDict;
+        private Dictionary<long, NetPeer> serverPeers;
 
         public LiteNetLibTransportEventListener(LiteNetLibTransport transport, Queue<TransportEventData> eventQueue)
         {
@@ -18,9 +17,9 @@ namespace LiteNetLibManager
             this.eventQueue = eventQueue;
         }
 
-        public LiteNetLibTransportEventListener(LiteNetLibTransport transport, Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> peersDict) : this(transport, eventQueue)
+        public LiteNetLibTransportEventListener(LiteNetLibTransport transport, Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> serverPeers) : this(transport, eventQueue)
         {
-            this.peersDict = peersDict;
+            this.serverPeers = serverPeers;
         }
 
         public void OnConnectionRequest(ConnectionRequest request)
@@ -61,9 +60,8 @@ namespace LiteNetLibManager
 
         public void OnPeerConnected(NetPeer peer)
         {
-            if (peersDict != null)
-                peersDict[peer.Id] = peer;
-
+            if (serverPeers != null)
+                serverPeers[peer.Id] = peer;
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
@@ -73,9 +71,8 @@ namespace LiteNetLibManager
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            if (peersDict != null)
-                peersDict.Remove(peer.Id);
-
+            if (serverPeers != null)
+                serverPeers.Remove(peer.Id);
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
