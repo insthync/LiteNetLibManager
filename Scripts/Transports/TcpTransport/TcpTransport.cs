@@ -68,7 +68,7 @@ namespace LiteNetLibManager
                     readBuffer[3];
                 if (length >= MAX_DATA_SIZE)
                 {
-                    Debug.LogError("Cannot read data, its size is too high");
+                    Debug.LogError("Cannot read data, its size is too big");
                     return null;
                 }
                 if (ReadBytes(TcpClient.GetStream(), length))
@@ -81,7 +81,7 @@ namespace LiteNetLibManager
                 int length = writer.Data.Length;
                 if (length >= MAX_DATA_SIZE)
                 {
-                    Debug.LogError("Cannot write data, its size is too high");
+                    Debug.LogError("Cannot write data, its size is too big");
                     return;
                 }
                 writerBuffer[0] = (byte)(length >> 24);
