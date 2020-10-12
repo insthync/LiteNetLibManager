@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
 #if !UNITY_WEBGL || UNITY_EDITOR
@@ -20,8 +18,8 @@ namespace LiteNetLibManager
         private readonly Dictionary<long, WSBehavior> serverPeers;
         private readonly Queue<TransportEventData> serverEventQueue;
 #endif
-        private bool dirtyIsConnected;
         private byte[] tempBuffers;
+        private bool dirtyIsConnected;
 
         public WebSocketTransport()
         {
@@ -38,6 +36,8 @@ namespace LiteNetLibManager
 
         public bool StartClient(string address, int port)
         {
+            if (IsClientStarted())
+                return false;
             dirtyIsConnected = false;
             client = new WebSocket(new System.Uri("ws://" + address + ":" + port));
             client.Connect();
@@ -106,13 +106,14 @@ namespace LiteNetLibManager
         public bool StartServer(int port, int maxConnections)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
+            if (IsServerStarted())
+                return false;
             serverPeers.Clear();
             server = new WebSocketServer(port);
             server.AddWebSocketService<WSBehavior>("/", (behavior) =>
             {
                 tempConnectionId = nextConnectionId++;
-                behavior.Initialize(tempConnectionId, serverEventQueue);
-                serverPeers[tempConnectionId] = behavior;
+                behavior.Initialize(tempConnectionId, serverEventQueue, serverPeers);
             });
             server.Start();
             return true;
@@ -125,7 +126,7 @@ namespace LiteNetLibManager
         {
             eventData = default(TransportEventData);
 #if !UNITY_WEBGL || UNITY_EDITOR
-            if (server == null)
+            if (!IsServerStarted())
                 return false;
             if (serverEventQueue.Count == 0)
                 return false;
@@ -139,7 +140,7 @@ namespace LiteNetLibManager
         public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
+            if (IsServerStarted() && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == WebSocketState.Open)
             {
                 serverPeers[connectionId].Context.WebSocket.Send(writer.Data);
                 return true;
@@ -154,6 +155,7 @@ namespace LiteNetLibManager
             if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
             {
                 serverPeers[connectionId].Context.WebSocket.Close();
+                serverPeers.Remove(connectionId);
                 return true;
             }
 #endif

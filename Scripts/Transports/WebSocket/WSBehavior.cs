@@ -13,17 +13,20 @@ namespace LiteNetLibManager
     {
         public long connectionId { get; private set; }
         private Queue<TransportEventData> eventQueue;
+        private Dictionary<long, WSBehavior> serverPeers;
 
-        public void Initialize(long connectionId, Queue<TransportEventData> eventQueue)
+        public void Initialize(long connectionId, Queue<TransportEventData> eventQueue, Dictionary<long, WSBehavior> serverPeers)
         {
             this.connectionId = connectionId;
             this.eventQueue = eventQueue;
+            this.serverPeers = serverPeers;
         }
-
 
         protected override void OnOpen()
         {
             base.OnOpen();
+            if (serverPeers != null)
+                serverPeers[connectionId] = this;
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
@@ -54,6 +57,8 @@ namespace LiteNetLibManager
         protected override void OnClose(CloseEventArgs e)
         {
             base.OnClose(e);
+            if (serverPeers != null)
+                serverPeers.Remove(connectionId);
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
