@@ -42,7 +42,8 @@ namespace LiteNetLibManager
             isNetworkActive = true;
             // Reset acks
             ackCallbacks.Clear();
-            ackTimes.Clear();
+            requestTimes.Clear();
+            requestDurations.Clear();
             nextAckId = 1;
             return Transport.StartClient(address, port);
         }
@@ -76,9 +77,9 @@ namespace LiteNetLibManager
             }
         }
 
-        public uint SendRequest<T>(ushort msgType, T messageData, AckMessageCallback callback, Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        public uint SendRequest<T>(ushort msgType, T messageData, AckMessageCallback callback, Action<NetDataWriter> extraSerializer = null, long duration = 30) where T : BaseAckMessage
         {
-            messageData.ackId = AddAckCallback(callback);
+            messageData.ackId = CreateRequest(callback, duration);
             SendPacket(DeliveryMethod.ReliableOrdered, msgType, (writer) =>
             {
                 messageData.Serialize(writer);

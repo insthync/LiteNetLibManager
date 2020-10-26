@@ -13,7 +13,8 @@ namespace LiteNetLibManager
         public ITransport Transport { get; protected set; }
         protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
         protected readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
-        protected readonly Dictionary<uint, long> ackTimes = new Dictionary<uint, long>();
+        protected readonly Dictionary<uint, long> requestTimes = new Dictionary<uint, long>();
+        protected readonly Dictionary<uint, long> requestDurations = new Dictionary<uint, long>();
         protected uint nextAckId = 1;
         protected TransportEventData tempEventData;
         protected bool isNetworkActive;
@@ -31,10 +32,10 @@ namespace LiteNetLibManager
                 return;
             if (AckCallbacksCount > 0)
             {
-                List<uint> ackIds = new List<uint>(ackTimes.Keys);
+                List<uint> ackIds = new List<uint>(requestTimes.Keys);
                 foreach (uint ackId in ackIds)
                 {
-                    if (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - ackTimes[ackId] >= 30)
+                    if (requestDurations[ackId] > 0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds() - requestTimes[ackId] >= requestDurations[ackId])
                     {
                         // Timeout
                         ReadResponse(ackId, AckResponseCode.Timeout, new BaseAckMessage());
@@ -64,13 +65,21 @@ namespace LiteNetLibManager
             messageHandlers.Remove(msgType);
         }
 
-        protected uint AddAckCallback(AckMessageCallback callback)
+        protected uint CreateRequest(AckMessageCallback callback, long duration)
         {
             uint ackId = nextAckId++;
             lock (ackCallbacks)
+            {
                 ackCallbacks.Add(ackId, callback);
-            lock (ackTimes)
-                ackTimes.Add(ackId, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            }
+            lock (requestTimes)
+            {
+                requestTimes.Add(ackId, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            }
+            lock (requestDurations)
+            {
+                requestDurations.Add(ackId, duration);
+            }
             return ackId;
         }
 
@@ -85,9 +94,13 @@ namespace LiteNetLibManager
                     ackCallback(responseCode, messageData);
                 }
             }
-            lock (ackTimes)
+            lock (requestTimes)
             {
-                ackTimes.Remove(ackId);
+                requestTimes.Remove(ackId);
+            }
+            lock (requestDurations)
+            {
+                requestDurations.Remove(ackId);
             }
         }
     }
