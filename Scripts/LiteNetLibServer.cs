@@ -1,7 +1,6 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
 using System;
-using UnityEngine;
 
 namespace LiteNetLibManager
 {
@@ -42,9 +41,7 @@ namespace LiteNetLibManager
             }
             isNetworkActive = true;
             // Reset acks
-            ackCallbacks.Clear();
-            requestTimes.Clear();
-            requestDurations.Clear();
+            requests.Clear();
             nextAckId = 1;
             ServerPort = port;
             return Transport.StartServer(port, maxConnections);
@@ -81,26 +78,39 @@ namespace LiteNetLibManager
             }
         }
 
-        public uint SendRequest<T>(long connectionId, ushort msgType, T messageData, AckMessageCallback callback, Action<NetDataWriter> extraSerializer = null, long duration = 30) where T : BaseAckMessage
+        public uint SendRequest<TRequest, TResponse>(
+            long connectionId,
+            ushort msgType,
+            TRequest requestMessage,
+            AckMessageCallback<TResponse> callback,
+            Action<NetDataWriter> extraSerializer = null,
+            long duration = 30)
+            where TRequest : BaseAckMessage, new()
+            where TResponse : BaseAckMessage, new()
         {
-            messageData.ackId = CreateRequest(callback, duration);
+            requestMessage.ackId = CreateRequest(callback, duration);
             SendPacket(connectionId, DeliveryMethod.ReliableOrdered, msgType, (writer) =>
             {
-                messageData.Serialize(writer);
+                requestMessage.Serialize(writer);
                 if (extraSerializer != null)
                     extraSerializer.Invoke(writer);
             });
-            return messageData.ackId;
+            return requestMessage.ackId;
         }
 
-        public void SendResponse<T>(long connectionId, ushort msgType, T messageData, Action<NetDataWriter> extraSerializer = null) where T : BaseAckMessage
+        public void SendResponse<TResponse>(
+            long connectionId,
+            ushort msgType,
+            TResponse responseMessage,
+            Action<NetDataWriter> extraSerializer = null)
+            where TResponse : BaseAckMessage, new()
         {
-            writer.Reset();
-            writer.PutPackedUShort(msgType);
-            messageData.Serialize(writer);
-            if (extraSerializer != null)
-                extraSerializer.Invoke(writer);
-            Transport.ServerSend(connectionId, DeliveryMethod.ReliableOrdered, writer);
+            SendPacket(connectionId, DeliveryMethod.ReliableOrdered, msgType, (writer) =>
+            {
+                responseMessage.Serialize(writer);
+                if (extraSerializer != null)
+                    extraSerializer.Invoke(writer);
+            });
         }
 
         public void SendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, Action<NetDataWriter> serializer)

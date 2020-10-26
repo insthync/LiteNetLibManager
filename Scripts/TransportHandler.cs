@@ -1,8 +1,5 @@
-﻿using LiteNetLib;
-using LiteNetLib.Utils;
-using System;
+﻿using LiteNetLib.Utils;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace LiteNetLibManager
 {
@@ -12,14 +9,12 @@ namespace LiteNetLibManager
 
         public ITransport Transport { get; protected set; }
         protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
-        protected readonly Dictionary<uint, AckMessageCallback> ackCallbacks = new Dictionary<uint, AckMessageCallback>();
-        protected readonly Dictionary<uint, long> requestTimes = new Dictionary<uint, long>();
-        protected readonly Dictionary<uint, long> requestDurations = new Dictionary<uint, long>();
+        protected readonly Dictionary<uint, BaseRequestMessageData> requests = new Dictionary<uint, BaseRequestMessageData>();
         protected uint nextAckId = 1;
         protected TransportEventData tempEventData;
         protected bool isNetworkActive;
 
-        public int AckCallbacksCount { get { return ackCallbacks.Count; } }
+        public int RequestsCount { get { return requests.Count; } }
 
         public TransportHandler(ITransport transport)
         {
@@ -30,15 +25,17 @@ namespace LiteNetLibManager
         {
             if (!isNetworkActive)
                 return;
-            if (AckCallbacksCount > 0)
+            if (RequestsCount > 0)
             {
-                List<uint> ackIds = new List<uint>(requestTimes.Keys);
+                List<uint> ackIds = new List<uint>(requests.Keys);
                 foreach (uint ackId in ackIds)
                 {
-                    if (requestDurations[ackId] > 0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds() - requestTimes[ackId] >= requestDurations[ackId])
+                    if (requests[ackId].ResponseTimeout())
                     {
-                        // Timeout
-                        ReadResponse(ackId, AckResponseCode.Timeout, new BaseAckMessage());
+                        lock (requests)
+                        {
+                            requests.Remove(ackId);
+                        }
                     }
                 }
             }
@@ -65,42 +62,27 @@ namespace LiteNetLibManager
             messageHandlers.Remove(msgType);
         }
 
-        protected uint CreateRequest(AckMessageCallback callback, long duration)
+        protected uint CreateRequest<T>(AckMessageCallback<T> callback, long duration)
+            where T : BaseAckMessage, new()
         {
             uint ackId = nextAckId++;
-            lock (ackCallbacks)
+            lock (requests)
             {
-                ackCallbacks.Add(ackId, callback);
-            }
-            lock (requestTimes)
-            {
-                requestTimes.Add(ackId, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            }
-            lock (requestDurations)
-            {
-                requestDurations.Add(ackId, duration);
+                requests.Add(ackId, new RequestMessageData<T>(ackId, callback, duration));
             }
             return ackId;
         }
 
-        public void ReadResponse<T>(uint ackId, AckResponseCode responseCode, T messageData) where T : BaseAckMessage
+        public void ReadResponse(NetDataReader reader)
         {
-            lock (ackCallbacks)
+            uint ackId = reader.PeekUInt();
+            if (requests.ContainsKey(ackId))
             {
-                AckMessageCallback ackCallback;
-                if (ackCallbacks.TryGetValue(ackId, out ackCallback))
+                requests[ackId].Response(reader);
+                lock (requests)
                 {
-                    ackCallbacks.Remove(ackId);
-                    ackCallback(responseCode, messageData);
+                    requests.Remove(ackId);
                 }
-            }
-            lock (requestTimes)
-            {
-                requestTimes.Remove(ackId);
-            }
-            lock (requestDurations)
-            {
-                requestDurations.Remove(ackId);
             }
         }
     }

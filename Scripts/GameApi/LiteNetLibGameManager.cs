@@ -30,7 +30,8 @@ namespace LiteNetLibManager
             public const ushort ClientSendTransform = 14;
             public const ushort ServerSetObjectOwner = 15;
             public const ushort Ping = 16;
-            public const ushort Highest = 16;
+            public const ushort GenericResponse = 17;
+            public const ushort Highest = 17;
         }
 
         public class DestroyObjectReasons
@@ -248,12 +249,12 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
+            RegisterServerMessage(GameMsgTypes.GenericResponse, HandleGenericResponse);
         }
 
         protected override void RegisterClientMessages()
         {
             base.RegisterClientMessages();
-            RegisterClientMessage(GameMsgTypes.EnterGame, HandleServerEnterGame);
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
@@ -266,6 +267,7 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
             RegisterClientMessage(GameMsgTypes.Ping, HandleServerPing);
+            RegisterClientMessage(GameMsgTypes.GenericResponse, HandleGenericResponse);
         }
 
         public override void OnPeerConnected(long connectionId)
@@ -345,21 +347,57 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.EnterGame);
+            ClientSendRequest<BaseAckMessage, EnterGameResponseMessage>(
+                GameMsgTypes.EnterGame,
+                new BaseAckMessage(),
+                OnEnterGame,
+                SerializeEnterGameData);
+        }
+
+        protected virtual void OnEnterGame(EnterGameResponseMessage message)
+        {
+            if (message.responseCode == AckResponseCode.Success)
+            {
+                ClientConnectionId = message.connectionId;
+                HandleServerSceneChange(message.serverSceneName);
+            }
+            else
+            {
+                if (LogInfo) Logging.Log(LogTag, "Enter game request was refused by server, disconnecting...");
+                StopClient();
+            }
         }
 
         public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.ClientReady, SerializeClientReadyExtra);
+            ClientSendRequest<BaseAckMessage, BaseAckMessage>(
+                GameMsgTypes.ClientReady,
+                new BaseAckMessage(),
+                OnClientReady,
+                SerializeClientReadyData);
+        }
+
+        protected virtual void OnClientReady(BaseAckMessage message)
+        {
+
         }
 
         public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.ClientNotReady);
+            ClientSendRequest<BaseAckMessage, BaseAckMessage>(
+                GameMsgTypes.ClientNotReady,
+                new BaseAckMessage(),
+                OnClientNotReady,
+                SerializeEnterGameData);
+        }
+
+        protected virtual void OnClientNotReady(BaseAckMessage message)
+        {
+
         }
 
         public void SendClientPing()
@@ -387,7 +425,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            LiteNetLibPlayer player = null;
+            LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             ServerSpawnSceneObjectMessage message = new ServerSpawnSceneObjectMessage();
@@ -412,7 +450,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            LiteNetLibPlayer player = null;
+            LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             ServerSpawnObjectMessage message = new ServerSpawnObjectMessage();
@@ -451,7 +489,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            LiteNetLibPlayer player = null;
+            LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             ServerDestroyObjectMessage message = new ServerDestroyObjectMessage();
@@ -474,7 +512,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            LiteNetLibPlayer player = null;
+            LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
             ServerErrorMessage message = new ServerErrorMessage();
@@ -489,6 +527,8 @@ namespace LiteNetLibManager
                 return;
             foreach (long connectionId in ConnectionIds)
             {
+                if (IsClientConnected && connectionId == ClientConnectionId)
+                    continue;
                 SendServerSceneChange(connectionId, sceneName);
             }
         }
@@ -500,13 +540,6 @@ namespace LiteNetLibManager
             ServerSceneChangeMessage message = new ServerSceneChangeMessage();
             message.serverSceneName = sceneName;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
-        }
-
-        public void SendServerEnterGame(long connectionId)
-        {
-            if (!IsServer)
-                return;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.EnterGame, (writer) => { writer.Put(connectionId); });
         }
 
         public void SendServerSetObjectOwner(uint objectId, long ownerConnectionId)
@@ -531,20 +564,60 @@ namespace LiteNetLibManager
         #endregion
 
         #region Message Handlers
-        protected virtual void HandleClientEnterGame(LiteNetLibMessageHandler messageHandler)
+        protected void HandleClientEnterGame(LiteNetLibMessageHandler messageHandler)
         {
-            SendServerEnterGame(messageHandler.connectionId);
-            SendServerSceneChange(messageHandler.connectionId, ServerSceneName);
+            BaseAckMessage message = messageHandler.ReadMessage<BaseAckMessage>();
+            EnterGameResponseMessage response = new EnterGameResponseMessage()
+            {
+                ackId = message.ackId,
+            };
+            if (DeserializeEnterGameData(messageHandler.connectionId, messageHandler.reader))
+            {
+                response.responseCode = AckResponseCode.Success;
+                response.connectionId = messageHandler.connectionId;
+                response.serverSceneName = ServerSceneName;
+            }
+            else
+            {
+                response.responseCode = AckResponseCode.Error;
+            }
+            ServerSendResponse(messageHandler.connectionId, response);
         }
 
         protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
         {
-            SetPlayerReady(messageHandler.connectionId, messageHandler.reader);
+            BaseAckMessage message = messageHandler.ReadMessage<BaseAckMessage>();
+            BaseAckMessage response = new BaseAckMessage()
+            {
+                ackId = message.ackId,
+            };
+            if (SetPlayerReady(messageHandler.connectionId, messageHandler.reader))
+            {
+                response.responseCode = AckResponseCode.Success;
+            }
+            else
+            {
+                response.responseCode = AckResponseCode.Error;
+            }
+            ServerSendResponse(messageHandler.connectionId, response);
         }
 
         protected virtual void HandleClientNotReady(LiteNetLibMessageHandler messageHandler)
         {
-            SetPlayerNotReady(messageHandler.connectionId, messageHandler.reader);
+            BaseAckMessage message = messageHandler.ReadMessage<BaseAckMessage>();
+            BaseAckMessage response = new BaseAckMessage()
+            {
+                ackId = message.ackId,
+            };
+            if (SetPlayerNotReady(messageHandler.connectionId, messageHandler.reader))
+            {
+                response.responseCode = AckResponseCode.Success;
+            }
+            else
+            {
+                response.responseCode = AckResponseCode.Error;
+            }
+            ServerSendResponse(messageHandler.connectionId, response);
         }
 
         protected virtual void HandleClientInitialSyncField(LiteNetLibMessageHandler messageHandler)
@@ -675,11 +748,6 @@ namespace LiteNetLibManager
             });
         }
 
-        protected virtual void HandleServerEnterGame(LiteNetLibMessageHandler messageHandler)
-        {
-            ClientConnectionId = messageHandler.reader.GetLong();
-        }
-
         protected virtual void HandleServerSpawnSceneObject(LiteNetLibMessageHandler messageHandler)
         {
             ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
@@ -797,7 +865,11 @@ namespace LiteNetLibManager
         {
             // Received scene name from server
             ServerSceneChangeMessage message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
-            string serverSceneName = message.serverSceneName;
+            HandleServerSceneChange(message.serverSceneName);
+        }
+
+        protected virtual void HandleServerSceneChange(string serverSceneName)
+        {
             if (IsServer)
             {
                 // If it is host (both client and server) it will send ready state to spawn player's character without scene load
@@ -839,18 +911,39 @@ namespace LiteNetLibManager
         }
         #endregion
 
+        protected void HandleGenericResponse(LiteNetLibMessageHandler messageHandler)
+        {
+            messageHandler.ReadResponse();
+        }
+
+        /// <summary>
+        /// Overrride this function to send custom data when send enter game message
+        /// </summary>
+        /// <param name="writer"></param>
+        public virtual void SerializeEnterGameData(NetDataWriter writer) { }
+
+        /// <summary>
+        /// Override this function to read custom data that come with enter game message
+        /// </summary>
+        /// <param name="connectionId"></param>
+        /// <param name="reader"></param>
+        /// <returns>Return `true` if allow player to enter game.</returns>
+        public virtual bool DeserializeEnterGameData(long connectionId, NetDataReader reader) { return true; }
+
         /// <summary>
         /// Overrride this function to send custom data when send client ready message
         /// </summary>
         /// <param name="writer"></param>
-        public virtual void SerializeClientReadyExtra(NetDataWriter writer) { }
+        public virtual void SerializeClientReadyData(NetDataWriter writer) { }
 
         /// <summary>
-        /// Override this function to read custom data that come with send client ready message
+        /// Override this function to read custom data that come with client ready message
         /// </summary>
         /// <param name="playerIdentity"></param>
+        /// <param name="connectionId"></param>
         /// <param name="reader"></param>
-        public virtual void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader) { }
+        /// <returns>Return `true` if player is ready to play.</returns>
+        public virtual bool DeserializeClientReadyData(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader) { return true; }
 
         /// <summary>
         /// Override this function to do anything after online scene loaded at server side
@@ -872,19 +965,23 @@ namespace LiteNetLibManager
                 StopClient();
         }
 
-        public virtual void SetPlayerReady(long connectionId, NetDataReader reader)
+        public virtual bool SetPlayerReady(long connectionId, NetDataReader reader)
         {
             if (!IsServer)
-                return;
+                return false;
 
             LiteNetLibPlayer player = Players[connectionId];
             if (player.IsReady)
-                return;
+                return false;
 
             player.IsReady = true;
-            LiteNetLibIdentity playerIdentity = SpawnPlayer(connectionId);
-            DeserializeClientReadyExtra(playerIdentity, connectionId, reader);
-            foreach (LiteNetLibIdentity spawnedObject in Assets.SpawnedObjects.Values)
+            if (!DeserializeClientReadyData(SpawnPlayer(connectionId), connectionId, reader))
+            {
+                player.IsReady = false;
+                return false;
+            }
+
+            foreach (LiteNetLibIdentity spawnedObject in Assets.GetSpawnedObjects())
             {
                 if (spawnedObject.ConnectionId == player.ConnectionId)
                     continue;
@@ -892,20 +989,22 @@ namespace LiteNetLibManager
                 if (spawnedObject.ShouldAddSubscriber(player))
                     spawnedObject.AddSubscriber(player);
             }
+            return true;
         }
 
-        public virtual void SetPlayerNotReady(long connectionId, NetDataReader reader)
+        public virtual bool SetPlayerNotReady(long connectionId, NetDataReader reader)
         {
             if (!IsServer)
-                return;
+                return false;
 
             LiteNetLibPlayer player = Players[connectionId];
             if (!player.IsReady)
-                return;
+                return false;
 
             player.IsReady = false;
             player.ClearSubscribing(true);
             player.DestroyAllObjects();
+            return true;
         }
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId)
@@ -928,6 +1027,18 @@ namespace LiteNetLibManager
             if (spawnedObject != null)
                 return spawnedObject;
             return null;
+        }
+
+        public void ClientSendResponse<TResponse>(TResponse response, System.Action<NetDataWriter> extraSerializer = null)
+            where TResponse : BaseAckMessage, new()
+        {
+            Client.SendResponse(GameMsgTypes.GenericResponse, response, extraSerializer);
+        }
+
+        public void ServerSendResponse<TResponse>(long connectionId, TResponse response, System.Action<NetDataWriter> extraSerializer = null)
+            where TResponse : BaseAckMessage, new()
+        {
+            Server.SendResponse(connectionId, GameMsgTypes.GenericResponse, response, extraSerializer);
         }
     }
 }

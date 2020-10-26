@@ -25,9 +25,9 @@ namespace LiteNetLibManager
             return msg;
         }
 
-        public void ReadMessage<T>(T msg) where T : INetSerializable
+        public void ReadResponse()
         {
-            msg.Deserialize(reader);
+            transportHandler.ReadResponse(reader);
         }
     }
 }

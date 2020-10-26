@@ -194,7 +194,7 @@ namespace LiteNetLibManager
 #endif
             if (prefab == null)
             {
-                Logging.LogError(LogTag, "Failed to find prefab parent for scene object [name:" + gameObject.name + "]");
+                Logging.LogError(LogTag, $"Failed to find prefab parent for scene object: {gameObject.name}.");
                 return false;
             }
             return true;
@@ -273,7 +273,7 @@ namespace LiteNetLibManager
             if (info.elementId >= 0 && info.elementId < SyncFields.Count)
                 return SyncFields[info.elementId];
             if (Manager.LogError)
-                Logging.LogError(LogTag, "Cannot find sync field [" + info.elementId + "].");
+                Logging.LogError(LogTag, $"Cannot find sync field: {info.elementId}.");
             return null;
         }
         #endregion
@@ -301,7 +301,7 @@ namespace LiteNetLibManager
             if (info.elementId >= 0 && info.elementId < NetFunctions.Count)
                 return NetFunctions[info.elementId];
             if (Manager.LogError)
-                Logging.LogError(LogTag, "Cannot find net function [" + info.elementId + "].");
+                Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
             return null;
         }
         #endregion
@@ -327,7 +327,7 @@ namespace LiteNetLibManager
             if (info.elementId >= 0 && info.elementId < SyncLists.Count)
                 return SyncLists[info.elementId];
             if (Manager.LogError)
-                Logging.LogError(LogTag, "Cannot find sync list [" + info.elementId + "].");
+                Logging.LogError(LogTag, $"Cannot find sync list: {info.elementId}.");
             return null;
         }
         #endregion
@@ -571,7 +571,7 @@ namespace LiteNetLibManager
             if (Subscribers.ContainsKey(subscriber.ConnectionId))
             {
                 if (Manager.LogDebug)
-                    Logging.Log(LogTag, "Subscriber [" + subscriber.ConnectionId + "] already added to [" + gameObject + "]");
+                    Logging.Log(LogTag, $"Subscriber: {subscriber.ConnectionId} already added to {gameObject}.");
                 return;
             }
 
@@ -666,7 +666,7 @@ namespace LiteNetLibManager
                 if (!subscriber.IsReady)
                 {
                     if (Manager.LogWarn)
-                        Logging.Log(LogTag, "Subscriber [" + subscriber.ConnectionId + "] is not ready");
+                        Logging.Log(LogTag, $"Subscriber: {subscriber.ConnectionId} is not ready.");
                     continue;
                 }
 
@@ -674,7 +674,7 @@ namespace LiteNetLibManager
                 {
                     subscriber.AddSubscribing(this);
                     if (Manager.LogDebug)
-                        Logging.Log(LogTag, "Add subscriber [" + subscriber.ConnectionId + "] to [" + gameObject + "]");
+                        Logging.Log(LogTag, $"Add subscriber: {subscriber.ConnectionId} to {gameObject}.");
                     hasChanges = true;
                 }
             }
@@ -686,7 +686,7 @@ namespace LiteNetLibManager
                 {
                     subscriber.RemoveSubscribing(this, true);
                     if (Manager.LogDebug)
-                        Logging.Log(LogTag, "Remove subscriber [" + subscriber.ConnectionId + "] from [" + gameObject + "]");
+                        Logging.Log(LogTag, $"Remove subscriber: {subscriber.ConnectionId} from {gameObject}.");
                     hasChanges = true;
                 }
             }
@@ -745,7 +745,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            Invoke("NetworkDestroyFunction", delay);
+            Invoke(nameof(NetworkDestroyFunction), delay);
         }
 
         private void NetworkDestroyFunction()
