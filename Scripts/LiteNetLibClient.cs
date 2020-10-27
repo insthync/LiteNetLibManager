@@ -1,7 +1,6 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
 using System;
-using UnityEngine;
 
 namespace LiteNetLibManager
 {

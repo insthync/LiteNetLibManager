@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using LiteNetLib;
@@ -501,28 +500,23 @@ namespace LiteNetLibManager
 
         #region Message Handlers
 
-        protected virtual void HandleEnterGameRequest(
-            long connectionId, NetDataReader reader,
-            EmptyMessage request, out AckResponseCode responseCode,
-            out EnterGameResponseMessage response,
-            out System.Action<NetDataWriter> responseSerializer)
+        protected virtual UniTaskVoid HandleEnterGameRequest(
+            long connectionId, NetDataReader reader, EmptyMessage request,
+            RequestProceedResultDelegate<EnterGameResponseMessage> result)
         {
-            response = new EnterGameResponseMessage();
+            AckResponseCode responseCode = AckResponseCode.Error;
+            EnterGameResponseMessage response = new EnterGameResponseMessage();
             if (DeserializeEnterGameData(connectionId, reader))
             {
                 responseCode = AckResponseCode.Success;
                 response.connectionId = connectionId;
                 response.serverSceneName = ServerSceneName;
             }
-            else
-            {
-                responseCode = AckResponseCode.Error;
-            }
-            // No extra data have to be sent
-            responseSerializer = null;
+            result.Invoke(responseCode, response);
+            return new UniTaskVoid();
         }
 
-        protected virtual void HandleEnterGameResponse(
+        protected virtual UniTaskVoid HandleEnterGameResponse(
             long connectionId, NetDataReader reader,
             AckResponseCode responseCode,
             EnterGameResponseMessage response)
@@ -537,60 +531,51 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, "Enter game request was refused by server, disconnecting...");
                 StopClient();
             }
+            return new UniTaskVoid();
         }
 
-        protected virtual void HandleClientReadyRequest(
-            long connectionId, NetDataReader reader,
-            EmptyMessage request, out AckResponseCode responseCode,
-            out EmptyMessage response,
-            out System.Action<NetDataWriter> responseSerializer)
+        protected virtual UniTaskVoid HandleClientReadyRequest(
+            long connectionId, NetDataReader reader, EmptyMessage request,
+            RequestProceedResultDelegate<EmptyMessage> result)
         {
-            response = new EmptyMessage();
+            AckResponseCode responseCode = AckResponseCode.Error;
             if (SetPlayerReady(connectionId, reader))
             {
                 responseCode = AckResponseCode.Success;
             }
-            else
-            {
-                responseCode = AckResponseCode.Error;
-            }
-            // No extra data have to be sent
-            responseSerializer = null;
+            result.Invoke(responseCode, new EmptyMessage());
+            return new UniTaskVoid();
         }
 
-        protected virtual void HandleClientReadyResponse(
+        protected virtual UniTaskVoid HandleClientReadyResponse(
             long connectionId, NetDataReader reader,
             AckResponseCode responseCode,
             EmptyMessage response)
         {
             // Override this function to do something by response code
+            return new UniTaskVoid();
         }
 
-        protected virtual void HandleClientNotReadyRequest(
-            long connectionId, NetDataReader reader,
-            EmptyMessage request, out AckResponseCode responseCode,
-            out EmptyMessage response,
-            out System.Action<NetDataWriter> responseSerializer)
+        protected virtual UniTaskVoid HandleClientNotReadyRequest(
+            long connectionId, NetDataReader reader, EmptyMessage request,
+            RequestProceedResultDelegate<EmptyMessage> result)
         {
-            response = new EmptyMessage();
+            AckResponseCode responseCode = AckResponseCode.Error;
             if (SetPlayerNotReady(connectionId, reader))
             {
                 responseCode = AckResponseCode.Success;
             }
-            else
-            {
-                responseCode = AckResponseCode.Error;
-            }
-            // No extra data have to be sent
-            responseSerializer = null;
+            result.Invoke(responseCode, new EmptyMessage());
+            return new UniTaskVoid();
         }
 
-        protected virtual void HandleClientNotReadyResponse(
+        protected virtual UniTaskVoid HandleClientNotReadyResponse(
             long connectionId, NetDataReader reader,
             AckResponseCode responseCode,
             EmptyMessage response)
         {
             // Override this function to do something by response code
+            return new UniTaskVoid();
         }
 
         protected virtual void HandleClientInitialSyncField(LiteNetLibMessageHandler messageHandler)

@@ -1,13 +1,17 @@
-﻿using LiteNetLib.Utils;
+﻿using Cysharp.Threading.Tasks;
+using LiteNetLib.Utils;
 using System;
 
 namespace LiteNetLibManager
 {
     public delegate void MessageHandlerDelegate(LiteNetLibMessageHandler messageHandler);
-    public delegate void RequestDelegate<TRequest, TResponse>(long connectionId, NetDataReader reader, TRequest request, out AckResponseCode responseCode, out TResponse response, out Action<NetDataWriter> responseSerializer)
+    public delegate void RequestProceedResultDelegate<TResponse>(AckResponseCode responseCode, TResponse response, Action<NetDataWriter> responseSerializer = null)
+        where TResponse : INetSerializable;
+    public delegate UniTaskVoid RequestDelegate<TRequest, TResponse>(long connectionId, NetDataReader reader, TRequest request, RequestProceedResultDelegate<TResponse> responseProceedResult)
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new();
-    public delegate void ResponseDelegate<TResponse>(long connectionId, NetDataReader reader, AckResponseCode responseCode, TResponse response) where TResponse : INetSerializable, new();
+    public delegate UniTaskVoid ResponseDelegate<TResponse>(long connectionId, NetDataReader reader, AckResponseCode responseCode, TResponse response)
+        where TResponse : INetSerializable, new();
     public delegate void NetFunctionDelegate();
     public delegate void NetFunctionDelegate<T1>(T1 param1);
     public delegate void NetFunctionDelegate<T1, T2>(T1 param1, T2 param2);

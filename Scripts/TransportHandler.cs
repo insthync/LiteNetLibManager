@@ -153,18 +153,22 @@ namespace LiteNetLibManager
                 return;
             }
             // Invoke request and create response
-            AckResponseCode responseCode;
-            INetSerializable response;
-            Action<NetDataWriter> extraSerializer;
-            requestHandlers[requestType].InvokeRequest(connectionId, reader, out responseCode, out response, out extraSerializer);
+            requestHandlers[requestType].InvokeRequest(connectionId, reader, (responseCode, response, responseSerializer) =>
+            {
+                RequestProceeded(connectionId, ackId, responseCode, response, responseSerializer);
+            });
+        }
+
+        private void RequestProceeded(long connectionId, uint ackId, AckResponseCode responseCode, INetSerializable response, Action<NetDataWriter> responseSerializer)
+        {
             // Write response
             writer.Reset();
             writer.PutPackedUShort(ResponseMessageType);
             writer.PutPackedUInt(ackId);
             writer.PutValue(responseCode);
             response.Serialize(writer);
-            if (extraSerializer != null)
-                extraSerializer.Invoke(writer);
+            if (responseSerializer != null)
+                responseSerializer.Invoke(writer);
             // Send response
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
         }
