@@ -8,7 +8,7 @@ namespace LiteNetLibManager
     {
         public LiteNetLibManager Manager { get; protected set; }
         public override string LogTag { get { return $"{(Manager == null ? "(No Manager)" : Manager.LogTag)}->LiteNetLibServer"; } }
-        public bool IsServerStarted { get { return Transport.IsServerStarted(); } }
+        public override bool IsNetworkActive { get { return Transport.IsServerStarted(); } }
         public int ServerPort { get; protected set; }
 
         public LiteNetLibServer(LiteNetLibManager manager) : base(manager.Transport)
@@ -23,7 +23,7 @@ namespace LiteNetLibManager
 
         public override void Update()
         {
-            if (!isNetworkActive)
+            if (!IsNetworkActive)
                 return;
             base.Update();
             while (Transport.ServerReceive(out tempEventData))
@@ -34,12 +34,11 @@ namespace LiteNetLibManager
 
         public bool StartServer(int port, int maxConnections)
         {
-            if (isNetworkActive)
+            if (IsNetworkActive)
             {
                 Logging.LogWarning(LogTag, "Cannot Start Server, network already active");
                 return false;
             }
-            isNetworkActive = true;
             // Reset acks
             requestCallbacks.Clear();
             nextAckId = 1;
@@ -49,7 +48,6 @@ namespace LiteNetLibManager
 
         public void StopServer()
         {
-            isNetworkActive = false;
             Transport.StopServer();
             ServerPort = 0;
         }

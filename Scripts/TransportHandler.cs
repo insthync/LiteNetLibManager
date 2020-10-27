@@ -9,16 +9,17 @@ namespace LiteNetLibManager
     {
         protected readonly NetDataWriter writer = new NetDataWriter();
         public abstract string LogTag { get; }
+        public abstract bool IsNetworkActive { get; }
         public ITransport Transport { get; protected set; }
         public bool RequestResponseEnabled { get; protected set; }
         public ushort RequestMessageType { get; protected set; }
         public ushort ResponseMessageType { get; protected set; }
         protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
         protected readonly Dictionary<ushort, LiteNetLibRequestHandler> requestHandlers = new Dictionary<ushort, LiteNetLibRequestHandler>();
+        protected readonly Dictionary<ushort, LiteNetLibResponseHandler> responseHandlers = new Dictionary<ushort, LiteNetLibResponseHandler>();
         protected readonly Dictionary<uint, LiteNetLibRequestCallback> requestCallbacks = new Dictionary<uint, LiteNetLibRequestCallback>();
         protected uint nextAckId = 1;
         protected TransportEventData tempEventData;
-        protected bool isNetworkActive;
 
         public int RequestsCount { get { return requestCallbacks.Count; } }
 
@@ -47,7 +48,7 @@ namespace LiteNetLibManager
 
         public virtual void Update()
         {
-            if (!isNetworkActive)
+            if (!IsNetworkActive)
                 return;
             if (RequestsCount > 0)
             {
@@ -70,12 +71,12 @@ namespace LiteNetLibManager
             ushort messageType = reader.GetPackedUShort();
             if (RequestResponseEnabled && RequestMessageType == messageType)
             {
-                HandleRequest(connectionId, reader);
+                ProceedRequest(connectionId, reader);
                 return;
             }
             if (RequestResponseEnabled && ResponseMessageType == messageType)
             {
-                HandleResponse(connectionId, reader);
+                ProceedResponse(connectionId, reader);
                 return;
             }
             if (!messageHandlers.ContainsKey(messageType))
@@ -97,14 +98,14 @@ namespace LiteNetLibManager
         protected abstract void SendMessage(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer);
 
         private uint CreateRequest(
-            LiteNetLibRequestHandler requestHandler,
+            LiteNetLibResponseHandler responseHandler,
             long duration)
         {
             uint ackId = nextAckId++;
             lock (requestCallbacks)
             {
                 // Get response callback by request type
-                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, requestHandler));
+                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, responseHandler));
             }
             return ackId;
         }
@@ -117,18 +118,18 @@ namespace LiteNetLibManager
             long duration = 30)
             where TRequest : INetSerializable
         {
-            if (!requestHandlers.ContainsKey(requestType))
+            if (!responseHandlers.ContainsKey(requestType))
             {
                 Logging.LogError($"Cannot create request. Request type: {requestType} not registered.");
                 return false;
             }
-            if (!requestHandlers[requestType].IsRequestTypeValid(typeof(TRequest)))
+            if (!responseHandlers[requestType].IsRequestTypeValid(typeof(TRequest)))
             {
                 Logging.LogError($"Cannot create request. Request type: {requestType}, {typeof(TRequest)} is not valid message type.");
                 return false;
             }
             // Create request
-            uint ackId = CreateRequest(requestHandlers[requestType], duration);
+            uint ackId = CreateRequest(responseHandlers[requestType], duration);
             // Write request
             writer.Reset();
             writer.PutPackedUShort(RequestMessageType);
@@ -140,7 +141,7 @@ namespace LiteNetLibManager
             return true;
         }
 
-        private void HandleRequest(
+        private void ProceedRequest(
             long connectionId,
             NetDataReader reader)
         {
@@ -173,7 +174,7 @@ namespace LiteNetLibManager
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
         }
 
-        private void HandleResponse(long connectionId, NetDataReader reader)
+        private void ProceedResponse(long connectionId, NetDataReader reader)
         {
             uint ackId = reader.GetPackedUInt();
             AckResponseCode responseCode = reader.GetValue<AckResponseCode>();
@@ -187,19 +188,32 @@ namespace LiteNetLibManager
             }
         }
 
-        public void RegisterRequest<TRequest, TResponse>(
+        public void RegisterRequestHandler<TRequest, TResponse>(
             ushort requestType,
-            RequestDelegate<TRequest, TResponse> requestDelegate,
+            RequestDelegate<TRequest, TResponse> requestDelegate)
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
+        {
+            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(requestDelegate);
+        }
+
+        public void UnregisterRequestHandler(ushort requestType)
+        {
+            requestHandlers.Remove(requestType);
+        }
+
+        public void RegisterResponseHandler<TRequest, TResponse>(
+            ushort requestType,
             ResponseDelegate<TResponse> responseDelegate)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(requestDelegate, responseDelegate);
+            responseHandlers[requestType] = new LiteNetLibResponseHandler<TRequest, TResponse>(responseDelegate);
         }
 
-        public void UnregisterRequest(ushort requestType)
+        public void UnregisterResponseHandler(ushort requestType)
         {
-            messageHandlers.Remove(requestType);
+            responseHandlers.Remove(requestType);
         }
 
         public void RegisterMessage(
