@@ -19,12 +19,12 @@ namespace LiteNetLibManager
             Fatal = 5,
         }
 
-        public LiteNetLibClient Client { get; protected set; }
-        public LiteNetLibServer Server { get; protected set; }
-        public bool IsServer { get { return Server != null; } }
-        public bool IsClient { get { return Client != null; } }
-        public bool IsClientConnected { get { return Client != null && Client.IsNetworkActive; } }
-        public bool IsNetworkActive { get { return Server != null || Client != null; } }
+        public LiteNetLibClient Client { get; private set; }
+        public LiteNetLibServer Server { get; private set; }
+        public bool IsServer { get; private set; }
+        public bool IsClient { get; private set; }
+        public bool IsClientConnected { get { return Client.IsNetworkActive; } }
+        public bool IsNetworkActive { get { return Server.IsNetworkActive || Client.IsNetworkActive; } }
         public bool LogDev { get { return currentLogLevel <= LogLevel.Developer; } }
         public bool LogDebug { get { return currentLogLevel <= LogLevel.Debug; } }
         public bool LogInfo { get { return currentLogLevel <= LogLevel.Info; } }
@@ -98,6 +98,9 @@ namespace LiteNetLibManager
 
             if (offlineTransport == null)
                 offlineTransport = new OfflineTransport();
+
+            Client = new LiteNetLibClient(this);
+            Server = new LiteNetLibServer(this);
         }
 
         protected virtual void Start() { }
@@ -136,51 +139,60 @@ namespace LiteNetLibManager
 
         public virtual bool StartServer()
         {
-            if (Server != null)
-                return true;
-
-            Server = new LiteNetLibServer(this);
+            if (IsServer)
+            {
+                if (LogError) Logging.LogError(LogTag, "Cannot start server because it was started.");
+                return false;
+            }
             RegisterServerMessages();
             if (!Server.StartServer(networkPort, maxConnections))
             {
-                if (LogError) Logging.LogError(LogTag, "StartServer cannot start server at port: " + networkPort);
-                Server = null;
+                if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
                 return false;
             }
+            IsServer = true;
             OnStartServer();
             return true;
         }
 
-        public virtual LiteNetLibClient StartClient()
+        public virtual bool StartClient()
         {
             return StartClient(networkAddress, networkPort);
         }
 
-        public virtual LiteNetLibClient StartClient(string networkAddress, int networkPort)
+        public virtual bool StartClient(string networkAddress, int networkPort)
         {
-            if (Client != null)
-                return Client;
-
+            if (IsClient)
+            {
+                if (LogError) Logging.LogError(LogTag, "Cannot start client because it was started.");
+                return false;
+            }
             this.networkAddress = networkAddress;
             this.networkPort = networkPort;
-            if (LogDev) Logging.Log(LogTag, "Client connecting to " + networkAddress + ":" + networkPort);
-            Client = new LiteNetLibClient(this);
+            if (LogDev) Logging.Log(LogTag, $"Connecting to {networkAddress}:{networkPort}.");
             RegisterClientMessages();
-            Client.StartClient(networkAddress, networkPort);
+            if (!Client.StartClient(networkAddress, networkPort))
+            {
+                if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
+                return false;
+            }
+            IsClient = true;
             OnStartClient(Client);
-            return Client;
+            return true;
         }
 
-        public virtual LiteNetLibClient StartHost(bool isOfflineConnection = false)
+        public virtual bool StartHost(bool isOfflineConnection = false)
         {
-            OnStartHost();
             this.isOfflineConnection = isOfflineConnection;
-            if (StartServer())
-                return ConnectLocalClient();
-            return null;
+            if (StartServer() && ConnectLocalClient())
+            {
+                OnStartHost();
+                return true;
+            }
+            return false;
         }
 
-        protected virtual LiteNetLibClient ConnectLocalClient()
+        protected virtual bool ConnectLocalClient()
         {
             return StartClient("localhost", Server.ServerPort);
         }
@@ -188,19 +200,18 @@ namespace LiteNetLibManager
         public void StopHost()
         {
             OnStopHost();
-
             StopClient();
             StopServer();
         }
 
         public void StopServer()
         {
-            if (Server == null)
+            if (!IsServer)
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopServer");
+            IsServer = false;
             Server.StopServer();
-            Server = null;
             isOfflineConnection = false;
 
             OnStopServer();
@@ -208,12 +219,12 @@ namespace LiteNetLibManager
 
         public void StopClient()
         {
-            if (Client == null)
+            if (!IsClient)
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopClient");
+            IsClient = false;
             Client.StopClient();
-            Client = null;
             isOfflineConnection = false;
 
             OnStopClient();
