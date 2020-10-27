@@ -286,7 +286,7 @@ namespace LiteNetLibManager
             return Client.SendRequest(requestType, request, extraSerializer, duration);
         }
 
-        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
+        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
             where TRequest : INetSerializable
         {
             return Server.SendRequest(connectionId, msgType, request, extraSerializer, duration);
