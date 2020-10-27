@@ -513,7 +513,7 @@ namespace LiteNetLibManager
                 response.serverSceneName = ServerSceneName;
             }
             result.Invoke(responseCode, response);
-            return new UniTaskVoid();
+            return default;
         }
 
         protected virtual UniTaskVoid HandleEnterGameResponse(
@@ -531,7 +531,7 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, "Enter game request was refused by server, disconnecting...");
                 StopClient();
             }
-            return new UniTaskVoid();
+            return default;
         }
 
         protected virtual UniTaskVoid HandleClientReadyRequest(
@@ -544,7 +544,7 @@ namespace LiteNetLibManager
                 responseCode = AckResponseCode.Success;
             }
             result.Invoke(responseCode, new EmptyMessage());
-            return new UniTaskVoid();
+            return default;
         }
 
         protected virtual UniTaskVoid HandleClientReadyResponse(
@@ -553,7 +553,7 @@ namespace LiteNetLibManager
             EmptyMessage response)
         {
             // Override this function to do something by response code
-            return new UniTaskVoid();
+            return default;
         }
 
         protected virtual UniTaskVoid HandleClientNotReadyRequest(
@@ -566,7 +566,7 @@ namespace LiteNetLibManager
                 responseCode = AckResponseCode.Success;
             }
             result.Invoke(responseCode, new EmptyMessage());
-            return new UniTaskVoid();
+            return default;
         }
 
         protected virtual UniTaskVoid HandleClientNotReadyResponse(
@@ -575,7 +575,7 @@ namespace LiteNetLibManager
             EmptyMessage response)
         {
             // Override this function to do something by response code
-            return new UniTaskVoid();
+            return default;
         }
 
         protected virtual void HandleClientInitialSyncField(LiteNetLibMessageHandler messageHandler)
