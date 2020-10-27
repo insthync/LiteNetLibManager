@@ -12,35 +12,7 @@ namespace LiteNetLibManager
     [RequireComponent(typeof(LiteNetLibAssets))]
     public class LiteNetLibGameManager : LiteNetLibManager
     {
-        public class GameMsgTypes
-        {
-            public const ushort EnterGame = 0;
-            public const ushort ClientReady = 1;
-            public const ushort ClientNotReady = 2;
-            public const ushort CallFunction = 3;
-            public const ushort ServerSpawnSceneObject = 4;
-            public const ushort ServerSpawnObject = 5;
-            public const ushort ServerDestroyObject = 6;
-            public const ushort UpdateSyncField = 7;
-            public const ushort InitialSyncField = 8;
-            public const ushort OperateSyncList = 9;
-            public const ushort ServerSyncBehaviour = 11;
-            public const ushort ServerError = 12;
-            public const ushort ServerSceneChange = 13;
-            public const ushort ClientSendTransform = 14;
-            public const ushort ServerSetObjectOwner = 15;
-            public const ushort Ping = 16;
-            public const ushort GenericResponse = 17;
-            public const ushort Highest = 17;
-        }
-
-        public class DestroyObjectReasons
-        {
-            public const byte RequestedToDestroy = 0;
-            public const byte RemovedFromSubscribing = 1;
-            public const byte Highest = 1;
-        }
-
+        [Header("Game manager configs")]
         public float pingDuration = 1f;
         public bool doNotEnterGameOnConnect;
         public bool doNotDestroyOnSceneChanges;
@@ -121,7 +93,7 @@ namespace LiteNetLibManager
 
         public virtual uint PacketVersion()
         {
-            return 1;
+            return 2;
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
@@ -241,20 +213,21 @@ namespace LiteNetLibManager
         protected override void RegisterServerMessages()
         {
             base.RegisterServerMessages();
-            RegisterServerMessage(GameMsgTypes.EnterGame, HandleClientEnterGame);
-            RegisterServerMessage(GameMsgTypes.ClientReady, HandleClientReady);
-            RegisterServerMessage(GameMsgTypes.ClientNotReady, HandleClientNotReady);
+            EnableServerRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
+            RegisterServerRequest(GameMsgTypes.EnterGame, HandleClientEnterGame);
+            RegisterServerRequest(GameMsgTypes.ClientReady, HandleClientReady);
+            RegisterServerRequest(GameMsgTypes.ClientNotReady, HandleClientNotReady);
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
             RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
-            RegisterServerMessage(GameMsgTypes.GenericResponse, HandleGenericResponse);
         }
 
         protected override void RegisterClientMessages()
         {
             base.RegisterClientMessages();
+            EnableClientRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
@@ -267,7 +240,6 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
             RegisterClientMessage(GameMsgTypes.Ping, HandleServerPing);
-            RegisterClientMessage(GameMsgTypes.GenericResponse, HandleGenericResponse);
         }
 
         public override void OnPeerConnected(long connectionId)
@@ -911,11 +883,6 @@ namespace LiteNetLibManager
         }
         #endregion
 
-        protected void HandleGenericResponse(LiteNetLibMessageHandler messageHandler)
-        {
-            messageHandler.ReadResponse();
-        }
-
         /// <summary>
         /// Overrride this function to send custom data when send enter game message
         /// </summary>
@@ -1027,18 +994,6 @@ namespace LiteNetLibManager
             if (spawnedObject != null)
                 return spawnedObject;
             return null;
-        }
-
-        public void ClientSendResponse<TResponse>(TResponse response, System.Action<NetDataWriter> extraSerializer = null)
-            where TResponse : BaseAckMessage, new()
-        {
-            Client.SendPacket(GameMsgTypes.GenericResponse, response, extraSerializer);
-        }
-
-        public void ServerSendResponse<TResponse>(long connectionId, TResponse response, System.Action<NetDataWriter> extraSerializer = null)
-            where TResponse : BaseAckMessage, new()
-        {
-            Server.SendResponse(connectionId, GameMsgTypes.GenericResponse, response, extraSerializer);
         }
     }
 }

@@ -167,8 +167,8 @@ namespace LiteNetLibManager
                         // Client send data to server, it should reliable-ordered
                         Manager.ClientSendPacket(DeliveryMethod.ReliableOrdered,
                             (isInitial ?
-                            LiteNetLibGameManager.GameMsgTypes.InitialSyncField :
-                            LiteNetLibGameManager.GameMsgTypes.UpdateSyncField),
+                            GameMsgTypes.InitialSyncField :
+                            GameMsgTypes.UpdateSyncField),
                             SerializeForSend);
                     }
                     break;
@@ -188,8 +188,8 @@ namespace LiteNetLibManager
             SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, deliveryMethod,
                 (isInitial ?
-                LiteNetLibGameManager.GameMsgTypes.InitialSyncField :
-                LiteNetLibGameManager.GameMsgTypes.UpdateSyncField),
+                GameMsgTypes.InitialSyncField :
+                GameMsgTypes.UpdateSyncField),
                 SerializeForSend);
         }
 
