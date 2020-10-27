@@ -214,9 +214,9 @@ namespace LiteNetLibManager
         {
             base.RegisterServerMessages();
             EnableServerRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
-            RegisterServerRequest(GameMsgTypes.EnterGame, HandleClientEnterGame);
-            RegisterServerRequest(GameMsgTypes.ClientReady, HandleClientReady);
-            RegisterServerRequest(GameMsgTypes.ClientNotReady, HandleClientNotReady);
+            RegisterServerRequest<EmptyMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest, HandleEnterGameResponse);
+            RegisterServerRequest<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest, HandleClientReadyResponse);
+            RegisterServerRequest<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest, HandleClientNotReadyResponse);
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
             RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
@@ -319,57 +319,21 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest<BaseAckMessage, EnterGameResponseMessage>(
-                GameMsgTypes.EnterGame,
-                new BaseAckMessage(),
-                OnEnterGame,
-                SerializeEnterGameData);
-        }
-
-        protected virtual void OnEnterGame(EnterGameResponseMessage message)
-        {
-            if (message.responseCode == AckResponseCode.Success)
-            {
-                ClientConnectionId = message.connectionId;
-                HandleServerSceneChange(message.serverSceneName);
-            }
-            else
-            {
-                if (LogInfo) Logging.Log(LogTag, "Enter game request was refused by server, disconnecting...");
-                StopClient();
-            }
+            ClientSendRequest(GameReqTypes.EnterGame, new EmptyMessage(), SerializeEnterGameData);
         }
 
         public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest<BaseAckMessage, BaseAckMessage>(
-                GameMsgTypes.ClientReady,
-                new BaseAckMessage(),
-                OnClientReady,
-                SerializeClientReadyData);
-        }
-
-        protected virtual void OnClientReady(BaseAckMessage message)
-        {
-
+            ClientSendRequest(GameReqTypes.ClientReady, new EmptyMessage(), SerializeClientReadyData);
         }
 
         public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest<BaseAckMessage, BaseAckMessage>(
-                GameMsgTypes.ClientNotReady,
-                new BaseAckMessage(),
-                OnClientNotReady,
-                SerializeEnterGameData);
-        }
-
-        protected virtual void OnClientNotReady(BaseAckMessage message)
-        {
-
+            ClientSendRequest(GameReqTypes.ClientNotReady, new EmptyMessage(), null);
         }
 
         public void SendClientPing()
@@ -536,60 +500,97 @@ namespace LiteNetLibManager
         #endregion
 
         #region Message Handlers
-        protected void HandleClientEnterGame(LiteNetLibMessageHandler messageHandler)
+
+        protected virtual void HandleEnterGameRequest(
+            long connectionId, NetDataReader reader,
+            EmptyMessage request, out AckResponseCode responseCode,
+            out EnterGameResponseMessage response,
+            out System.Action<NetDataWriter> responseSerializer)
         {
-            BaseAckMessage message = messageHandler.ReadMessage<BaseAckMessage>();
-            EnterGameResponseMessage response = new EnterGameResponseMessage()
+            response = new EnterGameResponseMessage();
+            if (DeserializeEnterGameData(connectionId, reader))
             {
-                ackId = message.ackId,
-            };
-            if (DeserializeEnterGameData(messageHandler.connectionId, messageHandler.reader))
-            {
-                response.responseCode = AckResponseCode.Success;
-                response.connectionId = messageHandler.connectionId;
+                responseCode = AckResponseCode.Success;
+                response.connectionId = connectionId;
                 response.serverSceneName = ServerSceneName;
             }
             else
             {
-                response.responseCode = AckResponseCode.Error;
+                responseCode = AckResponseCode.Error;
             }
-            ServerSendResponse(messageHandler.connectionId, response);
+            // No extra data have to be sent
+            responseSerializer = null;
         }
 
-        protected virtual void HandleClientReady(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleEnterGameResponse(
+            long connectionId, NetDataReader reader,
+            AckResponseCode responseCode,
+            EnterGameResponseMessage response)
         {
-            BaseAckMessage message = messageHandler.ReadMessage<BaseAckMessage>();
-            BaseAckMessage response = new BaseAckMessage()
+            if (responseCode == AckResponseCode.Success)
             {
-                ackId = message.ackId,
-            };
-            if (SetPlayerReady(messageHandler.connectionId, messageHandler.reader))
-            {
-                response.responseCode = AckResponseCode.Success;
+                ClientConnectionId = connectionId;
+                HandleServerSceneChange(serverSceneName);
             }
             else
             {
-                response.responseCode = AckResponseCode.Error;
+                if (LogError) Logging.LogError(LogTag, "Enter game request was refused by server, disconnecting...");
+                StopClient();
             }
-            ServerSendResponse(messageHandler.connectionId, response);
         }
 
-        protected virtual void HandleClientNotReady(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleClientReadyRequest(
+            long connectionId, NetDataReader reader,
+            EmptyMessage request, out AckResponseCode responseCode,
+            out EmptyMessage response,
+            out System.Action<NetDataWriter> responseSerializer)
         {
-            BaseAckMessage message = messageHandler.ReadMessage<BaseAckMessage>();
-            BaseAckMessage response = new BaseAckMessage()
+            response = new EmptyMessage();
+            if (SetPlayerReady(connectionId, reader))
             {
-                ackId = message.ackId,
-            };
-            if (SetPlayerNotReady(messageHandler.connectionId, messageHandler.reader))
-            {
-                response.responseCode = AckResponseCode.Success;
+                responseCode = AckResponseCode.Success;
             }
             else
             {
-                response.responseCode = AckResponseCode.Error;
+                responseCode = AckResponseCode.Error;
             }
-            ServerSendResponse(messageHandler.connectionId, response);
+            // No extra data have to be sent
+            responseSerializer = null;
+        }
+
+        protected virtual void HandleClientReadyResponse(
+            long connectionId, NetDataReader reader,
+            AckResponseCode responseCode,
+            EmptyMessage response)
+        {
+            // Override this function to do something by response code
+        }
+
+        protected virtual void HandleClientNotReadyRequest(
+            long connectionId, NetDataReader reader,
+            EmptyMessage request, out AckResponseCode responseCode,
+            out EmptyMessage response,
+            out System.Action<NetDataWriter> responseSerializer)
+        {
+            response = new EmptyMessage();
+            if (SetPlayerNotReady(connectionId, reader))
+            {
+                responseCode = AckResponseCode.Success;
+            }
+            else
+            {
+                responseCode = AckResponseCode.Error;
+            }
+            // No extra data have to be sent
+            responseSerializer = null;
+        }
+
+        protected virtual void HandleClientNotReadyResponse(
+            long connectionId, NetDataReader reader,
+            AckResponseCode responseCode,
+            EmptyMessage response)
+        {
+            // Override this function to do something by response code
         }
 
         protected virtual void HandleClientInitialSyncField(LiteNetLibMessageHandler messageHandler)
