@@ -230,7 +230,7 @@ namespace LiteNetLibManager
             }
 
             SendingConnectionId = connectionId;
-            Manager.ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, LiteNetLibGameManager.GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
+            Manager.ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }
 
         protected void SerializeForSendOperation(NetDataWriter writer, Operation operation, int index)

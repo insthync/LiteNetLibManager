@@ -752,7 +752,7 @@ namespace LiteNetLibManager
         {
             if (!destroyed)
             {
-                Manager.Assets.NetworkDestroy(ObjectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
+                Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
                 destroyed = true;
             }
         }

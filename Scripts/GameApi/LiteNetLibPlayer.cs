@@ -29,7 +29,7 @@ namespace LiteNetLibManager
             SubscribingObjects.Remove(identity);
 
             if (destroyObjectsOnPeer)
-                Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, LiteNetLibGameManager.DestroyObjectReasons.RemovedFromSubscribing);
+                Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
         }
 
         internal void ClearSubscribing(bool destroyObjectsOnPeer)
@@ -41,7 +41,7 @@ namespace LiteNetLibManager
                 // because it's going to clear in this function
                 identity.RemoveSubscriber(this, false);
                 if (destroyObjectsOnPeer)
-                    Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, LiteNetLibGameManager.DestroyObjectReasons.RemovedFromSubscribing);
+                    Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
             }
             SubscribingObjects.Clear();
         }
@@ -53,7 +53,7 @@ namespace LiteNetLibManager
         {
             List<uint> objectIds = new List<uint>(SpawnedObjects.Keys);
             foreach (uint objectId in objectIds)
-                Manager.Assets.NetworkDestroy(objectId, LiteNetLibGameManager.DestroyObjectReasons.RequestedToDestroy);
+                Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
             SpawnedObjects.Clear();
         }
 

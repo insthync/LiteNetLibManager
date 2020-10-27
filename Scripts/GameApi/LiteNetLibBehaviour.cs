@@ -167,7 +167,7 @@ namespace LiteNetLibManager
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Identity.IsSubscribedOrOwning(connectionId))
-                        Manager.ServerSendPacket(connectionId, sendOptions, LiteNetLibGameManager.GameMsgTypes.ServerSyncBehaviour, this);
+                        Manager.ServerSendPacket(connectionId, sendOptions, GameMsgTypes.ServerSyncBehaviour, this);
                 }
             }
             Profiler.EndSample();
