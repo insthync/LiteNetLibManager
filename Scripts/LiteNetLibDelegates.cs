@@ -3,9 +3,10 @@
 namespace LiteNetLibManager
 {
     public delegate void MessageHandlerDelegate(LiteNetLibMessageHandler messageHandler);
-    public delegate void AckMessageCallback<T>(T message) where T : BaseAckMessage;
-    public delegate void RequestDelegate<T>(T message) where T : INetSerializable, new();
-    public delegate void ResponseDelegate<T>(T message) where T : INetSerializable, new();
+    public delegate void RequestDelegate<TRequest, TResponse>(long connectionId, TRequest request, out AckResponseCode responseCode, out TResponse response)
+        where TRequest : INetSerializable, new()
+        where TResponse : INetSerializable, new();
+    public delegate void ResponseDelegate<TResponse>(long connectionId, AckResponseCode responseCode, TResponse response) where TResponse : INetSerializable, new();
     public delegate void NetFunctionDelegate();
     public delegate void NetFunctionDelegate<T1>(T1 param1);
     public delegate void NetFunctionDelegate<T1, T2>(T1 param1, T2 param2);

@@ -280,32 +280,17 @@ namespace LiteNetLibManager
             ServerSendPacket(connectionId, options, msgType, null);
         }
 
-        public uint ClientSendRequest<TRequest, TResponse>(ushort msgType, TRequest request, AckMessageCallback<TResponse> callback, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
-            where TRequest : BaseAckMessage, new()
-            where TResponse : BaseAckMessage, new()
+        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, long duration = 30)
+            where TRequest : INetSerializable
         {
-            return Client.SendRequest(msgType, request, callback, extraSerializer, duration);
+            return Client.SendRequest(requestType, request, duration);
         }
-        /*
-        public void ClientSendResponse<TResponse>(ushort msgType, TResponse response, System.Action<NetDataWriter> extraSerializer = null)
-            where TResponse : BaseAckMessage, new()
+
+        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, long duration = 30)
+            where TRequest : INetSerializable
         {
-            Client.SendResponse(msgType, response, extraSerializer);
+            return Server.SendRequest(connectionId, msgType, request, duration);
         }
-        */
-        public uint ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, AckMessageCallback<TResponse> callback, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
-            where TRequest : BaseAckMessage, new()
-            where TResponse : BaseAckMessage, new()
-        {
-            return Server.SendRequest(connectionId, msgType, request, callback, extraSerializer, duration);
-        }
-        /*
-        public void ServerSendResponse<TResponse>(long connectionId, ushort msgType, TResponse response, System.Action<NetDataWriter> extraSerializer = null)
-            where TResponse : BaseAckMessage, new()
-        {
-            Server.SendResponse(connectionId, msgType, response, extraSerializer);
-        }
-        */
         #endregion
 
         #region Relates components functions
@@ -351,6 +336,30 @@ namespace LiteNetLibManager
         public void UnregisterClientMessage(ushort msgType)
         {
             Client.UnregisterMessage(msgType);
+        }
+
+        public void RegisterServerRequest<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestDelegate, ResponseDelegate<TResponse> responseDelegate)
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
+        {
+            Server.RegisterRequest(reqType, requestDelegate, responseDelegate);
+        }
+
+        public void UnregisterServerRequest(ushort reqType)
+        {
+            Server.UnregisterRequest(reqType);
+        }
+
+        public void RegisterClientRequest<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestDelegate, ResponseDelegate<TResponse> responseDelegate)
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
+        {
+            Client.RegisterRequest(reqType, requestDelegate, responseDelegate);
+        }
+
+        public void UnregisterClientRequest(ushort reqType)
+        {
+            Client.UnregisterRequest(reqType);
         }
         #endregion
 

@@ -1032,7 +1032,7 @@ namespace LiteNetLibManager
         public void ClientSendResponse<TResponse>(TResponse response, System.Action<NetDataWriter> extraSerializer = null)
             where TResponse : BaseAckMessage, new()
         {
-            Client.SendResponse(GameMsgTypes.GenericResponse, response, extraSerializer);
+            Client.SendPacket(GameMsgTypes.GenericResponse, response, extraSerializer);
         }
 
         public void ServerSendResponse<TResponse>(long connectionId, TResponse response, System.Action<NetDataWriter> extraSerializer = null)

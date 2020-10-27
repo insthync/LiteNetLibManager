@@ -1,5 +1,4 @@
-﻿using LiteNetLib;
-using LiteNetLib.Utils;
+﻿using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
@@ -23,11 +22,6 @@ namespace LiteNetLibManager
             T msg = new T();
             msg.Deserialize(reader);
             return msg;
-        }
-
-        public void ReadResponse()
-        {
-            transportHandler.ReadResponse(reader);
         }
     }
 }

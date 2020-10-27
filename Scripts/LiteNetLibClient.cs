@@ -41,7 +41,7 @@ namespace LiteNetLibManager
             }
             isNetworkActive = true;
             // Reset acks
-            requests.Clear();
+            requestCallbacks.Clear();
             nextAckId = 1;
             return Transport.StartClient(address, port);
         }
@@ -75,46 +75,26 @@ namespace LiteNetLibManager
             }
         }
 
-        public uint SendRequest<TRequest, TResponse>(
-            ushort msgType,
-            TRequest requestMessage,
-            AckMessageCallback<TResponse> callback,
-            Action<NetDataWriter> extraSerializer = null,
-            long duration = 30)
-            where TRequest : BaseAckMessage, new()
-            where TResponse : BaseAckMessage, new()
+        protected override void SendMessage(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            requestMessage.ackId = CreateRequest(callback, duration);
-            SendPacket(DeliveryMethod.ReliableOrdered, msgType, (writer) =>
-            {
-                requestMessage.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
-            return requestMessage.ackId;
-        }
-
-        public void SendResponse<TResponse>(
-            ushort msgType,
-            TResponse responseMessage,
-            Action<NetDataWriter> extraSerializer = null)
-            where TResponse : BaseAckMessage, new()
-        {
-            SendPacket(DeliveryMethod.ReliableOrdered, msgType, (writer) =>
-            {
-                responseMessage.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
+            Transport.ClientSend(deliveryMethod, writer);
         }
 
         public void SendPacket(DeliveryMethod deliveryMethod, ushort msgType, Action<NetDataWriter> serializer)
         {
-            writer.Reset();
-            writer.PutPackedUShort(msgType);
-            if (serializer != null)
-                serializer.Invoke(writer);
-            Transport.ClientSend(deliveryMethod, writer);
+            // Send packet to server, so connection id will not being used
+            WritePacket(writer, msgType, serializer);
+            SendMessage(0, deliveryMethod, writer);
+        }
+
+        public bool SendRequest<TRequest>(ushort requestType, TRequest request, long duration = 30)
+            where TRequest : INetSerializable
+        {
+            // Send request to server, so connection id will not being used
+            if (!CreateAndWriteRequest(writer, requestType, request, duration))
+                return false;
+            SendMessage(0, DeliveryMethod.ReliableOrdered, writer);
+            return true;
         }
     }
 }
