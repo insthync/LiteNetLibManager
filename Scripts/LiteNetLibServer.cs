@@ -7,7 +7,7 @@ namespace LiteNetLibManager
     public class LiteNetLibServer : TransportHandler
     {
         public LiteNetLibManager Manager { get; protected set; }
-        public string LogTag { get { return $"{(Manager == null ? "(No Manager)" : Manager.LogTag)}->LiteNetLibServer"; } }
+        public override string LogTag { get { return $"{(Manager == null ? "(No Manager)" : Manager.LogTag)}->LiteNetLibServer"; } }
         public bool IsServerStarted { get { return Transport.IsServerStarted(); } }
         public int ServerPort { get; protected set; }
 

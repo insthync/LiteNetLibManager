@@ -15,9 +15,9 @@ namespace LiteNetLibManager
 
     public class RequestMessageData<T> : BaseRequestMessageData where T : BaseAckMessage, new()
     {
-        private AckMessageCallback<T> _callback;
+        private ResponseDelegate<T> _callback;
 
-        public RequestMessageData(uint ackId, AckMessageCallback<T> callback, long duration)
+        public RequestMessageData(uint ackId, ResponseDelegate<T> callback, long duration)
         {
             AckId = ackId;
             RequestTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
