@@ -83,17 +83,22 @@ namespace LiteNetLibManager
             messageHandlers[messageType].Invoke(new LiteNetLibMessageHandler(messageType, this, connectionId, reader));
         }
 
-        protected void WritePacket(NetDataWriter writer, ushort messageType, Action<NetDataWriter> serializer)
+        protected void WritePacket(
+            NetDataWriter writer,
+            ushort messageType,
+            Action<NetDataWriter> extraSerializer)
         {
             writer.Reset();
             writer.PutPackedUShort(messageType);
-            if (serializer != null)
-                serializer.Invoke(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
         }
 
         protected abstract void SendMessage(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer);
 
-        private uint CreateRequest(LiteNetLibRequestHandler requestHandler, long duration)
+        private uint CreateRequest(
+            LiteNetLibRequestHandler requestHandler,
+            long duration)
         {
             uint ackId = nextAckId++;
             lock (requestCallbacks)
@@ -104,7 +109,12 @@ namespace LiteNetLibManager
             return ackId;
         }
 
-        protected bool CreateAndWriteRequest<TRequest>(NetDataWriter writer, ushort requestType, TRequest request, long duration = 30)
+        protected bool CreateAndWriteRequest<TRequest>(
+            NetDataWriter writer,
+            ushort requestType,
+            TRequest request,
+            Action<NetDataWriter> extraSerializer,
+            long duration = 30)
             where TRequest : INetSerializable
         {
             if (!requestHandlers.ContainsKey(requestType))
@@ -125,10 +135,14 @@ namespace LiteNetLibManager
             writer.PutPackedUShort(requestType);
             writer.PutPackedUInt(ackId);
             request.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
             return true;
         }
 
-        private void HandleRequest(long connectionId, NetDataReader reader)
+        private void HandleRequest(
+            long connectionId,
+            NetDataReader reader)
         {
             ushort requestType = reader.GetPackedUShort();
             uint ackId = reader.GetPackedUInt();
@@ -141,13 +155,16 @@ namespace LiteNetLibManager
             // Invoke request and create response
             AckResponseCode responseCode;
             INetSerializable response;
-            requestHandlers[requestType].InvokeRequest(connectionId, reader, out responseCode, out response);
+            Action<NetDataWriter> extraSerializer;
+            requestHandlers[requestType].InvokeRequest(connectionId, reader, out responseCode, out response, out extraSerializer);
             // Write response
             writer.Reset();
             writer.PutPackedUShort(ResponseMessageType);
             writer.PutPackedUInt(ackId);
             writer.PutValue(responseCode);
             response.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
             // Send response
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
         }
@@ -166,7 +183,10 @@ namespace LiteNetLibManager
             }
         }
 
-        public void RegisterRequest<TRequest, TResponse>(ushort requestType, RequestDelegate<TRequest, TResponse> requestDelegate, ResponseDelegate<TResponse> responseDelegate)
+        public void RegisterRequest<TRequest, TResponse>(
+            ushort requestType,
+            RequestDelegate<TRequest, TResponse> requestDelegate,
+            ResponseDelegate<TResponse> responseDelegate)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
@@ -178,7 +198,9 @@ namespace LiteNetLibManager
             messageHandlers.Remove(requestType);
         }
 
-        public void RegisterMessage(ushort messageType, MessageHandlerDelegate handlerDelegate)
+        public void RegisterMessage(
+            ushort messageType,
+            MessageHandlerDelegate handlerDelegate)
         {
             if (RequestResponseEnabled && (RequestMessageType == messageType || ResponseMessageType == messageType))
             {

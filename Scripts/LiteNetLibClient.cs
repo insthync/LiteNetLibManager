@@ -84,16 +84,16 @@ namespace LiteNetLibManager
         {
             // Send packet to server, so connection id will not being used
             WritePacket(writer, msgType, serializer);
-            SendMessage(0, deliveryMethod, writer);
+            SendMessage(-1, deliveryMethod, writer);
         }
 
-        public bool SendRequest<TRequest>(ushort requestType, TRequest request, long duration = 30)
+        public bool SendRequest<TRequest>(ushort requestType, TRequest request, Action<NetDataWriter> extraSerializer, long duration = 30)
             where TRequest : INetSerializable
         {
             // Send request to server, so connection id will not being used
-            if (!CreateAndWriteRequest(writer, requestType, request, duration))
+            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, duration))
                 return false;
-            SendMessage(0, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(-1, DeliveryMethod.ReliableOrdered, writer);
             return true;
         }
     }

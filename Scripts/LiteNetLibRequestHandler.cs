@@ -5,7 +5,7 @@ namespace LiteNetLibManager
 {
     public abstract class LiteNetLibRequestHandler
     {
-        internal abstract void InvokeRequest(long connectionId, NetDataReader reader, out AckResponseCode responseCode, out INetSerializable response);
+        internal abstract void InvokeRequest(long connectionId, NetDataReader reader, out AckResponseCode responseCode, out INetSerializable response, out Action<NetDataWriter> extraSerializer);
         internal abstract void InvokeResponse(long connectionId, NetDataReader reader, AckResponseCode responseCode);
         internal abstract bool IsRequestTypeValid(Type type);
     }
@@ -25,13 +25,13 @@ namespace LiteNetLibManager
             this.responseDelegate = responseDelegate;
         }
 
-        internal override void InvokeRequest(long connectionId, NetDataReader reader, out AckResponseCode responseCode, out INetSerializable outResponse)
+        internal override void InvokeRequest(long connectionId, NetDataReader reader, out AckResponseCode responseCode, out INetSerializable outResponse, out Action<NetDataWriter> extraSerializer)
         {
             TRequest request = new TRequest();
             if (reader != null)
                 request.Deserialize(reader);
             TResponse response;
-            requestDelegate.Invoke(connectionId, request, out responseCode, out response);
+            requestDelegate.Invoke(connectionId, reader, request, out responseCode, out response, out extraSerializer);
             outResponse = response;
         }
 
@@ -40,7 +40,7 @@ namespace LiteNetLibManager
             TResponse response = new TResponse();
             if (reader != null)
                 response.Deserialize(reader);
-            responseDelegate.Invoke(connectionId, responseCode, response);
+            responseDelegate.Invoke(connectionId, reader, responseCode, response);
         }
 
         internal override bool IsRequestTypeValid(Type type)

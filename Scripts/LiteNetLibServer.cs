@@ -89,10 +89,10 @@ namespace LiteNetLibManager
             SendMessage(connectionId, deliveryMethod, writer);
         }
 
-        public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, long duration = 30)
+        public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, Action<NetDataWriter> extraSerializer, long duration = 30)
             where TRequest : INetSerializable
         {
-            if (!CreateAndWriteRequest(writer, requestType, request, duration))
+            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, duration))
                 return false;
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
             return true;

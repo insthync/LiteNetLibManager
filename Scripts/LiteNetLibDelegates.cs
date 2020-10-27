@@ -1,12 +1,13 @@
 ﻿using LiteNetLib.Utils;
+using System;
 
 namespace LiteNetLibManager
 {
     public delegate void MessageHandlerDelegate(LiteNetLibMessageHandler messageHandler);
-    public delegate void RequestDelegate<TRequest, TResponse>(long connectionId, TRequest request, out AckResponseCode responseCode, out TResponse response)
+    public delegate void RequestDelegate<TRequest, TResponse>(long connectionId, NetDataReader reader, TRequest request, out AckResponseCode responseCode, out TResponse response, out Action<NetDataWriter> responseSerializer)
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new();
-    public delegate void ResponseDelegate<TResponse>(long connectionId, AckResponseCode responseCode, TResponse response) where TResponse : INetSerializable, new();
+    public delegate void ResponseDelegate<TResponse>(long connectionId, NetDataReader reader, AckResponseCode responseCode, TResponse response) where TResponse : INetSerializable, new();
     public delegate void NetFunctionDelegate();
     public delegate void NetFunctionDelegate<T1>(T1 param1);
     public delegate void NetFunctionDelegate<T1, T2>(T1 param1, T2 param2);

@@ -280,16 +280,16 @@ namespace LiteNetLibManager
             ServerSendPacket(connectionId, options, msgType, null);
         }
 
-        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, long duration = 30)
+        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
             where TRequest : INetSerializable
         {
-            return Client.SendRequest(requestType, request, duration);
+            return Client.SendRequest(requestType, request, extraSerializer, duration);
         }
 
-        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, long duration = 30)
+        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
             where TRequest : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, duration);
+            return Server.SendRequest(connectionId, msgType, request, extraSerializer, duration);
         }
         #endregion
 
