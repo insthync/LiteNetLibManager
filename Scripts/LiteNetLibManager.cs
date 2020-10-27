@@ -338,6 +338,11 @@ namespace LiteNetLibManager
             Client.UnregisterMessage(msgType);
         }
 
+        public bool EnableServerRequestResponse(ushort requestMessageType, ushort responseMessageType)
+        {
+            return Server.EnableRequestResponse(requestMessageType, responseMessageType);
+        }
+
         public void RegisterServerRequest<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestDelegate, ResponseDelegate<TResponse> responseDelegate)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
@@ -348,6 +353,11 @@ namespace LiteNetLibManager
         public void UnregisterServerRequest(ushort reqType)
         {
             Server.UnregisterRequest(reqType);
+        }
+
+        public bool EnableClientRequestResponse(ushort requestMessageType, ushort responseMessageType)
+        {
+            return Client.EnableRequestResponse(requestMessageType, responseMessageType);
         }
 
         public void RegisterClientRequest<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestDelegate, ResponseDelegate<TResponse> responseDelegate)
