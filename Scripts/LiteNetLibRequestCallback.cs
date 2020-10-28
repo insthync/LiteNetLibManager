@@ -28,9 +28,7 @@ namespace LiteNetLibManager
         {
             if (Duration > 0 && DateTimeOffset.UtcNow.ToUnixTimeSeconds() - RequestTime >= Duration)
             {
-                ResponseHandler.InvokeResponse(0, null, AckResponseCode.Timeout, ResponseDelegate);
-                if (ResponseDelegate != null)
-                    ResponseDelegate.Invoke(AckResponseCode.Timeout, null);
+                ResponseHandler.InvokeResponse(-1, null, AckResponseCode.Timeout, ResponseDelegate);
                 return true;
             }
             return false;

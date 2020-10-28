@@ -29,7 +29,7 @@ namespace LiteNetLibManager
             if (registeredDelegate != null)
                 registeredDelegate.Invoke(connectionId, reader, responseCode, response);
             if (responseDelegate != null)
-                responseDelegate.Invoke(responseCode, response);
+                responseDelegate.Invoke(connectionId, responseCode, response);
         }
 
         internal override bool IsRequestTypeValid(Type type)
