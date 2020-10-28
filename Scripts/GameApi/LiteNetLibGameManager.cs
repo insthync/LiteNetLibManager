@@ -321,7 +321,10 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest(GameReqTypes.EnterGame, new EmptyMessage(), SerializeEnterGameData);
+            ClientSendRequest(GameReqTypes.EnterGame, new EnterGameRequestMessage()
+            {
+                packetVersion = PacketVersion(),
+            }, SerializeEnterGameData);
         }
 
         public void SendClientReady()
