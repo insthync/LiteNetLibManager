@@ -34,16 +34,21 @@ namespace LiteNetLibManager
                 messageHandlers.ContainsKey(requestMessageType) ||
                 messageHandlers.ContainsKey(responseMessageType))
             {
-                RequestResponseEnabled = false;
-                RequestMessageType = 0;
-                ResponseMessageType = 0;
                 Logging.LogError($"Cannot enable request-response feature, request/response message type must be different and not registered.");
+                DisableRequestResponse();
                 return false;
             }
             RequestResponseEnabled = true;
             RequestMessageType = requestMessageType;
             ResponseMessageType = responseMessageType;
             return true;
+        }
+
+        public void DisableRequestResponse()
+        {
+            RequestResponseEnabled = false;
+            RequestMessageType = 0;
+            ResponseMessageType = 0;
         }
 
         public virtual void Update()

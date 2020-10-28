@@ -359,6 +359,16 @@ namespace LiteNetLibManager
             return Server.EnableRequestResponse(requestMessageType, responseMessageType);
         }
 
+        public void DisableClientRequestResponse(ushort requestMessageType, ushort responseMessageType)
+        {
+            Client.DisableRequestResponse();
+        }
+
+        public void DisableServerRequestResponse(ushort requestMessageType, ushort responseMessageType)
+        {
+            Server.DisableRequestResponse();
+        }
+
         /// <summary>
         /// Use this to register request from client to server (server is request handler)
         /// </summary>
