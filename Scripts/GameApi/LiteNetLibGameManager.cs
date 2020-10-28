@@ -213,9 +213,9 @@ namespace LiteNetLibManager
         {
             base.RegisterServerMessages();
             EnableServerRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
-            RegisterServerRequestHandler<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest, HandleEnterGameResponse);
-            RegisterServerRequestHandler<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest, HandleClientReadyResponse);
-            RegisterServerRequestHandler<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest, HandleClientNotReadyResponse);
+            RegisterServerRequest<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest);
+            RegisterServerRequest<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest);
+            RegisterServerRequest<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest);
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
             RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
@@ -227,6 +227,9 @@ namespace LiteNetLibManager
         {
             base.RegisterClientMessages();
             EnableClientRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
+            RegisterClientResponse<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameResponse);
+            RegisterClientResponse<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyResponse);
+            RegisterClientResponse<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyResponse);
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);

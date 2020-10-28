@@ -105,13 +105,13 @@ namespace LiteNetLibManager
         private uint CreateRequest(
             LiteNetLibResponseHandler responseHandler,
             long duration,
-            ExtraResponseDelegate extraResponseCallback)
+            ResponseDelegate responseDelegate)
         {
             uint ackId = nextAckId++;
             lock (requestCallbacks)
             {
                 // Get response callback by request type
-                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, responseHandler, extraResponseCallback));
+                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, responseHandler, responseDelegate));
             }
             return ackId;
         }
@@ -122,7 +122,7 @@ namespace LiteNetLibManager
             TRequest request,
             SerializerDelegate extraRequestSerializer,
             long duration,
-            ExtraResponseDelegate extraResponseCallback)
+            ResponseDelegate responseDelegate)
             where TRequest : INetSerializable
         {
             if (!responseHandlers.ContainsKey(requestType))
@@ -136,7 +136,7 @@ namespace LiteNetLibManager
                 return false;
             }
             // Create request
-            uint ackId = CreateRequest(responseHandlers[requestType], duration, extraResponseCallback);
+            uint ackId = CreateRequest(responseHandlers[requestType], duration, responseDelegate);
             // Write request
             writer.Reset();
             writer.PutPackedUShort(RequestMessageType);
@@ -195,7 +195,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void RegisterRequestHandler<TRequest, TResponse>(
+        public void RegisterRequest<TRequest, TResponse>(
             ushort requestType,
             RequestDelegate<TRequest, TResponse> requestDelegate)
             where TRequest : INetSerializable, new()
@@ -204,21 +204,21 @@ namespace LiteNetLibManager
             requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(requestDelegate);
         }
 
-        public void UnregisterRequestHandler(ushort requestType)
+        public void UnregisterRequest(ushort requestType)
         {
             requestHandlers.Remove(requestType);
         }
 
-        public void RegisterResponseHandler<TRequest, TResponse>(
+        public void RegisterResponse<TRequest, TResponse>(
             ushort requestType,
-            ResponseDelegate<TResponse> responseDelegate)
+            ResponseDelegate<TResponse> responseDelegate = null)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
             responseHandlers[requestType] = new LiteNetLibResponseHandler<TRequest, TResponse>(responseDelegate);
         }
 
-        public void UnregisterResponseHandler(ushort requestType)
+        public void UnregisterResponse(ushort requestType)
         {
             responseHandlers.Remove(requestType);
         }

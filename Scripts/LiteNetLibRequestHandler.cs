@@ -25,10 +25,13 @@ namespace LiteNetLibManager
             TRequest request = new TRequest();
             if (reader != null)
                 request.Deserialize(reader);
-            requestDelegate.Invoke(connectionId, reader, request, (responseCode, response, responseSerializer) =>
+            if (requestDelegate != null)
             {
-                responseProceedResult.Invoke(responseCode, response, responseSerializer);
-            });
+                requestDelegate.Invoke(connectionId, reader, request, (responseCode, response, responseSerializer) =>
+                {
+                    responseProceedResult.Invoke(responseCode, response, responseSerializer);
+                });
+            }
         }
     }
 }
