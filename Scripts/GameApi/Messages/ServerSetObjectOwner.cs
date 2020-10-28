@@ -1,10 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using LiteNetLib.Utils;
+﻿using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public class ServerSetObjectOwner : INetSerializable
+    public struct ServerSetObjectOwner : INetSerializable
     {
         public uint objectId;
         public long connectionId;
