@@ -5,13 +5,15 @@ using System;
 namespace LiteNetLibManager
 {
     public delegate void MessageHandlerDelegate(LiteNetLibMessageHandler messageHandler);
-    public delegate void RequestProceedResultDelegate<TResponse>(AckResponseCode responseCode, TResponse response, Action<NetDataWriter> responseSerializer = null)
+    public delegate void RequestProceedResultDelegate<TResponse>(AckResponseCode responseCode, TResponse response, SerializerDelegate responseExtraSerializer = null)
         where TResponse : INetSerializable;
     public delegate UniTaskVoid RequestDelegate<TRequest, TResponse>(long connectionId, NetDataReader reader, TRequest request, RequestProceedResultDelegate<TResponse> responseProceedResult)
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new();
     public delegate UniTaskVoid ResponseDelegate<TResponse>(long connectionId, NetDataReader reader, AckResponseCode responseCode, TResponse response)
         where TResponse : INetSerializable, new();
+    public delegate void ExtraResponseDelegate(AckResponseCode responseCode, INetSerializable response);
+    public delegate void SerializerDelegate(NetDataWriter writer);
     public delegate void NetFunctionDelegate();
     public delegate void NetFunctionDelegate<T1>(T1 param1);
     public delegate void NetFunctionDelegate<T1, T2>(T1 param1, T2 param2);

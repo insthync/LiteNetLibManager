@@ -81,16 +81,16 @@ namespace LiteNetLibManager
             Transport.ServerSend(connectionId, deliveryMethod, writer);
         }
 
-        public void SendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, Action<NetDataWriter> serializer)
+        public void SendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             WritePacket(writer, msgType, serializer);
             SendMessage(connectionId, deliveryMethod, writer);
         }
 
-        public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, Action<NetDataWriter> extraSerializer, long duration = 30)
+        public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseDelegate = null)
             where TRequest : INetSerializable
         {
-            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, duration))
+            if (!CreateAndWriteRequest(writer, requestType, request, extraRequestSerializer, duration, extraResponseDelegate))
                 return false;
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
             return true;

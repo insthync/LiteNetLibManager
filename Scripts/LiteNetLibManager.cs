@@ -251,12 +251,12 @@ namespace LiteNetLibManager
         }
 
         #region Packets send / read
-        public void ClientSendPacket(DeliveryMethod options, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ClientSendPacket(DeliveryMethod options, ushort msgType, SerializerDelegate serializer)
         {
             Client.SendPacket(options, msgType, serializer);
         }
 
-        public void ClientSendPacket<T>(DeliveryMethod options, ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : INetSerializable
+        public void ClientSendPacket<T>(DeliveryMethod options, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
             ClientSendPacket(options, msgType, (writer) =>
             {
@@ -271,12 +271,12 @@ namespace LiteNetLibManager
             ClientSendPacket(options, msgType, null);
         }
 
-        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             Server.SendPacket(connectionId, deliveryMethod, msgType, serializer);
         }
 
-        public void ServerSendPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, System.Action<NetDataWriter> extraSerializer = null) where T : INetSerializable
+        public void ServerSendPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
             ServerSendPacket(connectionId, deliveryMethod, msgType, (writer) =>
             {
@@ -291,21 +291,21 @@ namespace LiteNetLibManager
             ServerSendPacket(connectionId, options, msgType, null);
         }
 
-        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
+        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseDelegate = null)
             where TRequest : INetSerializable
         {
-            return Client.SendRequest(requestType, request, extraSerializer, duration);
+            return Client.SendRequest(requestType, request, extraRequestSerializer, duration, extraResponseDelegate);
         }
 
-        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, System.Action<NetDataWriter> extraSerializer = null, long duration = 30)
+        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseDelegate = null)
             where TRequest : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, extraSerializer, duration);
+            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, extraResponseDelegate);
         }
         #endregion
 
         #region Relates components functions
-        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType, System.Action<NetDataWriter> serializer)
+        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             foreach (long connectionId in ConnectionIds)
             {

@@ -92,7 +92,7 @@ namespace LiteNetLibManager
         protected void WritePacket(
             NetDataWriter writer,
             ushort messageType,
-            Action<NetDataWriter> extraSerializer)
+            SerializerDelegate extraSerializer)
         {
             writer.Reset();
             writer.PutPackedUShort(messageType);
@@ -104,13 +104,14 @@ namespace LiteNetLibManager
 
         private uint CreateRequest(
             LiteNetLibResponseHandler responseHandler,
-            long duration)
+            long duration,
+            ExtraResponseDelegate extraResponseDelegate)
         {
             uint ackId = nextAckId++;
             lock (requestCallbacks)
             {
                 // Get response callback by request type
-                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, responseHandler));
+                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, responseHandler, extraResponseDelegate));
             }
             return ackId;
         }
@@ -119,8 +120,9 @@ namespace LiteNetLibManager
             NetDataWriter writer,
             ushort requestType,
             TRequest request,
-            Action<NetDataWriter> extraSerializer,
-            long duration = 30)
+            SerializerDelegate extraRequestSerializer = null,
+            long duration = 30,
+            ExtraResponseDelegate extraResponse = null)
             where TRequest : INetSerializable
         {
             if (!responseHandlers.ContainsKey(requestType))
@@ -134,15 +136,15 @@ namespace LiteNetLibManager
                 return false;
             }
             // Create request
-            uint ackId = CreateRequest(responseHandlers[requestType], duration);
+            uint ackId = CreateRequest(responseHandlers[requestType], duration, extraResponse);
             // Write request
             writer.Reset();
             writer.PutPackedUShort(RequestMessageType);
             writer.PutPackedUShort(requestType);
             writer.PutPackedUInt(ackId);
             request.Serialize(writer);
-            if (extraSerializer != null)
-                extraSerializer.Invoke(writer);
+            if (extraRequestSerializer != null)
+                extraRequestSerializer.Invoke(writer);
             return true;
         }
 
@@ -165,7 +167,7 @@ namespace LiteNetLibManager
             });
         }
 
-        private void RequestProceeded(long connectionId, uint ackId, AckResponseCode responseCode, INetSerializable response, Action<NetDataWriter> responseSerializer)
+        private void RequestProceeded(long connectionId, uint ackId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate responseSerializer)
         {
             // Write response
             writer.Reset();
