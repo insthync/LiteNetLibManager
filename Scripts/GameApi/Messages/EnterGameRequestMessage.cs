@@ -2,17 +2,18 @@
 
 namespace LiteNetLibManager
 {
-    /// <summary>
-    /// An empty message may be used as empty request or response
-    /// </summary>
-    public struct EmptyMessage : INetSerializable
+    public struct EnterGameRequestMessage : INetSerializable
     {
+        public uint packetVersion;
+
         public void Deserialize(NetDataReader reader)
         {
+            packetVersion = reader.GetPackedUInt();
         }
 
         public void Serialize(NetDataWriter writer)
         {
+            writer.PutPackedUInt(packetVersion);
         }
     }
 }

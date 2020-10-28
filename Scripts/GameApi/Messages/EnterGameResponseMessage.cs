@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using LiteNetLib.Utils;
+﻿using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
@@ -9,16 +7,16 @@ namespace LiteNetLibManager
         public long connectionId;
         public string serverSceneName;
 
-        public void Serialize(NetDataWriter writer)
-        {
-            writer.PutPackedLong(connectionId);
-            writer.Put(serverSceneName);
-        }
-
         public void Deserialize(NetDataReader reader)
         {
             connectionId = reader.GetPackedLong();
             serverSceneName = reader.GetString();
+        }
+
+        public void Serialize(NetDataWriter writer)
+        {
+            writer.PutPackedLong(connectionId);
+            writer.Put(serverSceneName);
         }
     }
 }

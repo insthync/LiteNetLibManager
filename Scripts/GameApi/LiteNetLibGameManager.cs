@@ -213,7 +213,7 @@ namespace LiteNetLibManager
         {
             base.RegisterServerMessages();
             EnableServerRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
-            RegisterServerRequestHandler<EmptyMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest, HandleEnterGameResponse);
+            RegisterServerRequestHandler<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest, HandleEnterGameResponse);
             RegisterServerRequestHandler<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest, HandleClientReadyResponse);
             RegisterServerRequestHandler<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest, HandleClientNotReadyResponse);
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
@@ -501,12 +501,13 @@ namespace LiteNetLibManager
         #region Message Handlers
 
         protected virtual UniTaskVoid HandleEnterGameRequest(
-            long connectionId, NetDataReader reader, EmptyMessage request,
+            long connectionId, NetDataReader reader, EnterGameRequestMessage request,
             RequestProceedResultDelegate<EnterGameResponseMessage> result)
         {
             AckResponseCode responseCode = AckResponseCode.Error;
             EnterGameResponseMessage response = new EnterGameResponseMessage();
-            if (DeserializeEnterGameData(connectionId, reader))
+            if (request.packetVersion == PacketVersion() &&
+                DeserializeEnterGameData(connectionId, reader))
             {
                 responseCode = AckResponseCode.Success;
                 response.connectionId = connectionId;
