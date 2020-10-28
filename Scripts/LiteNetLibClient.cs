@@ -84,11 +84,11 @@ namespace LiteNetLibManager
             SendMessage(-1, deliveryMethod, writer);
         }
 
-        public bool SendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseDelegate = null)
+        public bool SendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseCallback = null)
             where TRequest : INetSerializable
         {
             // Send request to server, so connection id will not being used
-            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, duration, extraResponseDelegate))
+            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, duration, extraResponseCallback))
                 return false;
             SendMessage(-1, DeliveryMethod.ReliableOrdered, writer);
             return true;

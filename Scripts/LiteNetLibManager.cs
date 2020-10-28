@@ -291,16 +291,16 @@ namespace LiteNetLibManager
             ServerSendPacket(connectionId, options, msgType, null);
         }
 
-        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseDelegate = null)
+        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseCallback = null)
             where TRequest : INetSerializable
         {
-            return Client.SendRequest(requestType, request, extraRequestSerializer, duration, extraResponseDelegate);
+            return Client.SendRequest(requestType, request, extraRequestSerializer, duration, extraResponseCallback);
         }
 
-        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseDelegate = null)
+        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ExtraResponseDelegate extraResponseCallback = null)
             where TRequest : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, extraResponseDelegate);
+            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, extraResponseCallback);
         }
         #endregion
 
