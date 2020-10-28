@@ -504,16 +504,17 @@ namespace LiteNetLibManager
         #region Message Handlers
 
         protected virtual UniTaskVoid HandleEnterGameRequest(
-            long connectionId, NetDataReader reader, EnterGameRequestMessage request,
+            RequestHandlerData requestHandler,
+            EnterGameRequestMessage request,
             RequestProceedResultDelegate<EnterGameResponseMessage> result)
         {
             AckResponseCode responseCode = AckResponseCode.Error;
             EnterGameResponseMessage response = new EnterGameResponseMessage();
             if (request.packetVersion == PacketVersion() &&
-                DeserializeEnterGameData(connectionId, reader))
+                DeserializeEnterGameData(requestHandler.ConnectionId, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
-                response.connectionId = connectionId;
+                response.connectionId = requestHandler.ConnectionId;
                 response.serverSceneName = ServerSceneName;
             }
             result.Invoke(responseCode, response);
@@ -521,14 +522,14 @@ namespace LiteNetLibManager
         }
 
         protected virtual UniTaskVoid HandleEnterGameResponse(
-            long connectionId, NetDataReader reader,
+            ResponseHandlerData responseHandler,
             AckResponseCode responseCode,
             EnterGameResponseMessage response)
         {
             if (responseCode == AckResponseCode.Success)
             {
-                ClientConnectionId = connectionId;
-                HandleServerSceneChange(serverSceneName);
+                ClientConnectionId = response.connectionId;
+                HandleServerSceneChange(response.serverSceneName);
             }
             else
             {
@@ -539,11 +540,12 @@ namespace LiteNetLibManager
         }
 
         protected virtual UniTaskVoid HandleClientReadyRequest(
-            long connectionId, NetDataReader reader, EmptyMessage request,
+            RequestHandlerData requestHandler,
+            EmptyMessage request,
             RequestProceedResultDelegate<EmptyMessage> result)
         {
             AckResponseCode responseCode = AckResponseCode.Error;
-            if (SetPlayerReady(connectionId, reader))
+            if (SetPlayerReady(requestHandler.ConnectionId, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
             }
@@ -552,7 +554,7 @@ namespace LiteNetLibManager
         }
 
         protected virtual UniTaskVoid HandleClientReadyResponse(
-            long connectionId, NetDataReader reader,
+            ResponseHandlerData responseHandler,
             AckResponseCode responseCode,
             EmptyMessage response)
         {
@@ -561,11 +563,12 @@ namespace LiteNetLibManager
         }
 
         protected virtual UniTaskVoid HandleClientNotReadyRequest(
-            long connectionId, NetDataReader reader, EmptyMessage request,
+            RequestHandlerData requestHandler,
+            EmptyMessage request,
             RequestProceedResultDelegate<EmptyMessage> result)
         {
             AckResponseCode responseCode = AckResponseCode.Error;
-            if (SetPlayerNotReady(connectionId, reader))
+            if (SetPlayerNotReady(requestHandler.ConnectionId, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
             }
@@ -574,7 +577,7 @@ namespace LiteNetLibManager
         }
 
         protected virtual UniTaskVoid HandleClientNotReadyResponse(
-            long connectionId, NetDataReader reader,
+            ResponseHandlerData responseHandler,
             AckResponseCode responseCode,
             EmptyMessage response)
         {
@@ -582,12 +585,12 @@ namespace LiteNetLibManager
             return default;
         }
 
-        protected virtual void HandleClientInitialSyncField(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleClientInitialSyncField(MessageHandlerData messageHandler)
         {
             // Field updated at owner-client, if this is server then multicast message to other clients
             if (!IsServer)
                 return;
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
@@ -604,7 +607,7 @@ namespace LiteNetLibManager
                     foreach (long connectionId in GetConnectionIds())
                     {
                         // Don't send the update to owner client because it was updated before send update to server
-                        if (connectionId == messageHandler.connectionId)
+                        if (connectionId == messageHandler.ConnectionId)
                             continue;
                         // Send update to clients except owner client
                         if (identity.IsSubscribedOrOwning(connectionId))
@@ -614,12 +617,12 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual void HandleClientUpdateSyncField(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleClientUpdateSyncField(MessageHandlerData messageHandler)
         {
             // Field updated at owner-client, if this is server then multicast message to other clients
             if (!IsServer)
                 return;
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
@@ -636,7 +639,7 @@ namespace LiteNetLibManager
                     foreach (long connectionId in GetConnectionIds())
                     {
                         // Don't send the update to owner client because it was updated before send update to server
-                        if (connectionId == messageHandler.connectionId)
+                        if (connectionId == messageHandler.ConnectionId)
                             continue;
                         // Send update to clients except owner client
                         if (identity.IsSubscribedOrOwning(connectionId))
@@ -646,9 +649,9 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual void HandleClientCallFunction(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleClientCallFunction(MessageHandlerData messageHandler)
         {
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             FunctionReceivers receivers = (FunctionReceivers)reader.GetByte();
             long connectionId = -1;
             if (receivers == FunctionReceivers.Target)
@@ -663,7 +666,7 @@ namespace LiteNetLibManager
                     // There is no net function that player try to call (player may try to hack)
                     return;
                 }
-                if (!netFunction.CanCallByEveryone && messageHandler.connectionId != identity.ConnectionId)
+                if (!netFunction.CanCallByEveryone && messageHandler.ConnectionId != identity.ConnectionId)
                 {
                     // The function not allowed anyone except owner client to call this net function
                     // And the client is also not the owner client
@@ -687,9 +690,9 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual void HandleClientSendTransform(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleClientSendTransform(MessageHandlerData messageHandler)
         {
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             uint objectId = reader.GetPackedUInt();
             byte behaviourIndex = reader.GetByte();
             LiteNetLibIdentity identity;
@@ -701,16 +704,16 @@ namespace LiteNetLibManager
             }
         }
 
-        protected void HandleClientPing(LiteNetLibMessageHandler messageHandler)
+        protected void HandleClientPing(MessageHandlerData messageHandler)
         {
-            ServerSendPacket(messageHandler.connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, (writer) =>
+            ServerSendPacket(messageHandler.ConnectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, (writer) =>
             {
                 // Send server time
                 writer.PutPackedLong(ServerUnixTime);
             });
         }
 
-        protected virtual void HandleServerSpawnSceneObject(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerSpawnSceneObject(MessageHandlerData messageHandler)
         {
             ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
             if (!IsServer)
@@ -720,14 +723,14 @@ namespace LiteNetLibManager
             {
                 // If it is not server, read its initial data
                 if (!IsServer)
-                    identity.ReadInitialSyncFields(messageHandler.reader);
+                    identity.ReadInitialSyncFields(messageHandler.Reader);
                 // If it is host, it may hidden so show it
                 if (IsServer)
                     identity.OnServerSubscribingAdded();
             }
         }
 
-        protected virtual void HandleServerSpawnObject(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerSpawnObject(MessageHandlerData messageHandler)
         {
             ServerSpawnObjectMessage message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
             if (!IsServer)
@@ -737,14 +740,14 @@ namespace LiteNetLibManager
             {
                 // If it is not server, read its initial data
                 if (!IsServer)
-                    identity.ReadInitialSyncFields(messageHandler.reader);
+                    identity.ReadInitialSyncFields(messageHandler.Reader);
                 // If it is host, it may hidden so show it
                 if (IsServer)
                     identity.OnServerSubscribingAdded();
             }
         }
 
-        protected virtual void HandleServerDestroyObject(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerDestroyObject(MessageHandlerData messageHandler)
         {
             ServerDestroyObjectMessage message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
             if (!IsServer)
@@ -755,33 +758,33 @@ namespace LiteNetLibManager
                 identity.OnServerSubscribingRemoved();
         }
 
-        protected virtual void HandleServerInitialSyncField(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerInitialSyncField(MessageHandlerData messageHandler)
         {
             // Field updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncField(info, reader, true);
         }
 
-        protected virtual void HandleServerUpdateSyncField(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerUpdateSyncField(MessageHandlerData messageHandler)
         {
             // Field updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncField(info, reader, false);
         }
 
-        protected virtual void HandleServerCallFunction(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerCallFunction(MessageHandlerData messageHandler)
         {
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
@@ -791,24 +794,24 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual void HandleServerUpdateSyncList(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerUpdateSyncList(MessageHandlerData messageHandler)
         {
             // List updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncList(info, reader);
         }
 
-        protected virtual void HandleServerSyncBehaviour(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerSyncBehaviour(MessageHandlerData messageHandler)
         {
             // Behaviour sync from server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.reader;
+            NetDataReader reader = messageHandler.Reader;
             uint objectId = reader.GetPackedUInt();
             byte behaviourIndex = reader.GetByte();
             LiteNetLibIdentity identity;
@@ -816,14 +819,14 @@ namespace LiteNetLibManager
                 identity.ProcessSyncBehaviour(behaviourIndex, reader);
         }
 
-        protected virtual void HandleServerError(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerError(MessageHandlerData messageHandler)
         {
             // Error sent from server
             ServerErrorMessage message = messageHandler.ReadMessage<ServerErrorMessage>();
             OnServerError(message);
         }
 
-        protected virtual void HandleServerSceneChange(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerSceneChange(MessageHandlerData messageHandler)
         {
             // Received scene name from server
             ServerSceneChangeMessage message = messageHandler.ReadMessage<ServerSceneChangeMessage>();
@@ -856,19 +859,19 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual void HandleServerSetObjectOwner(LiteNetLibMessageHandler messageHandler)
+        protected virtual void HandleServerSetObjectOwner(MessageHandlerData messageHandler)
         {
             ServerSetObjectOwner message = messageHandler.ReadMessage<ServerSetObjectOwner>();
             if (!IsServer)
                 Assets.SetObjectOwner(message.objectId, message.connectionId);
         }
 
-        protected void HandleServerPing(LiteNetLibMessageHandler messageHandler)
+        protected void HandleServerPing(MessageHandlerData messageHandler)
         {
             isPinging = false;
             Rtt = Timestamp - pingTime;
             // Time offset = server time - current timestamp - rtt
-            ServerUnixTimeOffset = messageHandler.reader.GetPackedLong() - Timestamp - Rtt;
+            ServerUnixTimeOffset = messageHandler.Reader.GetPackedLong() - Timestamp - Rtt;
             if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerUnixTimeOffset: " + ServerUnixTimeOffset);
         }
         #endregion

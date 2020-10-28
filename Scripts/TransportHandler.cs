@@ -86,7 +86,7 @@ namespace LiteNetLibManager
             }
             if (!messageHandlers.ContainsKey(messageType))
                 return;
-            messageHandlers[messageType].Invoke(new LiteNetLibMessageHandler(messageType, this, connectionId, reader));
+            messageHandlers[messageType].Invoke(new MessageHandlerData(messageType, this, connectionId, reader));
         }
 
         protected void WritePacket(
@@ -111,7 +111,7 @@ namespace LiteNetLibManager
             lock (requestCallbacks)
             {
                 // Get response callback by request type
-                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, responseHandler, responseDelegate));
+                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, this, responseHandler, responseDelegate));
             }
             return ackId;
         }
@@ -161,7 +161,7 @@ namespace LiteNetLibManager
                 return;
             }
             // Invoke request and create response
-            requestHandlers[requestType].InvokeRequest(connectionId, reader, (responseCode, response, responseSerializer) =>
+            requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, ackId, this, connectionId, reader), (responseCode, response, responseSerializer) =>
             {
                 RequestProceeded(connectionId, ackId, responseCode, response, responseSerializer);
             });
