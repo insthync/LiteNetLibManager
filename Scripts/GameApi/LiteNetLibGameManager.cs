@@ -174,6 +174,11 @@ namespace LiteNetLibManager
                 {
                     Assets.Initialize();
                     if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.Initialize()");
+                    if (IsClient)
+                    {
+                        // If it is host (both client and server) wait for client connection id before proceed server scene load
+                        while (ClientConnectionId < 0) await UniTask.Yield();
+                    }
                     if (IsServer)
                     {
                         serverSceneName = sceneName;
@@ -186,11 +191,6 @@ namespace LiteNetLibManager
                     }
                     if (IsClient)
                     {
-                        while (ClientConnectionId < 0)
-                        {
-                            // Wait for client connection Id from server
-                            await UniTask.Yield();
-                        }
                         OnClientOnlineSceneLoaded();
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
                         SendClientReady();
@@ -532,7 +532,8 @@ namespace LiteNetLibManager
             if (responseCode == AckResponseCode.Success)
             {
                 ClientConnectionId = response.connectionId;
-                HandleServerSceneChange(response.serverSceneName);
+                if (!IsClientConnected)
+                    HandleServerSceneChange(response.serverSceneName);
             }
             else
             {
@@ -844,6 +845,7 @@ namespace LiteNetLibManager
                 if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
                 {
                     OnClientOnlineSceneLoaded();
+                    Debug.LogError(2);
                     SendClientReady();
                 }
                 return;
@@ -853,6 +855,7 @@ namespace LiteNetLibManager
             {
                 Assets.Initialize();
                 OnClientOnlineSceneLoaded();
+                Debug.LogError(3);
                 SendClientReady();
             }
             else
