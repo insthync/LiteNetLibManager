@@ -532,7 +532,7 @@ namespace LiteNetLibManager
             if (responseCode == AckResponseCode.Success)
             {
                 ClientConnectionId = response.connectionId;
-                if (!IsClientConnected)
+                if (!IsServer || !IsClientConnected)
                     HandleServerSceneChange(response.serverSceneName);
             }
             else
@@ -845,7 +845,6 @@ namespace LiteNetLibManager
                 if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
                 {
                     OnClientOnlineSceneLoaded();
-                    Debug.LogError(2);
                     SendClientReady();
                 }
                 return;
@@ -855,7 +854,6 @@ namespace LiteNetLibManager
             {
                 Assets.Initialize();
                 OnClientOnlineSceneLoaded();
-                Debug.LogError(3);
                 SendClientReady();
             }
             else
