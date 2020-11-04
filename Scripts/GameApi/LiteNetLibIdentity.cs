@@ -418,6 +418,7 @@ namespace LiteNetLibManager
             this.objectId = objectId;
             this.connectionId = connectionId;
             this.manager = manager;
+            Subscribers.Clear();
             destroyed = false;
             if (objectId > HighestObjectId)
                 HighestObjectId = objectId;
