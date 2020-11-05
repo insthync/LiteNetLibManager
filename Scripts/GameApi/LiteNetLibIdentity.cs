@@ -21,8 +21,6 @@ namespace LiteNetLibManager
         private string assetId;
         [LiteNetLibReadOnly, SerializeField]
         private uint objectId;
-        [LiteNetLibReadOnly, SerializeField]
-        private long connectionId;
 #if UNITY_EDITOR
         [LiteNetLibReadOnly, SerializeField]
         private List<long> subscriberIds = new List<long>();
@@ -31,7 +29,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This will be true when identity setup
         /// </summary>
-        private bool isSetupBehaviours;
+        public bool IsSetupBehaviours { get; private set; }
         /// <summary>
         /// List of sync fields from all behaviours (include children behaviours)
         /// </summary>
@@ -77,7 +75,7 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } }
-        public long ConnectionId { get { return connectionId; } internal set { connectionId = value; } }
+        public long ConnectionId { get; internal set; } = -1;
         public LiteNetLibGameManager Manager { get { return LiteNetLibGameManager.Instance; } }
 
         private string logTag;
@@ -114,7 +112,7 @@ namespace LiteNetLibManager
 
         public bool IsOwnerClient
         {
-            get { return Manager != null && Manager.ClientConnectionId == ConnectionId; }
+            get { return IsClient && Manager.ClientConnectionId >= 0 && ConnectionId >= 0 && Manager.ClientConnectionId == ConnectionId; }
         }
 
         public bool IsSceneObject
@@ -413,7 +411,7 @@ namespace LiteNetLibManager
         internal void Initial(bool isSceneObject, uint objectId = 0, long connectionId = -1)
         {
             this.objectId = objectId;
-            this.connectionId = connectionId;
+            ConnectionId = connectionId;
             Subscribers.Clear();
             destroyed = false;
             if (objectId > HighestObjectId)
@@ -422,7 +420,7 @@ namespace LiteNetLibManager
             if (!IsSceneObject)
                 AssignSceneObjectId();
 
-            if (!isSetupBehaviours)
+            if (!IsSetupBehaviours)
             {
                 // Setup behaviours index, we will use this as reference for network functions
                 // NOTE: Maximum network behaviour for a identity is 255 (included children)
@@ -435,7 +433,7 @@ namespace LiteNetLibManager
                     if (Behaviours[loopCounter].CanSyncBehaviour())
                         SyncBehaviours.Add(Behaviours[loopCounter]);
                 }
-                isSetupBehaviours = true;
+                IsSetupBehaviours = true;
             }
 
             // If this is host, hide it then will showing when rebuild subscribers
