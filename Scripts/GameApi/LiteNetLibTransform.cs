@@ -185,7 +185,11 @@ namespace LiteNetLibManager
             {
                 InitInterpResults(position, rotation);
                 Snap(position, rotation);
-                CallNetFunction(NetFunction_Teleport, FunctionReceivers.All, position, rotation);
+                // This function can be called before networked object spawned
+                // to set initial object transform, so it won't be able to call net function yet.
+                // So have to avoid net function calling by check is behaviours already setup or not.
+                if (Identity.IsSetupBehaviours)
+                    CallNetFunction(NetFunction_Teleport, FunctionReceivers.All, position, rotation);
             }
         }
 
