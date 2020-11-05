@@ -23,8 +23,6 @@ namespace LiteNetLibManager
         private uint objectId;
         [LiteNetLibReadOnly, SerializeField]
         private long connectionId;
-        [LiteNetLibReadOnly, SerializeField]
-        private LiteNetLibGameManager manager;
 #if UNITY_EDITOR
         [LiteNetLibReadOnly, SerializeField]
         private List<long> subscriberIds = new List<long>();
@@ -80,7 +78,7 @@ namespace LiteNetLibManager
         }
         public uint ObjectId { get { return objectId; } }
         public long ConnectionId { get { return connectionId; } internal set { connectionId = value; } }
-        public LiteNetLibGameManager Manager { get { return manager; } }
+        public LiteNetLibGameManager Manager { get { return LiteNetLibGameManager.Instance; } }
 
         private string logTag;
         public string LogTag
@@ -410,14 +408,12 @@ namespace LiteNetLibManager
         /// <summary>
         /// Initial Identity, will be called when spawned. If object id == 0, it will generate new object id
         /// </summary>
-        /// <param name="manager"></param>
         /// <param name="objectId"></param>
         /// <param name="connectionId"></param>
-        internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectionId = -1)
+        internal void Initial(bool isSceneObject, uint objectId = 0, long connectionId = -1)
         {
             this.objectId = objectId;
             this.connectionId = connectionId;
-            this.manager = manager;
             Subscribers.Clear();
             destroyed = false;
             if (objectId > HighestObjectId)
