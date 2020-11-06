@@ -412,7 +412,6 @@ namespace LiteNetLibManager
         {
             this.objectId = objectId;
             ConnectionId = connectionId;
-            Subscribers.Clear();
             destroyed = false;
             if (objectId > HighestObjectId)
                 HighestObjectId = objectId;
@@ -616,7 +615,7 @@ namespace LiteNetLibManager
         public void RebuildSubscribers(bool initialize)
         {
             // Only server can manage subscribers
-            if (!IsServer)
+            if (!IsServer || !IsSetupBehaviours)
                 return;
 
             LiteNetLibPlayer ownerPlayer = Player;
@@ -748,6 +747,10 @@ namespace LiteNetLibManager
             if (!destroyed)
             {
                 Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
+                Subscribers.Clear();
+#if UNITY_EDITOR
+                subscriberIds.Clear();
+#endif
                 destroyed = true;
             }
         }

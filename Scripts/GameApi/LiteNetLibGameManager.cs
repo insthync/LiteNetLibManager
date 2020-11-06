@@ -354,16 +354,6 @@ namespace LiteNetLibManager
             ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping);
         }
 
-        public void SendServerSpawnSceneObject(LiteNetLibIdentity identity)
-        {
-            if (!IsServer)
-                return;
-            foreach (long connectionId in ConnectionIds)
-            {
-                SendServerSpawnSceneObject(connectionId, identity);
-            }
-        }
-
         public void SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
         {
             if (!IsServer)
@@ -377,16 +367,6 @@ namespace LiteNetLibManager
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message, identity.WriteInitialSyncFields);
-        }
-
-        public void SendServerSpawnObject(LiteNetLibIdentity identity)
-        {
-            if (!IsServer)
-                return;
-            foreach (long connectionId in ConnectionIds)
-            {
-                SendServerSpawnObject(connectionId, identity);
-            }
         }
 
         public void SendServerSpawnObject(long connectionId, LiteNetLibIdentity identity)
@@ -416,16 +396,6 @@ namespace LiteNetLibManager
                 SendServerSpawnObject(connectionId, identity);
             identity.SendInitSyncFields(connectionId);
             identity.SendInitSyncLists(connectionId);
-        }
-
-        public void SendServerDestroyObject(uint objectId, byte reasons)
-        {
-            if (!IsServer)
-                return;
-            foreach (long connectionId in ConnectionIds)
-            {
-                SendServerDestroyObject(connectionId, objectId, reasons);
-            }
         }
 
         public void SendServerDestroyObject(long connectionId, uint objectId, byte reasons)
@@ -483,16 +453,6 @@ namespace LiteNetLibManager
             ServerSceneChangeMessage message = new ServerSceneChangeMessage();
             message.serverSceneName = sceneName;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
-        }
-
-        public void SendServerSetObjectOwner(uint objectId, long ownerConnectionId)
-        {
-            if (!IsServer)
-                return;
-            foreach (long connectionId in ConnectionIds)
-            {
-                SendServerSetObjectOwner(connectionId, objectId, ownerConnectionId);
-            }
         }
 
         public void SendServerSetObjectOwner(long connectionId, uint objectId, long ownerConnectionId)
@@ -755,13 +715,11 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerDestroyObject(MessageHandlerData messageHandler)
         {
+            // Object owner was destroyed, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
             ServerDestroyObjectMessage message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
-            if (!IsServer)
-                Assets.NetworkDestroy(message.objectId, message.reasons);
-            // If this is host and reasons is removed from subscribing so hide it, don't destroy it
-            LiteNetLibIdentity identity;
-            if (IsServer && message.reasons == DestroyObjectReasons.RemovedFromSubscribing && Assets.TryGetSpawnedObject(message.objectId, out identity))
-                identity.OnServerSubscribingRemoved();
+            Assets.NetworkDestroy(message.objectId, message.reasons);
         }
 
         protected virtual void HandleServerInitialSyncField(MessageHandlerData messageHandler)
@@ -867,9 +825,11 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSetObjectOwner(MessageHandlerData messageHandler)
         {
+            // Object owner was set at server, if this is host (client and server) then skip it.
+            if (IsServer)
+                return;
             ServerSetObjectOwner message = messageHandler.ReadMessage<ServerSetObjectOwner>();
-            if (!IsServer)
-                Assets.SetObjectOwner(message.objectId, message.connectionId);
+            Assets.SetObjectOwner(message.objectId, message.connectionId);
         }
 
         protected void HandleServerPing(MessageHandlerData messageHandler)

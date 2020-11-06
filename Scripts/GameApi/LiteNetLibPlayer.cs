@@ -27,9 +27,12 @@ namespace LiteNetLibManager
         internal void RemoveSubscribing(LiteNetLibIdentity identity, bool destroyObjectsOnPeer)
         {
             SubscribingObjects.Remove(identity);
-
             if (destroyObjectsOnPeer)
+            {
+                if (Manager.IsClientConnected && Manager.ClientConnectionId == identity.ConnectionId)
+                    identity.OnServerSubscribingRemoved();
                 Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
+            }
         }
 
         internal void ClearSubscribing(bool destroyObjectsOnPeer)
@@ -41,7 +44,11 @@ namespace LiteNetLibManager
                 // because it's going to clear in this function
                 identity.RemoveSubscriber(this, false);
                 if (destroyObjectsOnPeer)
+                {
+                    if (Manager.IsClientConnected && Manager.ClientConnectionId == identity.ConnectionId)
+                        identity.OnServerSubscribingRemoved();
                     Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
+                }
             }
             SubscribingObjects.Clear();
         }

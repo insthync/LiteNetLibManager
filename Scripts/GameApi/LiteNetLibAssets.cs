@@ -259,6 +259,14 @@ namespace LiteNetLibManager
             LiteNetLibIdentity spawnedObject;
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
             {
+                // If this is server, send message to clients to destroy object
+                if (Manager.IsServer)
+                {
+                    foreach (LiteNetLibPlayer subscriber in spawnedObject.Subscribers.Values)
+                    {
+                        Manager.SendServerDestroyObject(subscriber.ConnectionId, objectId, DestroyObjectReasons.RequestedToDestroy);
+                    }
+                }
                 // Remove from player spawned objects dictionary
                 LiteNetLibPlayer player;
                 if (Manager.TryGetPlayer(spawnedObject.ConnectionId, out player))
@@ -273,9 +281,6 @@ namespace LiteNetLibManager
                     spawnedObject.gameObject.SetActive(false);
                 else
                     Destroy(spawnedObject.gameObject);
-                // If this is server, send message to clients to destroy object
-                if (Manager.IsServer)
-                    Manager.SendServerDestroyObject(objectId, reasons);
                 return true;
             }
             else if (Manager.LogWarn)
@@ -293,6 +298,17 @@ namespace LiteNetLibManager
             LiteNetLibIdentity spawnedObject;
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
             {
+                // If this is server, send message to clients to set object owner
+                if (Manager.IsServer)
+                {
+                    foreach (LiteNetLibPlayer subscriber in spawnedObject.Subscribers.Values)
+                    {
+                        if (subscriber.ConnectionId == connectionId)
+                            continue;
+                        Manager.SendServerSetObjectOwner(subscriber.ConnectionId, objectId, connectionId);
+                    }
+                    Manager.SendServerSetObjectOwner(connectionId, objectId, connectionId);
+                }
                 // Remove from player spawned objects dictionary and add to target connection id
                 LiteNetLibPlayer playerA;
                 LiteNetLibPlayer playerB;
@@ -306,9 +322,6 @@ namespace LiteNetLibManager
                 spawnedObject.ConnectionId = connectionId;
                 // Call set owner client event
                 spawnedObject.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
-                // If this is server, send message to clients to set object owner
-                if (Manager.IsServer)
-                    Manager.SendServerSetObjectOwner(objectId, connectionId);
                 return true;
             }
             else if (Manager.LogWarn)
