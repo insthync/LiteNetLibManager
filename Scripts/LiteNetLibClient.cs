@@ -8,7 +8,8 @@ namespace LiteNetLibManager
     {
         public LiteNetLibManager Manager { get; protected set; }
         public override string LogTag { get { return $"{(Manager == null ? "(No Manager)" : Manager.LogTag)}->LiteNetLibClient"; } }
-        public override bool IsNetworkActive { get { return Transport.IsClientStarted(); } }
+        private bool isNetworkActive;
+        public override bool IsNetworkActive { get { return isNetworkActive; } }
 
         public LiteNetLibClient(LiteNetLibManager manager) : base(manager.Transport)
         {
@@ -41,12 +42,13 @@ namespace LiteNetLibManager
             // Reset acks
             requestCallbacks.Clear();
             nextAckId = 1;
-            return Transport.StartClient(address, port);
+            return isNetworkActive = Transport.StartClient(address, port);
         }
 
         public void StopClient()
         {
             Transport.StopClient();
+            isNetworkActive = false;
         }
 
         public virtual void OnClientReceive(TransportEventData eventData)

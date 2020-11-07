@@ -8,7 +8,8 @@ namespace LiteNetLibManager
     {
         public LiteNetLibManager Manager { get; protected set; }
         public override string LogTag { get { return $"{(Manager == null ? "(No Manager)" : Manager.LogTag)}->LiteNetLibServer"; } }
-        public override bool IsNetworkActive { get { return Transport.IsServerStarted(); } }
+        private bool isNetworkActive;
+        public override bool IsNetworkActive { get { return isNetworkActive; } }
         public int ServerPort { get; protected set; }
 
         public LiteNetLibServer(LiteNetLibManager manager) : base(manager.Transport)
@@ -43,13 +44,14 @@ namespace LiteNetLibManager
             requestCallbacks.Clear();
             nextAckId = 1;
             ServerPort = port;
-            return Transport.StartServer(port, maxConnections);
+            return isNetworkActive = Transport.StartServer(port, maxConnections);
         }
 
         public void StopServer()
         {
             Transport.StopServer();
             ServerPort = 0;
+            isNetworkActive = false;
         }
 
         public virtual void OnServerReceive(TransportEventData eventData)
