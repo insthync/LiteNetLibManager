@@ -468,7 +468,7 @@ namespace LiteNetLibManager
 
         #region Message Handlers
 
-        protected virtual UniTaskVoid HandleEnterGameRequest(
+        protected virtual async UniTaskVoid HandleEnterGameRequest(
             RequestHandlerData requestHandler,
             EnterGameRequestMessage request,
             RequestProceedResultDelegate<EnterGameResponseMessage> result)
@@ -476,14 +476,13 @@ namespace LiteNetLibManager
             AckResponseCode responseCode = AckResponseCode.Error;
             EnterGameResponseMessage response = new EnterGameResponseMessage();
             if (request.packetVersion == PacketVersion() &&
-                DeserializeEnterGameData(requestHandler.ConnectionId, requestHandler.Reader))
+                await DeserializeEnterGameData(requestHandler.ConnectionId, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
                 response.connectionId = requestHandler.ConnectionId;
                 response.serverSceneName = ServerSceneName;
             }
             result.Invoke(responseCode, response);
-            return default;
         }
 
         protected virtual UniTaskVoid HandleEnterGameResponse(
@@ -505,18 +504,17 @@ namespace LiteNetLibManager
             return default;
         }
 
-        protected virtual UniTaskVoid HandleClientReadyRequest(
+        protected virtual async UniTaskVoid HandleClientReadyRequest(
             RequestHandlerData requestHandler,
             EmptyMessage request,
             RequestProceedResultDelegate<EmptyMessage> result)
         {
             AckResponseCode responseCode = AckResponseCode.Error;
-            if (SetPlayerReady(requestHandler.ConnectionId, requestHandler.Reader))
+            if (await SetPlayerReady(requestHandler.ConnectionId, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
             }
             result.Invoke(responseCode, new EmptyMessage());
-            return default;
         }
 
         protected virtual UniTaskVoid HandleClientReadyResponse(
@@ -846,7 +844,10 @@ namespace LiteNetLibManager
         /// Overrride this function to send custom data when send enter game message
         /// </summary>
         /// <param name="writer"></param>
-        public virtual void SerializeEnterGameData(NetDataWriter writer) { }
+        public virtual void SerializeEnterGameData(NetDataWriter writer)
+        {
+
+        }
 
         /// <summary>
         /// Override this function to read custom data that come with enter game message
@@ -854,13 +855,19 @@ namespace LiteNetLibManager
         /// <param name="connectionId"></param>
         /// <param name="reader"></param>
         /// <returns>Return `true` if allow player to enter game.</returns>
-        public virtual bool DeserializeEnterGameData(long connectionId, NetDataReader reader) { return true; }
-
+        public virtual async UniTask<bool> DeserializeEnterGameData(long connectionId, NetDataReader reader)
+        {
+            await UniTask.Yield();
+            return true;
+        }
         /// <summary>
         /// Overrride this function to send custom data when send client ready message
         /// </summary>
         /// <param name="writer"></param>
-        public virtual void SerializeClientReadyData(NetDataWriter writer) { }
+        public virtual void SerializeClientReadyData(NetDataWriter writer)
+        {
+
+        }
 
         /// <summary>
         /// Override this function to read custom data that come with client ready message
@@ -869,17 +876,27 @@ namespace LiteNetLibManager
         /// <param name="connectionId"></param>
         /// <param name="reader"></param>
         /// <returns>Return `true` if player is ready to play.</returns>
-        public virtual bool DeserializeClientReadyData(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader) { return true; }
+        public virtual async UniTask<bool> DeserializeClientReadyData(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader)
+        {
+            await UniTask.Yield();
+            return true;
+        }
 
         /// <summary>
         /// Override this function to do anything after online scene loaded at server side
         /// </summary>
-        public virtual void OnServerOnlineSceneLoaded() { }
+        public virtual void OnServerOnlineSceneLoaded()
+        {
+
+        }
 
         /// <summary>
         /// Override this function to do anything after online scene loaded at client side
         /// </summary>
-        public virtual void OnClientOnlineSceneLoaded() { }
+        public virtual void OnClientOnlineSceneLoaded()
+        {
+
+        }
 
         /// <summary>
         /// Override this function to show error message / disconnect
@@ -891,7 +908,7 @@ namespace LiteNetLibManager
                 StopClient();
         }
 
-        public virtual bool SetPlayerReady(long connectionId, NetDataReader reader)
+        public virtual async UniTask<bool> SetPlayerReady(long connectionId, NetDataReader reader)
         {
             if (!IsServer)
                 return false;
@@ -901,7 +918,7 @@ namespace LiteNetLibManager
                 return false;
 
             player.IsReady = true;
-            if (!DeserializeClientReadyData(SpawnPlayer(connectionId), connectionId, reader))
+            if (!await DeserializeClientReadyData(SpawnPlayer(connectionId), connectionId, reader))
             {
                 player.IsReady = false;
                 return false;
