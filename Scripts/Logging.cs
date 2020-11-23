@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Cysharp.Threading.Tasks;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,88 +14,78 @@ namespace LiteNetLibManager
         {
             if (message == null)
                 return;
-#if UNITY_EDITOR
-            Debug.Log("[" + tag + "] " + message.ToString());
-#endif
-            if (onLog != null)
-                onLog.Invoke(LogType.Log, tag, message.ToString());
+            InvokeOnLog(LogType.Log, tag, message.ToString()).Forget();
         }
 
         public static void LogError(string tag, object message)
         {
             if (message == null)
                 return;
-#if UNITY_EDITOR
-            Debug.LogError("[" + tag + "] " + message.ToString());
-#endif
-            if (onLog != null)
-                onLog.Invoke(LogType.Log, tag, message.ToString());
+            InvokeOnLog(LogType.Error, tag, message.ToString()).Forget();
         }
 
         public static void LogWarning(string tag, object message)
         {
             if (message == null)
                 return;
-#if UNITY_EDITOR
-            Debug.LogWarning("[" + tag + "] " + message.ToString());
-#endif
-            if (onLog != null)
-                onLog.Invoke(LogType.Warning, tag, message.ToString());
+            InvokeOnLog(LogType.Warning, tag, message.ToString()).Forget();
         }
 
         public static void LogException(string tag, System.Exception ex)
         {
             if (ex == null)
                 return;
-#if UNITY_EDITOR
-            Debug.LogException(ex);
-#endif
-            if (onLog != null)
-                onLog.Invoke(LogType.Exception, tag, ex.ToString());
+            InvokeOnLog(LogType.Exception, tag, ex.ToString()).Forget();
         }
 
         public static void Log(object message)
         {
             if (message == null)
                 return;
-#if UNITY_EDITOR
-            Debug.Log(message);
-#endif
-            if (onLog != null)
-                onLog.Invoke(LogType.Log, NoTag, message.ToString());
+            InvokeOnLog(LogType.Log, NoTag, message.ToString()).Forget();
         }
 
         public static void LogError(object message)
         {
             if (message == null)
                 return;
-#if UNITY_EDITOR
-            Debug.LogError(message);
-#endif
-            if (onLog != null)
-                onLog.Invoke(LogType.Error, NoTag, message.ToString());
+            InvokeOnLog(LogType.Error, NoTag, message.ToString()).Forget();
         }
 
         public static void LogWarning(object message)
         {
             if (message == null)
                 return;
-#if UNITY_EDITOR
-            Debug.LogWarning(message);
-#endif
-            if (onLog != null)
-                onLog.Invoke(LogType.Warning, NoTag, message.ToString());
+            InvokeOnLog(LogType.Warning, NoTag, message.ToString()).Forget();
         }
 
         public static void LogException(System.Exception ex)
         {
             if (ex == null)
                 return;
+            InvokeOnLog(LogType.Exception, NoTag, ex.ToString()).Forget();
+        }
+
+        private static async UniTaskVoid InvokeOnLog(LogType logType, string tag, string text)
+        {
+            await UniTask.SwitchToMainThread();
 #if UNITY_EDITOR
-            Debug.LogException(ex);
+            switch (logType)
+            {
+                case LogType.Log:
+                    Debug.Log(text);
+                    break;
+                case LogType.Error:
+                case LogType.Exception:
+                    Debug.LogError(text);
+                    break;
+                case LogType.Warning:
+                    Debug.LogWarning(text);
+                    break;
+            }
 #endif
             if (onLog != null)
-                onLog.Invoke(LogType.Exception, NoTag, ex.ToString());
+                onLog.Invoke(logType, tag, text);
         }
     }
 }
