@@ -203,42 +203,46 @@ namespace LiteNetLibManager
             GameObject prefab;
             if (ThisIsAPrefab())
             {
-                // This is a prefab
+                // This is a prefab, can create prefab while playing so it will still assign asset ID and reset object ID
                 AssignAssetID(gameObject);
                 objectId = 0;
             }
             else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out prefab))
             {
-                // This is a scene object with prefab link
-                AssignAssetID(prefab);
-                if (gameObject.scene == SceneManager.GetActiveScene())
+                if (!Application.isPlaying)
                 {
-                    // Assign object id if it is in scene
-                    AssignSceneObjectId();
-                    if (!Application.isPlaying)
+                    // This is a scene object with prefab link
+                    AssignAssetID(prefab);
+                    if (gameObject.scene == SceneManager.GetActiveScene())
+                    {
+                        // Assign object id if it is in scene
+                        AssignSceneObjectId();
                         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-                }
-                else
-                {
-                    // Difference working scene?, clear object Id
-                    objectId = 0;
+                    }
+                    else
+                    {
+                        // Difference working scene?, clear object Id
+                        objectId = 0;
+                    }
                 }
             }
             else
             {
-                // This is a pure scene object (Not a prefab)
-                assetId = string.Empty;
-                if (gameObject.scene == SceneManager.GetActiveScene())
+                if (!Application.isPlaying)
                 {
-                    // Assign object id if it is in scene
-                    AssignSceneObjectId();
-                    if (!Application.isPlaying)
+                    // This is a pure scene object (Not a prefab)
+                    assetId = string.Empty;
+                    if (gameObject.scene == SceneManager.GetActiveScene())
+                    {
+                        // Assign object id if it is in scene
+                        AssignSceneObjectId();
                         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-                }
-                else
-                {
-                    // Difference working scene?, clear object Id
-                    objectId = 0;
+                    }
+                    else
+                    {
+                        // Difference working scene?, clear object Id
+                        objectId = 0;
+                    }
                 }
             }
             // Do not mark dirty while playing
