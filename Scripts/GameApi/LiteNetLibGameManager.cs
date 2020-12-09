@@ -50,13 +50,11 @@ namespace LiteNetLibManager
             }
         }
 
-        public static LiteNetLibGameManager Instance { get; private set; }
         public LiteNetLibAssets Assets { get; private set; }
 
         protected override void Awake()
         {
             base.Awake();
-            Instance = this;
             Assets = GetComponent<LiteNetLibAssets>();
             serverSceneName = string.Empty;
             if (doNotDestroyOnSceneChanges)

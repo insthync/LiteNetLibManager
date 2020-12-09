@@ -167,7 +167,7 @@ namespace LiteNetLibManager
             if (SceneObjects.TryGetValue(objectId, out sceneObject))
             {
                 sceneObject.gameObject.SetActive(true);
-                sceneObject.Initial(true, objectId, connectionId);
+                sceneObject.Initial(Manager, true, objectId, connectionId);
                 sceneObject.InitTransform(position, rotation);
                 sceneObject.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
                 if (Manager.IsServer)
@@ -200,7 +200,7 @@ namespace LiteNetLibManager
             }
 
             identity.gameObject.SetActive(true);
-            identity.Initial(false, objectId, connectionId);
+            identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(gameObject.transform.position, gameObject.transform.rotation);
             identity.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (onObjectSpawn != null)

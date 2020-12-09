@@ -76,7 +76,7 @@ namespace LiteNetLibManager
         }
         public uint ObjectId { get { return objectId; } }
         public long ConnectionId { get; internal set; } = -1;
-        public LiteNetLibGameManager Manager { get { return LiteNetLibGameManager.Instance; } }
+        public LiteNetLibGameManager Manager { get; internal set; }
 
         private string logTag;
         public string LogTag
@@ -412,9 +412,10 @@ namespace LiteNetLibManager
         /// </summary>
         /// <param name="objectId"></param>
         /// <param name="connectionId"></param>
-        internal void Initial(bool isSceneObject, uint objectId = 0, long connectionId = -1)
+        internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectionId = -1)
         {
             this.objectId = objectId;
+            Manager = manager;
             ConnectionId = connectionId;
             destroyed = false;
             if (objectId > HighestObjectId)
