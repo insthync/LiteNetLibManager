@@ -49,7 +49,7 @@ namespace LiteNetLibManager
             get { return transportFactory; }
         }
 
-        private OfflineTransport offlineTransport;
+        private OfflineTransport offlineTransport = new OfflineTransport();
         private ITransport transport;
         public ITransport Transport
         {
@@ -78,10 +78,15 @@ namespace LiteNetLibManager
 
         protected virtual void Awake()
         {
+            InitTransportAndHandlers();
+        }
+
+        protected void InitTransportAndHandlers()
+        {
 #if UNITY_WEBGL && !UNITY_EDITOR
-                // Force to use websocket transport if it's running as webgl
-                if (transportFactory == null || !transportFactory.CanUseWithWebGL)
-                    transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+            // Force to use websocket transport if it's running as webgl
+            if (transportFactory == null || !transportFactory.CanUseWithWebGL)
+                transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
 #else
             if (useWebSocket)
             {
@@ -95,15 +100,9 @@ namespace LiteNetLibManager
             }
 #endif
             transport = TransportFactory.Build();
-
-            if (offlineTransport == null)
-                offlineTransport = new OfflineTransport();
-
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
         }
-
-        protected virtual void Start() { }
 
         protected virtual void LateUpdate()
         {
