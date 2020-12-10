@@ -20,14 +20,12 @@ namespace LiteNetLibManager
 
         private float tempDeltaTime;
         private float sendPingCountDown;
-        private string serverSceneName;
         private AsyncOperation loadSceneAsyncOperation;
         private bool isPinging;
         private long pingTime;
 
         public long ClientConnectionId { get; protected set; }
-
-        public long Rtt { get; private set; }
+        public long Rtt { get; protected set; }
         public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); } }
         public long ServerUnixTimeOffset { get; protected set; }
         public long ServerUnixTime
@@ -39,24 +37,14 @@ namespace LiteNetLibManager
                 return Timestamp + ServerUnixTimeOffset;
             }
         }
-
-        public string ServerSceneName
-        {
-            get
-            {
-                if (IsServer)
-                    return serverSceneName;
-                return string.Empty;
-            }
-        }
-
-        public LiteNetLibAssets Assets { get; private set; }
+        public string ServerSceneName { get; protected set; }
+        public LiteNetLibAssets Assets { get; protected set; }
 
         protected override void Awake()
         {
             base.Awake();
             Assets = GetComponent<LiteNetLibAssets>();
-            serverSceneName = string.Empty;
+            ServerSceneName = string.Empty;
             if (doNotDestroyOnSceneChanges)
                 DontDestroyOnLoad(gameObject);
         }
@@ -181,7 +169,7 @@ namespace LiteNetLibManager
                     }
                     if (IsServer)
                     {
-                        serverSceneName = sceneName;
+                        ServerSceneName = sceneName;
                         Assets.SpawnSceneObjects();
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
                         OnServerOnlineSceneLoaded();
@@ -283,14 +271,14 @@ namespace LiteNetLibManager
             Rtt = 0;
             if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
             {
-                serverSceneName = SceneManager.GetActiveScene().name;
+                ServerSceneName = SceneManager.GetActiveScene().name;
                 Assets.Initialize();
                 Assets.SpawnSceneObjects();
                 OnServerOnlineSceneLoaded();
             }
             else
             {
-                serverSceneName = Assets.onlineScene.SceneName;
+                ServerSceneName = Assets.onlineScene.SceneName;
                 LoadSceneRoutine(Assets.onlineScene.SceneName, true).Forget();
             }
         }
@@ -298,6 +286,7 @@ namespace LiteNetLibManager
         public override void OnStopServer()
         {
             base.OnStopServer();
+            ServerSceneName = string.Empty;
             Players.Clear();
             Assets.Clear();
             if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
