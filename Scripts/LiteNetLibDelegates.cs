@@ -7,10 +7,10 @@ namespace LiteNetLibManager
     public delegate void RequestProceedResultDelegate<TResponse>(AckResponseCode responseCode, TResponse response, SerializerDelegate responseExtraSerializer = null)
         where TResponse : INetSerializable;
     public delegate UniTaskVoid RequestDelegate<TRequest, TResponse>(RequestHandlerData requestHandler, TRequest request, RequestProceedResultDelegate<TResponse> responseProceedResult)
-        where TRequest : INetSerializable, new()
-        where TResponse : INetSerializable, new();
+        where TRequest : INetSerializable
+        where TResponse : INetSerializable;
     public delegate UniTaskVoid ResponseDelegate<TResponse>(ResponseHandlerData requestHandler, AckResponseCode responseCode, TResponse response)
-        where TResponse : INetSerializable, new();
+        where TResponse : INetSerializable;
     public delegate void ResponseDelegate(ResponseHandlerData requestHandler, AckResponseCode responseCode, INetSerializable response);
     public delegate void SerializerDelegate(NetDataWriter writer);
     public delegate void NetFunctionDelegate();

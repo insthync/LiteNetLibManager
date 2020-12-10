@@ -301,6 +301,28 @@ namespace LiteNetLibManager
         {
             return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, responseDelegate);
         }
+
+        public bool ClientSendRequest<TRequest, TResponse>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ResponseDelegate<TResponse> responseDelegate = null)
+            where TRequest : INetSerializable
+            where TResponse : INetSerializable
+        {
+            return Client.SendRequest(requestType, request, extraRequestSerializer, duration, (requestHandler, responseCode, response) =>
+            {
+                if (responseDelegate != null)
+                    responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+            });
+        }
+
+        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ResponseDelegate<TResponse> responseDelegate = null)
+            where TRequest : INetSerializable
+            where TResponse : INetSerializable
+        {
+            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, (requestHandler, responseCode, response) =>
+            {
+                if (responseDelegate != null)
+                    responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+            });
+        }
         #endregion
 
         #region Relates components functions
