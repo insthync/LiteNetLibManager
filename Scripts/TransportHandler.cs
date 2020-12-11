@@ -157,6 +157,7 @@ namespace LiteNetLibManager
             if (!requestHandlers.ContainsKey(requestType))
             {
                 // No request-response handler
+                RequestProceeded(connectionId, ackId, AckResponseCode.Unimplemented, new EmptyMessage(), null);
                 Logging.LogError($"Cannot proceed request {requestType} not registered.");
                 return;
             }
