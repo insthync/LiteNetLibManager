@@ -11,7 +11,7 @@ namespace LiteNetLibManager
         where TResponse : INetSerializable;
     public delegate UniTaskVoid ResponseDelegate<TResponse>(ResponseHandlerData requestHandler, AckResponseCode responseCode, TResponse response)
         where TResponse : INetSerializable;
-    public delegate void ResponseDelegate(ResponseHandlerData requestHandler, AckResponseCode responseCode, INetSerializable response);
+    public delegate UniTaskVoid ResponseDelegate(ResponseHandlerData requestHandler, AckResponseCode responseCode, INetSerializable response);
     public delegate void SerializerDelegate(NetDataWriter writer);
     public delegate void NetFunctionDelegate();
     public delegate void NetFunctionDelegate<T1>(T1 param1);

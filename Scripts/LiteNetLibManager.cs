@@ -309,7 +309,12 @@ namespace LiteNetLibManager
             return Client.SendRequest(requestType, request, extraRequestSerializer, duration, (requestHandler, responseCode, response) =>
             {
                 if (responseDelegate != null)
-                    responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+                {
+                    if (responseCode == AckResponseCode.Unimplemented)
+                        return responseDelegate.Invoke(requestHandler, responseCode, default(TResponse));
+                    return responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+                }
+                return default;
             });
         }
 
@@ -320,7 +325,12 @@ namespace LiteNetLibManager
             return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, (requestHandler, responseCode, response) =>
             {
                 if (responseDelegate != null)
-                    responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+                {
+                    if (responseCode == AckResponseCode.Unimplemented)
+                        return responseDelegate.Invoke(requestHandler, responseCode, default(TResponse));
+                    return responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+                }
+                return default;
             });
         }
         #endregion
