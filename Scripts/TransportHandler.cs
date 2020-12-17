@@ -1,6 +1,8 @@
-﻿using LiteNetLib;
+﻿using Cysharp.Threading.Tasks;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace LiteNetLibManager
@@ -17,7 +19,7 @@ namespace LiteNetLibManager
         protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
         protected readonly Dictionary<ushort, LiteNetLibRequestHandler> requestHandlers = new Dictionary<ushort, LiteNetLibRequestHandler>();
         protected readonly Dictionary<ushort, LiteNetLibResponseHandler> responseHandlers = new Dictionary<ushort, LiteNetLibResponseHandler>();
-        protected readonly Dictionary<uint, LiteNetLibRequestCallback> requestCallbacks = new Dictionary<uint, LiteNetLibRequestCallback>();
+        protected readonly ConcurrentDictionary<uint, LiteNetLibRequestCallback> requestCallbacks = new ConcurrentDictionary<uint, LiteNetLibRequestCallback>();
         protected uint nextAckId = 1;
         protected TransportEventData tempEventData;
 
@@ -49,26 +51,6 @@ namespace LiteNetLibManager
             RequestResponseEnabled = false;
             RequestMessageType = 0;
             ResponseMessageType = 0;
-        }
-
-        public virtual void Update()
-        {
-            if (!IsNetworkActive)
-                return;
-            if (RequestsCount > 0)
-            {
-                List<uint> ackIds = new List<uint>(requestCallbacks.Keys);
-                foreach (uint ackId in ackIds)
-                {
-                    if (requestCallbacks[ackId].ResponseTimeout())
-                    {
-                        lock (requestCallbacks)
-                        {
-                            requestCallbacks.Remove(ackId);
-                        }
-                    }
-                }
-            }
         }
 
         protected void ReadPacket(long connectionId, NetDataReader reader)
@@ -104,16 +86,22 @@ namespace LiteNetLibManager
 
         private uint CreateRequest(
             LiteNetLibResponseHandler responseHandler,
-            long duration,
+            int millisecondsTimeout,
             ResponseDelegate responseDelegate)
         {
             uint ackId = nextAckId++;
-            lock (requestCallbacks)
-            {
-                // Get response callback by request type
-                requestCallbacks.Add(ackId, new LiteNetLibRequestCallback(ackId, duration, this, responseHandler, responseDelegate));
-            }
+            // Get response callback by request type
+            requestCallbacks.TryAdd(ackId, new LiteNetLibRequestCallback(ackId, this, responseHandler, responseDelegate));
+            RequestTimeout(ackId, millisecondsTimeout).Forget();
             return ackId;
+        }
+
+        private async UniTaskVoid RequestTimeout(uint ackId, int millisecondsTimeout)
+        {
+            await UniTask.Delay(millisecondsTimeout);
+            LiteNetLibRequestCallback callback;
+            if (requestCallbacks.TryRemove(ackId, out callback))
+                callback.ResponseTimeout();
         }
 
         protected bool CreateAndWriteRequest<TRequest>(
@@ -121,7 +109,7 @@ namespace LiteNetLibManager
             ushort requestType,
             TRequest request,
             SerializerDelegate extraRequestSerializer,
-            long duration,
+            int millisecondsTimeout,
             ResponseDelegate responseDelegate)
             where TRequest : INetSerializable
         {
@@ -136,7 +124,7 @@ namespace LiteNetLibManager
                 return false;
             }
             // Create request
-            uint ackId = CreateRequest(responseHandlers[requestType], duration, responseDelegate);
+            uint ackId = CreateRequest(responseHandlers[requestType], millisecondsTimeout, responseDelegate);
             // Write request
             writer.Reset();
             writer.PutPackedUShort(RequestMessageType);
@@ -189,10 +177,7 @@ namespace LiteNetLibManager
             if (requestCallbacks.ContainsKey(ackId))
             {
                 requestCallbacks[ackId].Response(connectionId, reader, responseCode);
-                lock (requestCallbacks)
-                {
-                    requestCallbacks.Remove(ackId);
-                }
+                requestCallbacks.TryRemove(ackId, out _);
             }
         }
 

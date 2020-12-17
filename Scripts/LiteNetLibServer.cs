@@ -22,11 +22,10 @@ namespace LiteNetLibManager
 
         }
 
-        public override void Update()
+        public void Update()
         {
             if (!IsNetworkActive)
                 return;
-            base.Update();
             while (Transport.ServerReceive(out tempEventData))
             {
                 OnServerReceive(tempEventData);
@@ -89,10 +88,10 @@ namespace LiteNetLibManager
             SendMessage(connectionId, deliveryMethod, writer);
         }
 
-        public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ResponseDelegate responseDelegate = null)
+        public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate responseDelegate = null)
             where TRequest : INetSerializable
         {
-            if (!CreateAndWriteRequest(writer, requestType, request, extraRequestSerializer, duration, responseDelegate))
+            if (!CreateAndWriteRequest(writer, requestType, request, extraRequestSerializer, millisecondsTimeout, responseDelegate))
                 return false;
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
             return true;

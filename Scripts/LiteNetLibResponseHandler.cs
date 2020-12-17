@@ -23,8 +23,12 @@ namespace LiteNetLibManager
         internal override void InvokeResponse(ResponseHandlerData responseHandler, AckResponseCode responseCode, ResponseDelegate responseDelegate)
         {
             TResponse response = new TResponse();
-            if (responseHandler.Reader != null)
-                response.Deserialize(responseHandler.Reader);
+            if (responseCode != AckResponseCode.Timeout &&
+                responseCode != AckResponseCode.Unimplemented)
+            {
+                if (responseHandler.Reader != null)
+                    response.Deserialize(responseHandler.Reader);
+            }
             if (registeredDelegate != null)
                 registeredDelegate.Invoke(responseHandler, responseCode, response);
             if (responseDelegate != null)

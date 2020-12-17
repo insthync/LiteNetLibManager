@@ -290,46 +290,38 @@ namespace LiteNetLibManager
             ServerSendPacket(connectionId, options, msgType, null);
         }
 
-        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ResponseDelegate responseDelegate = null)
+        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate responseDelegate = null)
             where TRequest : INetSerializable
         {
-            return Client.SendRequest(requestType, request, extraRequestSerializer, duration, responseDelegate);
+            return Client.SendRequest(requestType, request, extraRequestSerializer, millisecondsTimeout, responseDelegate);
         }
 
-        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ResponseDelegate responseDelegate = null)
+        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate responseDelegate = null)
             where TRequest : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, responseDelegate);
+            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, millisecondsTimeout, responseDelegate);
         }
 
-        public bool ClientSendRequest<TRequest, TResponse>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ResponseDelegate<TResponse> responseDelegate = null)
+        public bool ClientSendRequest<TRequest, TResponse>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate<TResponse> responseDelegate = null)
             where TRequest : INetSerializable
             where TResponse : INetSerializable
         {
-            return Client.SendRequest(requestType, request, extraRequestSerializer, duration, (requestHandler, responseCode, response) =>
+            return Client.SendRequest(requestType, request, extraRequestSerializer, millisecondsTimeout, (requestHandler, responseCode, response) =>
             {
                 if (responseDelegate != null)
-                {
-                    if (responseCode == AckResponseCode.Unimplemented)
-                        return responseDelegate.Invoke(requestHandler, responseCode, default(TResponse));
                     return responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
-                }
                 return default;
             });
         }
 
-        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, long duration = 30, ResponseDelegate<TResponse> responseDelegate = null)
+        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate<TResponse> responseDelegate = null)
             where TRequest : INetSerializable
             where TResponse : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, duration, (requestHandler, responseCode, response) =>
+            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, millisecondsTimeout, (requestHandler, responseCode, response) =>
             {
                 if (responseDelegate != null)
-                {
-                    if (responseCode == AckResponseCode.Unimplemented)
-                        return responseDelegate.Invoke(requestHandler, responseCode, default(TResponse));
                     return responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
-                }
                 return default;
             });
         }

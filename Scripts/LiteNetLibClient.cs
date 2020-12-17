@@ -21,11 +21,10 @@ namespace LiteNetLibManager
 
         }
 
-        public override void Update()
+        public void Update()
         {
             if (!IsNetworkActive)
                 return;
-            base.Update();
             while (Transport.ClientReceive(out tempEventData))
             {
                 OnClientReceive(tempEventData);
@@ -86,11 +85,11 @@ namespace LiteNetLibManager
             SendMessage(-1, deliveryMethod, writer);
         }
 
-        public bool SendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraSerializer = null, long duration = 30, ResponseDelegate responseDelegate = null)
+        public bool SendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate responseDelegate = null)
             where TRequest : INetSerializable
         {
             // Send request to server, so connection id will not being used
-            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, duration, responseDelegate))
+            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, millisecondsTimeout, responseDelegate))
                 return false;
             SendMessage(-1, DeliveryMethod.ReliableOrdered, writer);
             return true;
