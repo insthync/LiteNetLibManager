@@ -505,10 +505,10 @@ namespace LiteNetLibManager
 
         internal static uint GetNewObjectId()
         {
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
             if (HighestObjectId == 0)
             {
                 uint result = HighestObjectId;
+                LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
                 foreach (LiteNetLibIdentity netObject in netObjects)
                 {
                     if (netObject.objectId > result)
