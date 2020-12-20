@@ -34,10 +34,9 @@ namespace LiteNetLibManager
             int ypos = 10 + offsetY;
             const int spacing = 24;
 
-            bool noConnection = Manager.Client == null;
             if (!Manager.IsClientConnected && !Manager.IsServer)
             {
-                if (noConnection)
+                if (!Manager.IsClient)
                 {
                     GUI.Label(new Rect(xpos, ypos, 100, 20), "Network Address");
                     Manager.networkAddress = GUI.TextField(new Rect(xpos + 105, ypos, 95, 20), Manager.networkAddress);
