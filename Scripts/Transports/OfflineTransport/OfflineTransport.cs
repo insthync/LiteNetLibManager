@@ -10,12 +10,10 @@ namespace LiteNetLibManager
 
         private readonly Queue<TransportEventData> clientData = new Queue<TransportEventData>();
         private readonly Queue<TransportEventData> serverData = new Queue<TransportEventData>();
-        private int peerCount;
-
-        public bool IsClientStarted()
-        {
-            return true;
-        }
+        public int ServerPeersCount { get; private set; }
+        public int ServerMaxConnections { get { return 1; } }
+        public bool IsClientStarted { get; private set; }
+        public bool IsServerStarted { get; private set; }
 
         public bool StartClient(string address, int port)
         {
@@ -23,6 +21,7 @@ namespace LiteNetLibManager
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.ConnectEvent;
             clientData.Enqueue(data);
+            IsClientStarted = true;
             return true;
         }
 
@@ -31,6 +30,7 @@ namespace LiteNetLibManager
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DisconnectEvent;
             clientData.Enqueue(data);
+            IsClientStarted = false;
         }
 
         public bool ClientReceive(out TransportEventData eventData)
@@ -51,15 +51,11 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool IsServerStarted()
-        {
-            return true;
-        }
-
         public bool StartServer(int port, int maxConnections)
         {
             serverData.Clear();
-            peerCount = 0;
+            ServerPeersCount = 0;
+            IsServerStarted = true;
             return true;
         }
 
@@ -69,12 +65,18 @@ namespace LiteNetLibManager
             if (clientData.Count == 0)
                 return false;
             eventData = clientData.Dequeue();
-            if (eventData.type == ENetworkEvent.ConnectEvent)
+            switch (eventData.type)
             {
-                TransportEventData data = new TransportEventData();
-                data.type = ENetworkEvent.ConnectEvent;
-                serverData.Enqueue(data);
-                peerCount++;
+                case ENetworkEvent.ConnectEvent:
+                    TransportEventData data = new TransportEventData();
+                    data.type = ENetworkEvent.ConnectEvent;
+                    serverData.Enqueue(data);
+                    ServerPeersCount++;
+                    break;
+                case ENetworkEvent.DisconnectEvent:
+                    ServerPeersCount--;
+                    IsClientStarted = false;
+                    break;
             }
             return true;
         }
@@ -101,17 +103,13 @@ namespace LiteNetLibManager
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DisconnectEvent;
             serverData.Enqueue(data);
+            IsServerStarted = false;
         }
 
         public void Destroy()
         {
             StopClient();
             StopServer();
-        }
-
-        public int GetServerPeersCount()
-        {
-            return peerCount;
         }
     }
 }

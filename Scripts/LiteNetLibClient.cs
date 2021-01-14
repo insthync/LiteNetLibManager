@@ -59,7 +59,7 @@ namespace LiteNetLibManager
                     Manager.OnClientConnected();
                     break;
                 case ENetworkEvent.DataEvent:
-                    ReadPacket(eventData.connectionId, eventData.reader);
+                    ReadPacket(-1, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
                     if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);

@@ -6,49 +6,61 @@ namespace LiteNetLibManager
 {
     public sealed class LiteNetLibTransport : ITransport
     {
-        public NetManager client { get; private set; }
-        public NetManager server { get; private set; }
-        public string connectKey { get; private set; }
-        public int maxConnections { get; private set; }
+        public NetManager Client { get; private set; }
+        public NetManager Server { get; private set; }
+        public string ConnectKey { get; private set; }
+        public int ServerPeersCount
+        {
+            get
+            {
+                if (Server != null)
+                    return Server.ConnectedPeersCount;
+                return 0;
+            }
+        }
+        public int ServerMaxConnections { get; private set; }
+        public bool IsClientStarted
+        {
+            get { return Client != null && Client.FirstPeer != null && Client.FirstPeer.ConnectionState == ConnectionState.Connected; }
+        }
+        public bool IsServerStarted
+        {
+            get { return Server != null; }
+        }
         private readonly Dictionary<long, NetPeer> serverPeers;
         private readonly Queue<TransportEventData> clientEventQueue;
         private readonly Queue<TransportEventData> serverEventQueue;
 
         public LiteNetLibTransport(string connectKey)
         {
-            this.connectKey = connectKey;
+            ConnectKey = connectKey;
             serverPeers = new Dictionary<long, NetPeer>();
             clientEventQueue = new Queue<TransportEventData>();
             serverEventQueue = new Queue<TransportEventData>();
         }
 
-        public bool IsClientStarted()
-        {
-            return client != null && client.FirstPeer != null && client.FirstPeer.ConnectionState == ConnectionState.Connected;
-        }
-
         public bool StartClient(string address, int port)
         {
-            if (IsClientStarted())
+            if (IsClientStarted)
                 return false;
             clientEventQueue.Clear();
-            client = new NetManager(new LiteNetLibTransportEventListener(this, clientEventQueue));
-            return client.Start() && client.Connect(address, port, connectKey) != null;
+            Client = new NetManager(new LiteNetLibTransportClientEventListener(clientEventQueue));
+            return Client.Start() && Client.Connect(address, port, ConnectKey) != null;
         }
 
         public void StopClient()
         {
-            if (client != null)
-                client.Stop();
-            client = null;
+            if (Client != null)
+                Client.Stop();
+            Client = null;
         }
 
         public bool ClientReceive(out TransportEventData eventData)
         {
             eventData = default(TransportEventData);
-            if (client == null)
+            if (Client == null)
                 return false;
-            client.PollEvents();
+            Client.PollEvents();
             if (clientEventQueue.Count == 0)
                 return false;
             eventData = clientEventQueue.Dequeue();
@@ -57,36 +69,31 @@ namespace LiteNetLibManager
 
         public bool ClientSend(DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            if (IsClientStarted())
+            if (IsClientStarted)
             {
-                client.FirstPeer.Send(writer, deliveryMethod);
+                Client.FirstPeer.Send(writer, deliveryMethod);
                 return true;
             }
             return false;
         }
 
-        public bool IsServerStarted()
-        {
-            return server != null;
-        }
-
         public bool StartServer(int port, int maxConnections)
         {
-            if (IsServerStarted())
+            if (IsServerStarted)
                 return false;
+            ServerMaxConnections = maxConnections;
             serverPeers.Clear();
             serverEventQueue.Clear();
-            server = new NetManager(new LiteNetLibTransportEventListener(this, serverEventQueue, serverPeers));
-            this.maxConnections = maxConnections;
-            return server.Start(port);
+            Server = new NetManager(new LiteNetLibTransportServerEventListener(this, ConnectKey, serverEventQueue, serverPeers));
+            return Server.Start(port);
         }
 
         public bool ServerReceive(out TransportEventData eventData)
         {
             eventData = default(TransportEventData);
-            if (server == null)
+            if (Server == null)
                 return false;
-            server.PollEvents();
+            Server.PollEvents();
             if (serverEventQueue.Count == 0)
                 return false;
             eventData = serverEventQueue.Dequeue();
@@ -95,7 +102,7 @@ namespace LiteNetLibManager
 
         public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            if (IsServerStarted() && serverPeers.ContainsKey(connectionId) && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
+            if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
                 serverPeers[connectionId].Send(writer, deliveryMethod);
                 return true;
@@ -105,9 +112,9 @@ namespace LiteNetLibManager
 
         public bool ServerDisconnect(long connectionId)
         {
-            if (IsServerStarted() && serverPeers.ContainsKey(connectionId))
+            if (IsServerStarted && serverPeers.ContainsKey(connectionId))
             {
-                server.DisconnectPeer(serverPeers[connectionId]);
+                Server.DisconnectPeer(serverPeers[connectionId]);
                 serverPeers.Remove(connectionId);
                 return true;
             }
@@ -116,22 +123,15 @@ namespace LiteNetLibManager
 
         public void StopServer()
         {
-            if (server != null)
-                server.Stop();
-            server = null;
+            if (Server != null)
+                Server.Stop();
+            Server = null;
         }
 
         public void Destroy()
         {
             StopClient();
             StopServer();
-        }
-
-        public int GetServerPeersCount()
-        {
-            if (server != null)
-                return server.ConnectedPeersCount;
-            return 0;
         }
     }
 }

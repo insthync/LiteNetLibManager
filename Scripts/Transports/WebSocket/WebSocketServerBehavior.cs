@@ -9,15 +9,15 @@ using WebSocketSharp.Server;
 namespace LiteNetLibManager
 {
 #if !UNITY_WEBGL || UNITY_EDITOR
-    public class WSBehavior : WebSocketBehavior
+    public class WebSocketServerBehavior : WebSocketBehavior
     {
-        public long connectionId { get; private set; }
+        public long ConnectionId { get; private set; }
         private Queue<TransportEventData> eventQueue;
-        private Dictionary<long, WSBehavior> serverPeers;
+        private Dictionary<long, WebSocketServerBehavior> serverPeers;
 
-        public void Initialize(long connectionId, Queue<TransportEventData> eventQueue, Dictionary<long, WSBehavior> serverPeers)
+        public void Initialize(long connectionId, Queue<TransportEventData> eventQueue, Dictionary<long, WebSocketServerBehavior> serverPeers)
         {
-            this.connectionId = connectionId;
+            ConnectionId = connectionId;
             this.eventQueue = eventQueue;
             this.serverPeers = serverPeers;
         }
@@ -26,11 +26,11 @@ namespace LiteNetLibManager
         {
             base.OnOpen();
             if (serverPeers != null)
-                serverPeers[connectionId] = this;
+                serverPeers[ConnectionId] = this;
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
-                connectionId = connectionId,
+                connectionId = ConnectionId,
             });
         }
 
@@ -40,7 +40,7 @@ namespace LiteNetLibManager
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DataEvent,
-                connectionId = connectionId,
+                connectionId = ConnectionId,
                 reader = new NetDataReader(e.RawData),
             });
         }
@@ -58,11 +58,11 @@ namespace LiteNetLibManager
         {
             base.OnClose(e);
             if (serverPeers != null)
-                serverPeers.Remove(connectionId);
+                serverPeers.Remove(ConnectionId);
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
-                connectionId = connectionId,
+                connectionId = ConnectionId,
             });
         }
     }
