@@ -1,4 +1,5 @@
-﻿using LiteNetLib.Utils;
+﻿using LiteNetLib;
+using LiteNetLib.Utils;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -84,6 +85,13 @@ namespace LiteNetLibManager
                     CacheRigidbody2D = syncingTransform.GetComponent<Rigidbody2D>();
                 }
             }
+            sendOptions = DeliveryMethod.Unreliable;
+        }
+
+        private void OnValidate()
+        {
+            // Force set to `Unreliable`
+            sendOptions = DeliveryMethod.Unreliable;
         }
 
         private void OnEnable()
@@ -163,7 +171,7 @@ namespace LiteNetLibManager
             // Don't request to set transform if not set "canClientSendResult" to TRUE
             if (!ownerClientCanSendTransform || !IsOwnerClient)
                 return;
-            Manager.ClientSendPacket(sendOptions, GameMsgTypes.ClientSendTransform, (writer) => ClientSendTransformWriter(writer, transformResult));
+            Manager.ClientSendPacket(DeliveryMethod.Unreliable, GameMsgTypes.ClientSendTransform, (writer) => ClientSendTransformWriter(writer, transformResult));
         }
 
         private void ClientSendTransformWriter(NetDataWriter writer, TransformResult transformResult)
