@@ -2,10 +2,9 @@
 {
     public enum AckResponseCode : byte
     {
-        Default = 0,
-        Success = 1,
-        Timeout = 2,
-        Error = 3,
-        Unimplemented = 4,
+        Success = 0,
+        Timeout = 1,
+        Error = 2,
+        Unimplemented = 3,
     }
 }
