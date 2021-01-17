@@ -7,6 +7,8 @@ namespace LiteNetLibManager
     /// </summary>
     public struct EmptyMessage : INetSerializable
     {
+        public static readonly EmptyMessage Value = new EmptyMessage();
+
         public void Deserialize(NetDataReader reader)
         {
         }

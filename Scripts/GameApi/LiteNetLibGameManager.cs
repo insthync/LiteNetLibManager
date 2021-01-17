@@ -320,14 +320,14 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest(GameReqTypes.ClientReady, new EmptyMessage(), SerializeClientReadyData);
+            ClientSendRequest(GameReqTypes.ClientReady, EmptyMessage.Value, SerializeClientReadyData);
         }
 
         public void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest(GameReqTypes.ClientNotReady, new EmptyMessage(), null);
+            ClientSendRequest(GameReqTypes.ClientNotReady, EmptyMessage.Value, null);
         }
 
         public void SendClientPing()
@@ -501,7 +501,7 @@ namespace LiteNetLibManager
             {
                 responseCode = AckResponseCode.Success;
             }
-            result.Invoke(responseCode, new EmptyMessage());
+            result.Invoke(responseCode, EmptyMessage.Value);
         }
 
         protected virtual UniTaskVoid HandleClientReadyResponse(
@@ -523,7 +523,7 @@ namespace LiteNetLibManager
             {
                 responseCode = AckResponseCode.Success;
             }
-            result.Invoke(responseCode, new EmptyMessage());
+            result.Invoke(responseCode, EmptyMessage.Value);
             return default;
         }
 
