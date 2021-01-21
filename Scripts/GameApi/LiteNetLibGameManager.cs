@@ -197,27 +197,21 @@ namespace LiteNetLibManager
             }
         }
 
-        protected override void RegisterServerMessages()
+        protected override void RegisterMessages()
         {
-            base.RegisterServerMessages();
-            EnableServerRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
-            RegisterServerRequest<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest);
-            RegisterServerRequest<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest);
-            RegisterServerRequest<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest);
+            base.RegisterMessages();
+            EnableRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
+            // Request to server (response to client)
+            RegisterRequestToServer<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest);
+            RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest);
+            RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest);
+            // Server messages
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
             RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
-        }
-
-        protected override void RegisterClientMessages()
-        {
-            base.RegisterClientMessages();
-            EnableClientRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
-            RegisterClientResponse<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameResponse);
-            RegisterClientResponse<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyResponse);
-            RegisterClientResponse<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyResponse);
+            // Client messages
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);

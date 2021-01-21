@@ -181,35 +181,54 @@ namespace LiteNetLibManager
             }
         }
 
-        public void RegisterRequest<TRequest, TResponse>(
+        /// <summary>
+        /// Register request handler which will read request message and response to requester peer
+        /// </summary>
+        /// <typeparam name="TRequest"></typeparam>
+        /// <typeparam name="TResponse"></typeparam>
+        /// <param name="requestType"></param>
+        /// <param name="handlerDelegate"></param>
+        public void RegisterRequestHandler<TRequest, TResponse>(
             ushort requestType,
-            RequestDelegate<TRequest, TResponse> requestDelegate)
+            RequestDelegate<TRequest, TResponse> handlerDelegate)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(requestDelegate);
+            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(handlerDelegate);
         }
 
-        public void UnregisterRequest(ushort requestType)
+        public void UnregisterRequestHandler(ushort requestType)
         {
             requestHandlers.Remove(requestType);
         }
 
-        public void RegisterResponse<TRequest, TResponse>(
+        /// <summary>
+        /// Register response handler which will read response message and do something by requester
+        /// </summary>
+        /// <typeparam name="TRequest"></typeparam>
+        /// <typeparam name="TResponse"></typeparam>
+        /// <param name="requestType"></param>
+        /// <param name="handlerDelegate"></param>
+        public void RegisterResponseHandler<TRequest, TResponse>(
             ushort requestType,
-            ResponseDelegate<TResponse> responseDelegate = null)
+            ResponseDelegate<TResponse> handlerDelegate = null)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            responseHandlers[requestType] = new LiteNetLibResponseHandler<TRequest, TResponse>(responseDelegate);
+            responseHandlers[requestType] = new LiteNetLibResponseHandler<TRequest, TResponse>(handlerDelegate);
         }
 
-        public void UnregisterResponse(ushort requestType)
+        public void UnregisterResponseHandler(ushort requestType)
         {
             responseHandlers.Remove(requestType);
         }
 
-        public void RegisterMessage(
+        /// <summary>
+        /// Register message handler for messages which will be received by other peers to do something when receive message
+        /// </summary>
+        /// <param name="messageType"></param>
+        /// <param name="handlerDelegate"></param>
+        public void RegisterMessageHandler(
             ushort messageType,
             MessageHandlerDelegate handlerDelegate)
         {
@@ -221,7 +240,7 @@ namespace LiteNetLibManager
             messageHandlers[messageType] = handlerDelegate;
         }
 
-        public void UnregisterMessage(ushort messageType)
+        public void UnregisterMessageHandler(ushort messageType)
         {
             messageHandlers.Remove(messageType);
         }

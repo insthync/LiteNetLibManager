@@ -102,6 +102,7 @@ namespace LiteNetLibManager
             transport = TransportFactory.Build();
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
+            RegisterMessages();
         }
 
         protected virtual void LateUpdate()
@@ -127,14 +128,9 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// Override this function to register messages that calling from clients to do anything at server
+        /// Override this function to register messages
         /// </summary>
-        protected virtual void RegisterServerMessages() { }
-
-        /// <summary>
-        /// Override this function to register messages that calling from server to do anything at clients
-        /// </summary>
-        protected virtual void RegisterClientMessages() { }
+        protected virtual void RegisterMessages() { }
 
         public virtual bool StartServer()
         {
@@ -143,7 +139,6 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, "Cannot start server because it was started.");
                 return false;
             }
-            RegisterServerMessages();
             if (!Server.StartServer(networkPort, maxConnections))
             {
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
@@ -169,7 +164,6 @@ namespace LiteNetLibManager
             this.networkAddress = networkAddress;
             this.networkPort = networkPort;
             if (LogDev) Logging.Log(LogTag, $"Connecting to {networkAddress}:{networkPort}.");
-            RegisterClientMessages();
             if (!Client.StartClient(networkAddress, networkPort))
             {
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
@@ -354,90 +348,62 @@ namespace LiteNetLibManager
 
         public void RegisterServerMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
         {
-            Server.RegisterMessage(msgType, handlerDelegate);
+            Server.RegisterMessageHandler(msgType, handlerDelegate);
         }
 
         public void UnregisterServerMessage(ushort msgType)
         {
-            Server.UnregisterMessage(msgType);
+            Server.UnregisterMessageHandler(msgType);
         }
 
         public void RegisterClientMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
         {
-            Client.RegisterMessage(msgType, handlerDelegate);
+            Client.RegisterMessageHandler(msgType, handlerDelegate);
         }
 
         public void UnregisterClientMessage(ushort msgType)
         {
-            Client.UnregisterMessage(msgType);
+            Client.UnregisterMessageHandler(msgType);
         }
 
-        public bool EnableClientRequestResponse(ushort requestMessageType, ushort responseMessageType)
+        public bool EnableRequestResponse(ushort requestMessageType, ushort responseMessageType)
         {
-            return Client.EnableRequestResponse(requestMessageType, responseMessageType);
+            return Client.EnableRequestResponse(requestMessageType, responseMessageType) &&
+                Server.EnableRequestResponse(requestMessageType, responseMessageType);
         }
 
-        public bool EnableServerRequestResponse(ushort requestMessageType, ushort responseMessageType)
-        {
-            return Server.EnableRequestResponse(requestMessageType, responseMessageType);
-        }
-
-        public void DisableClientRequestResponse()
+        public void DisableRequestResponse()
         {
             Client.DisableRequestResponse();
-        }
-
-        public void DisableServerRequestResponse()
-        {
             Server.DisableRequestResponse();
         }
 
-        public void RegisterServerRequest<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestDelegate)
+        public void RegisterRequestToServer<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestHandlerDelegate, ResponseDelegate<TResponse> responseHandlerDelegate = null)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            Server.RegisterRequest(reqType, requestDelegate);
+            Server.RegisterRequestHandler(reqType, requestHandlerDelegate);
+            Client.RegisterResponseHandler<TRequest, TResponse>(reqType, responseHandlerDelegate);
         }
 
-        public void UnregisterServerRequest(ushort reqType)
+        public void UnregisterRequestToServer(ushort reqType)
         {
-            Server.UnregisterRequest(reqType);
+            Server.UnregisterRequestHandler(reqType);
+            Client.UnregisterResponseHandler(reqType);
         }
 
-        public void RegisterClientRequest<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestDelegate)
+        public void RegisterRequestToClient<TRequest, TResponse>(ushort reqType, RequestDelegate<TRequest, TResponse> requestHandlerDelegate, ResponseDelegate<TResponse> responseHandlerDelegate = null)
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            Client.RegisterRequest(reqType, requestDelegate);
+            Client.RegisterRequestHandler(reqType, requestHandlerDelegate);
+            Server.RegisterResponseHandler<TRequest, TResponse>(reqType, responseHandlerDelegate);
         }
 
-        public void UnregisterClientRequest(ushort reqType)
+        public void UnregisterRequestToClient(ushort reqType)
         {
-            Client.UnregisterRequest(reqType);
-        }
-
-        public void RegisterServerResponse<TRequest, TResponse>(ushort reqType, ResponseDelegate<TResponse> requestDelegate = null)
-            where TRequest : INetSerializable, new()
-            where TResponse : INetSerializable, new()
-        {
-            Server.RegisterResponse<TRequest, TResponse>(reqType, requestDelegate);
-        }
-
-        public void UnregisterServerResponse(ushort reqType)
-        {
-            Server.UnregisterResponse(reqType);
-        }
-
-        public void RegisterClientResponse<TRequest, TResponse>(ushort reqType, ResponseDelegate<TResponse> requestDelegate = null)
-            where TRequest : INetSerializable, new()
-            where TResponse : INetSerializable, new()
-        {
-            Client.RegisterResponse<TRequest, TResponse>(reqType, requestDelegate);
-        }
-
-        public void UnregisterClientResponse(ushort reqType)
-        {
-            Client.UnregisterResponse(reqType);
+            Client.UnregisterRequestHandler(reqType);
+            Server.UnregisterResponseHandler(reqType);
         }
         #endregion
 
