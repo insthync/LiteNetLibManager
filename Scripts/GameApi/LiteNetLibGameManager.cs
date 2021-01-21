@@ -80,7 +80,7 @@ namespace LiteNetLibManager
 
         public virtual uint PacketVersion()
         {
-            return 2;
+            return 3;
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
@@ -199,12 +199,11 @@ namespace LiteNetLibManager
 
         protected override void RegisterMessages()
         {
-            base.RegisterMessages();
             EnableRequestResponse(GameMsgTypes.Request, GameMsgTypes.Response);
             // Request to server (response to client)
-            RegisterRequestToServer<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest);
-            RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest);
-            RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest);
+            RegisterRequestToServer<EnterGameRequestMessage, EnterGameResponseMessage>(GameReqTypes.EnterGame, HandleEnterGameRequest, HandleEnterGameResponse);
+            RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest, HandleClientReadyResponse);
+            RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest, HandleClientNotReadyResponse);
             // Server messages
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
             RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
