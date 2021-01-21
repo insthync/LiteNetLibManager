@@ -98,10 +98,13 @@ namespace LiteNetLibManager
 
         private async UniTaskVoid RequestTimeout(uint ackId, int millisecondsTimeout)
         {
-            await UniTask.Delay(millisecondsTimeout);
-            LiteNetLibRequestCallback callback;
-            if (requestCallbacks.TryRemove(ackId, out callback))
-                callback.ResponseTimeout();
+            if (millisecondsTimeout > 0)
+            {
+                await UniTask.Delay(millisecondsTimeout);
+                LiteNetLibRequestCallback callback;
+                if (requestCallbacks.TryRemove(ackId, out callback))
+                    callback.ResponseTimeout();
+            }
         }
 
         protected bool CreateAndWriteRequest<TRequest>(
