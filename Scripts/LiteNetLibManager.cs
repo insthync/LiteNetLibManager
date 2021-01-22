@@ -116,14 +116,16 @@ namespace LiteNetLibManager
         protected virtual void OnDestroy()
         {
             StopHost();
-            Transport.Destroy();
+            if (Transport != null)
+                Transport.Destroy();
         }
 
         protected virtual void OnApplicationQuit()
         {
 #if UNITY_EDITOR
             StopHost();
-            Transport.Destroy();
+            if (Transport != null)
+                Transport.Destroy();
 #endif
         }
 
