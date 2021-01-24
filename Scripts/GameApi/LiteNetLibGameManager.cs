@@ -139,7 +139,7 @@ namespace LiteNetLibManager
                     foreach (LiteNetLibPlayer player in Players.Values)
                     {
                         player.IsReady = false;
-                        player.SubscribingObjects.Clear();
+                        player.Subscribings.Clear();
                         player.SpawnedObjects.Clear();
                     }
                     Assets.Clear(true);
@@ -693,11 +693,17 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerDestroyObject(MessageHandlerData messageHandler)
         {
-            // Object owner was destroyed, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
             ServerDestroyObjectMessage message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
-            Assets.NetworkDestroy(message.objectId, message.reasons);
+            if (!IsServer)
+            {
+                Assets.NetworkDestroy(message.objectId, message.reasons);
+            }
+            else
+            {
+                LiteNetLibIdentity identity;
+                if (Assets.TryGetSpawnedObject(message.objectId, out identity))
+                    identity.OnServerSubscribingRemoved();
+            }
         }
 
         protected virtual void HandleServerInitialSyncField(MessageHandlerData messageHandler)
@@ -904,14 +910,6 @@ namespace LiteNetLibManager
                 return false;
             }
 
-            foreach (LiteNetLibIdentity spawnedObject in Assets.GetSpawnedObjects())
-            {
-                if (spawnedObject.ConnectionId == player.ConnectionId)
-                    continue;
-
-                if (spawnedObject.ShouldAddSubscriber(player))
-                    spawnedObject.AddSubscriber(player);
-            }
             return true;
         }
 

@@ -1,11 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace LiteNetLibManager
 {
-    public class LiteNetLibVisibleChecker : LiteNetLibBehaviour
+    public class LiteNetLibVisibleChecker : BaseLiteNetLibVisibleChecker
     {
         public enum CheckMethod
         {
@@ -19,9 +17,8 @@ namespace LiteNetLibManager
 
         private Collider[] colliders = new Collider[5000];
         private Collider2D[] colliders2D = new Collider2D[5000];
-        private int colliderLength;
+        private readonly HashSet<uint> subscribings = new HashSet<uint>();
         private float updateCountDown;
-        private LiteNetLibIdentity tempIdentity;
 
         void Start()
         {
@@ -30,7 +27,7 @@ namespace LiteNetLibManager
 
         void Update()
         {
-            if (!IsServer)
+            if (!IsServer || ConnectionId < 0)
                 return;
 
             updateCountDown -= Time.unscaledDeltaTime;
@@ -38,82 +35,48 @@ namespace LiteNetLibManager
             if (updateCountDown <= 0f)
             {
                 updateCountDown = updateInterval;
-                // Request identity to rebuild subscribers
-                Identity.RebuildSubscribers(false);
+                FindObjectsToSubscribe();
+                UpdateSubscribings(subscribings);
             }
         }
 
-        public override bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
+        public override HashSet<uint> GetInitializeSubscribings()
         {
-            if (subscriber == null)
-                return false;
-
-            if (subscriber.ConnectionId == ConnectionId)
-                return true;
-
-            Vector3 pos;
-            foreach (LiteNetLibIdentity spawnedObject in subscriber.GetSpawnedObjects())
-            {
-                pos = spawnedObject.transform.position;
-                if ((pos - transform.position).sqrMagnitude < range * range)
-                    return true;
-            }
-            return false;
+            FindObjectsToSubscribe();
+            return subscribings;
         }
 
-        public override bool OnRebuildSubscribers(HashSet<LiteNetLibPlayer> subscribers, bool initialize)
+        private void FindObjectsToSubscribe()
         {
+            subscribings.Clear();
             // find players within range
             switch (checkMethod)
             {
                 case CheckMethod.Physics3D:
                     {
-                        colliderLength = Physics.OverlapSphereNonAlloc(transform.position, range, colliders, layerMask.value);
+                        LiteNetLibIdentity tempIdentity;
+                        int colliderLength = Physics.OverlapSphereNonAlloc(transform.position, range, colliders, layerMask.value);
                         for (int i = 0; i < colliderLength; ++i)
                         {
                             tempIdentity = colliders[i].GetComponent<LiteNetLibIdentity>();
-                            if (tempIdentity != null && tempIdentity.Player != null)
-                                subscribers.Add(tempIdentity.Player);
+                            if (tempIdentity != null && tempIdentity.IsSpawned)
+                                subscribings.Add(tempIdentity.ObjectId);
                         }
-                        return true;
+                        return;
                     }
 
                 case CheckMethod.Physics2D:
                     {
-                        colliderLength = Physics2D.OverlapCircleNonAlloc(transform.position, range, colliders2D, layerMask.value);
+                        LiteNetLibIdentity tempIdentity;
+                        int colliderLength = Physics2D.OverlapCircleNonAlloc(transform.position, range, colliders2D, layerMask.value);
                         for (int i = 0; i < colliderLength; ++i)
                         {
                             tempIdentity = colliders2D[i].GetComponent<LiteNetLibIdentity>();
-                            if (tempIdentity != null && tempIdentity.Player != null)
-                                subscribers.Add(tempIdentity.Player);
+                            if (tempIdentity != null && tempIdentity.IsSpawned)
+                                subscribings.Add(tempIdentity.ObjectId);
                         }
-                        return true;
+                        return;
                     }
-            }
-            return false;
-        }
-
-        public override void OnServerSubscribingAdded()
-        {
-            base.OnServerSubscribingAdded();
-            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
-                return;
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            for (int i = 0; i < renderers.Length; ++i)
-            {
-                renderers[i].forceRenderingOff = false;
-            }
-        }
-
-        public override void OnServerSubscribingRemoved()
-        {
-            base.OnServerSubscribingRemoved();
-            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
-                return;
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            for (int i = 0; i < renderers.Length; ++i)
-            {
-                renderers[i].forceRenderingOff = true;
             }
         }
     }

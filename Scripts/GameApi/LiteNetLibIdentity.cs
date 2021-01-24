@@ -10,6 +10,7 @@ using UnityEditor.SceneManagement;
 using LiteNetLib.Utils;
 using UnityEngine.Profiling;
 using LiteNetLib;
+using UnityEngine.Rendering;
 
 namespace LiteNetLibManager
 {
@@ -21,15 +22,31 @@ namespace LiteNetLibManager
         private string assetId;
         [LiteNetLibReadOnly, SerializeField]
         private uint objectId;
-#if UNITY_EDITOR
-        [LiteNetLibReadOnly, SerializeField]
-        private List<long> subscriberIds = new List<long>();
-#endif
 
+        /// <summary>
+        /// This will be true when identity was spawned by manager
+        /// </summary>
+        public bool IsSpawned { get; private set; }
+        /// <summary>
+        /// This will be true when identity was requested to destroy
+        /// </summary>
+        public bool IsDestroyed { get; private set; }
         /// <summary>
         /// This will be true when identity setup
         /// </summary>
         public bool IsSetupBehaviours { get; private set; }
+        /// <summary>
+        /// Array of all behaviours
+        /// </summary>
+        public LiteNetLibBehaviour[] Behaviours { get; private set; }
+        /// <summary>
+        /// This will be true if it can get visible checker component when setup
+        /// </summary>
+        public bool HasVisibleChecker { get; private set; }
+        /// <summary>
+        /// Visible checker component which attached to this identity
+        /// </summary>
+        public BaseLiteNetLibVisibleChecker VisibleChecker { get; private set; }
         /// <summary>
         /// List of sync fields from all behaviours (include children behaviours)
         /// </summary>
@@ -47,10 +64,13 @@ namespace LiteNetLibManager
         /// </summary>
         internal readonly List<LiteNetLibBehaviour> SyncBehaviours = new List<LiteNetLibBehaviour>();
         /// <summary>
-        /// Array of all behaviours
+        /// List of networked objects which subscribed by this identity
         /// </summary>
-        internal LiteNetLibBehaviour[] Behaviours { get; private set; }
-        internal readonly Dictionary<long, LiteNetLibPlayer> Subscribers = new Dictionary<long, LiteNetLibPlayer>();
+        internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
+        /// <summary>
+        /// List of players which subscribe this identity
+        /// </summary>
+        internal readonly HashSet<long> Subscribers = new HashSet<long>();
 
         public string AssetId { get { return assetId; } }
         public int HashAssetId
@@ -119,8 +139,6 @@ namespace LiteNetLibManager
         {
             get; private set;
         }
-
-        private bool destroyed;
 
         internal void NetworkUpdate(float deltaTime)
         {
@@ -417,7 +435,8 @@ namespace LiteNetLibManager
             this.objectId = objectId;
             Manager = manager;
             ConnectionId = connectionId;
-            destroyed = false;
+            IsDestroyed = false;
+            IsSpawned = true;
             if (objectId > HighestObjectId)
                 HighestObjectId = objectId;
             IsSceneObject = isSceneObject;
@@ -437,23 +456,28 @@ namespace LiteNetLibManager
                     if (Behaviours[loopCounter].CanSyncBehaviour())
                         SyncBehaviours.Add(Behaviours[loopCounter]);
                 }
+                VisibleChecker = GetComponent<BaseLiteNetLibVisibleChecker>();
+                HasVisibleChecker = VisibleChecker != null;
                 IsSetupBehaviours = true;
             }
 
-            // If this is host, hide it then will showing when rebuild subscribers
+            // If this is host, hide it then will be showned when initialize subscribings
             if (IsServer && IsClient)
                 OnServerSubscribingRemoved();
 
-            RebuildSubscribers(true);
+            InitializeSubscribings();
         }
 
-        internal void SetOwnerClient(bool isOwnerClient)
+        internal void OnSetOwnerClient(bool isOwnerClient)
         {
             int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
             }
+
+            if (IsServer && IsClient && isOwnerClient)
+                OnServerSubscribingAdded();
         }
 
         internal void InitTransform(Vector3 position, Quaternion rotation)
@@ -540,169 +564,88 @@ namespace LiteNetLibManager
 #endif
         }
 
+        public bool AddSubscriber(long connectionId)
+        {
+            return Subscribers.Add(connectionId);
+        }
+
+        public bool RemoveSubscriber(long connectionId)
+        {
+            return Subscribers.Remove(connectionId);
+        }
+
+        public bool HasSubscriber(long connectionId)
+        {
+            return Subscribers.Contains(connectionId);
+        }
+
         public int CountSubscribers()
         {
             return Subscribers.Count;
         }
 
-        public void ClearSubscribers()
-        {
-            // Only server can manage subscribers
-            if (!IsServer)
-                return;
-
-            foreach (LiteNetLibPlayer subscriber in Subscribers.Values)
-            {
-                subscriber.RemoveSubscribing(this, false);
-            }
-            Subscribers.Clear();
-#if UNITY_EDITOR
-            subscriberIds.Clear();
-#endif
-        }
-
-        public void AddSubscriber(LiteNetLibPlayer subscriber)
-        {
-            // Only server can manage subscribers
-            if (!IsServer || subscriber == null)
-                return;
-
-            if (Subscribers.ContainsKey(subscriber.ConnectionId))
-            {
-                if (Manager.LogDebug)
-                    Logging.Log(LogTag, $"Subscriber: {subscriber.ConnectionId} already added to {gameObject}.");
-                return;
-            }
-
-            Subscribers[subscriber.ConnectionId] = subscriber;
-#if UNITY_EDITOR
-            if (!subscriberIds.Contains(subscriber.ConnectionId))
-                subscriberIds.Add(subscriber.ConnectionId);
-#endif
-            subscriber.AddSubscribing(this);
-        }
-
-        public void RemoveSubscriber(LiteNetLibPlayer subscriber, bool removePlayerSubscribing)
-        {
-            // Only server can manage subscribers
-            if (!IsServer)
-                return;
-
-            Subscribers.Remove(subscriber.ConnectionId);
-#if UNITY_EDITOR
-            subscriberIds.Remove(subscriber.ConnectionId);
-#endif
-            if (removePlayerSubscribing)
-                subscriber.RemoveSubscribing(this, false);
-        }
-
-        public bool ContainsSubscriber(long connectionId)
-        {
-            return Subscribers.ContainsKey(connectionId);
-        }
-
-        public bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
-        {
-            int loopCounter;
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
-            {
-                if (!Behaviours[loopCounter].ShouldAddSubscriber(subscriber))
-                    return false;
-            }
-            return true;
-        }
-
         public bool IsSubscribedOrOwning(long connectionId)
         {
-            return ContainsSubscriber(connectionId) || connectionId == ConnectionId;
+            return connectionId == ConnectionId || Subscribers.Contains(connectionId);
         }
 
-        public void RebuildSubscribers(bool initialize)
+        private void InitializeSubscribings()
         {
-            // Only server can manage subscribers
-            if (!IsServer || !IsSetupBehaviours)
-                return;
-
-            LiteNetLibPlayer ownerPlayer = Player;
-            if (initialize)
-                AddSubscriber(ownerPlayer);
-
-            bool hasChanges = false;
-            bool shouldRebuild = false;
-            HashSet<LiteNetLibPlayer> newSubscribers = new HashSet<LiteNetLibPlayer>();
-            HashSet<LiteNetLibPlayer> oldSubscribers = new HashSet<LiteNetLibPlayer>(Subscribers.Values);
-
-            int loopCounter;
-            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
+            if (ConnectionId < 0)
             {
-                shouldRebuild |= Behaviours[loopCounter].OnRebuildSubscribers(newSubscribers, initialize);
-            }
-
-            // If shouldRebuild is FALSE, it's means it does not have to rebuild subscribers
-            if (!shouldRebuild)
-            {
-                // None of the behaviours rebuilt our subscribers, use built-in rebuild method
-                if (initialize)
-                {
-                    foreach (LiteNetLibPlayer player in Manager.GetPlayers())
-                    {
-                        if (ConnectionId == player.ConnectionId || !player.IsReady)
-                            continue;
-
-                        if (ShouldAddSubscriber(player))
-                            AddSubscriber(player);
-                    }
-                }
+                // This is not player's networked object
                 return;
             }
-
-            // Apply changes from rebuild
-            foreach (LiteNetLibPlayer subscriber in newSubscribers)
+            // Always add controlled network object to subscribe it
+            Subscribings.Add(ObjectId);
+            if (!HasVisibleChecker)
             {
-                if (subscriber == null)
-                    continue;
-
-                if (!subscriber.IsReady)
+                // Subscribes all spawned objects
+                foreach (uint objectId in Manager.Assets.SpawnedObjects.Keys)
                 {
-                    if (Manager.LogWarn)
-                        Logging.Log(LogTag, $"Subscriber: {subscriber.ConnectionId} is not ready.");
-                    continue;
+                    Subscribings.Add(objectId);
                 }
-
-                if ((ownerPlayer == null || subscriber.ConnectionId != ownerPlayer.ConnectionId) && (initialize || !oldSubscribers.Contains(subscriber)))
+            }
+            else
+            {
+                // Find objects to subscribes by visible checker
+                foreach (uint objectId in VisibleChecker.GetInitializeSubscribings())
                 {
-                    subscriber.AddSubscribing(this);
+                    Subscribings.Add(objectId);
+                }
+            }
+            foreach (uint objectId in Subscribings)
+            {
+                Player.Subscribe(objectId);
+            }
+        }
+
+        public void UpdateSubscribings(HashSet<uint> newSubscribings)
+        {
+            if (ConnectionId < 0)
+            {
+                // This is not player's networked object
+                return;
+            }
+            // Always add controlled network object to subscribe it
+            newSubscribings.Add(ObjectId);
+            foreach (uint oldSubscribing in Subscribings)
+            {
+                if (!newSubscribings.Contains(oldSubscribing))
+                {
+                    Player.Unsubscribe(oldSubscribing, true);
                     if (Manager.LogDebug)
-                        Logging.Log(LogTag, $"Add subscriber: {subscriber.ConnectionId} to {gameObject}.");
-                    hasChanges = true;
+                        Logging.Log(LogTag, $"Player: {ConnectionId} unsubscribe object ID: {oldSubscribing}.");
                 }
             }
-
-            // Remove subscribers that is not in new subscribers list
-            foreach (LiteNetLibPlayer subscriber in oldSubscribers)
+            Subscribings.Clear();
+            foreach (uint newSubscribing in newSubscribings)
             {
-                if (!newSubscribers.Contains(subscriber))
-                {
-                    subscriber.RemoveSubscribing(this, true);
-                    if (Manager.LogDebug)
-                        Logging.Log(LogTag, $"Remove subscriber: {subscriber.ConnectionId} from {gameObject}.");
-                    hasChanges = true;
-                }
+                Subscribings.Add(newSubscribing);
+                Player.Subscribe(newSubscribing);
+                if (Manager.LogDebug)
+                    Logging.Log(LogTag, $"Player: {ConnectionId} subscribe object ID: {newSubscribing}.");
             }
-
-            if (!hasChanges)
-                return;
-
-            // Rebuild subscribers
-            Subscribers.Clear();
-            foreach (LiteNetLibPlayer subscriber in newSubscribers)
-                Subscribers.Add(subscriber.ConnectionId, subscriber);
-
-#if UNITY_EDITOR
-            subscriberIds.Clear();
-            foreach (LiteNetLibPlayer subscriber in newSubscribers)
-                subscriberIds.Add(subscriber.ConnectionId);
-#endif
         }
 
         public void OnServerSubscribingAdded()
@@ -712,6 +655,13 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnServerSubscribingAdded();
             }
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                return;
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            for (int i = 0; i < renderers.Length; ++i)
+            {
+                renderers[i].forceRenderingOff = false;
+            }
         }
 
         public void OnServerSubscribingRemoved()
@@ -720,6 +670,13 @@ namespace LiteNetLibManager
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnServerSubscribingRemoved();
+            }
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                return;
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            for (int i = 0; i < renderers.Length; ++i)
+            {
+                renderers[i].forceRenderingOff = true;
             }
         }
 
@@ -749,14 +706,12 @@ namespace LiteNetLibManager
 
         private void NetworkDestroyFunction()
         {
-            if (!destroyed)
+            if (!IsDestroyed)
             {
                 Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
-                Subscribers.Clear();
-#if UNITY_EDITOR
-                subscriberIds.Clear();
-#endif
-                destroyed = true;
+                Subscribings.Clear();
+                IsDestroyed = true;
+                IsSpawned = false;
             }
         }
 

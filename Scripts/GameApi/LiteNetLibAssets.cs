@@ -169,7 +169,7 @@ namespace LiteNetLibManager
                 sceneObject.gameObject.SetActive(true);
                 sceneObject.Initial(Manager, true, objectId, connectionId);
                 sceneObject.InitTransform(position, rotation);
-                sceneObject.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+                sceneObject.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
                 if (Manager.IsServer)
                     sceneObject.OnStartServer();
                 if (Manager.IsClient)
@@ -202,7 +202,7 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(gameObject.transform.position, gameObject.transform.rotation);
-            identity.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+            identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (onObjectSpawn != null)
                 onObjectSpawn.Invoke(identity);
             if (Manager.IsServer)
@@ -262,9 +262,9 @@ namespace LiteNetLibManager
                 // If this is server, send message to clients to destroy object
                 if (Manager.IsServer)
                 {
-                    foreach (LiteNetLibPlayer subscriber in spawnedObject.Subscribers.Values)
+                    foreach (long subscriber in spawnedObject.Subscribers)
                     {
-                        Manager.SendServerDestroyObject(subscriber.ConnectionId, objectId, DestroyObjectReasons.RequestedToDestroy);
+                        Manager.SendServerDestroyObject(subscriber, objectId, DestroyObjectReasons.RequestedToDestroy);
                     }
                 }
                 // Remove from player spawned objects dictionary
@@ -301,11 +301,11 @@ namespace LiteNetLibManager
                 // If this is server, send message to clients to set object owner
                 if (Manager.IsServer)
                 {
-                    foreach (LiteNetLibPlayer subscriber in spawnedObject.Subscribers.Values)
+                    foreach (long subscriber in spawnedObject.Subscribers)
                     {
-                        if (subscriber.ConnectionId == connectionId)
+                        if (subscriber == connectionId)
                             continue;
-                        Manager.SendServerSetObjectOwner(subscriber.ConnectionId, objectId, connectionId);
+                        Manager.SendServerSetObjectOwner(subscriber, objectId, connectionId);
                     }
                     Manager.SendServerSetObjectOwner(connectionId, objectId, connectionId);
                 }
@@ -321,7 +321,7 @@ namespace LiteNetLibManager
                 // Set connection id
                 spawnedObject.ConnectionId = connectionId;
                 // Call set owner client event
-                spawnedObject.SetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+                spawnedObject.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
                 return true;
             }
             else if (Manager.LogWarn)

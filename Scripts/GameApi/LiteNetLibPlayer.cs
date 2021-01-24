@@ -8,7 +8,7 @@ namespace LiteNetLibManager
         public long ConnectionId { get; protected set; }
 
         public bool IsReady { get; set; }
-        internal readonly HashSet<LiteNetLibIdentity> SubscribingObjects = new HashSet<LiteNetLibIdentity>();
+        internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
@@ -17,40 +17,54 @@ namespace LiteNetLibManager
             ConnectionId = connectionId;
         }
 
-        internal void AddSubscribing(LiteNetLibIdentity identity)
+        internal bool IsSubscribing(uint objectId)
         {
-            SubscribingObjects.Add(identity);
-
-            Manager.SendServerSpawnObjectWithData(ConnectionId, identity);
+            return Subscribings.Contains(objectId);
         }
 
-        internal void RemoveSubscribing(LiteNetLibIdentity identity, bool destroyObjectsOnPeer)
+        internal int CountSubscribing()
         {
-            SubscribingObjects.Remove(identity);
-            if (destroyObjectsOnPeer)
+            return Subscribings.Count;
+        }
+
+        internal void Subscribe(uint objectId)
+        {
+            LiteNetLibIdentity identity;
+            if (Subscribings.Add(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
-                if (Manager.IsClientConnected && Manager.ClientConnectionId == identity.ConnectionId)
-                    identity.OnServerSubscribingRemoved();
-                Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
+                identity.AddSubscriber(ConnectionId);
+                Manager.SendServerSpawnObjectWithData(ConnectionId, identity);
+            }
+        }
+
+        internal void Unsubscribe(uint objectId, bool destroyObjectOnPeer)
+        {
+            if (Subscribings.Remove(objectId))
+            {
+                LiteNetLibIdentity identity;
+                if (destroyObjectOnPeer && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
+                {
+                    identity.RemoveSubscriber(ConnectionId);
+                    Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
+                }
             }
         }
 
         internal void ClearSubscribing(bool destroyObjectsOnPeer)
         {
             // Remove this from identities subscriber list
-            foreach (LiteNetLibIdentity identity in SubscribingObjects)
+            LiteNetLibIdentity identity;
+            foreach (uint objectId in Subscribings)
             {
                 // Don't call for remove subscribing 
                 // because it's going to clear in this function
-                identity.RemoveSubscriber(this, false);
-                if (destroyObjectsOnPeer)
+                if (destroyObjectsOnPeer && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
                 {
-                    if (Manager.IsClientConnected && Manager.ClientConnectionId == identity.ConnectionId)
-                        identity.OnServerSubscribingRemoved();
-                    Manager.SendServerDestroyObject(ConnectionId, identity.ObjectId, DestroyObjectReasons.RemovedFromSubscribing);
+                    identity.RemoveSubscriber(ConnectionId);
+                    Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
                 }
             }
-            SubscribingObjects.Clear();
+            Subscribings.Clear();
         }
 
         /// <summary>

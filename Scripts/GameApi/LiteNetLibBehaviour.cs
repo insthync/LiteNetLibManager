@@ -1592,28 +1592,6 @@ namespace LiteNetLibManager
         public virtual void OnSetup() { }
 
         /// <summary>
-        /// Override this function to decides that old object should add new object as subscriber or not
-        /// </summary>
-        /// <param name="subscriber"></param>
-        public virtual bool ShouldAddSubscriber(LiteNetLibPlayer subscriber)
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// This will be called by Identity when rebuild subscribers
-        /// will return TRUE if subscribers have to rebuild
-        /// you can override this function to create your own interest management
-        /// </summary>
-        /// <param name="subscribers"></param>
-        /// <param name="initialize"></param>
-        /// <returns></returns>
-        public virtual bool OnRebuildSubscribers(HashSet<LiteNetLibPlayer> subscribers, bool initialize)
-        {
-            return false;
-        }
-
-        /// <summary>
         /// Override this function to define condition to sync behaviour data to client or not
         /// </summary>
         /// <returns></returns>
@@ -1642,12 +1620,12 @@ namespace LiteNetLibManager
         public virtual void OnDeserialize(NetDataReader reader) { }
 
         /// <summary>
-        /// Override this function to change object visibility when this added to player as subcribing 
+        /// Override this function to change object visibility when this added to player as subcribing
         /// </summary>
         public virtual void OnServerSubscribingAdded() { }
 
         /// <summary>
-        /// Override this function to change object visibility when this removed from player as subcribing 
+        /// Override this function to change object visibility when this removed from player as subcribing
         /// </summary>
         public virtual void OnServerSubscribingRemoved() { }
     }
