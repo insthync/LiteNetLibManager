@@ -163,25 +163,27 @@ namespace LiteNetLibManager
                 return null;
             }
 
-            LiteNetLibIdentity sceneObject;
-            if (SceneObjects.TryGetValue(objectId, out sceneObject))
+            LiteNetLibIdentity identity;
+            if (!SceneObjects.TryGetValue(objectId, out identity))
             {
-                sceneObject.gameObject.SetActive(true);
-                sceneObject.Initial(Manager, true, objectId, connectionId);
-                sceneObject.InitTransform(position, rotation);
-                sceneObject.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
-                if (Manager.IsServer)
-                    sceneObject.OnStartServer();
-                if (Manager.IsClient)
-                    sceneObject.OnStartClient();
-                if (connectionId >= 0 && connectionId == Manager.ClientConnectionId)
-                    sceneObject.OnStartOwnerClient();
-                SpawnedObjects[sceneObject.ObjectId] = sceneObject;
-                return sceneObject;
-            }
-            else if (Manager.LogWarn)
                 Logging.LogWarning(LogTag, "NetworkSpawnScene - Object Id: " + objectId + " is not registered.");
-            return null;
+                return null;
+            }
+
+            identity.gameObject.SetActive(true);
+            identity.Initial(Manager, true, objectId, connectionId);
+            identity.InitTransform(position, rotation);
+            identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+            if (Manager.IsServer)
+                identity.OnStartServer();
+            if (Manager.IsClient)
+                identity.OnStartClient();
+            if (connectionId >= 0 && connectionId == Manager.ClientConnectionId)
+                identity.OnStartOwnerClient();
+            if (onObjectSpawn != null)
+                onObjectSpawn.Invoke(identity);
+
+            return identity;
         }
 
         public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectionId = -1)
@@ -203,20 +205,14 @@ namespace LiteNetLibManager
             identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(gameObject.transform.position, gameObject.transform.rotation);
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
-            if (onObjectSpawn != null)
-                onObjectSpawn.Invoke(identity);
             if (Manager.IsServer)
                 identity.OnStartServer();
             if (Manager.IsClient)
                 identity.OnStartClient();
             if (connectionId >= 0 && connectionId == Manager.ClientConnectionId)
                 identity.OnStartOwnerClient();
-            SpawnedObjects[identity.ObjectId] = identity;
-
-            // Add to player spawned objects dictionary
-            LiteNetLibPlayer player;
-            if (Manager.TryGetPlayer(connectionId, out player))
-                player.SpawnedObjects[identity.ObjectId] = identity;
+            if (onObjectSpawn != null)
+                onObjectSpawn.Invoke(identity);
 
             return identity;
         }
@@ -267,12 +263,7 @@ namespace LiteNetLibManager
                         Manager.SendServerDestroyObject(subscriber, objectId, DestroyObjectReasons.RequestedToDestroy);
                     }
                 }
-                // Remove from player spawned objects dictionary
-                LiteNetLibPlayer player;
-                if (Manager.TryGetPlayer(spawnedObject.ConnectionId, out player))
-                    player.SpawnedObjects.Remove(objectId);
-                // Remove from asset spawned objects dictionary
-                SpawnedObjects.Remove(objectId);
+                // Call this function to tell behaviour that the identity is being destroyed
                 spawnedObject.OnNetworkDestroy(reasons);
                 if (onObjectDestroy != null)
                     onObjectDestroy.Invoke(spawnedObject);

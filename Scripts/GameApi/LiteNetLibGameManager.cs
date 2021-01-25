@@ -229,7 +229,7 @@ namespace LiteNetLibManager
         {
             base.OnPeerConnected(connectionId);
             if (!Players.ContainsKey(connectionId))
-                Players[connectionId] = new LiteNetLibPlayer(this, connectionId);
+                Players.Add(connectionId, new LiteNetLibPlayer(this, connectionId));
         }
 
         public override void OnPeerDisconnected(long connectionId, DisconnectInfo disconnectInfo)
@@ -334,28 +334,29 @@ namespace LiteNetLibManager
             ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping);
         }
 
-        public void SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
+        public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
         {
             if (!IsServer)
-                return;
+                return false;
             LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
-                return;
+                return false;
             ServerSpawnSceneObjectMessage message = new ServerSpawnSceneObjectMessage();
             message.objectId = identity.ObjectId;
             message.connectionId = identity.ConnectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message, identity.WriteInitialSyncFields);
+            return true;
         }
 
-        public void SendServerSpawnObject(long connectionId, LiteNetLibIdentity identity)
+        public bool SendServerSpawnObject(long connectionId, LiteNetLibIdentity identity)
         {
             if (!IsServer)
-                return;
+                return false;
             LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
-                return;
+                return false;
             ServerSpawnObjectMessage message = new ServerSpawnObjectMessage();
             message.hashAssetId = identity.HashAssetId;
             message.objectId = identity.ObjectId;
@@ -363,6 +364,7 @@ namespace LiteNetLibManager
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message, identity.WriteInitialSyncFields);
+            return true;
         }
 
         public void SendServerSpawnObjectWithData(long connectionId, LiteNetLibIdentity identity)
@@ -370,25 +372,30 @@ namespace LiteNetLibManager
             if (identity == null)
                 return;
 
+            bool spawnObjectSent;
             if (Assets.ContainsSceneObject(identity.ObjectId))
-                SendServerSpawnSceneObject(connectionId, identity);
+                spawnObjectSent = SendServerSpawnSceneObject(connectionId, identity);
             else
-                SendServerSpawnObject(connectionId, identity);
-            identity.SendInitSyncFields(connectionId);
-            identity.SendInitSyncLists(connectionId);
+                spawnObjectSent = SendServerSpawnObject(connectionId, identity);
+            if (spawnObjectSent)
+            {
+                identity.SendInitSyncFields(connectionId);
+                identity.SendInitSyncLists(connectionId);
+            }
         }
 
-        public void SendServerDestroyObject(long connectionId, uint objectId, byte reasons)
+        public bool SendServerDestroyObject(long connectionId, uint objectId, byte reasons)
         {
             if (!IsServer)
-                return;
+                return false;
             LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
-                return;
+                return false;
             ServerDestroyObjectMessage message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
             message.reasons = reasons;
             ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
+            return true;
         }
 
         public void SendServerError(bool shouldDisconnect, string errorMessage)

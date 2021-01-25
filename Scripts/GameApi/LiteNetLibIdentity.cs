@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
@@ -465,6 +463,10 @@ namespace LiteNetLibManager
             if (IsServer && IsClient)
                 OnServerSubscribingRemoved();
 
+            Manager.Assets.SpawnedObjects.Add(ObjectId, this);
+            if (IsServer && ConnectionId >= 0)
+                Player.SpawnedObjects.Add(ObjectId, this);
+
             InitializeSubscribings();
         }
 
@@ -475,9 +477,6 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
             }
-
-            if (IsServer && IsClient && isOwnerClient)
-                OnServerSubscribingAdded();
         }
 
         internal void InitTransform(Vector3 position, Quaternion rotation)
@@ -693,7 +692,7 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            NetworkDestroyFunction();
+            DestroyFromAssets();
         }
 
         public void NetworkDestroy(float delay)
@@ -701,18 +700,13 @@ namespace LiteNetLibManager
             if (!IsServer)
                 return;
 
-            Invoke(nameof(NetworkDestroyFunction), delay);
+            Invoke(nameof(DestroyFromAssets), delay);
         }
 
-        private void NetworkDestroyFunction()
+        private void DestroyFromAssets()
         {
-            if (!IsDestroyed)
-            {
-                Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy);
-                Subscribings.Clear();
+            if (!IsDestroyed && Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy))
                 IsDestroyed = true;
-                IsSpawned = false;
-            }
         }
 
         public void OnNetworkDestroy(byte reasons)
@@ -722,6 +716,12 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnNetworkDestroy(reasons);
             }
+
+            Manager.Assets.SpawnedObjects.Remove(ObjectId);
+            if (IsServer && ConnectionId >= 0)
+                Player.SpawnedObjects.Remove(ObjectId);
+            Subscribings.Clear();
+            IsSpawned = false;
         }
     }
 }
