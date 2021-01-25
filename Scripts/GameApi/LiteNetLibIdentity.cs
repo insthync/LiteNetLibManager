@@ -92,7 +92,7 @@ namespace LiteNetLibManager
                 }
             }
         }
-        public uint ObjectId { get { return objectId; } }
+        public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
         public long ConnectionId { get; internal set; } = -1;
         public LiteNetLibGameManager Manager { get; internal set; }
 
@@ -430,13 +430,12 @@ namespace LiteNetLibManager
         /// <param name="connectionId"></param>
         internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectionId = -1)
         {
-            this.objectId = objectId;
             Manager = manager;
+            ObjectId = objectId;
             ConnectionId = connectionId;
+            UpdateHighestObjectId(objectId);
             IsDestroyed = false;
             IsSpawned = true;
-            if (objectId > HighestObjectId)
-                HighestObjectId = objectId;
             IsSceneObject = isSceneObject;
             if (!IsSceneObject)
                 AssignSceneObjectId();
@@ -543,7 +542,7 @@ namespace LiteNetLibManager
             return HighestObjectId;
         }
 
-        private static void ReorderSceneObjectId()
+        internal static void ReorderSceneObjectId()
         {
             ResetObjectId();
             LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
@@ -561,6 +560,12 @@ namespace LiteNetLibManager
             if (!Application.isPlaying)
                 EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 #endif
+        }
+
+        internal static void UpdateHighestObjectId(uint objectId)
+        {
+            if (objectId > HighestObjectId)
+                HighestObjectId = objectId;
         }
 
         public bool AddSubscriber(long connectionId)

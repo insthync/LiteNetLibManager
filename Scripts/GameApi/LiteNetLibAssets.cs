@@ -28,7 +28,7 @@ namespace LiteNetLibManager
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        
+
         public LiteNetLibGameManager Manager { get; private set; }
         private string logTag;
         public string LogTag
@@ -137,6 +137,7 @@ namespace LiteNetLibManager
                 {
                     sceneObject.gameObject.SetActive(false);
                     SceneObjects[sceneObject.ObjectId] = sceneObject;
+                    LiteNetLibIdentity.UpdateHighestObjectId(sceneObject.ObjectId);
                 }
             }
         }
