@@ -591,7 +591,7 @@ namespace LiteNetLibManager
 
         private void InitializeSubscribings()
         {
-            if (ConnectionId < 0)
+            if (!IsServer || ConnectionId < 0)
             {
                 // This is not player's networked object
                 return;
@@ -622,7 +622,7 @@ namespace LiteNetLibManager
 
         public void UpdateSubscribings(HashSet<uint> newSubscribings)
         {
-            if (ConnectionId < 0)
+            if (!IsServer || ConnectionId < 0)
             {
                 // This is not player's networked object
                 return;
