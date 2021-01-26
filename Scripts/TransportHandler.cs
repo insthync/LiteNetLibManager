@@ -12,7 +12,7 @@ namespace LiteNetLibManager
         protected readonly NetDataWriter writer = new NetDataWriter();
         public abstract string LogTag { get; }
         public abstract bool IsNetworkActive { get; }
-        public ITransport Transport { get; protected set; }
+        public ITransport Transport { get; set; }
         public bool RequestResponseEnabled { get; protected set; }
         public ushort RequestMessageType { get; protected set; }
         public ushort ResponseMessageType { get; protected set; }
@@ -20,12 +20,20 @@ namespace LiteNetLibManager
         protected readonly Dictionary<ushort, LiteNetLibRequestHandler> requestHandlers = new Dictionary<ushort, LiteNetLibRequestHandler>();
         protected readonly Dictionary<ushort, LiteNetLibResponseHandler> responseHandlers = new Dictionary<ushort, LiteNetLibResponseHandler>();
         protected readonly ConcurrentDictionary<uint, LiteNetLibRequestCallback> requestCallbacks = new ConcurrentDictionary<uint, LiteNetLibRequestCallback>();
-        protected uint nextAckId = 1;
+        protected uint nextRequestId;
         protected TransportEventData tempEventData;
 
         public int RequestsCount { get { return requestCallbacks.Count; } }
 
-        public TransportHandler(ITransport transport)
+        public TransportHandler()
+        {
+            RequestResponseEnabled = false;
+            RequestMessageType = 0;
+            ResponseMessageType = 0;
+            nextRequestId = 1;
+        }
+
+        public TransportHandler(ITransport transport) : this()
         {
             Transport = transport;
         }
@@ -89,20 +97,20 @@ namespace LiteNetLibManager
             int millisecondsTimeout,
             ResponseDelegate responseDelegate)
         {
-            uint ackId = nextAckId++;
+            uint requestId = nextRequestId++;
             // Get response callback by request type
-            requestCallbacks.TryAdd(ackId, new LiteNetLibRequestCallback(ackId, this, responseHandler, responseDelegate));
-            RequestTimeout(ackId, millisecondsTimeout).Forget();
-            return ackId;
+            requestCallbacks.TryAdd(requestId, new LiteNetLibRequestCallback(requestId, this, responseHandler, responseDelegate));
+            RequestTimeout(requestId, millisecondsTimeout).Forget();
+            return requestId;
         }
 
-        private async UniTaskVoid RequestTimeout(uint ackId, int millisecondsTimeout)
+        private async UniTaskVoid RequestTimeout(uint requestId, int millisecondsTimeout)
         {
             if (millisecondsTimeout > 0)
             {
                 await UniTask.Delay(millisecondsTimeout);
                 LiteNetLibRequestCallback callback;
-                if (requestCallbacks.TryRemove(ackId, out callback))
+                if (requestCallbacks.TryRemove(requestId, out callback))
                     callback.ResponseTimeout();
             }
         }
@@ -127,12 +135,12 @@ namespace LiteNetLibManager
                 return false;
             }
             // Create request
-            uint ackId = CreateRequest(responseHandlers[requestType], millisecondsTimeout, responseDelegate);
+            uint requestId = CreateRequest(responseHandlers[requestType], millisecondsTimeout, responseDelegate);
             // Write request
             writer.Reset();
             writer.PutPackedUShort(RequestMessageType);
             writer.PutPackedUShort(requestType);
-            writer.PutPackedUInt(ackId);
+            writer.PutPackedUInt(requestId);
             request.Serialize(writer);
             if (extraRequestSerializer != null)
                 extraRequestSerializer.Invoke(writer);
@@ -144,27 +152,27 @@ namespace LiteNetLibManager
             NetDataReader reader)
         {
             ushort requestType = reader.GetPackedUShort();
-            uint ackId = reader.GetPackedUInt();
+            uint requestId = reader.GetPackedUInt();
             if (!requestHandlers.ContainsKey(requestType))
             {
                 // No request-response handler
-                RequestProceeded(connectionId, ackId, AckResponseCode.Unimplemented, EmptyMessage.Value, null);
+                RequestProceeded(connectionId, requestId, AckResponseCode.Unimplemented, EmptyMessage.Value, null);
                 Logging.LogError($"Cannot proceed request {requestType} not registered.");
                 return;
             }
             // Invoke request and create response
-            requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, ackId, this, connectionId, reader), (responseCode, response, responseSerializer) =>
+            requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, requestId, this, connectionId, reader), (responseCode, response, responseSerializer) =>
             {
-                RequestProceeded(connectionId, ackId, responseCode, response, responseSerializer);
+                RequestProceeded(connectionId, requestId, responseCode, response, responseSerializer);
             });
         }
 
-        private void RequestProceeded(long connectionId, uint ackId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate responseSerializer)
+        private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate responseSerializer)
         {
             // Write response
             writer.Reset();
             writer.PutPackedUShort(ResponseMessageType);
-            writer.PutPackedUInt(ackId);
+            writer.PutPackedUInt(requestId);
             writer.PutValue(responseCode);
             response.Serialize(writer);
             if (responseSerializer != null)
@@ -175,12 +183,12 @@ namespace LiteNetLibManager
 
         private void ProceedResponse(long connectionId, NetDataReader reader)
         {
-            uint ackId = reader.GetPackedUInt();
+            uint requestId = reader.GetPackedUInt();
             AckResponseCode responseCode = reader.GetValue<AckResponseCode>();
-            if (requestCallbacks.ContainsKey(ackId))
+            if (requestCallbacks.ContainsKey(requestId))
             {
-                requestCallbacks[ackId].Response(connectionId, reader, responseCode);
-                requestCallbacks.TryRemove(ackId, out _);
+                requestCallbacks[requestId].Response(connectionId, reader, responseCode);
+                requestCallbacks.TryRemove(requestId, out _);
             }
         }
 

@@ -38,9 +38,9 @@ namespace LiteNetLibManager
                 Logging.LogWarning(LogTag, "Cannot Start Client, network already active");
                 return false;
             }
-            // Reset acks
+            // Clear and reset request Id
             requestCallbacks.Clear();
-            nextAckId = 1;
+            nextRequestId = 1;
             return isNetworkActive = Transport.StartClient(address, port);
         }
 

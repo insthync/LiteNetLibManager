@@ -49,17 +49,14 @@ namespace LiteNetLibManager
             get { return transportFactory; }
         }
 
-        private OfflineTransport offlineTransport = new OfflineTransport();
-        private ITransport transport;
+        private ITransport offlineTransport;
+        private ITransport onlineTransport;
         public ITransport Transport
         {
-            get
-            {
-                if (isOfflineConnection)
-                    return offlineTransport;
-                return transport;
-            }
+            get { return IsOfflineConnection ? offlineTransport : onlineTransport; }
         }
+
+        public bool IsOfflineConnection { get; protected set; }
 
         private string logTag;
         public virtual string LogTag
@@ -73,8 +70,6 @@ namespace LiteNetLibManager
         }
 
         protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
-
-        private bool isOfflineConnection;
 
         protected virtual void Awake()
         {
@@ -99,7 +94,8 @@ namespace LiteNetLibManager
                     transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
             }
 #endif
-            transport = TransportFactory.Build();
+            offlineTransport = new OfflineTransport();
+            onlineTransport = TransportFactory.Build();
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
             RegisterMessages();
@@ -141,6 +137,7 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, "Cannot start server because it was started.");
                 return false;
             }
+            Server.Transport = Transport;
             if (!Server.StartServer(networkPort, maxConnections))
             {
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
@@ -166,6 +163,7 @@ namespace LiteNetLibManager
             this.networkAddress = networkAddress;
             this.networkPort = networkPort;
             if (LogDev) Logging.Log(LogTag, $"Connecting to {networkAddress}:{networkPort}.");
+            Client.Transport = Transport;
             if (!Client.StartClient(networkAddress, networkPort))
             {
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
@@ -178,7 +176,7 @@ namespace LiteNetLibManager
 
         public virtual bool StartHost(bool isOfflineConnection = false)
         {
-            this.isOfflineConnection = isOfflineConnection;
+            IsOfflineConnection = isOfflineConnection;
             if (StartServer() && ConnectLocalClient())
             {
                 OnStartHost();
@@ -207,9 +205,13 @@ namespace LiteNetLibManager
             if (LogInfo) Logging.Log(LogTag, "StopServer");
             IsServer = false;
             Server.StopServer();
-            isOfflineConnection = false;
-
             OnStopServer();
+
+            if (IsOfflineConnection && IsClient)
+            {
+                StopClient();
+                IsOfflineConnection = false;
+            }
         }
 
         public void StopClient()
@@ -220,9 +222,13 @@ namespace LiteNetLibManager
             if (LogInfo) Logging.Log(LogTag, "StopClient");
             IsClient = false;
             Client.StopClient();
-            isOfflineConnection = false;
-
             OnStopClient();
+
+            if (IsOfflineConnection && IsServer)
+            {
+                StopServer();
+                IsOfflineConnection = false;
+            }
         }
 
         public void AddConnectionId(long connectionId)
