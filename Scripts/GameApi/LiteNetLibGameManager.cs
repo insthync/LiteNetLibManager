@@ -668,7 +668,7 @@ namespace LiteNetLibManager
         {
             ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
             if (!IsServer)
-                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation, message.objectId);
+                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation, message.connectionId);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {

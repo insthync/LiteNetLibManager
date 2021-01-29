@@ -256,14 +256,6 @@ namespace LiteNetLibManager
             LiteNetLibIdentity spawnedObject;
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
             {
-                // If this is server, send message to clients to destroy object
-                if (Manager.IsServer)
-                {
-                    foreach (long subscriber in spawnedObject.Subscribers)
-                    {
-                        Manager.SendServerDestroyObject(subscriber, objectId, DestroyObjectReasons.RequestedToDestroy);
-                    }
-                }
                 // Call this function to tell behaviour that the identity is being destroyed
                 spawnedObject.OnNetworkDestroy(reasons);
                 if (onObjectDestroy != null)

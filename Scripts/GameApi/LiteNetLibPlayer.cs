@@ -45,16 +45,13 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void Unsubscribe(uint objectId, bool destroyObjectOnPeer)
+        internal void Unsubscribe(uint objectId)
         {
-            if (Subscribings.Remove(objectId))
+            LiteNetLibIdentity identity;
+            if (Subscribings.Remove(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
-                LiteNetLibIdentity identity;
-                if (destroyObjectOnPeer && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
-                {
-                    identity.RemoveSubscriber(ConnectionId);
-                    Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
-                }
+                identity.RemoveSubscriber(ConnectionId);
+                Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
             }
         }
 

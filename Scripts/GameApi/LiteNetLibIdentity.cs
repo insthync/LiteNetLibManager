@@ -596,7 +596,7 @@ namespace LiteNetLibManager
 
         private void InitializeSubscribings()
         {
-            if (!IsServer || ConnectionId < 0)
+            if (!IsServer || ConnectionId < 0 || !Player.IsReady)
             {
                 // This is not player's networked object
                 return;
@@ -642,7 +642,7 @@ namespace LiteNetLibManager
 
         public void UpdateSubscribings(HashSet<uint> newSubscribings)
         {
-            if (!IsServer || ConnectionId < 0)
+            if (!IsServer || ConnectionId < 0 || !Player.IsReady)
             {
                 // This is not player's networked object
                 return;
@@ -653,14 +653,18 @@ namespace LiteNetLibManager
             {
                 if (!newSubscribings.Contains(oldSubscribing))
                 {
-                    Player.Unsubscribe(oldSubscribing, true);
+                    Player.Unsubscribe(oldSubscribing);
                     if (Manager.LogDebug)
                         Logging.Log(LogTag, $"Player: {ConnectionId} unsubscribe object ID: {oldSubscribing}.");
                 }
             }
             Subscribings.Clear();
+            LiteNetLibIdentity subscribingObject;
             foreach (uint newSubscribing in newSubscribings)
             {
+                if (!Manager.Assets.TryGetSpawnedObject(newSubscribing, out subscribingObject) ||
+                    subscribingObject.IsDestroyed)
+                    continue;
                 Subscribings.Add(newSubscribing);
                 Player.Subscribe(newSubscribing);
                 if (Manager.LogDebug)
@@ -670,7 +674,7 @@ namespace LiteNetLibManager
 
         public void NotifyNewObject(LiteNetLibIdentity newIdentity)
         {
-            if (!IsServer || ConnectionId < 0)
+            if (!IsServer || ConnectionId < 0 || !Player.IsReady)
             {
                 // This is not player's networked object
                 return;
@@ -744,18 +748,34 @@ namespace LiteNetLibManager
                 IsDestroyed = true;
         }
 
-        public void OnNetworkDestroy(byte reasons)
+        internal void OnNetworkDestroy(byte reasons)
         {
             int loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnNetworkDestroy(reasons);
             }
-
+            if (Manager.IsServer)
+            {
+                // If this is server, send message to clients to destroy object
+                LiteNetLibPlayer player;
+                foreach (long subscriber in Subscribers)
+                {
+                    if (Manager.TryGetPlayer(subscriber, out player))
+                    {
+                        player.Subscribings.Remove(objectId);
+                        Manager.SendServerDestroyObject(subscriber, objectId, reasons);
+                    }
+                }
+                // Delete object from owner player's spawned objects collection
+                if (ConnectionId >= 0)
+                    Player.SpawnedObjects.Remove(ObjectId);
+            }
+            // Delete object from assets component
             Manager.Assets.SpawnedObjects.Remove(ObjectId);
-            if (IsServer && ConnectionId >= 0)
-                Player.SpawnedObjects.Remove(ObjectId);
+            // Clear data
             Subscribings.Clear();
+            Subscribers.Clear();
             IsSpawned = false;
         }
     }
