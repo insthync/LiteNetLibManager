@@ -467,6 +467,7 @@ namespace LiteNetLibManager
                 Player.SpawnedObjects.Add(ObjectId, this);
 
             InitializeSubscribings();
+            NotifyNewObjectToOther();
         }
 
         internal void OnSetOwnerClient(bool isOwnerClient)
@@ -624,6 +625,21 @@ namespace LiteNetLibManager
             }
         }
 
+        private void NotifyNewObjectToOther()
+        {
+            if (!IsServer)
+            {
+                // Notifies by server only
+                return;
+            }
+            foreach (LiteNetLibPlayer player in Manager.GetPlayers())
+            {
+                if (player.ConnectionId == ConnectionId || !player.IsReady)
+                    continue;
+                player.NotifyNewObject(this);
+            }
+        }
+
         public void UpdateSubscribings(HashSet<uint> newSubscribings)
         {
             if (!IsServer || ConnectionId < 0)
@@ -649,6 +665,20 @@ namespace LiteNetLibManager
                 Player.Subscribe(newSubscribing);
                 if (Manager.LogDebug)
                     Logging.Log(LogTag, $"Player: {ConnectionId} subscribe object ID: {newSubscribing}.");
+            }
+        }
+
+        public void NotifyNewObject(LiteNetLibIdentity newIdentity)
+        {
+            if (!IsServer || ConnectionId < 0)
+            {
+                // This is not player's networked object
+                return;
+            }
+            if (!HasVisibleChecker || VisibleChecker.ShouldSubscribe(newIdentity))
+            {
+                Subscribings.Add(newIdentity.ObjectId);
+                Player.Subscribe(newIdentity.objectId);
             }
         }
 

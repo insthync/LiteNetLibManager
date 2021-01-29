@@ -79,5 +79,10 @@ namespace LiteNetLibManager
                     }
             }
         }
+
+        public override bool ShouldSubscribe(LiteNetLibIdentity identity)
+        {
+            return (identity.transform.position - transform.position).sqrMagnitude < range * range;
+        }
     }
 }

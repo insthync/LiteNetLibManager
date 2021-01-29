@@ -58,6 +58,8 @@ namespace LiteNetLibManager
             get { return Identity.IsSceneObject; }
         }
 
+        public abstract bool ShouldSubscribe(LiteNetLibIdentity identity);
+
         public abstract HashSet<uint> GetInitializeSubscribings();
 
         public void UpdateSubscribings(HashSet<uint> objectIds)

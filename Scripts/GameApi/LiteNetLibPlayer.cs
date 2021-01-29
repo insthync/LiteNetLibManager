@@ -17,6 +17,14 @@ namespace LiteNetLibManager
             ConnectionId = connectionId;
         }
 
+        internal void NotifyNewObject(LiteNetLibIdentity identity)
+        {
+            foreach (LiteNetLibIdentity obj in GetSpawnedObjects())
+            {
+                obj.NotifyNewObject(identity);
+            }
+        }
+
         internal bool IsSubscribing(uint objectId)
         {
             return Subscribings.Contains(objectId);

@@ -80,7 +80,7 @@ namespace LiteNetLibManager
 
         public virtual uint PacketVersion()
         {
-            return 3;
+            return 5;
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
