@@ -370,8 +370,10 @@ namespace LiteNetLibManager
             }
             else if (!IsOwnerClient || !ownerClientNotInterpolate)
             {
-                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, SendRate * deltaTime);
-                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, SendRate * deltaTime);
+                float receiveRate = Manager.Rtt > 0f ? 1 / Manager.Rtt : SendRate;
+                float lerpT = 1f / receiveRate * deltaTime;
+                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, lerpT);
+                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, lerpT);
                 Interpolate(currentInterpResult.position, currentInterpResult.rotation);
             }
         }
