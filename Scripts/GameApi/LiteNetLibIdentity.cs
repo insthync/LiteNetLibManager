@@ -143,13 +143,15 @@ namespace LiteNetLibManager
             if (Manager == null)
                 return;
 
-            Profiler.BeginSample("LiteNetLibIdentity - Network Update");
+            Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
             int loopCounter;
             for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
             {
                 SyncFields[loopCounter].NetworkUpdate(deltaTime);
             }
+            Profiler.EndSample();
 
+            Profiler.BeginSample("LiteNetLibIdentity - SyncBehaviours Update");
             for (loopCounter = 0; loopCounter < SyncBehaviours.Count; ++loopCounter)
             {
                 SyncBehaviours[loopCounter].NetworkUpdate(deltaTime);
