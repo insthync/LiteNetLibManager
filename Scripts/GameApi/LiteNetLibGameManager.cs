@@ -18,7 +18,6 @@ namespace LiteNetLibManager
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
-        private float tempDeltaTime;
         private float sendPingCountDown;
         private AsyncOperation loadSceneAsyncOperation;
         private bool isPinging;
@@ -49,25 +48,14 @@ namespace LiteNetLibManager
                 DontDestroyOnLoad(gameObject);
         }
 
-        protected override void LateUpdate()
+        protected override void FixedUpdate()
         {
             if (loadSceneAsyncOperation == null)
             {
-                tempDeltaTime = Time.unscaledDeltaTime;
-                // Update Spawned Objects
-                Profiler.BeginSample("LiteNetLibGameManager - Update Spawned Objects");
-                foreach (LiteNetLibIdentity spawnedObject in Assets.GetSpawnedObjects())
-                {
-                    if (spawnedObject == null)
-                        continue;
-                    spawnedObject.NetworkUpdate(tempDeltaTime);
-                }
-                Profiler.EndSample();
-
                 if (IsClientConnected)
                 {
                     // Send ping from client
-                    sendPingCountDown -= tempDeltaTime;
+                    sendPingCountDown -= Time.fixedDeltaTime;
                     if (sendPingCountDown <= 0f && !isPinging)
                     {
                         SendClientPing();
@@ -75,7 +63,7 @@ namespace LiteNetLibManager
                     }
                 }
             }
-            base.LateUpdate();
+            base.FixedUpdate();
         }
 
         public virtual uint PacketVersion()

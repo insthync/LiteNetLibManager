@@ -101,7 +101,7 @@ namespace LiteNetLibManager
             RegisterMessages();
         }
 
-        protected virtual void LateUpdate()
+        protected virtual void FixedUpdate()
         {
             if (IsServer)
                 Server.Update();

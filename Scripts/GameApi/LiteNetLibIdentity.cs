@@ -138,6 +138,11 @@ namespace LiteNetLibManager
             get; private set;
         }
 
+        private void FixedUpdate()
+        {
+            NetworkUpdate(Time.fixedDeltaTime);
+        }
+
         internal void NetworkUpdate(float deltaTime)
         {
             if (Manager == null)
