@@ -68,7 +68,7 @@ namespace LiteNetLibManager
 
         public virtual uint PacketVersion()
         {
-            return 5;
+            return 6;
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
