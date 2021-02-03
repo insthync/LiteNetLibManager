@@ -36,10 +36,11 @@ namespace LiteNetLibManager
         public bool ownerClientNotInterpolate;
         [Tooltip("This will be used when `ownerClientCanSendTransform` is set to TRUE to send transform update from client to server")]
         [Range(0.01f, 2f)]
-        public float ownerClientSendInterval = 0.01f;
+        public float ownerClientSendInterval = 0.1f;
         public float snapThreshold = 5.0f;
         public float movementTheshold = 0.075f;
         public float rotateTheshold = 1f;
+        public bool extrapolate;
         [Header("Sync Position Settings")]
         public SyncPositionOptions syncPositionX;
         public SyncPositionOptions syncPositionY;
@@ -60,14 +61,12 @@ namespace LiteNetLibManager
 
         private bool syncingTransformIsIdentity;
         // Interpolation related variables
-        private float ownerSendElapsed = 0;
-        private float lastClientTimestamp = 0;
-        private float lastServerTimestamp = 0;
+        private float ownerSendElapsed = 0f;
+        private float lastReceivedTime = 0f;
+        private float lastReceivedTimestamp = 0f;
         private TransformResult currentInterpResult;
+        private TransformResult previousEndInterpResult;
         private TransformResult endInterpResult;
-        private TransformResult syncResult;
-        // Optimize garbage collection
-        private float tempDeltaTime;
 
         private void Awake()
         {
@@ -118,8 +117,8 @@ namespace LiteNetLibManager
             currentInterpResult = new TransformResult();
             currentInterpResult.position = position;
             currentInterpResult.rotation = rotation;
-            currentInterpResult.timestamp = Time.unscaledTime;
-            syncResult = currentInterpResult;
+            currentInterpResult.timestamp = GetTimeStamp();
+            previousEndInterpResult = currentInterpResult;
             endInterpResult = currentInterpResult;
         }
 
@@ -154,11 +153,12 @@ namespace LiteNetLibManager
                 return;
             TransformResult result = DeserializeResult(reader);
             // Discard out of order results
-            if (result.timestamp <= lastClientTimestamp)
+            if (result.timestamp <= lastReceivedTimestamp)
                 return;
-            lastClientTimestamp = result.timestamp;
-            // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.unscaledTime;
+            lastReceivedTime = Time.fixedTime;
+            lastReceivedTimestamp = result.timestamp;
+            result.timestamp = GetTimeStamp();
+            previousEndInterpResult = endInterpResult;
             endInterpResult = result;
         }
 
@@ -184,7 +184,7 @@ namespace LiteNetLibManager
             SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.x, syncRotationX);
             SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.y, syncRotationY);
             SerializeRotationAxis(writer, transformResult.rotation.eulerAngles.z, syncRotationZ);
-            writer.Put(Time.unscaledTime);
+            writer.Put(GetTimeStamp());
         }
 
         public void Teleport(Vector3 position, Quaternion rotation)
@@ -208,14 +208,7 @@ namespace LiteNetLibManager
 
         public override bool ShouldSyncBehaviour()
         {
-            if (Vector3.Distance(syncResult.position, syncingTransform.position) >= movementTheshold || Quaternion.Angle(syncResult.rotation, syncingTransform.rotation) >= rotateTheshold)
-            {
-                syncResult.position = syncingTransform.position;
-                syncResult.rotation = syncingTransform.rotation;
-                syncResult.timestamp = Time.unscaledTime;
-                return true;
-            }
-            return false;
+            return true;
         }
 
         public override void OnSerialize(NetDataWriter writer)
@@ -226,7 +219,7 @@ namespace LiteNetLibManager
             SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.x, syncRotationX);
             SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.y, syncRotationY);
             SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.z, syncRotationZ);
-            writer.Put(Time.unscaledTime);
+            writer.Put(GetTimeStamp());
         }
 
         public override void OnDeserialize(NetDataReader reader)
@@ -236,11 +229,12 @@ namespace LiteNetLibManager
                 return;
             TransformResult result = DeserializeResult(reader);
             // Discard out of order results
-            if (result.timestamp <= lastServerTimestamp)
+            if (result.timestamp <= lastReceivedTimestamp)
                 return;
-            lastServerTimestamp = result.timestamp;
-            // Adding results to the results list so they can be used in interpolation process
-            result.timestamp = Time.unscaledTime;
+            lastReceivedTime = Time.fixedTime;
+            lastReceivedTimestamp = result.timestamp;
+            result.timestamp = GetTimeStamp();
+            previousEndInterpResult = endInterpResult;
             endInterpResult = result;
         }
 
@@ -324,43 +318,44 @@ namespace LiteNetLibManager
 
         private void Update()
         {
-            tempDeltaTime = Time.deltaTime;
-            // Sending client transform result to server
-            // Don't send to server if it's server which already update transform result
-            // So only owner client can send transform result to server
-            if (ownerClientCanSendTransform && IsOwnerClient && !IsServer)
-            {
-                if (ownerSendElapsed >= ownerClientSendInterval)
-                {
-                    // Send transform to server only when there are changes on transform
-                    if (ShouldSyncBehaviour())
-                    {
-                        ClientSendTransform(syncResult);
-                        ownerSendElapsed = 0;
-                    }
-                }
-                ownerSendElapsed += tempDeltaTime;
-            }
-
-            UpdateInterpolate(tempDeltaTime);
-        }
-
-        private void UpdateInterpolate(float deltaTime)
-        {
             // Sending transform to all clients
             if (IsServer)
             {
                 // Interpolate transform that receives from clients
                 // So if this is no owning client (ConnectionId < 0), it won't interpolate
                 if (ownerClientCanSendTransform && !IsOwnerClient && ConnectionId >= 0)
-                    Interpolate(deltaTime);
+                    UpdateTransform(Time.deltaTime);
             }
             // Interpolating results for non-owner client objects on clients
             else if (!ownerClientCanSendTransform || !IsOwnerClient)
-                Interpolate(deltaTime);
+            {
+                UpdateTransform(Time.deltaTime);
+            }
         }
 
-        private void Interpolate(float deltaTime)
+        private void FixedUpdate()
+        {
+            // Sending client transform result to server
+            // Don't send to server if it's server which already update transform result
+            // So only owner client can send transform result to server
+            if (ownerClientCanSendTransform && IsOwnerClient && !IsServer)
+            {
+                ownerSendElapsed += Time.fixedDeltaTime;
+                if (ownerSendElapsed >= ownerClientSendInterval)
+                {
+                    // Send transform to server only when there are changes on transform
+                    ClientSendTransform(new TransformResult()
+                    {
+                        position = syncingTransform.position,
+                        rotation = syncingTransform.rotation,
+                        timestamp = GetTimeStamp(),
+                    });
+                    ownerSendElapsed = 0;
+                }
+            }
+        }
+
+        private void UpdateTransform(float deltaTime)
         {
             if (ShouldSnap(endInterpResult.position))
             {
@@ -370,17 +365,28 @@ namespace LiteNetLibManager
             }
             else if (!IsOwnerClient || !ownerClientNotInterpolate)
             {
-                float receiveRate = Manager.Rtt > 0f ? 1 / Manager.Rtt : SendRate;
-                float lerpT = 1f / receiveRate * deltaTime;
-                currentInterpResult.position = Vector3.Lerp(currentInterpResult.position, endInterpResult.position, lerpT);
-                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, lerpT);
+                float dist = Vector3.Distance(endInterpResult.position, previousEndInterpResult.position);
+                float timeDiff = endInterpResult.timestamp - previousEndInterpResult.timestamp;
+                float moveSpeed = 0f;
+                if (timeDiff > 0f)
+                    moveSpeed = dist / timeDiff;
+                Vector3 extrapolateOffsets = Vector3.zero;
+                if (extrapolate)
+                {
+                    float timePassed = Time.fixedTime - lastReceivedTime;
+                    Vector3 moveDirection = (endInterpResult.position - previousEndInterpResult.position).normalized;
+                    if (moveDirection.sqrMagnitude > 0f && timePassed > 0f)
+                        extrapolateOffsets = moveDirection * moveSpeed * timePassed;
+                }
+                currentInterpResult.position = Vector3.MoveTowards(currentInterpResult.position, endInterpResult.position + extrapolateOffsets, moveSpeed * deltaTime);
+                currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, (1f / timeDiff) * deltaTime);
                 Interpolate(currentInterpResult.position, currentInterpResult.rotation);
             }
         }
 
         private bool ShouldSnap(Vector3 targetPosition)
         {
-            float dist = 0f;
+            float dist;
             if (CacheRigidbody2D != null)
                 dist = (CacheRigidbody2D.position - new Vector2(targetPosition.x, targetPosition.y)).sqrMagnitude;
             else
@@ -455,6 +461,11 @@ namespace LiteNetLibManager
                 syncingTransform.position = position;
                 syncingTransform.rotation = rotation;
             }
+        }
+
+        private float GetTimeStamp()
+        {
+            return Time.fixedTime;
         }
 
         #region Math Utilities
