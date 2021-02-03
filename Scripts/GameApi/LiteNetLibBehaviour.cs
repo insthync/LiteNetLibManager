@@ -37,6 +37,9 @@ namespace LiteNetLibManager
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
+        /// <summary>
+        /// How many times per second it will sync behaviour
+        /// </summary>
         public float SendRate
         {
             get { return 1f / sendInterval; }
