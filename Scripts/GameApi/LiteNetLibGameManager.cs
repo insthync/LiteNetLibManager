@@ -308,7 +308,7 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest(GameReqTypes.ClientNotReady, EmptyMessage.Value, null);
+            ClientSendRequest(GameReqTypes.ClientNotReady, EmptyMessage.Value);
         }
 
         public void SendClientPing()
