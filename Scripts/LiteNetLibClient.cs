@@ -1,4 +1,5 @@
-﻿using LiteNetLib;
+﻿using Cysharp.Threading.Tasks;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using System;
 
@@ -85,11 +86,11 @@ namespace LiteNetLibManager
             SendMessage(-1, deliveryMethod, writer);
         }
 
-        public bool SendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate responseDelegate = null)
+        public bool SendRequest<TRequest>(ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraSerializer = null)
             where TRequest : INetSerializable
         {
             // Send request to server, so connection id will not being used
-            if (!CreateAndWriteRequest(writer, requestType, request, extraSerializer, millisecondsTimeout, responseDelegate))
+            if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
                 return false;
             SendMessage(-1, DeliveryMethod.ReliableOrdered, writer);
             return true;

@@ -294,14 +294,14 @@ namespace LiteNetLibManager
             ClientSendRequest(GameReqTypes.EnterGame, new EnterGameRequestMessage()
             {
                 packetVersion = PacketVersion(),
-            }, SerializeEnterGameData);
+            }, extraRequestSerializer: SerializeEnterGameData);
         }
 
         public void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest(GameReqTypes.ClientReady, EmptyMessage.Value, SerializeClientReadyData);
+            ClientSendRequest(GameReqTypes.ClientReady, EmptyMessage.Value, extraRequestSerializer: SerializeClientReadyData);
         }
 
         public void SendClientNotReady()

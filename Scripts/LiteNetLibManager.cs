@@ -292,40 +292,30 @@ namespace LiteNetLibManager
             ServerSendPacket(connectionId, options, msgType, null);
         }
 
-        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate responseDelegate = null)
+        public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
             where TRequest : INetSerializable
         {
-            return Client.SendRequest(requestType, request, extraRequestSerializer, millisecondsTimeout, responseDelegate);
+            return Client.SendRequest(requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer);
         }
 
-        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate responseDelegate = null)
+        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
             where TRequest : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, millisecondsTimeout, responseDelegate);
+            return Server.SendRequest(connectionId, msgType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer);
         }
 
-        public bool ClientSendRequest<TRequest, TResponse>(ushort requestType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate<TResponse> responseDelegate = null)
+        public bool ClientSendRequest<TRequest, TResponse>(ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
             where TRequest : INetSerializable
             where TResponse : INetSerializable
         {
-            return Client.SendRequest(requestType, request, extraRequestSerializer, millisecondsTimeout, (requestHandler, responseCode, response) =>
-            {
-                if (responseDelegate != null)
-                    return responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
-                return default;
-            });
+            return Client.SendRequest(requestType, request, (requestHandler, responseCode, response) => responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response), millisecondsTimeout, extraRequestSerializer);
         }
 
-        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, SerializerDelegate extraRequestSerializer = null, int millisecondsTimeout = 30000, ResponseDelegate<TResponse> responseDelegate = null)
+        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
             where TRequest : INetSerializable
             where TResponse : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, extraRequestSerializer, millisecondsTimeout, (requestHandler, responseCode, response) =>
-            {
-                if (responseDelegate != null)
-                    return responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
-                return default;
-            });
+            return Server.SendRequest(connectionId, msgType, request, (requestHandler, responseCode, response) => responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response), millisecondsTimeout, extraRequestSerializer);
         }
         #endregion
 

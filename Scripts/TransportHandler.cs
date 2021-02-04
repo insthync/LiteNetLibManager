@@ -94,8 +94,8 @@ namespace LiteNetLibManager
 
         private uint CreateRequest(
             LiteNetLibResponseHandler responseHandler,
-            int millisecondsTimeout,
-            ResponseDelegate responseDelegate)
+            ResponseDelegate<INetSerializable> responseDelegate,
+            int millisecondsTimeout)
         {
             uint requestId = nextRequestId++;
             // Get response callback by request type
@@ -119,9 +119,9 @@ namespace LiteNetLibManager
             NetDataWriter writer,
             ushort requestType,
             TRequest request,
-            SerializerDelegate extraRequestSerializer,
+            ResponseDelegate<INetSerializable> responseDelegate,
             int millisecondsTimeout,
-            ResponseDelegate responseDelegate)
+            SerializerDelegate extraRequestSerializer)
             where TRequest : INetSerializable
         {
             if (!responseHandlers.ContainsKey(requestType))
@@ -137,7 +137,7 @@ namespace LiteNetLibManager
                 return false;
             }
             // Create request
-            uint requestId = CreateRequest(responseHandlers[requestType], millisecondsTimeout, responseDelegate);
+            uint requestId = CreateRequest(responseHandlers[requestType], responseDelegate, millisecondsTimeout);
             // Write request
             writer.Reset();
             writer.PutPackedUShort(RequestMessageType);
