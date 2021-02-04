@@ -126,11 +126,13 @@ namespace LiteNetLibManager
         {
             if (!responseHandlers.ContainsKey(requestType))
             {
+                responseDelegate.Invoke(new ResponseHandlerData(nextRequestId++, this, -1, null), AckResponseCode.Unimplemented, EmptyMessage.Value);
                 Logging.LogError($"Cannot create request. Request type: {requestType} not registered.");
                 return false;
             }
             if (!responseHandlers[requestType].IsRequestTypeValid(typeof(TRequest)))
             {
+                responseDelegate.Invoke(new ResponseHandlerData(nextRequestId++, this, -1, null), AckResponseCode.Unimplemented, EmptyMessage.Value);
                 Logging.LogError($"Cannot create request. Request type: {requestType}, {typeof(TRequest)} is not valid message type.");
                 return false;
             }
