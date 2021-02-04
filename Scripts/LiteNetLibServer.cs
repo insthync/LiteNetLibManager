@@ -1,6 +1,6 @@
-﻿using LiteNetLib;
+﻿using Cysharp.Threading.Tasks;
+using LiteNetLib;
 using LiteNetLib.Utils;
-using System;
 
 namespace LiteNetLibManager
 {
@@ -96,6 +96,30 @@ namespace LiteNetLibManager
                 return false;
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
             return true;
+        }
+
+        public async UniTask<AsyncResponseData<TResponse>> SendRequestAsync<TRequest, TResponse>(long connectionId, ushort requestType, TRequest request, int millisecondsTimeout = 30000, SerializerDelegate extraSerializer = null)
+            where TRequest : INetSerializable
+            where TResponse : INetSerializable
+        {
+            bool done = false;
+            AsyncResponseData<TResponse> responseData = default;
+            // Create request
+            CreateAndWriteRequest(writer, requestType, request, (requestHandler, responseCode, response) =>
+            {
+                responseData = new AsyncResponseData<TResponse>(requestHandler, responseCode, (TResponse)response);
+                done = true;
+                return default;
+            }, millisecondsTimeout, extraSerializer);
+            // Send request to target client
+            SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
+            // Wait for response
+            do
+            {
+                await UniTask.Yield();
+            } while (!done);
+            // Return response data
+            return responseData;
         }
     }
 }

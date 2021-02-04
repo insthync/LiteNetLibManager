@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using Cysharp.Threading.Tasks;
 
 namespace LiteNetLibManager
 {
@@ -298,10 +299,10 @@ namespace LiteNetLibManager
             return Client.SendRequest(requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer);
         }
 
-        public bool ServerSendRequest<TRequest>(long connectionId, ushort msgType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
+        public bool ServerSendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
             where TRequest : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer);
+            return Server.SendRequest(connectionId, requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer);
         }
 
         public bool ClientSendRequest<TRequest, TResponse>(ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
@@ -311,11 +312,25 @@ namespace LiteNetLibManager
             return Client.SendRequest(requestType, request, (requestHandler, responseCode, response) => responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response), millisecondsTimeout, extraRequestSerializer);
         }
 
-        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort msgType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
+        public UniTask<AsyncResponseData<TResponse>> ClientSendRequestAsync<TRequest, TResponse>(ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
             where TRequest : INetSerializable
             where TResponse : INetSerializable
         {
-            return Server.SendRequest(connectionId, msgType, request, (requestHandler, responseCode, response) => responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response), millisecondsTimeout, extraRequestSerializer);
+            return Client.SendRequestAsync<TRequest, TResponse>(requestType, request, millisecondsTimeout, extraRequestSerializer);
+        }
+
+        public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
+            where TRequest : INetSerializable
+            where TResponse : INetSerializable
+        {
+            return Server.SendRequest(connectionId, requestType, request, (requestHandler, responseCode, response) => responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response), millisecondsTimeout, extraRequestSerializer);
+        }
+
+        public UniTask<AsyncResponseData<TResponse>> ServerSendRequestAsync<TRequest, TResponse>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
+            where TRequest : INetSerializable
+            where TResponse : INetSerializable
+        {
+            return Server.SendRequestAsync<TRequest, TResponse>(connectionId, requestType, request, millisecondsTimeout, extraRequestSerializer);
         }
         #endregion
 
