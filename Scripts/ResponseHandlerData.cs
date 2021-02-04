@@ -2,7 +2,7 @@
 
 namespace LiteNetLibManager
 {
-    public class ResponseHandlerData
+    public struct ResponseHandlerData
     {
         public uint AckId { get; private set; }
         public TransportHandler TransportHandler { get; private set; }

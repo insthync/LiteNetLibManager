@@ -3,13 +3,13 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public abstract class LiteNetLibResponseHandler
+    public interface LiteNetLibResponseHandler
     {
-        internal abstract void InvokeResponse(ResponseHandlerData responseHandler, AckResponseCode responseCode, ResponseDelegate responseDelegate);
-        internal abstract bool IsRequestTypeValid(Type type);
+        void InvokeResponse(ResponseHandlerData responseHandler, AckResponseCode responseCode, ResponseDelegate<INetSerializable> responseDelegate);
+        bool IsRequestTypeValid(Type type);
     }
 
-    public sealed class LiteNetLibResponseHandler<TRequest, TResponse> : LiteNetLibResponseHandler
+    public struct LiteNetLibResponseHandler<TRequest, TResponse> : LiteNetLibResponseHandler
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new()
     {
@@ -20,7 +20,7 @@ namespace LiteNetLibManager
             registeredDelegate = responseDelegate;
         }
 
-        internal override void InvokeResponse(ResponseHandlerData responseHandler, AckResponseCode responseCode, ResponseDelegate responseDelegate)
+        public void InvokeResponse(ResponseHandlerData responseHandler, AckResponseCode responseCode, ResponseDelegate<INetSerializable> responseDelegate)
         {
             TResponse response = new TResponse();
             if (responseCode != AckResponseCode.Timeout &&
@@ -35,7 +35,7 @@ namespace LiteNetLibManager
                 responseDelegate.Invoke(responseHandler, responseCode, response);
         }
 
-        internal override bool IsRequestTypeValid(Type type)
+        public bool IsRequestTypeValid(Type type)
         {
             return typeof(TRequest) == type;
         }

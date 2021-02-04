@@ -2,7 +2,7 @@
 
 namespace LiteNetLibManager
 {
-    public class RequestHandlerData
+    public struct RequestHandlerData
     {
         public ushort RequestType { get; private set; }
         public uint AckId { get; private set; }

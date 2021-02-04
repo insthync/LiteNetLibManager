@@ -3,12 +3,12 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public abstract class LiteNetLibRequestHandler
+    public interface LiteNetLibRequestHandler
     {
-        internal abstract void InvokeRequest(RequestHandlerData requestHandler, RequestProceedResultDelegate<INetSerializable> responseProceedResult);
+        void InvokeRequest(RequestHandlerData requestHandler, RequestProceedResultDelegate<INetSerializable> responseProceedResult);
     }
 
-    public class LiteNetLibRequestHandler<TRequest, TResponse> : LiteNetLibRequestHandler
+    public struct LiteNetLibRequestHandler<TRequest, TResponse> : LiteNetLibRequestHandler
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new()
     {
@@ -19,7 +19,7 @@ namespace LiteNetLibManager
             this.requestDelegate = requestDelegate;
         }
 
-        internal override void InvokeRequest(RequestHandlerData requestHandler, RequestProceedResultDelegate<INetSerializable> responseProceedResult)
+        public void InvokeRequest(RequestHandlerData requestHandler, RequestProceedResultDelegate<INetSerializable> responseProceedResult)
         {
             TRequest request = new TRequest();
             if (requestHandler.Reader != null)

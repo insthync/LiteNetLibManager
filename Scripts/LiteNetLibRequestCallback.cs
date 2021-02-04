@@ -1,20 +1,19 @@
 ﻿using LiteNetLib.Utils;
-using System;
 
 namespace LiteNetLibManager
 {
-    public class LiteNetLibRequestCallback
+    public struct LiteNetLibRequestCallback
     {
-        public uint AckId { get; protected set; }
-        public TransportHandler TransportHandler { get; protected set; }
-        public LiteNetLibResponseHandler ResponseHandler { get; protected set; }
-        public ResponseDelegate ResponseDelegate { get; protected set; }
+        public uint AckId { get; private set; }
+        public TransportHandler TransportHandler { get; private set; }
+        public LiteNetLibResponseHandler ResponseHandler { get; private set; }
+        public ResponseDelegate<INetSerializable> ResponseDelegate { get; private set; }
 
         public LiteNetLibRequestCallback(
             uint ackId,
             TransportHandler transportHandler,
             LiteNetLibResponseHandler responseHandler,
-            ResponseDelegate responseDelegate)
+            ResponseDelegate<INetSerializable> responseDelegate)
         {
             AckId = ackId;
             TransportHandler = transportHandler;

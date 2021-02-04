@@ -2,7 +2,7 @@
 
 namespace LiteNetLibManager
 {
-    public class MessageHandlerData
+    public struct MessageHandlerData
     {
         public ushort MessageType { get; private set; }
         public TransportHandler TransportHandler { get; private set; }
