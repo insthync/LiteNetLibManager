@@ -32,11 +32,11 @@ namespace LiteNetLibManager
         public Transform syncingTransform;
         [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
         public bool ownerClientCanSendTransform;
-        [Tooltip("If this is TRUE, it will not interpolate transform at owner client, but it's still snapping")]
-        public bool ownerClientNotInterpolate;
         [Tooltip("This will be used when `ownerClientCanSendTransform` is set to TRUE to send transform update from client to server")]
         [Range(0.01f, 2f)]
         public float ownerClientSendInterval = 0.1f;
+        [Tooltip("This will be used when `ownerClientCanSendTransform` is set to TRUE to not interpolate transform that received from owner client")]
+        public bool serverNotInterpolate;
         public float snapThreshold = 5.0f;
         public float movementTheshold = 0.075f;
         public float rotateTheshold = 1f;
@@ -213,12 +213,20 @@ namespace LiteNetLibManager
 
         public override void OnSerialize(NetDataWriter writer)
         {
-            SerializePositionAxis(writer, syncingTransform.position.x, syncPositionX);
-            SerializePositionAxis(writer, syncingTransform.position.y, syncPositionY);
-            SerializePositionAxis(writer, syncingTransform.position.z, syncPositionZ);
-            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.x, syncRotationX);
-            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.y, syncRotationY);
-            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.z, syncRotationZ);
+            Vector3 position = syncingTransform.position;
+            Quaternion rotation = syncingTransform.rotation;
+            if (!IsOwnerClient && ownerClientCanSendTransform)
+            {
+                // Pass last received transform, not interpolating transform
+                position = endInterpResult.position;
+                rotation = endInterpResult.rotation;
+            }
+            SerializePositionAxis(writer, position.x, syncPositionX);
+            SerializePositionAxis(writer, position.y, syncPositionY);
+            SerializePositionAxis(writer, position.z, syncPositionZ);
+            SerializeRotationAxis(writer, rotation.eulerAngles.x, syncRotationX);
+            SerializeRotationAxis(writer, rotation.eulerAngles.y, syncRotationY);
+            SerializeRotationAxis(writer, rotation.eulerAngles.z, syncRotationZ);
             writer.Put(GetTimeStamp());
         }
 
@@ -363,8 +371,18 @@ namespace LiteNetLibManager
                 currentInterpResult.rotation = endInterpResult.rotation;
                 Snap(endInterpResult.position, endInterpResult.rotation);
             }
-            else if (!IsOwnerClient || !ownerClientNotInterpolate)
+            else
             {
+                if (IsOwnerClient && ownerClientCanSendTransform)
+                {
+                    // If owner client can send transform, it won't interpolating transform at owner client
+                    return;
+                }
+                if (IsServer && !IsClient && ownerClientCanSendTransform && serverNotInterpolate)
+                {
+                    // If owner client can send transform, it won't interpolating at server by `serverNotInterpolate` condition
+                    return;
+                }
                 float dist = Vector3.Distance(endInterpResult.position, previousEndInterpResult.position);
                 float timeDiff = endInterpResult.timestamp - previousEndInterpResult.timestamp;
                 float moveSpeed = 0f;
