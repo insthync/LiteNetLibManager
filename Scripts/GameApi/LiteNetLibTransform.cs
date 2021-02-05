@@ -38,8 +38,6 @@ namespace LiteNetLibManager
         [Tooltip("This will be used when `ownerClientCanSendTransform` is set to TRUE to not interpolate transform that received from owner client")]
         public bool serverNotInterpolate;
         public float snapThreshold = 5.0f;
-        public float movementTheshold = 0.075f;
-        public float rotateTheshold = 1f;
         public bool extrapolate;
         [Header("Sync Position Settings")]
         public SyncPositionOptions syncPositionX;
@@ -215,11 +213,13 @@ namespace LiteNetLibManager
         {
             Vector3 position = syncingTransform.position;
             Quaternion rotation = syncingTransform.rotation;
+            float timestamp = GetTimeStamp();
             if (!IsOwnerClient && ownerClientCanSendTransform)
             {
                 // Pass last received transform, not interpolating transform
                 position = endInterpResult.position;
                 rotation = endInterpResult.rotation;
+                timestamp = endInterpResult.timestamp;
             }
             SerializePositionAxis(writer, position.x, syncPositionX);
             SerializePositionAxis(writer, position.y, syncPositionY);
@@ -227,7 +227,7 @@ namespace LiteNetLibManager
             SerializeRotationAxis(writer, rotation.eulerAngles.x, syncRotationX);
             SerializeRotationAxis(writer, rotation.eulerAngles.y, syncRotationY);
             SerializeRotationAxis(writer, rotation.eulerAngles.z, syncRotationZ);
-            writer.Put(GetTimeStamp());
+            writer.Put(timestamp);
         }
 
         public override void OnDeserialize(NetDataReader reader)
@@ -381,6 +381,13 @@ namespace LiteNetLibManager
                 if (IsServer && !IsClient && ownerClientCanSendTransform && serverNotInterpolate)
                 {
                     // If owner client can send transform, it won't interpolating at server by `serverNotInterpolate` condition
+                    if (Vector3.Distance(currentInterpResult.position, endInterpResult.position) > 0 ||
+                        Quaternion.Angle(currentInterpResult.rotation, endInterpResult.rotation) > 0)
+                    {
+                        currentInterpResult.position = endInterpResult.position;
+                        currentInterpResult.rotation = endInterpResult.rotation;
+                        Snap(endInterpResult.position, endInterpResult.rotation);
+                    }
                     return;
                 }
                 float dist = Vector3.Distance(endInterpResult.position, previousEndInterpResult.position);
@@ -454,7 +461,7 @@ namespace LiteNetLibManager
             }
             else if (CacheRigidbody3D != null && !CacheRigidbody3D.isKinematic)
             {
-                if (Vector3.Distance(position, CacheRigidbody3D.position) >= movementTheshold)
+                if (Vector3.Distance(position, CacheRigidbody3D.position) > 0f)
                     CacheRigidbody3D.MovePosition(position);
                 else
                 {
@@ -465,7 +472,7 @@ namespace LiteNetLibManager
             }
             else if (CacheRigidbody2D != null && !CacheRigidbody2D.isKinematic)
             {
-                if (Vector2.Distance(position, CacheRigidbody2D.position) >= movementTheshold)
+                if (Vector2.Distance(position, CacheRigidbody2D.position) > 0f)
                     CacheRigidbody2D.MovePosition(position);
                 else
                 {
