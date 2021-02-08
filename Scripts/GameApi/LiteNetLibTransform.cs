@@ -35,8 +35,6 @@ namespace LiteNetLibManager
         [Tooltip("This will be used when `ownerClientCanSendTransform` is set to TRUE to send transform update from client to server")]
         [Range(0.01f, 2f)]
         public float ownerClientSendInterval = 0.1f;
-        [Tooltip("This will be used when `ownerClientCanSendTransform` is set to TRUE to not interpolate transform that received from owner client")]
-        public bool serverNotInterpolate;
         public float snapThreshold = 5.0f;
         public bool extrapolate;
         [Header("Sync Position Settings")]
@@ -211,23 +209,13 @@ namespace LiteNetLibManager
 
         public override void OnSerialize(NetDataWriter writer)
         {
-            Vector3 position = syncingTransform.position;
-            Quaternion rotation = syncingTransform.rotation;
-            float timestamp = GetTimeStamp();
-            if (!IsOwnerClient && ownerClientCanSendTransform)
-            {
-                // Pass last received transform, not interpolating transform
-                position = endInterpResult.position;
-                rotation = endInterpResult.rotation;
-                timestamp = endInterpResult.timestamp;
-            }
-            SerializePositionAxis(writer, position.x, syncPositionX);
-            SerializePositionAxis(writer, position.y, syncPositionY);
-            SerializePositionAxis(writer, position.z, syncPositionZ);
-            SerializeRotationAxis(writer, rotation.eulerAngles.x, syncRotationX);
-            SerializeRotationAxis(writer, rotation.eulerAngles.y, syncRotationY);
-            SerializeRotationAxis(writer, rotation.eulerAngles.z, syncRotationZ);
-            writer.Put(timestamp);
+            SerializePositionAxis(writer, syncingTransform.position.x, syncPositionX);
+            SerializePositionAxis(writer, syncingTransform.position.y, syncPositionY);
+            SerializePositionAxis(writer, syncingTransform.position.z, syncPositionZ);
+            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.x, syncRotationX);
+            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.y, syncRotationY);
+            SerializeRotationAxis(writer, syncingTransform.rotation.eulerAngles.z, syncRotationZ);
+            writer.Put(GetTimeStamp());
         }
 
         public override void OnDeserialize(NetDataReader reader)
@@ -376,18 +364,6 @@ namespace LiteNetLibManager
                 if (IsOwnerClient && ownerClientCanSendTransform)
                 {
                     // If owner client can send transform, it won't interpolating transform at owner client
-                    return;
-                }
-                if (IsServer && !IsClient && ownerClientCanSendTransform && serverNotInterpolate)
-                {
-                    // If owner client can send transform, it won't interpolating at server by `serverNotInterpolate` condition
-                    if (Vector3.Distance(currentInterpResult.position, endInterpResult.position) > 0 ||
-                        Quaternion.Angle(currentInterpResult.rotation, endInterpResult.rotation) > 0)
-                    {
-                        currentInterpResult.position = endInterpResult.position;
-                        currentInterpResult.rotation = endInterpResult.rotation;
-                        Snap(endInterpResult.position, endInterpResult.rotation);
-                    }
                     return;
                 }
                 float dist = Vector3.Distance(endInterpResult.position, previousEndInterpResult.position);
