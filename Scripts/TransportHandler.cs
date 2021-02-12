@@ -122,7 +122,7 @@ namespace LiteNetLibManager
             ResponseDelegate<INetSerializable> responseDelegate,
             int millisecondsTimeout,
             SerializerDelegate extraRequestSerializer)
-            where TRequest : INetSerializable
+            where TRequest : INetSerializable, new()
         {
             if (!responseHandlers.ContainsKey(requestType))
             {

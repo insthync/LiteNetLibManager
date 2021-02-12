@@ -294,41 +294,51 @@ namespace LiteNetLibManager
         }
 
         public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
-            where TRequest : INetSerializable
+            where TRequest : INetSerializable, new()
         {
             return Client.SendRequest(requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer);
         }
 
         public bool ServerSendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
-            where TRequest : INetSerializable
+            where TRequest : INetSerializable, new()
         {
             return Server.SendRequest(connectionId, requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer);
         }
 
         public bool ClientSendRequest<TRequest, TResponse>(ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
-            where TRequest : INetSerializable
-            where TResponse : INetSerializable
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
         {
-            return Client.SendRequest(requestType, request, (requestHandler, responseCode, response) => responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response), millisecondsTimeout, extraRequestSerializer);
+            return Client.SendRequest(requestType, request, (requestHandler, responseCode, response) =>
+            {
+                if (!(response is TResponse))
+                    response = default(TResponse);
+                responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+            }, millisecondsTimeout, extraRequestSerializer);
         }
 
-        public UniTask<AsyncResponseData<TResponse>> ClientSendRequestAsync<TRequest, TResponse>(ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
-            where TRequest : INetSerializable
-            where TResponse : INetSerializable
+        public UniTask<AsyncResponseData<TResponse>> ClientSendRequestAsync<TRequest, TResponse>(ushort requestType, TRequest request, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
         {
             return Client.SendRequestAsync<TRequest, TResponse>(requestType, request, millisecondsTimeout, extraRequestSerializer);
         }
 
         public bool ServerSendRequest<TRequest, TResponse>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
-            where TRequest : INetSerializable
-            where TResponse : INetSerializable
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
         {
-            return Server.SendRequest(connectionId, requestType, request, (requestHandler, responseCode, response) => responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response), millisecondsTimeout, extraRequestSerializer);
+            return Server.SendRequest(connectionId, requestType, request, (requestHandler, responseCode, response) =>
+            {
+                if (!(response is TResponse))
+                    response = default(TResponse);
+                responseDelegate.Invoke(requestHandler, responseCode, (TResponse)response);
+            }, millisecondsTimeout, extraRequestSerializer);
         }
 
-        public UniTask<AsyncResponseData<TResponse>> ServerSendRequestAsync<TRequest, TResponse>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<TResponse> responseDelegate, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
-            where TRequest : INetSerializable
-            where TResponse : INetSerializable
+        public UniTask<AsyncResponseData<TResponse>> ServerSendRequestAsync<TRequest, TResponse>(long connectionId, ushort requestType, TRequest request, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
         {
             return Server.SendRequestAsync<TRequest, TResponse>(connectionId, requestType, request, millisecondsTimeout, extraRequestSerializer);
         }

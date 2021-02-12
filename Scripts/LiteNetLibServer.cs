@@ -90,7 +90,7 @@ namespace LiteNetLibManager
         }
 
         public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
-            where TRequest : INetSerializable
+            where TRequest : INetSerializable, new()
         {
             if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer))
                 return false;
@@ -99,17 +99,18 @@ namespace LiteNetLibManager
         }
 
         public async UniTask<AsyncResponseData<TResponse>> SendRequestAsync<TRequest, TResponse>(long connectionId, ushort requestType, TRequest request, int millisecondsTimeout = 30000, SerializerDelegate extraSerializer = null)
-            where TRequest : INetSerializable
-            where TResponse : INetSerializable
+            where TRequest : INetSerializable, new()
+            where TResponse : INetSerializable, new()
         {
             bool done = false;
             AsyncResponseData<TResponse> responseData = default;
             // Create request
             CreateAndWriteRequest(writer, requestType, request, (requestHandler, responseCode, response) =>
             {
+                if (!(response is TResponse))
+                    response = default(TResponse);
                 responseData = new AsyncResponseData<TResponse>(requestHandler, responseCode, (TResponse)response);
                 done = true;
-                return default;
             }, millisecondsTimeout, extraSerializer);
             // Send request to target client
             SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
