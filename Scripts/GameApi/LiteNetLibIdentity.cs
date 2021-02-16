@@ -621,9 +621,10 @@ namespace LiteNetLibManager
             else
             {
                 // Find objects to subscribes by visible checker
-                foreach (uint objectId in VisibleChecker.GetInitializeSubscribings())
+                foreach (LiteNetLibIdentity newIdentity in Manager.Assets.SpawnedObjects.Values)
                 {
-                    Subscribings.Add(objectId);
+                    if (!newIdentity.HasVisibleChecker || VisibleChecker.ShouldSubscribe(newIdentity))
+                        Subscribings.Add(newIdentity.ObjectId);
                 }
             }
             foreach (uint objectId in Subscribings)
@@ -655,9 +656,13 @@ namespace LiteNetLibManager
                 return;
             }
             // Always add controlled network object to subscribe it
+            LiteNetLibIdentity tempIdentity;
             newSubscribings.Add(ObjectId);
             foreach (uint oldSubscribing in Subscribings)
             {
+                if (Manager.Assets.TryGetSpawnedObject(oldSubscribing, out tempIdentity) &&
+                    !tempIdentity.IsDestroyed && !tempIdentity.HasVisibleChecker)
+                    continue;
                 if (!newSubscribings.Contains(oldSubscribing))
                 {
                     Player.Unsubscribe(oldSubscribing);
@@ -666,11 +671,10 @@ namespace LiteNetLibManager
                 }
             }
             Subscribings.Clear();
-            LiteNetLibIdentity subscribingObject;
             foreach (uint newSubscribing in newSubscribings)
             {
-                if (!Manager.Assets.TryGetSpawnedObject(newSubscribing, out subscribingObject) ||
-                    subscribingObject.IsDestroyed)
+                if (!Manager.Assets.TryGetSpawnedObject(newSubscribing, out tempIdentity) ||
+                    tempIdentity.IsDestroyed)
                     continue;
                 Subscribings.Add(newSubscribing);
                 Player.Subscribe(newSubscribing);
@@ -686,7 +690,7 @@ namespace LiteNetLibManager
                 // This is not player's networked object
                 return;
             }
-            if (!HasVisibleChecker || VisibleChecker.ShouldSubscribe(newIdentity))
+            if (!HasVisibleChecker || !newIdentity.HasVisibleChecker || VisibleChecker.ShouldSubscribe(newIdentity))
             {
                 Subscribings.Add(newIdentity.ObjectId);
                 Player.Subscribe(newIdentity.objectId);

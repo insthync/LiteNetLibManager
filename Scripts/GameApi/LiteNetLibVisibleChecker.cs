@@ -40,12 +40,6 @@ namespace LiteNetLibManager
             }
         }
 
-        public override HashSet<uint> GetInitializeSubscribings()
-        {
-            FindObjectsToSubscribe();
-            return subscribings;
-        }
-
         private void FindObjectsToSubscribe()
         {
             subscribings.Clear();
