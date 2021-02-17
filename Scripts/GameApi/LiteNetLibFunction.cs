@@ -40,7 +40,7 @@ namespace LiteNetLibManager
             this.callback = callback;
         }
 
-        protected override bool ValidateBeforeAccess()
+        protected override bool CanSync()
         {
             return Behaviour != null && (IsServer || IsOwnerClient || CanCallByEveryone);
         }
@@ -125,7 +125,7 @@ namespace LiteNetLibManager
 
         public void Call(DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameterValues)
         {
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
                 return;
 
             SetParameters(parameterValues);
@@ -134,7 +134,7 @@ namespace LiteNetLibManager
 
         public void Call(long connectionId, params object[] parameterValues)
         {
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
                 return;
 
             SetParameters(parameterValues);
@@ -143,7 +143,7 @@ namespace LiteNetLibManager
 
         public void CallWithoutParametersSet(DeliveryMethod deliveryMethod, FunctionReceivers receivers)
         {
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
                 return;
 
             SendCall(deliveryMethod, receivers, ConnectionId);
@@ -151,7 +151,7 @@ namespace LiteNetLibManager
 
         public void CallWithoutParametersSet(long connectionId)
         {
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
                 return;
 
             SendCall(DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);

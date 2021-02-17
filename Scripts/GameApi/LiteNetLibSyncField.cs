@@ -69,7 +69,7 @@ namespace LiteNetLibManager
 
         internal void NetworkUpdate(float deltaTime)
         {
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
                 return;
 
             // No update
@@ -142,7 +142,7 @@ namespace LiteNetLibManager
 
         internal void SendUpdate(bool isInitial)
         {
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
             {
                 Logging.LogError(LogTag, "Error while set value, behaviour is empty");
                 return;
@@ -182,7 +182,7 @@ namespace LiteNetLibManager
 
         internal void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod)
         {
-            if (!ValidateBeforeAccess() || !IsServer)
+            if (!CanSync() || !IsServer)
                 return;
 
             SendingConnectionId = connectionId;
@@ -302,17 +302,11 @@ namespace LiteNetLibManager
             get { return value; }
             set
             {
-                if (!ValidateBeforeAccess())
-                {
-                    // Set intial values
-                    this.value = value;
-                    return;
-                }
-
                 if (IsValueChanged(value))
                 {
                     this.value = value;
-                    hasUpdate = true;
+                    if (CanSync())
+                        hasUpdate = true;
                 }
             }
         }

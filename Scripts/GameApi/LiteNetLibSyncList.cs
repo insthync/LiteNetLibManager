@@ -54,9 +54,9 @@ namespace LiteNetLibManager
         public abstract void DeserializeOperation(NetDataReader reader);
         public abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
 
-        protected override bool ValidateBeforeAccess()
+        protected override bool CanSync()
         {
-            return Behaviour != null && IsServer;
+            return IsServer;
         }
 
         internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
@@ -79,6 +79,11 @@ namespace LiteNetLibManager
             get { return list[index]; }
             set
             {
+                if (IsSetup && !IsServer)
+                {
+                    Logging.LogError(LogTag, "Cannot access sync list from client.");
+                    return;
+                }
                 list[index] = value;
                 SendOperation(Operation.Set, index);
             }
@@ -106,12 +111,22 @@ namespace LiteNetLibManager
 
         public void Add(TType item)
         {
+            if (IsSetup && !IsServer)
+            {
+                Logging.LogError(LogTag, "Cannot access sync list from client.");
+                return;
+            }
             list.Add(item);
             SendOperation(Operation.Add, list.Count - 1);
         }
 
         public void AddRange(IEnumerable<TType> collection)
         {
+            if (IsSetup && !IsServer)
+            {
+                Logging.LogError(LogTag, "Cannot access sync list from client.");
+                return;
+            }
             SendOperation(Operation.AddRangeStart, list.Count - 1);
             foreach (TType item in collection)
             {
@@ -123,6 +138,11 @@ namespace LiteNetLibManager
 
         public void Insert(int index, TType item)
         {
+            if (IsSetup && !IsServer)
+            {
+                Logging.LogError(LogTag, "Cannot access sync list from client.");
+                return;
+            }
             list.Insert(index, item);
             SendOperation(Operation.Insert, index);
         }
@@ -139,6 +159,11 @@ namespace LiteNetLibManager
 
         public bool Remove(TType value)
         {
+            if (IsSetup && !IsServer)
+            {
+                Logging.LogError(LogTag, "Cannot access sync list from client.");
+                return false;
+            }
             int index = IndexOf(value);
             if (index >= 0)
             {
@@ -150,6 +175,11 @@ namespace LiteNetLibManager
 
         public void RemoveAt(int index)
         {
+            if (IsSetup && !IsServer)
+            {
+                Logging.LogError(LogTag, "Cannot access sync list from client.");
+                return;
+            }
             if (index == 0)
             {
                 list.RemoveAt(index);
@@ -169,6 +199,11 @@ namespace LiteNetLibManager
 
         public void Clear()
         {
+            if (IsSetup && !IsServer)
+            {
+                Logging.LogError(LogTag, "Cannot access sync list from client.");
+                return;
+            }
             list.Clear();
             SendOperation(Operation.Clear, -1);
         }
@@ -190,6 +225,11 @@ namespace LiteNetLibManager
 
         public void Dirty(int index)
         {
+            if (IsSetup && !IsServer)
+            {
+                Logging.LogError(LogTag, "Cannot access sync list from client.");
+                return;
+            }
             SendOperation(Operation.Dirty, index);
         }
 
@@ -202,7 +242,7 @@ namespace LiteNetLibManager
         {
             OnOperation(operation, index);
 
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
                 return;
 
             if (forOwnerOnly)
@@ -222,7 +262,7 @@ namespace LiteNetLibManager
 
         public override sealed void SendOperation(long connectionId, Operation operation, int index)
         {
-            if (!ValidateBeforeAccess())
+            if (!CanSync())
             {
                 Logging.LogError(LogTag, "Error while send operation, behaviour is empty or not the server");
                 return;

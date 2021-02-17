@@ -43,12 +43,12 @@ namespace LiteNetLibManager
 
         public long ConnectionId
         {
-            get { return Behaviour == null ? -1 : Behaviour.ConnectionId; }
+            get { return !IsSetup ? -1 : Behaviour.ConnectionId; }
         }
 
         public uint ObjectId
         {
-            get { return Behaviour == null ? 0 : Behaviour.ObjectId; }
+            get { return !IsSetup ? 0 : Behaviour.ObjectId; }
         }
 
         public LiteNetLibGameManager Manager
@@ -58,25 +58,27 @@ namespace LiteNetLibManager
 
         public virtual string LogTag
         {
-            get { return Behaviour.Manager + "::" + ToString(); }
+            get { return (!IsSetup ? "(No Behaviour)" : Behaviour.LogTag) + "->" + ToString(); }
         }
 
         public bool IsServer
         {
-            get { return Behaviour.IsServer; }
+            get { return IsSetup && Behaviour.IsServer; }
         }
 
         public bool IsClient
         {
-            get { return Behaviour.IsClient; }
+            get { return IsSetup && Behaviour.IsClient; }
         }
 
         public bool IsOwnerClient
         {
-            get { return Behaviour.IsOwnerClient; }
+            get { return IsSetup && Behaviour.IsOwnerClient; }
         }
 
         public long SendingConnectionId { get; protected set; }
+
+        public bool IsSetup { get; private set; }
 
         [LiteNetLibReadOnly, SerializeField]
         protected int elementId;
@@ -94,11 +96,12 @@ namespace LiteNetLibManager
         {
             this.behaviour = behaviour;
             this.elementId = elementId;
+            IsSetup = true;
         }
 
-        protected virtual bool ValidateBeforeAccess()
+        protected virtual bool CanSync()
         {
-            return Behaviour != null;
+            return IsSetup;
         }
     }
 }
