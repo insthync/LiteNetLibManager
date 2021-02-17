@@ -76,7 +76,22 @@ namespace LiteNetLibManager
 
         public override bool ShouldSubscribe(LiteNetLibIdentity identity)
         {
+            // Objects that have no colliders should be subscribed
+            if (checkMethod == CheckMethod.Physics3D && !identity.GetComponent<Collider>())
+                return true;
+            if (checkMethod == CheckMethod.Physics2D && !identity.GetComponent<Collider2D>())
+                return true;
             return (identity.transform.position - transform.position).sqrMagnitude < range * range;
+        }
+
+        public override bool ShouldUnsubscribe(LiteNetLibIdentity identity)
+        {
+            // Objects that have colliders should be unsubscribed
+            if (checkMethod == CheckMethod.Physics3D && identity.GetComponent<Collider>())
+                return true;
+            if (checkMethod == CheckMethod.Physics2D && identity.GetComponent<Collider2D>())
+                return true;
+            return identity.IsDestroyed;
         }
     }
 }

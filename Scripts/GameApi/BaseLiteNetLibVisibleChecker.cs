@@ -60,6 +60,8 @@ namespace LiteNetLibManager
 
         public abstract bool ShouldSubscribe(LiteNetLibIdentity identity);
 
+        public abstract bool ShouldUnsubscribe(LiteNetLibIdentity identity);
+
         public void UpdateSubscribings(HashSet<uint> objectIds)
         {
             Identity.UpdateSubscribings(objectIds);
