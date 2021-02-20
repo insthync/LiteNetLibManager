@@ -22,7 +22,7 @@ namespace LiteNetLibManager
 
         void Start()
         {
-            updateCountDown = updateInterval + Random.value;
+            updateCountDown = 0;
         }
 
         void Update()
