@@ -330,6 +330,8 @@ namespace LiteNetLibManager
 
         private void Update()
         {
+            if (!IsServer && !IsClient)
+                return;
             // Sending transform to all clients
             if (IsServer)
             {
@@ -347,6 +349,8 @@ namespace LiteNetLibManager
 
         private void FixedUpdate()
         {
+            if (!IsServer && !IsClient)
+                return;
             // Sending client transform result to server
             // Don't send to server if it's server which already update transform result
             // So only owner client can send transform result to server
