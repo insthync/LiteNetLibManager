@@ -28,6 +28,19 @@ namespace LiteNetLibManager
             CompressToByte,
         }
 
+        public enum InterpolateMode
+        {
+            EstimatedSpeed,
+            FixedSpeed,
+        }
+
+        public enum ExtrapolateMode
+        {
+            None,
+            EstimatedSpeed,
+            FixedSpeed,
+        }
+
         [Tooltip("Which transform you are going to sync, if it is empty it will use transform which this component attached to")]
         public Transform syncingTransform;
         [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
@@ -36,7 +49,10 @@ namespace LiteNetLibManager
         [Range(0.01f, 2f)]
         public float ownerClientSendInterval = 0.1f;
         public float snapThreshold = 5.0f;
-        public bool extrapolate;
+        public InterpolateMode interpolateMode = InterpolateMode.EstimatedSpeed;
+        public float fixedInterpolateSpeed;
+        public ExtrapolateMode extrapolateMode = ExtrapolateMode.None;
+        public float fixedExtrapolateSpeed;
         [Header("Sync Position Settings")]
         public SyncPositionOptions syncPositionX;
         public SyncPositionOptions syncPositionY;
@@ -366,20 +382,37 @@ namespace LiteNetLibManager
                     // If owner client can send transform, it won't interpolating transform at owner client
                     return;
                 }
+                // Calculate move speed by distance and time
                 float dist = Vector3.Distance(endInterpResult.position, previousEndInterpResult.position);
                 float timeDiff = endInterpResult.timestamp - previousEndInterpResult.timestamp;
                 float moveSpeed = 0f;
                 if (timeDiff > 0f)
                     moveSpeed = dist / timeDiff;
-                Vector3 extrapolateOffsets = Vector3.zero;
-                if (extrapolate)
+                // Find extrapolated move by move direction, time passed (which calculated by current time and last received time) 
+                // and calculate move speed or fixed extrapolate speed
+                Vector3 extrapolatedMove = Vector3.zero;
+                if (extrapolateMode != ExtrapolateMode.None)
                 {
                     float timePassed = Time.fixedTime - lastReceivedTime;
                     Vector3 moveDirection = (endInterpResult.position - previousEndInterpResult.position).normalized;
                     if (moveDirection.sqrMagnitude > 0f && timePassed > 0f)
-                        extrapolateOffsets = moveDirection * moveSpeed * timePassed;
+                    {
+                        switch (extrapolateMode)
+                        {
+                            case ExtrapolateMode.EstimatedSpeed:
+                                extrapolatedMove = moveDirection * moveSpeed * timePassed;
+                                break;
+                            case ExtrapolateMode.FixedSpeed:
+                                extrapolatedMove = moveDirection * fixedExtrapolateSpeed * timePassed;
+                                break;
+                        }
+                    }
                 }
-                currentInterpResult.position = Vector3.MoveTowards(currentInterpResult.position, endInterpResult.position + extrapolateOffsets, moveSpeed * deltaTime);
+                // Set interpolate move speed to fixed value if interpolate mode is fixed speed
+                if (interpolateMode == InterpolateMode.FixedSpeed)
+                    moveSpeed = fixedInterpolateSpeed;
+                // Move it
+                currentInterpResult.position = Vector3.MoveTowards(currentInterpResult.position, endInterpResult.position + extrapolatedMove, moveSpeed * deltaTime);
                 currentInterpResult.rotation = Quaternion.Slerp(currentInterpResult.rotation, endInterpResult.rotation, (1f / timeDiff) * deltaTime);
                 Interpolate(currentInterpResult.position, currentInterpResult.rotation);
             }
