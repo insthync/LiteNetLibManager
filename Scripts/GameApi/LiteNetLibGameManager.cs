@@ -526,8 +526,7 @@ namespace LiteNetLibManager
             // Field updated at owner-client, if this is server then multicast message to other clients
             if (!IsServer)
                 return;
-            NetDataReader reader = messageHandler.Reader;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
@@ -538,7 +537,7 @@ namespace LiteNetLibManager
                     // If this is server but it is not host, set data (deserialize) then pass to other clients
                     // If this is host don't set data because it's already did (in LiteNetLibSyncField class)
                     if (!identity.IsOwnerClient)
-                        syncField.Deserialize(reader, true);
+                        syncField.Deserialize(messageHandler.Reader, true);
                     // Send to other clients
                     foreach (long connectionId in GetConnectionIds())
                     {
@@ -558,8 +557,7 @@ namespace LiteNetLibManager
             // Field updated at owner-client, if this is server then multicast message to other clients
             if (!IsServer)
                 return;
-            NetDataReader reader = messageHandler.Reader;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
@@ -570,7 +568,7 @@ namespace LiteNetLibManager
                     // If this is server but it is not host, set data (deserialize) then pass to other clients
                     // If this is host don't set data because it's already did (in LiteNetLibSyncField class)
                     if (!identity.IsOwnerClient)
-                        syncField.Deserialize(reader, false);
+                        syncField.Deserialize(messageHandler.Reader, false);
                     // Send to other clients
                     foreach (long connectionId in GetConnectionIds())
                     {
@@ -587,12 +585,11 @@ namespace LiteNetLibManager
 
         protected virtual void HandleClientCallFunction(MessageHandlerData messageHandler)
         {
-            NetDataReader reader = messageHandler.Reader;
-            FunctionReceivers receivers = (FunctionReceivers)reader.GetByte();
+            FunctionReceivers receivers = (FunctionReceivers)messageHandler.Reader.GetByte();
             long connectionId = -1;
             if (receivers == FunctionReceivers.Target)
-                connectionId = reader.GetPackedLong();
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+                connectionId = messageHandler.Reader.GetPackedLong();
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
@@ -611,12 +608,12 @@ namespace LiteNetLibManager
                 if (receivers == FunctionReceivers.Server)
                 {
                     // Request from client to server, so hook callback at server immediately
-                    identity.ProcessNetFunction(netFunction, reader, true);
+                    identity.ProcessNetFunction(netFunction, messageHandler.Reader, true);
                 }
                 else
                 {
                     // Request from client to other clients, so hook callback later
-                    identity.ProcessNetFunction(netFunction, reader, false);
+                    identity.ProcessNetFunction(netFunction, messageHandler.Reader, false);
                     // Use call with out parameters set because parameters already set while process net function
                     if (receivers == FunctionReceivers.Target)
                         netFunction.CallWithoutParametersSet(connectionId);
@@ -628,15 +625,14 @@ namespace LiteNetLibManager
 
         protected virtual void HandleClientSendTransform(MessageHandlerData messageHandler)
         {
-            NetDataReader reader = messageHandler.Reader;
-            uint objectId = reader.GetPackedUInt();
-            byte behaviourIndex = reader.GetByte();
+            uint objectId = messageHandler.Reader.GetPackedUInt();
+            byte behaviourIndex = messageHandler.Reader.GetByte();
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 LiteNetLibTransform netTransform;
                 if (identity.TryGetBehaviour(behaviourIndex, out netTransform))
-                    netTransform.HandleClientSendTransform(reader);
+                    netTransform.HandleClientSendTransform(messageHandler.Reader);
             }
         }
 
@@ -703,11 +699,10 @@ namespace LiteNetLibManager
             // Field updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.Reader;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-                identity.ProcessSyncField(info, reader, true);
+                identity.ProcessSyncField(info, messageHandler.Reader, true);
         }
 
         protected virtual void HandleServerUpdateSyncField(MessageHandlerData messageHandler)
@@ -715,22 +710,20 @@ namespace LiteNetLibManager
             // Field updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.Reader;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-                identity.ProcessSyncField(info, reader, false);
+                identity.ProcessSyncField(info, messageHandler.Reader, false);
         }
 
         protected virtual void HandleServerCallFunction(MessageHandlerData messageHandler)
         {
-            NetDataReader reader = messageHandler.Reader;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
                 // All function from server will be processed (because it's always trust server)
-                identity.ProcessNetFunction(info, reader, true);
+                identity.ProcessNetFunction(info, messageHandler.Reader, true);
             }
         }
 
@@ -739,11 +732,10 @@ namespace LiteNetLibManager
             // List updated at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.Reader;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(reader);
+            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-                identity.ProcessSyncList(info, reader);
+                identity.ProcessSyncList(info, messageHandler.Reader);
         }
 
         protected virtual void HandleServerSyncBehaviour(MessageHandlerData messageHandler)
@@ -751,12 +743,11 @@ namespace LiteNetLibManager
             // Behaviour sync from server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
-            NetDataReader reader = messageHandler.Reader;
-            uint objectId = reader.GetPackedUInt();
-            byte behaviourIndex = reader.GetByte();
+            uint objectId = messageHandler.Reader.GetPackedUInt();
+            byte behaviourIndex = messageHandler.Reader.GetByte();
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(objectId, out identity))
-                identity.ProcessSyncBehaviour(behaviourIndex, reader);
+                identity.ProcessSyncBehaviour(behaviourIndex, messageHandler.Reader);
         }
 
         protected virtual void HandleServerError(MessageHandlerData messageHandler)
