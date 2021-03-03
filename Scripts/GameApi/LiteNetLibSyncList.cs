@@ -254,7 +254,7 @@ namespace LiteNetLibManager
             {
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
-                    if (Identity.IsSubscribedOrOwning(connectionId))
+                    if (Identity.HasSubscriberOrIsOwning(connectionId))
                         SendOperation(connectionId, operation, index);
                 }
             }

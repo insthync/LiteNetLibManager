@@ -153,7 +153,7 @@ namespace LiteNetLibManager
                 case SyncMode.ServerToClients:
                     foreach (long connectionId in Manager.GetConnectionIds())
                     {
-                        if (Identity.IsSubscribedOrOwning(connectionId))
+                        if (Identity.HasSubscriberOrIsOwning(connectionId))
                             SendUpdate(isInitial, connectionId);
                     }
                     break;

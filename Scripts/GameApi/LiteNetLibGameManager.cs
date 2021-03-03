@@ -545,7 +545,7 @@ namespace LiteNetLibManager
                         if (connectionId == messageHandler.ConnectionId)
                             continue;
                         // Send update to clients except owner client
-                        if (identity.IsSubscribedOrOwning(connectionId))
+                        if (identity.HasSubscriberOrIsOwning(connectionId))
                             syncField.SendUpdate(true, connectionId);
                     }
                 }
@@ -576,7 +576,7 @@ namespace LiteNetLibManager
                         if (connectionId == messageHandler.ConnectionId)
                             continue;
                         // Send update to clients except owner client
-                        if (identity.IsSubscribedOrOwning(connectionId))
+                        if (identity.HasSubscriberOrIsOwning(connectionId))
                             syncField.SendUpdate(false, connectionId);
                     }
                 }

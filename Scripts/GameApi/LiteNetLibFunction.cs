@@ -70,7 +70,7 @@ namespace LiteNetLibManager
                 switch (receivers)
                 {
                     case FunctionReceivers.Target:
-                        if (Identity.IsSubscribedOrOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
+                        if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
                             // Send function call message from server to target client by target connection Id
                             ServerSendCall(targetConnectionId, deliveryMethod);
@@ -85,7 +85,7 @@ namespace LiteNetLibManager
                                 // Don't have to send message to the client, because it is currently run as both server and client
                                 HookCallback();
                             }
-                            else if (Identity.IsSubscribedOrOwning(connectionId))
+                            else if (Identity.HasSubscriberOrIsOwning(connectionId))
                             {
                                 // Send message to subscribing clients
                                 ServerSendCall(connectionId, deliveryMethod);

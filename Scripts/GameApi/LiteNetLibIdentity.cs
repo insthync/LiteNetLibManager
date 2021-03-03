@@ -596,9 +596,9 @@ namespace LiteNetLibManager
             return Subscribers.Count;
         }
 
-        public bool IsSubscribedOrOwning(long connectionId)
+        public bool HasSubscriberOrIsOwning(long connectionId)
         {
-            return connectionId == ConnectionId || Subscribers.Contains(connectionId);
+            return connectionId == ConnectionId || HasSubscriber(connectionId);
         }
 
         private void InitializeSubscribings()

@@ -169,7 +169,7 @@ namespace LiteNetLibManager
             {
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
-                    if (Identity.IsSubscribedOrOwning(connectionId))
+                    if (Identity.HasSubscriberOrIsOwning(connectionId))
                         Manager.ServerSendPacket(connectionId, sendOptions, GameMsgTypes.ServerSyncBehaviour, this);
                 }
             }
@@ -1553,6 +1553,38 @@ namespace LiteNetLibManager
         public void NetworkDestroy(float delay)
         {
             Identity.NetworkDestroy(delay);
+        }
+
+        public void ClientSendPacket(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        {
+            if (!IsClient)
+                return;
+            Manager.ClientSendPacket(deliveryMethod, msgType, serializerDelegate);
+        }
+
+        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        {
+            if (!IsServer)
+                return;
+            Manager.ServerSendPacket(connectionId, deliveryMethod, msgType, serializerDelegate);
+        }
+
+        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        {
+            if (!IsServer)
+                return;
+            Manager.ServerSendPacketToAllConnections(deliveryMethod, msgType, serializerDelegate);
+        }
+
+        public void ServerSendPacketToSubscribers(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        {
+            if (!IsServer)
+                return;
+            foreach (long connectionId in Manager.GetConnectionIds())
+            {
+                if (Identity.HasSubscriber(connectionId))
+                    Manager.ServerSendPacket(connectionId, deliveryMethod, msgType, serializerDelegate);
+            }
         }
 
         /// <summary>
