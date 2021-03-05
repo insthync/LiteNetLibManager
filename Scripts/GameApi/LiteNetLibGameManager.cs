@@ -20,8 +20,6 @@ namespace LiteNetLibManager
 
         private float sendPingCountDown;
         private AsyncOperation loadSceneAsyncOperation;
-        private bool isPinging;
-        private long pingTime;
 
         public long ClientConnectionId { get; protected set; }
         public long Rtt { get; protected set; }
@@ -56,7 +54,7 @@ namespace LiteNetLibManager
                 {
                     // Send ping from client
                     sendPingCountDown -= Time.fixedDeltaTime;
-                    if (sendPingCountDown <= 0f && !isPinging)
+                    if (sendPingCountDown <= 0f)
                     {
                         SendClientPing();
                         sendPingCountDown = pingDuration;
@@ -237,7 +235,6 @@ namespace LiteNetLibManager
             base.OnClientConnected();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
-            isPinging = false;
             Rtt = 0;
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
@@ -248,7 +245,6 @@ namespace LiteNetLibManager
             base.OnStartServer();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
-            isPinging = false;
             Rtt = 0;
             if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
             {
@@ -315,11 +311,9 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            if (isPinging)
-                return;
-            isPinging = true;
-            pingTime = Timestamp;
-            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping);
+            PingMessage message = new PingMessage();
+            message.clientTime = Timestamp;
+            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, message);
         }
 
         public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
@@ -638,11 +632,13 @@ namespace LiteNetLibManager
 
         protected void HandleClientPing(MessageHandlerData messageHandler)
         {
-            ServerSendPacket(messageHandler.ConnectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, (writer) =>
+            PingMessage message = messageHandler.ReadMessage<PingMessage>();
+            PongMessage pongMessage = new PongMessage()
             {
-                // Send server time
-                writer.PutPackedLong(ServerUnixTime);
-            });
+                clientTime = message.clientTime,
+                serverUnixTime = ServerUnixTime,
+            };
+            ServerSendPacket(messageHandler.ConnectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, pongMessage);
         }
 
         protected virtual void HandleServerSpawnSceneObject(MessageHandlerData messageHandler)
@@ -801,10 +797,10 @@ namespace LiteNetLibManager
 
         protected void HandleServerPing(MessageHandlerData messageHandler)
         {
-            isPinging = false;
-            Rtt = Timestamp - pingTime;
+            PongMessage message = messageHandler.ReadMessage<PongMessage>();
+            Rtt = Timestamp - message.clientTime;
             // Time offset = server time - current timestamp - rtt
-            ServerUnixTimeOffset = messageHandler.Reader.GetPackedLong() - Timestamp - Rtt;
+            ServerUnixTimeOffset = message.serverUnixTime - Timestamp + Rtt;
             if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerUnixTimeOffset: " + ServerUnixTimeOffset);
         }
         #endregion
