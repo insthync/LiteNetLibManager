@@ -684,14 +684,18 @@ namespace LiteNetLibManager
                 if (!Manager.Assets.TryGetSpawnedObject(newSubscribing, out tempIdentity) ||
                     tempIdentity.IsDestroyed)
                     continue;
-                if (tempIdentity.IsHide && !(tempIdentity.HideExceptions.Contains(ConnectionId) ||
-                    tempIdentity.ConnectionId == ConnectionId))
-                    continue;
                 Subscribings.Add(newSubscribing);
                 Player.Subscribe(newSubscribing);
                 if (Manager.LogDebug)
                     Logging.Log(LogTag, $"Player: {ConnectionId} subscribe object ID: {newSubscribing}.");
             }
+        }
+
+        public bool IsIdentityHideFromThis(LiteNetLibIdentity identity)
+        {
+            if (identity == null)
+                return true;
+            return identity.IsHide && !identity.HideExceptions.Contains(ConnectionId) && identity.ConnectionId != ConnectionId;
         }
 
         public void NotifyNewObject(LiteNetLibIdentity newIdentity)

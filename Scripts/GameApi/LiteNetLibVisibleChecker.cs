@@ -53,7 +53,7 @@ namespace LiteNetLibManager
                         for (int i = 0; i < colliderLength; ++i)
                         {
                             tempIdentity = colliders[i].GetComponent<LiteNetLibIdentity>();
-                            if (tempIdentity != null && tempIdentity.IsSpawned)
+                            if (tempIdentity != null && tempIdentity.IsSpawned && !Identity.IsIdentityHideFromThis(tempIdentity))
                                 subscribings.Add(tempIdentity.ObjectId);
                         }
                         return;
@@ -66,7 +66,7 @@ namespace LiteNetLibManager
                         for (int i = 0; i < colliderLength; ++i)
                         {
                             tempIdentity = colliders2D[i].GetComponent<LiteNetLibIdentity>();
-                            if (tempIdentity != null && tempIdentity.IsSpawned)
+                            if (tempIdentity != null && tempIdentity.IsSpawned && !Identity.IsIdentityHideFromThis(tempIdentity))
                                 subscribings.Add(tempIdentity.ObjectId);
                         }
                         return;
