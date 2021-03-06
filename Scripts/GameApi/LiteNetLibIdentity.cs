@@ -93,6 +93,14 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
+        /// <summary>
+        /// If this is `TRUE` it will disallow other connections to subscribe this networked object
+        /// </summary>
+        public bool IsHide { get; set; }
+        /// <summary>
+        /// This will be used while `IsHide` is `TRUE` to allow some connections to subscribe this networked object
+        /// </summary>
+        public HashSet<long> HideExceptions { get; } = new HashSet<long>();
         public long ConnectionId { get; internal set; } = -1;
         public LiteNetLibGameManager Manager { get; internal set; }
 
@@ -675,6 +683,9 @@ namespace LiteNetLibManager
             {
                 if (!Manager.Assets.TryGetSpawnedObject(newSubscribing, out tempIdentity) ||
                     tempIdentity.IsDestroyed)
+                    continue;
+                if (tempIdentity.IsHide && !(tempIdentity.HideExceptions.Contains(ConnectionId) ||
+                    tempIdentity.ConnectionId == ConnectionId))
                     continue;
                 Subscribings.Add(newSubscribing);
                 Player.Subscribe(newSubscribing);
