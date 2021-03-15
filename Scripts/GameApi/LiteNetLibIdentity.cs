@@ -721,7 +721,7 @@ namespace LiteNetLibManager
             }
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
             for (int i = 0; i < renderers.Length; ++i)
             {
                 renderers[i].forceRenderingOff = false;
@@ -737,7 +737,7 @@ namespace LiteNetLibManager
             }
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
             for (int i = 0; i < renderers.Length; ++i)
             {
                 renderers[i].forceRenderingOff = true;
