@@ -42,7 +42,7 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ClientSend(DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DataEvent;
@@ -81,7 +81,7 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DataEvent;

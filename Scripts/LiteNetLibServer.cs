@@ -80,7 +80,7 @@ namespace LiteNetLibManager
 
         protected override void SendMessage(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            Transport.ServerSend(connectionId, deliveryMethod, writer);
+            Transport.ServerSend(connectionId, 0, deliveryMethod, writer);
         }
 
         public void SendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)

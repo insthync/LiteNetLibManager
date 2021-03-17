@@ -113,7 +113,7 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public bool ClientSend(DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsClientStarted)
             {
@@ -158,7 +158,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == WebSocketState.Open)

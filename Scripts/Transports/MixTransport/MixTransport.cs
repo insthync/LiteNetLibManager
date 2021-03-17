@@ -76,10 +76,12 @@ namespace LiteNetLibManager
         private readonly Dictionary<long, NetPeer> serverPeers;
         private readonly Queue<TransportEventData> clientEventQueue;
         private readonly Queue<TransportEventData> serverEventQueue;
+        private readonly byte clientDataChannelsCount;
+        private readonly byte serverDataChannelsCount;
 
         private readonly int webSocketPortOffset;
 
-        public MixTransport(string connectKey, int webSocketPortOffset)
+        public MixTransport(string connectKey, int webSocketPortOffset, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
 #if !UNITY_WEBGL
@@ -87,6 +89,8 @@ namespace LiteNetLibManager
             serverPeers = new Dictionary<long, NetPeer>();
             clientEventQueue = new Queue<TransportEventData>();
             serverEventQueue = new Queue<TransportEventData>();
+            this.clientDataChannelsCount = clientDataChannelsCount;
+            this.serverDataChannelsCount = serverDataChannelsCount;
 #endif
             this.webSocketPortOffset = webSocketPortOffset;
         }
@@ -102,6 +106,7 @@ namespace LiteNetLibManager
 #else
             clientEventQueue.Clear();
             Client = new NetManager(new LiteNetLibTransportClientEventListener(clientEventQueue));
+            Client.ChannelsCount = clientDataChannelsCount;
             return Client.Start() && Client.Connect(address, port, ConnectKey) != null;
 #endif
         }
@@ -162,7 +167,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ClientSend(DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if UNITY_WEBGL
             if (IsClientStarted)
@@ -173,7 +178,7 @@ namespace LiteNetLibManager
 #else
             if (IsClientStarted)
             {
-                Client.FirstPeer.Send(writer, deliveryMethod);
+                Client.FirstPeer.Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
 #endif
@@ -205,6 +210,7 @@ namespace LiteNetLibManager
             // Start LiteNetLib Server
             serverPeers.Clear();
             Server = new NetManager(new LiteNetLibTransportServerEventListener(this, ConnectKey, serverEventQueue, serverPeers));
+            Server.ChannelsCount = serverDataChannelsCount;
             return Server.Start(port);
 #endif
         }
@@ -226,7 +232,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if !UNITY_WEBGL
             // WebSocket Server Send
@@ -238,7 +244,7 @@ namespace LiteNetLibManager
             // LiteNetLib Server Send
             if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
-                serverPeers[connectionId].Send(writer, deliveryMethod);
+                serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
 #endif

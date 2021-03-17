@@ -30,13 +30,17 @@ namespace LiteNetLibManager
         private readonly Dictionary<long, NetPeer> serverPeers;
         private readonly Queue<TransportEventData> clientEventQueue;
         private readonly Queue<TransportEventData> serverEventQueue;
+        private readonly byte clientDataChannelsCount;
+        private readonly byte serverDataChannelsCount;
 
-        public LiteNetLibTransport(string connectKey)
+        public LiteNetLibTransport(string connectKey, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
             serverPeers = new Dictionary<long, NetPeer>();
             clientEventQueue = new Queue<TransportEventData>();
             serverEventQueue = new Queue<TransportEventData>();
+            this.clientDataChannelsCount = clientDataChannelsCount;
+            this.serverDataChannelsCount = serverDataChannelsCount;
         }
 
         public bool StartClient(string address, int port)
@@ -45,6 +49,7 @@ namespace LiteNetLibManager
                 return false;
             clientEventQueue.Clear();
             Client = new NetManager(new LiteNetLibTransportClientEventListener(clientEventQueue));
+            Client.ChannelsCount = clientDataChannelsCount;
             return Client.Start() && Client.Connect(address, port, ConnectKey) != null;
         }
 
@@ -67,11 +72,11 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ClientSend(DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsClientStarted)
             {
-                Client.FirstPeer.Send(writer, deliveryMethod);
+                Client.FirstPeer.Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
             return false;
@@ -85,6 +90,7 @@ namespace LiteNetLibManager
             serverPeers.Clear();
             serverEventQueue.Clear();
             Server = new NetManager(new LiteNetLibTransportServerEventListener(this, ConnectKey, serverEventQueue, serverPeers));
+            Server.ChannelsCount = serverDataChannelsCount;
             return Server.Start(port);
         }
 
@@ -100,11 +106,11 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ServerSend(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
-                serverPeers[connectionId].Send(writer, deliveryMethod);
+                serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
             return false;

@@ -75,7 +75,7 @@ namespace LiteNetLibManager
 
         protected override void SendMessage(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            Transport.ClientSend(deliveryMethod, writer);
+            Transport.ClientSend(0, deliveryMethod, writer);
         }
 
         public void SendPacket(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
