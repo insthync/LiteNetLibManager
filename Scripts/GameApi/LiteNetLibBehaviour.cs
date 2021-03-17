@@ -33,6 +33,7 @@ namespace LiteNetLibManager
         }
 
         [Header("Behaviour Sync Options")]
+        public byte dataChannel;
         public DeliveryMethod sendOptions;
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
@@ -170,7 +171,7 @@ namespace LiteNetLibManager
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        Manager.ServerSendPacket(connectionId, sendOptions, GameMsgTypes.ServerSyncBehaviour, this);
+                        Manager.ServerSendPacket(connectionId, dataChannel, sendOptions, GameMsgTypes.ServerSyncBehaviour, this);
                 }
             }
             Profiler.EndSample();
@@ -928,57 +929,57 @@ namespace LiteNetLibManager
 
         public void RPC(NetFunctionDelegate func, FunctionReceivers receivers)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers);
         }
 
         public void RPC<T1>(NetFunctionDelegate<T1> func, FunctionReceivers receivers, T1 param1)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1);
         }
 
         public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, FunctionReceivers receivers, T1 param1, T2 param2)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2);
         }
 
         public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3);
         }
 
         public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4);
         }
 
         public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
-            RPC(func.Method.Name, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
@@ -986,264 +987,264 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction(NetFunctionDelegate func, DeliveryMethod deliveryMethod, FunctionReceivers receivers)
+        public void CallNetFunction(NetFunctionDelegate func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers)
         {
-            RPC(func, deliveryMethod, receivers);
+            RPC(func, dataChannel, deliveryMethod, receivers);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1>(NetFunctionDelegate<T1> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1)
+        public void CallNetFunction<T1>(NetFunctionDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1)
         {
-            RPC(func, deliveryMethod, receivers, param1);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2)
+        public void CallNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
+        public void CallNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void CallNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3, param4);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void CallNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3, param4, param5);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
         /// <summary>
         /// This is another synonym of `RPC`
         /// </summary>
-        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
-            RPC(func, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+            RPC(func, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
 
-        public void RPC(NetFunctionDelegate func, DeliveryMethod deliveryMethod, FunctionReceivers receivers)
+        public void RPC(NetFunctionDelegate func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1)
+        public void RPC<T1>(NetFunctionDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2)
+        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
-            RPC(func.Method.Name, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region All RPC or Server RPC with parameters
         public void RPC(NetFunctionDelegate func)
         {
-            RPC(func.Method.Name);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered);
         }
 
         public void RPC<T1>(NetFunctionDelegate<T1> func, T1 param1)
         {
-            RPC(func.Method.Name, param1);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1);
         }
 
         public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, T1 param1, T2 param2)
         {
-            RPC(func.Method.Name, param1, param2);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2);
         }
 
         public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, T1 param1, T2 param2, T3 param3)
         {
-            RPC(func.Method.Name, param1, param2, param3);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3);
         }
 
         public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, T1 param1, T2 param2, T3 param3, T4 param4)
         {
-            RPC(func.Method.Name, param1, param2, param3, param4);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4);
         }
 
         public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
-            RPC(func.Method.Name, param1, param2, param3, param4, param5);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
-            RPC(func.Method.Name, param1, param2, param3, param4, param5, param6);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
-            RPC(func.Method.Name, param1, param2, param3, param4, param5, param6, param7);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
-            RPC(func.Method.Name, param1, param2, param3, param4, param5, param6, param7, param8);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
-            RPC(func.Method.Name, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
         public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
-            RPC(func.Method.Name, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+            RPC(func.Method.Name, 0, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region All RPC or Server RPC with delivery method and parameters
-        public void RPC(NetFunctionDelegate func, DeliveryMethod deliveryMethod)
+        public void RPC(NetFunctionDelegate func, byte dataChannel, DeliveryMethod deliveryMethod)
         {
-            RPC(func.Method.Name, deliveryMethod);
+            RPC(func.Method.Name, dataChannel, deliveryMethod);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, DeliveryMethod deliveryMethod, T1 param1)
+        public void RPC<T1>(NetFunctionDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1)
         {
-            RPC(func.Method.Name, deliveryMethod, param1);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2)
+        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
-            RPC(func.Method.Name, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
+            RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region Target RPC with connectionId and parameters
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction(NetFunctionDelegate func, long connectionId)
         {
@@ -1251,7 +1252,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1>(NetFunctionDelegate<T1> func, long connectionId, T1 param1)
         {
@@ -1259,7 +1260,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, long connectionId, T1 param1, T2 param2)
         {
@@ -1267,7 +1268,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, long connectionId, T1 param1, T2 param2, T3 param3)
         {
@@ -1275,7 +1276,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4)
         {
@@ -1283,7 +1284,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
@@ -1291,7 +1292,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
@@ -1299,7 +1300,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
@@ -1307,7 +1308,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
@@ -1315,7 +1316,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
@@ -1323,7 +1324,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId`
+        /// This is another synonym of `RPC` which contains `connectionId`
         /// </summary>
         public void CallNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
@@ -1387,7 +1388,7 @@ namespace LiteNetLibManager
         #endregion
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `receivers` and `parameters`
+        /// This is another synonym of `RPC` which contains `receivers` and `parameters`
         /// </summary>
         public void CallNetFunction(string methodName, FunctionReceivers receivers, params object[] parameters)
         {
@@ -1402,25 +1403,26 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, FunctionReceivers receivers, params object[] parameters)
         {
-            RPC(methodName, DeliveryMethod.ReliableOrdered, receivers, parameters);
+            RPC(methodName, 0, DeliveryMethod.ReliableOrdered, receivers, parameters);
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `deliveryMethod`, `receivers` and `parameters`
+        /// This is another synonym of `RPC` which contains `dataChannel`, `deliveryMethod`, `receivers` and `parameters`
         /// </summary>
-        public void CallNetFunction(string methodName, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
+        public void CallNetFunction(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
         {
-            RPC(methodName, deliveryMethod, receivers, parameters);
+            RPC(methodName, dataChannel, deliveryMethod, receivers, parameters);
         }
 
         /// <summary>
         /// Call elastic RPC, it can be `All RPC` or `Server RPC` up to how you define `receivers`
         /// </summary>
         /// <param name="methodName"></param>
+        /// <param name="dataChannel"></param>
         /// <param name="deliveryMethod"></param>
         /// <param name="receivers"></param>
         /// <param name="parameters"></param>
-        public void RPC(string methodName, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
+        public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
         {
             int elementId;
             switch (receivers)
@@ -1428,7 +1430,7 @@ namespace LiteNetLibManager
                 case FunctionReceivers.All:
                     if (allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
                     {
-                        Identity.NetFunctions[elementId].Call(deliveryMethod, receivers, parameters);
+                        Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
                     else
                     {
@@ -1439,7 +1441,7 @@ namespace LiteNetLibManager
                 case FunctionReceivers.Server:
                     if (serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
                     {
-                        Identity.NetFunctions[elementId].Call(deliveryMethod, receivers, parameters);
+                        Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
                     else
                     {
@@ -1461,24 +1463,26 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, params object[] parameters)
         {
-            RPC(methodName, DeliveryMethod.ReliableOrdered, parameters);
+            RPC(methodName, 0, DeliveryMethod.ReliableOrdered, parameters);
         }
 
         /// <summary>
         /// Call `All RPC` or `Server RPC`, if it's elastic RPC, it will call `All RPC`
         /// </summary>
         /// <param name="methodName"></param>
+        /// <param name="dataChannel"></param>
+        /// <param name="deliveryMethod"></param>
         /// <param name="parameters"></param>
-        public void RPC(string methodName, DeliveryMethod deliveryMethod, params object[] parameters)
+        public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, params object[] parameters)
         {
             int elementId;
             if (allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
-                Identity.NetFunctions[elementId].Call(deliveryMethod, FunctionReceivers.All, parameters);
+                Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.All, parameters);
             }
             else if (serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
-                Identity.NetFunctions[elementId].Call(deliveryMethod, FunctionReceivers.Server, parameters);
+                Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.Server, parameters);
             }
             else
             {
@@ -1488,7 +1492,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// This is another synonym of `RPC` which contain `connectionId` and `parameters`
+        /// This is another synonym of `RPC` which contains `connectionId` and `parameters`
         /// </summary>
         public void CallNetFunction(string methodName, long connectionId, params object[] parameters)
         {
@@ -1506,7 +1510,7 @@ namespace LiteNetLibManager
             int elementId;
             if (targetRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
-                Identity.NetFunctions[elementId].Call(connectionId, parameters);
+                Identity.NetFunctions[elementId].Call(0, DeliveryMethod.ReliableOrdered, connectionId, parameters);
             }
             else
             {
@@ -1522,7 +1526,7 @@ namespace LiteNetLibManager
 
         private string MakeNetFunctionId(string methodName)
         {
-            return $"{TypeName}+{methodName}";
+            return new StringBuilder(TypeName).Append('+').Append(methodName).ToString();
         }
 
         public void Serialize(NetDataWriter writer)
@@ -1555,35 +1559,35 @@ namespace LiteNetLibManager
             Identity.NetworkDestroy(delay);
         }
 
-        public void ClientSendPacket(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
         {
             if (!IsClient)
                 return;
-            Manager.ClientSendPacket(deliveryMethod, msgType, serializerDelegate);
+            Manager.ClientSendPacket(dataChannel, deliveryMethod, msgType, serializerDelegate);
         }
 
-        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        public void ServerSendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
         {
             if (!IsServer)
                 return;
-            Manager.ServerSendPacket(connectionId, deliveryMethod, msgType, serializerDelegate);
+            Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, serializerDelegate);
         }
 
-        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
         {
             if (!IsServer)
                 return;
-            Manager.ServerSendPacketToAllConnections(deliveryMethod, msgType, serializerDelegate);
+            Manager.ServerSendPacketToAllConnections(dataChannel, deliveryMethod, msgType, serializerDelegate);
         }
 
-        public void ServerSendPacketToSubscribers(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
+        public void ServerSendPacketToSubscribers(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
         {
             if (!IsServer)
                 return;
             foreach (long connectionId in Manager.GetConnectionIds())
             {
                 if (Identity.HasSubscriber(connectionId))
-                    Manager.ServerSendPacket(connectionId, deliveryMethod, msgType, serializerDelegate);
+                    Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, serializerDelegate);
             }
         }
 

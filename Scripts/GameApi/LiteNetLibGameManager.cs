@@ -313,7 +313,7 @@ namespace LiteNetLibManager
                 return;
             PingMessage message = new PingMessage();
             message.clientTime = Timestamp;
-            ClientSendPacket(DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, message);
+            ClientSendPacket(0, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, message);
         }
 
         public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
@@ -328,7 +328,7 @@ namespace LiteNetLibManager
             message.connectionId = identity.ConnectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message, identity.WriteInitialSyncFields);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message, identity.WriteInitialSyncFields);
             return true;
         }
 
@@ -345,7 +345,7 @@ namespace LiteNetLibManager
             message.connectionId = identity.ConnectionId;
             message.position = identity.transform.position;
             message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message, identity.WriteInitialSyncFields);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message, identity.WriteInitialSyncFields);
             return true;
         }
 
@@ -376,7 +376,7 @@ namespace LiteNetLibManager
             ServerDestroyObjectMessage message = new ServerDestroyObjectMessage();
             message.objectId = objectId;
             message.reasons = reasons;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
             return true;
         }
 
@@ -400,7 +400,7 @@ namespace LiteNetLibManager
             ServerErrorMessage message = new ServerErrorMessage();
             message.shouldDisconnect = shouldDisconnect;
             message.errorMessage = errorMessage;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
         }
 
         public void SendServerSceneChange(string sceneName)
@@ -421,7 +421,7 @@ namespace LiteNetLibManager
                 return;
             ServerSceneChangeMessage message = new ServerSceneChangeMessage();
             message.serverSceneName = sceneName;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
         }
 
         public void SendServerSetObjectOwner(long connectionId, uint objectId, long ownerConnectionId)
@@ -431,7 +431,7 @@ namespace LiteNetLibManager
             ServerSetObjectOwner message = new ServerSetObjectOwner();
             message.objectId = objectId;
             message.connectionId = ownerConnectionId;
-            ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSetObjectOwner, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSetObjectOwner, message);
         }
         #endregion
 
@@ -612,7 +612,7 @@ namespace LiteNetLibManager
                     if (receivers == FunctionReceivers.Target)
                         netFunction.CallWithoutParametersSet(connectionId);
                     else
-                        netFunction.CallWithoutParametersSet(DeliveryMethod.ReliableOrdered, receivers);
+                        netFunction.CallWithoutParametersSet(receivers);
                 }
             }
         }
@@ -638,7 +638,7 @@ namespace LiteNetLibManager
                 clientTime = message.clientTime,
                 serverUnixTime = ServerUnixTime,
             };
-            ServerSendPacket(messageHandler.ConnectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, pongMessage);
+            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, pongMessage);
         }
 
         protected virtual void HandleServerSpawnSceneObject(MessageHandlerData messageHandler)

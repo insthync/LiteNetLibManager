@@ -253,14 +253,14 @@ namespace LiteNetLibManager
         }
 
         #region Packets send / read
-        public void ClientSendPacket(DeliveryMethod options, ushort msgType, SerializerDelegate serializer)
+        public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
-            Client.SendPacket(options, msgType, serializer);
+            Client.SendPacket(dataChannel, deliveryMethod, msgType, serializer);
         }
 
-        public void ClientSendPacket<T>(DeliveryMethod options, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
+        public void ClientSendPacket<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            ClientSendPacket(options, msgType, (writer) =>
+            ClientSendPacket(dataChannel, deliveryMethod, msgType, (writer) =>
             {
                 messageData.Serialize(writer);
                 if (extraSerializer != null)
@@ -268,19 +268,19 @@ namespace LiteNetLibManager
             });
         }
 
-        public void ClientSendPacket(DeliveryMethod options, ushort msgType)
+        public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
         {
-            ClientSendPacket(options, msgType, null);
+            ClientSendPacket(dataChannel, deliveryMethod, msgType, null);
         }
 
-        public void ServerSendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
+        public void ServerSendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
-            Server.SendPacket(connectionId, deliveryMethod, msgType, serializer);
+            Server.SendPacket(connectionId, dataChannel, deliveryMethod, msgType, serializer);
         }
 
-        public void ServerSendPacket<T>(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
+        public void ServerSendPacket<T>(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            ServerSendPacket(connectionId, deliveryMethod, msgType, (writer) =>
+            ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, (writer) =>
             {
                 messageData.Serialize(writer);
                 if (extraSerializer != null)
@@ -288,9 +288,9 @@ namespace LiteNetLibManager
             });
         }
 
-        public void ServerSendPacket(long connectionId, DeliveryMethod options, ushort msgType)
+        public void ServerSendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
         {
-            ServerSendPacket(connectionId, options, msgType, null);
+            ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, null);
         }
 
         public bool ClientSendRequest<TRequest>(ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
@@ -345,27 +345,27 @@ namespace LiteNetLibManager
         #endregion
 
         #region Relates components functions
-        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
+        public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             foreach (long connectionId in ConnectionIds)
             {
-                ServerSendPacket(connectionId, deliveryMethod, msgType, serializer);
+                ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, serializer);
             }
         }
 
-        public void ServerSendPacketToAllConnections<T>(DeliveryMethod deliveryMethod, ushort msgType, T messageData) where T : INetSerializable
+        public void ServerSendPacketToAllConnections<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData) where T : INetSerializable
         {
             foreach (long connectionId in ConnectionIds)
             {
-                ServerSendPacket(connectionId, deliveryMethod, msgType, messageData);
+                ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, messageData);
             }
         }
 
-        public void ServerSendPacketToAllConnections(DeliveryMethod deliveryMethod, ushort msgType)
+        public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
         {
             foreach (long connectionId in ConnectionIds)
             {
-                ServerSendPacket(connectionId, deliveryMethod, msgType);
+                ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType);
             }
         }
 

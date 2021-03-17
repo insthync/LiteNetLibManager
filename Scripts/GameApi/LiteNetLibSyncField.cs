@@ -27,19 +27,21 @@ namespace LiteNetLibManager
             ClientMulticast
         }
 
-        [Tooltip("Sending method type")]
-        public DeliveryMethod deliveryMethod;
+        [Tooltip("Sending data channel")]
+        public byte dataChannel = 0;
+        [Tooltip("Sending method type, default is `Sequenced`")]
+        public DeliveryMethod deliveryMethod = DeliveryMethod.Sequenced;
         [Tooltip("Interval to send network data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
-        [Tooltip("If this is `TRUE` it will syncing although no changes")]
-        public bool alwaysSync;
-        [Tooltip("If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later)")]
-        public bool doNotSyncInitialDataImmediately;
+        [Tooltip("If this is `TRUE` it will syncing although no changes, default is `FALSE`")]
+        public bool alwaysSync = false;
+        [Tooltip("If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later), default is `FALSE`")]
+        public bool doNotSyncInitialDataImmediately = false;
         [Tooltip("How data changes handle and sync")]
         public SyncMode syncMode;
-        protected float sendCountDown;
 
+        private float sendCountDown;
         private bool onChangeCalled;
 
         public abstract Type GetFieldType();
@@ -164,8 +166,8 @@ namespace LiteNetLibManager
                 case SyncMode.ClientMulticast:
                     if (IsOwnerClient)
                     {
-                        // Client send data to server, it should reliable-ordered
-                        Manager.ClientSendPacket(DeliveryMethod.ReliableOrdered,
+                        // Client send data to server, then server send to other clients, it should be reliable-ordered
+                        Manager.ClientSendPacket(dataChannel, DeliveryMethod.ReliableOrdered,
                             (isInitial ?
                             GameMsgTypes.InitialSyncField :
                             GameMsgTypes.UpdateSyncField),
@@ -186,7 +188,7 @@ namespace LiteNetLibManager
                 return;
 
             SendingConnectionId = connectionId;
-            Manager.ServerSendPacket(connectionId, deliveryMethod,
+            Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod,
                 (isInitial ?
                 GameMsgTypes.InitialSyncField :
                 GameMsgTypes.UpdateSyncField),

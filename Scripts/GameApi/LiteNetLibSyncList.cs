@@ -43,8 +43,10 @@ namespace LiteNetLibManager
 
         public delegate void OnChanged(Operation op, int itemIndex);
 
-        [Tooltip("If this is TRUE, this will update to owner client only")]
-        public bool forOwnerOnly;
+        [Tooltip("Sending data channel")]
+        public byte dataChannel = 0;
+        [Tooltip("If this is `TRUE`, this will update to owner client only, default is `FALSE`")]
+        public bool forOwnerOnly = false;
         public OnChanged onOperation;
 
         public abstract int Count { get; }
@@ -269,7 +271,7 @@ namespace LiteNetLibManager
             }
 
             SendingConnectionId = connectionId;
-            Manager.ServerSendPacket(connectionId, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
+            Manager.ServerSendPacket(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }
 
         protected void SerializeForSendOperation(NetDataWriter writer, Operation operation, int index)

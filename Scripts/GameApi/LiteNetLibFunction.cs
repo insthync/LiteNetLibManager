@@ -50,18 +50,18 @@ namespace LiteNetLibManager
             callback.Invoke();
         }
 
-        protected void ServerSendCall(long connectionId, DeliveryMethod deliveryMethod)
+        protected void ServerSendCall(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod)
         {
             SendingConnectionId = connectionId;
-            Manager.ServerSendPacket(connectionId, deliveryMethod, GameMsgTypes.CallFunction, (writer) => SerializeForSend(writer));
+            Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod, GameMsgTypes.CallFunction, (writer) => SerializeForSend(writer));
         }
 
-        protected void ClientSendCall(DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
+        protected void ClientSendCall(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
-            Manager.ClientSendPacket(deliveryMethod, GameMsgTypes.CallFunction, (writer) => SerializeForClient(writer, receivers, targetConnectionId));
+            Manager.ClientSendPacket(dataChannel, deliveryMethod, GameMsgTypes.CallFunction, (writer) => SerializeForClient(writer, receivers, targetConnectionId));
         }
 
-        protected void SendCall(DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
+        protected void SendCall(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
             LiteNetLibGameManager manager = Manager;
 
@@ -73,7 +73,7 @@ namespace LiteNetLibManager
                         if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
                             // Send function call message from server to target client by target connection Id
-                            ServerSendCall(targetConnectionId, deliveryMethod);
+                            ServerSendCall(targetConnectionId, dataChannel, deliveryMethod);
                         }
                         break;
                     case FunctionReceivers.All:
@@ -88,7 +88,7 @@ namespace LiteNetLibManager
                             else if (Identity.HasSubscriberOrIsOwning(connectionId))
                             {
                                 // Send message to subscribing clients
-                                ServerSendCall(connectionId, deliveryMethod);
+                                ServerSendCall(connectionId, dataChannel, deliveryMethod);
                             }
                         }
                         if (!Manager.IsClientConnected)
@@ -109,11 +109,11 @@ namespace LiteNetLibManager
             {
                 // Client send net function call to server
                 // Then the server will hook callback or forward message to other clients
-                ClientSendCall(deliveryMethod, receivers, targetConnectionId);
+                ClientSendCall(dataChannel, deliveryMethod, receivers, targetConnectionId);
             }
         }
 
-        public void SetParameters(params object[] parameterValues)
+        internal void SetParameters(params object[] parameterValues)
         {
             for (int i = 0; i < Parameters.Length; ++i)
             {
@@ -123,38 +123,38 @@ namespace LiteNetLibManager
             }
         }
 
-        public void Call(DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameterValues)
+        internal void Call(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameterValues)
         {
             if (!CanSync())
                 return;
 
             SetParameters(parameterValues);
-            SendCall(deliveryMethod, receivers, ConnectionId);
+            SendCall(dataChannel, deliveryMethod, receivers, ConnectionId);
         }
 
-        public void Call(long connectionId, params object[] parameterValues)
+        internal void Call(byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, params object[] parameterValues)
         {
             if (!CanSync())
                 return;
 
             SetParameters(parameterValues);
-            SendCall(DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
+            SendCall(dataChannel, deliveryMethod, FunctionReceivers.Target, connectionId);
         }
 
-        public void CallWithoutParametersSet(DeliveryMethod deliveryMethod, FunctionReceivers receivers)
+        internal void CallWithoutParametersSet(FunctionReceivers receivers)
         {
             if (!CanSync())
                 return;
 
-            SendCall(deliveryMethod, receivers, ConnectionId);
+            SendCall(0, DeliveryMethod.ReliableOrdered, receivers, ConnectionId);
         }
 
-        public void CallWithoutParametersSet(long connectionId)
+        internal void CallWithoutParametersSet(long connectionId)
         {
             if (!CanSync())
                 return;
 
-            SendCall(DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
+            SendCall(0, DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
         }
 
         protected void SerializeForClient(NetDataWriter writer, FunctionReceivers receivers, long connectionId)

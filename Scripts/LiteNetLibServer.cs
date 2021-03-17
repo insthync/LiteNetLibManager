@@ -78,15 +78,15 @@ namespace LiteNetLibManager
             }
         }
 
-        protected override void SendMessage(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        protected override void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            Transport.ServerSend(connectionId, 0, deliveryMethod, writer);
+            Transport.ServerSend(connectionId, dataChannel, deliveryMethod, writer);
         }
 
-        public void SendPacket(long connectionId, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
+        public void SendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             WritePacket(writer, msgType, serializer);
-            SendMessage(connectionId, deliveryMethod, writer);
+            SendMessage(connectionId, dataChannel, deliveryMethod, writer);
         }
 
         public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
@@ -94,7 +94,7 @@ namespace LiteNetLibManager
         {
             if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer))
                 return false;
-            SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
             return true;
         }
 
@@ -113,7 +113,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to target client
-            SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
             // Wait for response
             do
             {

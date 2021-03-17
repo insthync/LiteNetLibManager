@@ -93,6 +93,7 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
+        public byte DataChannel { get; set; } = 0;
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
         /// </summary>

@@ -90,7 +90,7 @@ namespace LiteNetLibManager
                 extraSerializer.Invoke(writer);
         }
 
-        protected abstract void SendMessage(long connectionId, DeliveryMethod deliveryMethod, NetDataWriter writer);
+        protected abstract void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer);
 
         private uint CreateRequest(
             LiteNetLibResponseHandler responseHandler,
@@ -180,7 +180,7 @@ namespace LiteNetLibManager
             if (responseSerializer != null)
                 responseSerializer.Invoke(writer);
             // Send response
-            SendMessage(connectionId, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
         }
 
         private void ProceedResponse(long connectionId, NetDataReader reader)
