@@ -27,19 +27,28 @@ namespace LiteNetLibManager
             ClientMulticast
         }
 
-        [Tooltip("Sending data channel")]
-        public byte dataChannel = 0;
-        [Tooltip("Sending method type, default is `Sequenced`")]
-        public DeliveryMethod deliveryMethod = DeliveryMethod.Sequenced;
-        [Tooltip("Interval to send network data")]
-        [Range(0.01f, 2f)]
-        public float sendInterval = 0.1f;
+        [Header("Generic Settings")]
         [Tooltip("If this is `TRUE` it will syncing although no changes, default is `FALSE`")]
         public bool alwaysSync = false;
         [Tooltip("If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later), default is `FALSE`")]
         public bool doNotSyncInitialDataImmediately = false;
         [Tooltip("How data changes handle and sync")]
         public SyncMode syncMode;
+
+        [Header("Server Sync Settings")]
+        [Tooltip("Sending data channel")]
+        public byte dataChannel = 0;
+        [Tooltip("Sending method type from server to clients, default is `Sequenced`")]
+        public DeliveryMethod deliveryMethod = DeliveryMethod.Sequenced;
+        [Tooltip("Interval to send network data")]
+        [Range(0.01f, 2f)]
+        public float sendInterval = 0.1f;
+
+        [Header("Client Sync Settings (`ClientMulticast` mode only)")]
+        [Tooltip("Sending data channel")]
+        public byte clientDataChannel = 0;
+        [Tooltip("Sending method type, default is `Sequenced`")]
+        public DeliveryMethod clientDeliveryMethod = DeliveryMethod.Sequenced;
 
         private float sendCountDown;
         private bool onChangeCalled;
@@ -167,11 +176,19 @@ namespace LiteNetLibManager
                     if (IsOwnerClient)
                     {
                         // Client send data to server, then server send to other clients, it should be reliable-ordered
-                        Manager.ClientSendPacket(dataChannel, DeliveryMethod.ReliableOrdered,
+                        Manager.ClientSendPacket(clientDataChannel, clientDeliveryMethod,
                             (isInitial ?
                             GameMsgTypes.InitialSyncField :
                             GameMsgTypes.UpdateSyncField),
                             SerializeForSend);
+                    }
+                    else if (IsServer)
+                    {
+                        foreach (long connectionId in Manager.GetConnectionIds())
+                        {
+                            if (Identity.HasSubscriberOrIsOwning(connectionId))
+                                SendUpdate(isInitial, connectionId);
+                        }
                     }
                     break;
             }
@@ -520,31 +537,73 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldQuaternion : LiteNetLibSyncField<Quaternion>
     {
+        [Tooltip("If angle between new value and old value >= this value, it will be determined that the value is changing")]
+        public float valueChangeAngle = 1f;
+
+        protected override bool IsValueChanged(Quaternion newValue)
+        {
+            return Quaternion.Angle(value, newValue) >= valueChangeAngle;
+        }
     }
 
     [Serializable]
     public class SyncFieldVector2 : LiteNetLibSyncField<Vector2>
     {
+        [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
+        public float valueChangeDistance = 0.01f;
+
+        protected override bool IsValueChanged(Vector2 newValue)
+        {
+            return Vector2.Distance(value, newValue) >= valueChangeDistance;
+        }
     }
 
     [Serializable]
     public class SyncFieldVector2Int : LiteNetLibSyncField<Vector2Int>
     {
+        [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
+        public float valueChangeDistance = 0.01f;
+
+        protected override bool IsValueChanged(Vector2Int newValue)
+        {
+            return Vector2Int.Distance(value, newValue) >= valueChangeDistance;
+        }
     }
 
     [Serializable]
     public class SyncFieldVector3 : LiteNetLibSyncField<Vector3>
     {
+        [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
+        public float valueChangeDistance = 0.01f;
+
+        protected override bool IsValueChanged(Vector3 newValue)
+        {
+            return Vector3.Distance(value, newValue) >= valueChangeDistance;
+        }
     }
 
     [Serializable]
     public class SyncFieldVector3Int : LiteNetLibSyncField<Vector3Int>
     {
+        [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
+        public float valueChangeDistance = 0.01f;
+
+        protected override bool IsValueChanged(Vector3Int newValue)
+        {
+            return Vector3Int.Distance(value, newValue) >= valueChangeDistance;
+        }
     }
 
     [Serializable]
     public class SyncFieldVector4 : LiteNetLibSyncField<Vector4>
     {
+        [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
+        public float valueChangeDistance = 0.01f;
+
+        protected override bool IsValueChanged(Vector4 newValue)
+        {
+            return Vector4.Distance(value, newValue) >= valueChangeDistance;
+        }
     }
 
     [Serializable]
