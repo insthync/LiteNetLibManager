@@ -91,7 +91,7 @@ namespace LiteNetLibManager
             if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
                 return false;
             // Send request to server, so connection id will not being used
-            SendMessage(-1, 0, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(-1, 0, DeliveryMethod.ReliableUnordered, writer);
             return true;
         }
 
@@ -110,7 +110,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to server, so connection id will not being used
-            SendMessage(-1, 0, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(-1, 0, DeliveryMethod.ReliableUnordered, writer);
             // Wait for response
             do
             {

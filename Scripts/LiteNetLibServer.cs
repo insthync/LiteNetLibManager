@@ -94,7 +94,7 @@ namespace LiteNetLibManager
         {
             if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer))
                 return false;
-            SendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, writer);
             return true;
         }
 
@@ -113,7 +113,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to target client
-            SendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, writer);
             // Wait for response
             do
             {
