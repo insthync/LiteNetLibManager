@@ -48,14 +48,24 @@ namespace Cysharp.Threading.Tasks.Internal
             }
         }
 
-        public void Clear()
+        public int Clear()
         {
             lock (arrayLock)
             {
+                var rest = 0;
+
                 for (var index = 0; index < loopItems.Length; index++)
                 {
+                    if (loopItems[index] != null)
+                    {
+                        rest++;
+                    }
+
                     loopItems[index] = null;
                 }
+
+                tail = 0;
+                return rest;
             }
         }
 
@@ -108,6 +118,14 @@ namespace Cysharp.Threading.Tasks.Internal
                 case PlayerLoopTiming.LastPostLateUpdate:
                     LastPostLateUpdate();
                     break;
+#if UNITY_2020_2_OR_NEWER
+                case PlayerLoopTiming.TimeUpdate:
+                    TimeUpdate();
+                    break;
+                case PlayerLoopTiming.LastTimeUpdate:
+                    LastTimeUpdate();
+                    break;
+#endif
                 default:
                     break;
             }
@@ -130,6 +148,10 @@ namespace Cysharp.Threading.Tasks.Internal
         void LastPreLateUpdate() => RunCore();
         void PostLateUpdate() => RunCore();
         void LastPostLateUpdate() => RunCore();
+#if UNITY_2020_2_OR_NEWER
+        void TimeUpdate() => RunCore();
+        void LastTimeUpdate() => RunCore();
+#endif
 
         [System.Diagnostics.DebuggerHidden]
         void RunCore()
@@ -143,7 +165,6 @@ namespace Cysharp.Threading.Tasks.Internal
             {
                 var j = tail - 1;
 
-                // eliminate array-bound check for i
                 for (int i = 0; i < loopItems.Length; i++)
                 {
                     var action = loopItems[i];

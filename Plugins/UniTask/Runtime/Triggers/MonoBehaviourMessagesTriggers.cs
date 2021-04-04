@@ -2,7 +2,9 @@
 
 using System.Threading;
 using UnityEngine;
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 using UnityEngine.EventSystems;
+#endif
 
 namespace Cysharp.Threading.Tasks.Triggers
 {
@@ -715,6 +717,7 @@ namespace Cysharp.Threading.Tasks.Triggers
 #endregion
 
 #region CollisionEnter
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnCollisionEnterHandler
     {
@@ -771,9 +774,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnCollisionEnterHandler)new AsyncTriggerHandler<Collision>(this, cancellationToken, true)).OnCollisionEnterAsync();
         }
     }
+#endif
 #endregion
 
 #region CollisionEnter2D
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS2D_SUPPORT
 
     public interface IAsyncOnCollisionEnter2DHandler
     {
@@ -830,9 +835,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnCollisionEnter2DHandler)new AsyncTriggerHandler<Collision2D>(this, cancellationToken, true)).OnCollisionEnter2DAsync();
         }
     }
+#endif
 #endregion
 
 #region CollisionExit
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnCollisionExitHandler
     {
@@ -889,9 +896,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnCollisionExitHandler)new AsyncTriggerHandler<Collision>(this, cancellationToken, true)).OnCollisionExitAsync();
         }
     }
+#endif
 #endregion
 
 #region CollisionExit2D
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS2D_SUPPORT
 
     public interface IAsyncOnCollisionExit2DHandler
     {
@@ -948,9 +957,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnCollisionExit2DHandler)new AsyncTriggerHandler<Collision2D>(this, cancellationToken, true)).OnCollisionExit2DAsync();
         }
     }
+#endif
 #endregion
 
 #region CollisionStay
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnCollisionStayHandler
     {
@@ -1007,9 +1018,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnCollisionStayHandler)new AsyncTriggerHandler<Collision>(this, cancellationToken, true)).OnCollisionStayAsync();
         }
     }
+#endif
 #endregion
 
 #region CollisionStay2D
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS2D_SUPPORT
 
     public interface IAsyncOnCollisionStay2DHandler
     {
@@ -1066,9 +1079,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnCollisionStay2DHandler)new AsyncTriggerHandler<Collision2D>(this, cancellationToken, true)).OnCollisionStay2DAsync();
         }
     }
+#endif
 #endregion
 
 #region ControllerColliderHit
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnControllerColliderHitHandler
     {
@@ -1125,6 +1140,7 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnControllerColliderHitHandler)new AsyncTriggerHandler<ControllerColliderHit>(this, cancellationToken, true)).OnControllerColliderHitAsync();
         }
     }
+#endif
 #endregion
 
 #region Disable
@@ -1423,6 +1439,7 @@ namespace Cysharp.Threading.Tasks.Triggers
 #endregion
 
 #region JointBreak
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnJointBreakHandler
     {
@@ -1479,9 +1496,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnJointBreakHandler)new AsyncTriggerHandler<float>(this, cancellationToken, true)).OnJointBreakAsync();
         }
     }
+#endif
 #endregion
 
 #region JointBreak2D
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS2D_SUPPORT
 
     public interface IAsyncOnJointBreak2DHandler
     {
@@ -1538,9 +1557,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnJointBreak2DHandler)new AsyncTriggerHandler<Joint2D>(this, cancellationToken, true)).OnJointBreak2DAsync();
         }
     }
+#endif
 #endregion
 
 #region MouseDown
+#if !(UNITY_IPHONE || UNITY_ANDROID || UNITY_METRO)
 
     public interface IAsyncOnMouseDownHandler
     {
@@ -1597,9 +1618,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMouseDownHandler)new AsyncTriggerHandler<AsyncUnit>(this, cancellationToken, true)).OnMouseDownAsync();
         }
     }
+#endif
 #endregion
 
 #region MouseDrag
+#if !(UNITY_IPHONE || UNITY_ANDROID || UNITY_METRO)
 
     public interface IAsyncOnMouseDragHandler
     {
@@ -1656,9 +1679,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMouseDragHandler)new AsyncTriggerHandler<AsyncUnit>(this, cancellationToken, true)).OnMouseDragAsync();
         }
     }
+#endif
 #endregion
 
 #region MouseEnter
+#if !(UNITY_IPHONE || UNITY_ANDROID || UNITY_METRO)
 
     public interface IAsyncOnMouseEnterHandler
     {
@@ -1715,9 +1740,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMouseEnterHandler)new AsyncTriggerHandler<AsyncUnit>(this, cancellationToken, true)).OnMouseEnterAsync();
         }
     }
+#endif
 #endregion
 
 #region MouseExit
+#if !(UNITY_IPHONE || UNITY_ANDROID || UNITY_METRO)
 
     public interface IAsyncOnMouseExitHandler
     {
@@ -1774,9 +1801,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMouseExitHandler)new AsyncTriggerHandler<AsyncUnit>(this, cancellationToken, true)).OnMouseExitAsync();
         }
     }
+#endif
 #endregion
 
 #region MouseOver
+#if !(UNITY_IPHONE || UNITY_ANDROID || UNITY_METRO)
 
     public interface IAsyncOnMouseOverHandler
     {
@@ -1833,9 +1862,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMouseOverHandler)new AsyncTriggerHandler<AsyncUnit>(this, cancellationToken, true)).OnMouseOverAsync();
         }
     }
+#endif
 #endregion
 
 #region MouseUp
+#if !(UNITY_IPHONE || UNITY_ANDROID || UNITY_METRO)
 
     public interface IAsyncOnMouseUpHandler
     {
@@ -1892,9 +1923,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMouseUpHandler)new AsyncTriggerHandler<AsyncUnit>(this, cancellationToken, true)).OnMouseUpAsync();
         }
     }
+#endif
 #endregion
 
 #region MouseUpAsButton
+#if !(UNITY_IPHONE || UNITY_ANDROID || UNITY_METRO)
 
     public interface IAsyncOnMouseUpAsButtonHandler
     {
@@ -1951,6 +1984,7 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMouseUpAsButtonHandler)new AsyncTriggerHandler<AsyncUnit>(this, cancellationToken, true)).OnMouseUpAsButtonAsync();
         }
     }
+#endif
 #endregion
 
 #region ParticleCollision
@@ -2131,7 +2165,7 @@ namespace Cysharp.Threading.Tasks.Triggers
 #endregion
 
 #region ParticleUpdateJobScheduled
-#if UNITY_2019_3_OR_NEWER
+#if UNITY_2019_3_OR_NEWER && (!UNITY_2019_1_OR_NEWER || UNITASK_PARTICLESYSTEM_SUPPORT)
 
     public interface IAsyncOnParticleUpdateJobScheduledHandler
     {
@@ -2782,6 +2816,7 @@ namespace Cysharp.Threading.Tasks.Triggers
 #endregion
 
 #region TriggerEnter
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnTriggerEnterHandler
     {
@@ -2838,9 +2873,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnTriggerEnterHandler)new AsyncTriggerHandler<Collider>(this, cancellationToken, true)).OnTriggerEnterAsync();
         }
     }
+#endif
 #endregion
 
 #region TriggerEnter2D
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS2D_SUPPORT
 
     public interface IAsyncOnTriggerEnter2DHandler
     {
@@ -2897,9 +2934,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnTriggerEnter2DHandler)new AsyncTriggerHandler<Collider2D>(this, cancellationToken, true)).OnTriggerEnter2DAsync();
         }
     }
+#endif
 #endregion
 
 #region TriggerExit
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnTriggerExitHandler
     {
@@ -2956,9 +2995,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnTriggerExitHandler)new AsyncTriggerHandler<Collider>(this, cancellationToken, true)).OnTriggerExitAsync();
         }
     }
+#endif
 #endregion
 
 #region TriggerExit2D
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS2D_SUPPORT
 
     public interface IAsyncOnTriggerExit2DHandler
     {
@@ -3015,9 +3056,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnTriggerExit2DHandler)new AsyncTriggerHandler<Collider2D>(this, cancellationToken, true)).OnTriggerExit2DAsync();
         }
     }
+#endif
 #endregion
 
 #region TriggerStay
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS_SUPPORT
 
     public interface IAsyncOnTriggerStayHandler
     {
@@ -3074,9 +3117,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnTriggerStayHandler)new AsyncTriggerHandler<Collider>(this, cancellationToken, true)).OnTriggerStayAsync();
         }
     }
+#endif
 #endregion
 
 #region TriggerStay2D
+#if !UNITY_2019_1_OR_NEWER || UNITASK_PHYSICS2D_SUPPORT
 
     public interface IAsyncOnTriggerStay2DHandler
     {
@@ -3133,6 +3178,7 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnTriggerStay2DHandler)new AsyncTriggerHandler<Collider2D>(this, cancellationToken, true)).OnTriggerStay2DAsync();
         }
     }
+#endif
 #endregion
 
 #region Validate
@@ -3372,6 +3418,7 @@ namespace Cysharp.Threading.Tasks.Triggers
 #endregion
 
 #region BeginDrag
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnBeginDragHandler
     {
@@ -3428,9 +3475,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnBeginDragHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnBeginDragAsync();
         }
     }
+#endif
 #endregion
 
 #region Cancel
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnCancelHandler
     {
@@ -3487,9 +3536,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnCancelHandler)new AsyncTriggerHandler<BaseEventData>(this, cancellationToken, true)).OnCancelAsync();
         }
     }
+#endif
 #endregion
 
 #region Deselect
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnDeselectHandler
     {
@@ -3546,9 +3597,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnDeselectHandler)new AsyncTriggerHandler<BaseEventData>(this, cancellationToken, true)).OnDeselectAsync();
         }
     }
+#endif
 #endregion
 
 #region Drag
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnDragHandler
     {
@@ -3605,9 +3658,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnDragHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnDragAsync();
         }
     }
+#endif
 #endregion
 
 #region Drop
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnDropHandler
     {
@@ -3664,9 +3719,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnDropHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnDropAsync();
         }
     }
+#endif
 #endregion
 
 #region EndDrag
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnEndDragHandler
     {
@@ -3723,9 +3780,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnEndDragHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnEndDragAsync();
         }
     }
+#endif
 #endregion
 
 #region InitializePotentialDrag
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnInitializePotentialDragHandler
     {
@@ -3782,9 +3841,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnInitializePotentialDragHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnInitializePotentialDragAsync();
         }
     }
+#endif
 #endregion
 
 #region Move
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnMoveHandler
     {
@@ -3841,9 +3902,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnMoveHandler)new AsyncTriggerHandler<AxisEventData>(this, cancellationToken, true)).OnMoveAsync();
         }
     }
+#endif
 #endregion
 
 #region PointerClick
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnPointerClickHandler
     {
@@ -3900,9 +3963,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnPointerClickHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnPointerClickAsync();
         }
     }
+#endif
 #endregion
 
 #region PointerDown
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnPointerDownHandler
     {
@@ -3959,9 +4024,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnPointerDownHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnPointerDownAsync();
         }
     }
+#endif
 #endregion
 
 #region PointerEnter
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnPointerEnterHandler
     {
@@ -4018,9 +4085,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnPointerEnterHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnPointerEnterAsync();
         }
     }
+#endif
 #endregion
 
 #region PointerExit
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnPointerExitHandler
     {
@@ -4077,9 +4146,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnPointerExitHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnPointerExitAsync();
         }
     }
+#endif
 #endregion
 
 #region PointerUp
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnPointerUpHandler
     {
@@ -4136,9 +4207,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnPointerUpHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnPointerUpAsync();
         }
     }
+#endif
 #endregion
 
 #region Scroll
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnScrollHandler
     {
@@ -4195,9 +4268,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnScrollHandler)new AsyncTriggerHandler<PointerEventData>(this, cancellationToken, true)).OnScrollAsync();
         }
     }
+#endif
 #endregion
 
 #region Select
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnSelectHandler
     {
@@ -4254,9 +4329,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnSelectHandler)new AsyncTriggerHandler<BaseEventData>(this, cancellationToken, true)).OnSelectAsync();
         }
     }
+#endif
 #endregion
 
 #region Submit
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnSubmitHandler
     {
@@ -4313,9 +4390,11 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnSubmitHandler)new AsyncTriggerHandler<BaseEventData>(this, cancellationToken, true)).OnSubmitAsync();
         }
     }
+#endif
 #endregion
 
 #region UpdateSelected
+#if !UNITY_2019_1_OR_NEWER || UNITASK_UGUI_SUPPORT
 
     public interface IAsyncOnUpdateSelectedHandler
     {
@@ -4372,6 +4451,7 @@ namespace Cysharp.Threading.Tasks.Triggers
             return ((IAsyncOnUpdateSelectedHandler)new AsyncTriggerHandler<BaseEventData>(this, cancellationToken, true)).OnUpdateSelectedAsync();
         }
     }
+#endif
 #endregion
 
 }
