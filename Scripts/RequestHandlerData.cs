@@ -5,15 +5,15 @@ namespace LiteNetLibManager
     public struct RequestHandlerData
     {
         public ushort RequestType { get; private set; }
-        public uint AckId { get; private set; }
+        public uint RequestId { get; private set; }
         public TransportHandler TransportHandler { get; private set; }
         public long ConnectionId { get; private set; }
         public NetDataReader Reader { get; private set; }
 
-        public RequestHandlerData(ushort requestType, uint ackId, TransportHandler transportHandler, long connectionId, NetDataReader reader)
+        public RequestHandlerData(ushort requestType, uint requestId, TransportHandler transportHandler, long connectionId, NetDataReader reader)
         {
             RequestType = requestType;
-            AckId = ackId;
+            RequestId = requestId;
             TransportHandler = transportHandler;
             ConnectionId = connectionId;
             Reader = reader;

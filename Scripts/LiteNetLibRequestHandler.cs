@@ -5,7 +5,7 @@ namespace LiteNetLibManager
 {
     public interface LiteNetLibRequestHandler
     {
-        void InvokeRequest(RequestHandlerData requestHandler, RequestProceedResultDelegate<INetSerializable> responseProceedResult);
+        void InvokeRequest(RequestHandlerData requestHandler, RequestProceededDelegate responseProceedResult);
     }
 
     public struct LiteNetLibRequestHandler<TRequest, TResponse> : LiteNetLibRequestHandler
@@ -19,7 +19,7 @@ namespace LiteNetLibManager
             this.requestDelegate = requestDelegate;
         }
 
-        public void InvokeRequest(RequestHandlerData requestHandler, RequestProceedResultDelegate<INetSerializable> responseProceedResult)
+        public void InvokeRequest(RequestHandlerData requestHandler, RequestProceededDelegate responseProceedResult)
         {
             TRequest request = new TRequest();
             if (requestHandler.Reader != null)
@@ -28,7 +28,7 @@ namespace LiteNetLibManager
             {
                 requestDelegate.Invoke(requestHandler, request, (responseCode, response, responseSerializer) =>
                 {
-                    responseProceedResult.Invoke(responseCode, response, responseSerializer);
+                    responseProceedResult.Invoke(requestHandler.ConnectionId, requestHandler.RequestId, responseCode, response, responseSerializer);
                 });
             }
         }

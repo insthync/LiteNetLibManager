@@ -4,14 +4,14 @@ namespace LiteNetLibManager
 {
     public struct ResponseHandlerData
     {
-        public uint AckId { get; private set; }
+        public uint RequestId { get; private set; }
         public TransportHandler TransportHandler { get; private set; }
         public long ConnectionId { get; private set; }
         public NetDataReader Reader { get; private set; }
 
-        public ResponseHandlerData(uint ackId, TransportHandler transportHandler, long connectionId, NetDataReader reader)
+        public ResponseHandlerData(uint requestId, TransportHandler transportHandler, long connectionId, NetDataReader reader)
         {
-            AckId = ackId;
+            RequestId = requestId;
             TransportHandler = transportHandler;
             ConnectionId = connectionId;
             Reader = reader;

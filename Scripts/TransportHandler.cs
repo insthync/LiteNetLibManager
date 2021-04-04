@@ -163,10 +163,7 @@ namespace LiteNetLibManager
                 return;
             }
             // Invoke request and create response
-            requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, requestId, this, connectionId, reader), (responseCode, response, responseSerializer) =>
-            {
-                RequestProceeded(connectionId, requestId, responseCode, response, responseSerializer);
-            });
+            requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, requestId, this, connectionId, reader), RequestProceeded);
         }
 
         private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate responseSerializer)
