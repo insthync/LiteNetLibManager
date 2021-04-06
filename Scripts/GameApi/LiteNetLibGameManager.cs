@@ -816,7 +816,7 @@ namespace LiteNetLibManager
             Rtt = Timestamp - message.pingTime;
             // Calculate time offsets by device time offsets and RTT
             ServerTimestampOffsets = message.serverTime - Timestamp + Rtt;
-            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerUnixTimeOffset: " + ServerTimestampOffsets);
+            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
             // Send pong back to server (then server will calculates Rtt for this client later)
             PongMessage pongMessage = new PongMessage()
             {
