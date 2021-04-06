@@ -17,6 +17,7 @@
         public const ushort ClientSendTransform = 14;
         public const ushort ServerSetObjectOwner = 15;
         public const ushort Ping = 16;
-        public const ushort Highest = 16;
+        public const ushort Pong = 17;
+        public const ushort Highest = 17;
     }
 }

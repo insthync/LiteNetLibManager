@@ -4,19 +4,19 @@ namespace LiteNetLibManager
 {
     public struct PongMessage : INetSerializable
     {
-        public long clientTime;
-        public long serverUnixTime;
+        public long pingTime;
+        public long serverTime;
 
         public void Deserialize(NetDataReader reader)
         {
-            clientTime = reader.GetPackedLong();
-            serverUnixTime = reader.GetPackedLong();
+            pingTime = reader.GetPackedLong();
+            serverTime = reader.GetPackedLong();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.PutPackedLong(clientTime);
-            writer.PutPackedLong(serverUnixTime);
+            writer.PutPackedLong(pingTime);
+            writer.PutPackedLong(serverTime);
         }
     }
 }

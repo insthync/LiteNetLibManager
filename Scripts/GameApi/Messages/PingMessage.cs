@@ -4,16 +4,16 @@ namespace LiteNetLibManager
 {
     public struct PingMessage : INetSerializable
     {
-        public long clientTime;
+        public long pingTime;
 
         public void Deserialize(NetDataReader reader)
         {
-            clientTime = reader.GetPackedLong();
+            pingTime = reader.GetPackedLong();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.PutPackedLong(clientTime);
+            writer.PutPackedLong(pingTime);
         }
     }
 }

@@ -18,20 +18,26 @@ namespace LiteNetLibManager
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
-        private float sendPingCountDown;
+        private float clientSendPingCountDown;
         private AsyncOperation loadSceneAsyncOperation;
 
         public long ClientConnectionId { get; protected set; }
         public long Rtt { get; protected set; }
         public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); } }
-        public long ServerUnixTimeOffset { get; protected set; }
-        public long ServerUnixTime
+        /// <summary>
+        /// Unix timestamp (milliseconds) offsets from server
+        /// </summary>
+        public long ServerTimestampOffsets { get; protected set; }
+        /// <summary>
+        /// Server unix timestamp (milliseconds)
+        /// </summary>
+        public long ServerTimestamp
         {
             get
             {
                 if (IsServer)
                     return Timestamp;
-                return Timestamp + ServerUnixTimeOffset;
+                return Timestamp + ServerTimestampOffsets;
             }
         }
         public string ServerSceneName { get; protected set; }
@@ -53,11 +59,11 @@ namespace LiteNetLibManager
                 if (IsClientConnected)
                 {
                     // Send ping from client
-                    sendPingCountDown -= Time.fixedDeltaTime;
-                    if (sendPingCountDown <= 0f)
+                    clientSendPingCountDown -= Time.fixedDeltaTime;
+                    if (clientSendPingCountDown <= 0f)
                     {
                         SendClientPing();
-                        sendPingCountDown = pingDuration;
+                        clientSendPingCountDown = pingDuration;
                     }
                 }
             }
@@ -66,7 +72,7 @@ namespace LiteNetLibManager
 
         public virtual uint PacketVersion()
         {
-            return 6;
+            return 7;
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
@@ -196,6 +202,7 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
+            RegisterServerMessage(GameMsgTypes.Pong, HandleClientPong);
             // Client messages
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
@@ -208,7 +215,7 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
-            RegisterClientMessage(GameMsgTypes.Ping, HandleServerPing);
+            RegisterClientMessage(GameMsgTypes.Pong, HandleServerPong);
         }
 
         public override void OnPeerConnected(long connectionId)
@@ -312,8 +319,8 @@ namespace LiteNetLibManager
             if (!IsClientConnected)
                 return;
             PingMessage message = new PingMessage();
-            message.clientTime = Timestamp;
-            ClientSendPacket(0, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, message);
+            message.pingTime = Timestamp;
+            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, message);
         }
 
         public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
@@ -635,10 +642,18 @@ namespace LiteNetLibManager
             PingMessage message = messageHandler.ReadMessage<PingMessage>();
             PongMessage pongMessage = new PongMessage()
             {
-                clientTime = message.clientTime,
-                serverUnixTime = ServerUnixTime,
+                pingTime = message.pingTime,
+                serverTime = Timestamp,
             };
-            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.Ping, pongMessage);
+            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, pongMessage);
+        }
+
+        protected void HandleClientPong(MessageHandlerData messageHandler)
+        {
+            if (!Players.ContainsKey(messageHandler.ConnectionId))
+                return;
+            PongMessage message = messageHandler.ReadMessage<PongMessage>();
+            Players[messageHandler.ConnectionId].Rtt = Timestamp - message.pingTime;
         }
 
         protected virtual void HandleServerSpawnSceneObject(MessageHandlerData messageHandler)
@@ -795,13 +810,19 @@ namespace LiteNetLibManager
             Assets.SetObjectOwner(message.objectId, message.connectionId);
         }
 
-        protected void HandleServerPing(MessageHandlerData messageHandler)
+        protected void HandleServerPong(MessageHandlerData messageHandler)
         {
             PongMessage message = messageHandler.ReadMessage<PongMessage>();
-            Rtt = Timestamp - message.clientTime;
-            // Time offset = server time - current timestamp - rtt
-            ServerUnixTimeOffset = message.serverUnixTime - Timestamp + Rtt;
-            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerUnixTimeOffset: " + ServerUnixTimeOffset);
+            Rtt = Timestamp - message.pingTime;
+            // Calculate time offsets by device time offsets and RTT
+            ServerTimestampOffsets = message.serverTime - Timestamp + Rtt;
+            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerUnixTimeOffset: " + ServerTimestampOffsets);
+            // Send pong back to server (then server will calculates Rtt for this client later)
+            PongMessage pongMessage = new PongMessage()
+            {
+                pingTime = message.serverTime,
+            };
+            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, pongMessage);
         }
         #endregion
 
