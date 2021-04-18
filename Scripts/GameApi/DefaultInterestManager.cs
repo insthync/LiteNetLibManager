@@ -5,8 +5,6 @@ namespace LiteNetLibManager
 {
     public class DefaultInterestManager : BaseInterestManager
     {
-        [Tooltip("Default visible range will be used when Identity's visible range is <= 0f")]
-        public float defaultVisibleRange = 30f;
         [Tooltip("Update every ? seconds")]
         public float updateInterval = 1f;
 

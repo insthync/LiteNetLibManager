@@ -20,7 +20,7 @@ namespace LiteNetLibManager
         private string assetId;
         [LiteNetLibReadOnly, SerializeField]
         private uint objectId;
-        [Tooltip("If this is <= 0f, it will uses interest manager's default visible range setting"), SerializeField]
+        [Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting"), SerializeField]
         private float visibleRange = 0f;
         [Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects"), SerializeField]
         private bool alwaysVisible = false;

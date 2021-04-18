@@ -5,6 +5,8 @@ namespace LiteNetLibManager
     [DisallowMultipleComponent]
     public abstract class BaseInterestManager : MonoBehaviour
     {
+        [Tooltip("Default visible range will be used when Identity's visible range is <= 0f")]
+        public float defaultVisibleRange = 30f;
         public LiteNetLibGameManager Manager { get; protected set; }
         public bool IsServer { get { return Manager.IsServer; } }
 
