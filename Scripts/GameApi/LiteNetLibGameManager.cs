@@ -86,7 +86,7 @@ namespace LiteNetLibManager
 
         public virtual uint PacketVersion()
         {
-            return 7;
+            return 8;
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
@@ -333,18 +333,20 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            PingMessage message = new PingMessage();
-            message.pingTime = Timestamp;
-            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, message);
+            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, new PingMessage()
+            {
+                pingTime = Timestamp,
+            });
         }
 
         public void SendServerPing()
         {
             if (!IsServer)
                 return;
-            PingMessage message = new PingMessage();
-            message.pingTime = Timestamp;
-            ServerSendPacketToAllConnections(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, message);
+            ServerSendPacketToAllConnections(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, new PingMessage()
+            {
+                pingTime = Timestamp,
+            });
         }
 
         public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
@@ -354,12 +356,13 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return false;
-            ServerSpawnSceneObjectMessage message = new ServerSpawnSceneObjectMessage();
-            message.objectId = identity.ObjectId;
-            message.connectionId = identity.ConnectionId;
-            message.position = identity.transform.position;
-            message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, message, identity.WriteInitialSyncFields);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, new ServerSpawnSceneObjectMessage()
+            {
+                objectId = identity.ObjectId,
+                connectionId = identity.ConnectionId,
+                position = identity.transform.position,
+                rotation = identity.transform.rotation,
+            }, identity.WriteInitialSyncFields);
             return true;
         }
 
@@ -370,13 +373,14 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return false;
-            ServerSpawnObjectMessage message = new ServerSpawnObjectMessage();
-            message.hashAssetId = identity.HashAssetId;
-            message.objectId = identity.ObjectId;
-            message.connectionId = identity.ConnectionId;
-            message.position = identity.transform.position;
-            message.rotation = identity.transform.rotation;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, message, identity.WriteInitialSyncFields);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, new ServerSpawnObjectMessage()
+            {
+                hashAssetId = identity.HashAssetId,
+                objectId = identity.ObjectId,
+                connectionId = identity.ConnectionId,
+                position = identity.transform.position,
+                rotation = identity.transform.rotation,
+            }, identity.WriteInitialSyncFields);
             return true;
         }
 
@@ -404,10 +408,11 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return false;
-            ServerDestroyObjectMessage message = new ServerDestroyObjectMessage();
-            message.objectId = objectId;
-            message.reasons = reasons;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, new ServerDestroyObjectMessage()
+            {
+                objectId = objectId,
+                reasons = reasons,
+            });
             return true;
         }
 
@@ -428,10 +433,11 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player;
             if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
                 return;
-            ServerErrorMessage message = new ServerErrorMessage();
-            message.shouldDisconnect = shouldDisconnect;
-            message.errorMessage = errorMessage;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, new ServerErrorMessage()
+            {
+                shouldDisconnect = shouldDisconnect,
+                errorMessage = errorMessage,
+            });
         }
 
         public void SendServerSceneChange(string sceneName)
@@ -450,19 +456,21 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            ServerSceneChangeMessage message = new ServerSceneChangeMessage();
-            message.serverSceneName = sceneName;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSceneChange, new ServerSceneChangeMessage()
+            {
+                serverSceneName = sceneName,
+            });
         }
 
         public void SendServerSetObjectOwner(long connectionId, uint objectId, long ownerConnectionId)
         {
             if (!IsServer)
                 return;
-            ServerSetObjectOwner message = new ServerSetObjectOwner();
-            message.objectId = objectId;
-            message.connectionId = ownerConnectionId;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSetObjectOwner, message);
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSetObjectOwner, new ServerSetObjectOwner()
+            {
+                objectId = objectId,
+                connectionId = ownerConnectionId,
+            });
         }
         #endregion
 
