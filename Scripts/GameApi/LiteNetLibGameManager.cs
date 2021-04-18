@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using UnityEngine.Profiling;
 using Cysharp.Threading.Tasks;
 
 namespace LiteNetLibManager
@@ -19,6 +18,7 @@ namespace LiteNetLibManager
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         private float clientSendPingCountDown;
+        private float serverSendPingCountDown;
         private AsyncOperation loadSceneAsyncOperation;
 
         public long ClientConnectionId { get; protected set; }
@@ -68,6 +68,16 @@ namespace LiteNetLibManager
                     {
                         SendClientPing();
                         clientSendPingCountDown = pingDuration;
+                    }
+                }
+                if (IsServer)
+                {
+                    // Send ping from server
+                    serverSendPingCountDown -= Time.fixedDeltaTime;
+                    if (serverSendPingCountDown <= 0f)
+                    {
+                        SendServerPing();
+                        serverSendPingCountDown = pingDuration;
                     }
                 }
             }
@@ -219,6 +229,7 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
+            RegisterClientMessage(GameMsgTypes.Ping, HandleServerPing);
             RegisterClientMessage(GameMsgTypes.Pong, HandleServerPong);
         }
 
@@ -325,6 +336,15 @@ namespace LiteNetLibManager
             PingMessage message = new PingMessage();
             message.pingTime = Timestamp;
             ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, message);
+        }
+
+        public void SendServerPing()
+        {
+            if (!IsServer)
+                return;
+            PingMessage message = new PingMessage();
+            message.pingTime = Timestamp;
+            ServerSendPacketToAllConnections(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, message);
         }
 
         public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
@@ -644,12 +664,11 @@ namespace LiteNetLibManager
         protected void HandleClientPing(MessageHandlerData messageHandler)
         {
             PingMessage message = messageHandler.ReadMessage<PingMessage>();
-            PongMessage pongMessage = new PongMessage()
+            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, new PongMessage()
             {
                 pingTime = message.pingTime,
                 serverTime = Timestamp,
-            };
-            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, pongMessage);
+            });
         }
 
         protected void HandleClientPong(MessageHandlerData messageHandler)
@@ -814,6 +833,16 @@ namespace LiteNetLibManager
             Assets.SetObjectOwner(message.objectId, message.connectionId);
         }
 
+        protected void HandleServerPing(MessageHandlerData messageHandler)
+        {
+            PingMessage message = messageHandler.ReadMessage<PingMessage>();
+            // Send pong back to server (then server will calculates Rtt for this client later)
+            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, new PongMessage()
+            {
+                pingTime = message.pingTime,
+            });
+        }
+
         protected void HandleServerPong(MessageHandlerData messageHandler)
         {
             PongMessage message = messageHandler.ReadMessage<PongMessage>();
@@ -821,12 +850,6 @@ namespace LiteNetLibManager
             // Calculate time offsets by device time offsets and RTT
             ServerTimestampOffsets = message.serverTime - Timestamp + Rtt;
             if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
-            // Send pong back to server (then server will calculates Rtt for this client later)
-            PongMessage pongMessage = new PongMessage()
-            {
-                pingTime = message.serverTime,
-            };
-            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, pongMessage);
         }
         #endregion
 
