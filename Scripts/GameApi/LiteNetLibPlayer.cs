@@ -18,14 +18,6 @@ namespace LiteNetLibManager
             ConnectionId = connectionId;
         }
 
-        internal void NotifyNewObject(LiteNetLibIdentity identity)
-        {
-            foreach (LiteNetLibIdentity obj in GetSpawnedObjects())
-            {
-                obj.NotifyNewObject(identity);
-            }
-        }
-
         internal bool IsSubscribing(uint objectId)
         {
             return Subscribings.Contains(objectId);
@@ -99,7 +91,7 @@ namespace LiteNetLibManager
             return SpawnedObjects[objectId];
         }
 
-        public Dictionary<uint, LiteNetLibIdentity>.ValueCollection GetSpawnedObjects()
+        public IEnumerable<LiteNetLibIdentity> GetSpawnedObjects()
         {
             return SpawnedObjects.Values;
         }

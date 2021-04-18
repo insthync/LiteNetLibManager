@@ -42,11 +42,15 @@ namespace LiteNetLibManager
         }
         public string ServerSceneName { get; protected set; }
         public LiteNetLibAssets Assets { get; protected set; }
+        public BaseInterestManager InterestManager { get; protected set; }
 
         protected override void Awake()
         {
             base.Awake();
             Assets = GetComponent<LiteNetLibAssets>();
+            InterestManager = GetComponent<BaseInterestManager>();
+            if (InterestManager == null)
+                InterestManager = gameObject.AddComponent<DefaultInterestManager>();
             ServerSceneName = string.Empty;
             if (doNotDestroyOnSceneChanges)
                 DontDestroyOnLoad(gameObject);
@@ -90,7 +94,7 @@ namespace LiteNetLibManager
             return Players[connectionId];
         }
 
-        public Dictionary<long, LiteNetLibPlayer>.ValueCollection GetPlayers()
+        public IEnumerable<LiteNetLibPlayer> GetPlayers()
         {
             return Players.Values;
         }

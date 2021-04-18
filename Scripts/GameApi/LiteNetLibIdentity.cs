@@ -20,6 +20,10 @@ namespace LiteNetLibManager
         private string assetId;
         [LiteNetLibReadOnly, SerializeField]
         private uint objectId;
+        [Tooltip("If this is <= 0f, it will uses interest manager's default visible range setting"), SerializeField]
+        private float visibleRange = 0f;
+        [Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects"), SerializeField]
+        private bool alwaysVisible = false;
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -37,14 +41,6 @@ namespace LiteNetLibManager
         /// Array of all behaviours
         /// </summary>
         public LiteNetLibBehaviour[] Behaviours { get; private set; }
-        /// <summary>
-        /// This will be true if it can get visible checker component when setup
-        /// </summary>
-        public bool HasVisibleChecker { get; private set; }
-        /// <summary>
-        /// Visible checker component which attached to this identity
-        /// </summary>
-        public BaseLiteNetLibVisibleChecker VisibleChecker { get; private set; }
         /// <summary>
         /// List of sync fields from all behaviours (include children behaviours)
         /// </summary>
@@ -98,6 +94,8 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
+        public float VisibleRange { get { return visibleRange; } }
+        public bool AlwaysVisible { get { return alwaysVisible; } }
         public byte DataChannel { get; set; } = 0;
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
@@ -474,8 +472,6 @@ namespace LiteNetLibManager
                     if (Behaviours[loopCounter].CanSyncBehaviour())
                         SyncBehaviours.Add(Behaviours[loopCounter]);
                 }
-                VisibleChecker = GetComponent<BaseLiteNetLibVisibleChecker>();
-                HasVisibleChecker = VisibleChecker != null;
                 IsSetupBehaviours = true;
             }
 
@@ -487,8 +483,7 @@ namespace LiteNetLibManager
             if (IsServer && ConnectionId >= 0)
                 Player.SpawnedObjects.Add(ObjectId, this);
 
-            InitializeSubscribings();
-            NotifyNewObjectToOther();
+            Manager.InterestManager.NotifyNewObject(this);
         }
 
         internal void OnSetOwnerClient(bool isOwnerClient)
@@ -615,51 +610,16 @@ namespace LiteNetLibManager
             return connectionId == ConnectionId || HasSubscriber(connectionId);
         }
 
-        private void InitializeSubscribings()
+        public void AddSubscribing(uint subscribing)
         {
-            if (!IsServer || ConnectionId < 0 || !Player.IsReady)
-            {
-                // This is not player's networked object
-                return;
-            }
-            // Always add controlled network object to subscribe it
-            Subscribings.Add(ObjectId);
-            if (!HasVisibleChecker)
-            {
-                // Subscribes all spawned objects
-                foreach (uint objectId in Manager.Assets.SpawnedObjects.Keys)
-                {
-                    Subscribings.Add(objectId);
-                }
-            }
-            else
-            {
-                // Find objects to subscribes by visible checker
-                foreach (LiteNetLibIdentity newIdentity in Manager.Assets.SpawnedObjects.Values)
-                {
-                    if (VisibleChecker.ShouldSubscribe(newIdentity))
-                        Subscribings.Add(newIdentity.ObjectId);
-                }
-            }
-            foreach (uint objectId in Subscribings)
-            {
-                Player.Subscribe(objectId);
-            }
+            Subscribings.Add(subscribing);
+            Player.Subscribe(subscribing);
         }
 
-        private void NotifyNewObjectToOther()
+        public void RemoveSubscribing(uint subscribing)
         {
-            if (!IsServer)
-            {
-                // Notifies by server only
-                return;
-            }
-            foreach (LiteNetLibPlayer player in Manager.GetPlayers())
-            {
-                if (player.ConnectionId == ConnectionId || !player.IsReady)
-                    continue;
-                player.NotifyNewObject(this);
-            }
+            Subscribings.Remove(subscribing);
+            Player.Unsubscribe(subscribing);
         }
 
         public void UpdateSubscribings(HashSet<uint> newSubscribings)
@@ -674,8 +634,7 @@ namespace LiteNetLibManager
             newSubscribings.Add(ObjectId);
             foreach (uint oldSubscribing in Subscribings)
             {
-                if (Manager.Assets.TryGetSpawnedObject(oldSubscribing, out tempIdentity) &&
-                    !VisibleChecker.ShouldUnsubscribe(tempIdentity))
+                if (oldSubscribing == ObjectId)
                     continue;
                 if (!newSubscribings.Contains(oldSubscribing))
                 {
@@ -702,20 +661,6 @@ namespace LiteNetLibManager
             if (identity == null)
                 return true;
             return identity.IsHide && !identity.HideExceptions.Contains(ConnectionId) && identity.ConnectionId != ConnectionId;
-        }
-
-        public void NotifyNewObject(LiteNetLibIdentity newIdentity)
-        {
-            if (!IsServer || ConnectionId < 0 || !Player.IsReady)
-            {
-                // This is not player's networked object
-                return;
-            }
-            if (!HasVisibleChecker || VisibleChecker.ShouldSubscribe(newIdentity))
-            {
-                Subscribings.Add(newIdentity.ObjectId);
-                Player.Subscribe(newIdentity.objectId);
-            }
         }
 
         public void OnServerSubscribingAdded()
