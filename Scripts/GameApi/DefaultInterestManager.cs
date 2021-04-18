@@ -8,7 +8,7 @@ namespace LiteNetLibManager
         [Tooltip("Update every ? seconds")]
         public float updateInterval = 1f;
 
-        private float countDown = 0f;
+        private float updateCountDown = 0f;
 
         private void Update()
         {
@@ -17,10 +17,10 @@ namespace LiteNetLibManager
                 // Update at server only
                 return;
             }
-            countDown -= Time.unscaledDeltaTime;
-            if (countDown <= 0)
+            updateCountDown -= Time.unscaledDeltaTime;
+            if (updateCountDown <= 0f)
             {
-                countDown = updateInterval;
+                updateCountDown = updateInterval;
                 HashSet<uint> subscribings = new HashSet<uint>();
                 foreach (LiteNetLibPlayer player in Manager.GetPlayers())
                 {
@@ -42,24 +42,6 @@ namespace LiteNetLibManager
                     }
                 }
             }
-        }
-
-        public override bool Subscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target)
-        {
-            if (ShouldSubscribe(subscriber, target))
-            {
-                subscriber.AddSubscribing(target.ObjectId);
-                return true;
-            }
-            return false;
-        }
-
-        public bool ShouldSubscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target)
-        {
-            float range = defaultVisibleRange;
-            if (target.VisibleRange > 0f)
-                range = target.VisibleRange;
-            return subscriber.ConnectionId != target.ConnectionId && (target.AlwaysVisible || Vector3.Distance(subscriber.transform.position, target.transform.position) <= range);
         }
     }
 }

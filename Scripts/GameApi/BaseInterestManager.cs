@@ -6,16 +6,14 @@ namespace LiteNetLibManager
     public abstract class BaseInterestManager : MonoBehaviour
     {
         [Tooltip("Default visible range will be used when Identity's visible range is <= 0f")]
-        public float defaultVisibleRange = 30f;
+        public float defaultVisibleRange = 80f;
         public LiteNetLibGameManager Manager { get; protected set; }
         public bool IsServer { get { return Manager.IsServer; } }
 
-        private void Awake()
+        protected virtual void Awake()
         {
             Manager = GetComponent<LiteNetLibGameManager>();
         }
-
-        public abstract bool Subscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target);
 
         public void NotifyNewObject(LiteNetLibIdentity newObject)
         {
@@ -47,6 +45,26 @@ namespace LiteNetLibManager
                     Subscribe(subscriber, newObject);
                 }
             }
+        }
+
+        public float GetVisibleRange(LiteNetLibIdentity identity)
+        {
+            return identity.VisibleRange > 0f ? identity.VisibleRange : defaultVisibleRange;
+        }
+
+        public virtual bool ShouldSubscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target, bool checkRange = true)
+        {
+            return subscriber.ConnectionId != target.ConnectionId && !target.IsIdentityHideFromThis(subscriber) && (!checkRange || target.AlwaysVisible || Vector3.Distance(subscriber.transform.position, target.transform.position) <= GetVisibleRange(target));
+        }
+
+        public virtual bool Subscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target)
+        {
+            if (ShouldSubscribe(subscriber, target))
+            {
+                subscriber.AddSubscribing(target.ObjectId);
+                return true;
+            }
+            return false;
         }
     }
 }
