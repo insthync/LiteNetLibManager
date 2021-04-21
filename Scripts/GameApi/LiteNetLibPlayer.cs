@@ -96,6 +96,11 @@ namespace LiteNetLibManager
             return SpawnedObjects.Values;
         }
 
+        public IEnumerable<uint> GetSubscribingObjectIds()
+        {
+            return Subscribings;
+        }
+
         public int SpawnedObjectsCount
         {
             get { return SpawnedObjects.Count; }
