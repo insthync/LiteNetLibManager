@@ -16,7 +16,7 @@ namespace LiteNetLibManager
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
-        [SerializeField]
+        [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
         private string assetId;
         [LiteNetLibReadOnly, SerializeField]
         private uint objectId;
