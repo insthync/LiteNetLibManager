@@ -25,7 +25,7 @@ namespace LiteNetLibManager
             public List<MethodInfo> functionsCanCallByEveryone;
         }
 
-        [LiteNetLibReadOnly, SerializeField]
+        [ReadOnly, SerializeField]
         private byte behaviourIndex;
         public byte BehaviourIndex
         {

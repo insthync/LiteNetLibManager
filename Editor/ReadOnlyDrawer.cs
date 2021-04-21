@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace LiteNetLibManager
 {
-    [CustomPropertyDrawer(typeof(LiteNetLibReadOnlyAttribute))]
-    public class LiteNetLibReadOnlyDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
+    public class ReadOnlyDrawer : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

@@ -29,7 +29,7 @@ namespace LiteNetLibManager
 
     public abstract class LiteNetLibElement
     {
-        [LiteNetLibReadOnly, SerializeField]
+        [ReadOnly, SerializeField]
         protected LiteNetLibBehaviour behaviour;
         public LiteNetLibBehaviour Behaviour
         {
@@ -80,7 +80,7 @@ namespace LiteNetLibManager
 
         public bool IsSetup { get; private set; }
 
-        [LiteNetLibReadOnly, SerializeField]
+        [ReadOnly, SerializeField]
         protected int elementId;
         public int ElementId
         {

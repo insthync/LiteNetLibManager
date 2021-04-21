@@ -3,7 +3,7 @@
 namespace LiteNetLibManager
 {
     [System.Serializable]
-    public struct LiteNetLibScene
+    public struct SceneField
     {
         [SerializeField]
         private Object sceneAsset;
@@ -16,7 +16,7 @@ namespace LiteNetLibManager
             set { sceneName = value; }
         }
 
-        public static implicit operator string(LiteNetLibScene unityScene)
+        public static implicit operator string(SceneField unityScene)
         {
             return unityScene.SceneName;
         }

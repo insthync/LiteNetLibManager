@@ -15,8 +15,8 @@ namespace LiteNetLibManager
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs;
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
-        public LiteNetLibScene offlineScene;
-        public LiteNetLibScene onlineScene;
+        public SceneField offlineScene;
+        public SceneField onlineScene;
         public UnityEvent onInitialize;
         public LiteNetLibLoadSceneEvent onLoadSceneStart;
         public LiteNetLibLoadSceneEvent onLoadSceneProgress;

@@ -18,7 +18,7 @@ namespace LiteNetLibManager
         public static uint HighestObjectId { get; private set; }
         [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
         private string assetId;
-        [LiteNetLibReadOnly, SerializeField]
+        [ReadOnly, SerializeField]
         private uint objectId;
         [Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting"), SerializeField]
         private float visibleRange = 0f;

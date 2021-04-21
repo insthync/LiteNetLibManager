@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace LiteNetLibManager
 {
-    [CustomPropertyDrawer(typeof(LiteNetLibScene))]
-    public class LiteNetLibScenePropertyDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(SceneField))]
+    public class SceneFieldPropertyDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect _position, SerializedProperty _property, GUIContent _label)
         {
