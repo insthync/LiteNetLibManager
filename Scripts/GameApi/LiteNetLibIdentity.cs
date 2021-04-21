@@ -16,7 +16,7 @@ namespace LiteNetLibManager
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
-        [LiteNetLibReadOnly, SerializeField]
+        [SerializeField]
         private string assetId;
         [LiteNetLibReadOnly, SerializeField]
         private uint objectId;
@@ -191,8 +191,8 @@ namespace LiteNetLibManager
 
         private void AssignAssetID(GameObject prefab)
         {
-            string path = AssetDatabase.GetAssetPath(prefab);
-            assetId = AssetDatabase.AssetPathToGUID(path);
+            if (!string.IsNullOrEmpty(assetId)) return;
+            assetId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
         }
 
         private bool ThisIsAPrefab()
