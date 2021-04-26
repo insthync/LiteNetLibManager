@@ -135,6 +135,11 @@ namespace LiteNetLibManager
             get { return Identity.IsOwnerClient; }
         }
 
+        public bool IsOwnerClientOrOwnedByServer
+        {
+            get { return Identity.IsOwnerClientOrOwnedByServer; }
+        }
+
         public bool IsSceneObject
         {
             get { return Identity.IsSceneObject; }

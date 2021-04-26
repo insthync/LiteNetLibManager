@@ -145,6 +145,11 @@ namespace LiteNetLibManager
             get { return IsClient && Manager.ClientConnectionId >= 0 && ConnectionId >= 0 && Manager.ClientConnectionId == ConnectionId; }
         }
 
+        public bool IsOwnerClientOrOwnedByServer
+        {
+            get { return IsOwnerClient || (IsServer && ConnectionId < 0); }
+        }
+
         public bool IsSceneObject
         {
             get; private set;
