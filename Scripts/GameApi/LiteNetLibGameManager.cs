@@ -22,7 +22,16 @@ namespace LiteNetLibManager
         private AsyncOperation loadSceneAsyncOperation;
 
         public long ClientConnectionId { get; protected set; }
-        public long Rtt { get; protected set; }
+        private long rtt;
+        public long Rtt
+        {
+            get
+            {
+                if (IsServer)
+                    return 0;
+                return rtt;
+            }
+        }
         public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); } }
         /// <summary>
         /// Unix timestamp (milliseconds) offsets from server
@@ -257,7 +266,7 @@ namespace LiteNetLibManager
             base.OnClientConnected();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
-            Rtt = 0;
+            rtt = 0;
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
         }
@@ -267,7 +276,7 @@ namespace LiteNetLibManager
             base.OnStartServer();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
-            Rtt = 0;
+            rtt = 0;
             if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
             {
                 ServerSceneName = SceneManager.GetActiveScene().name;
@@ -854,10 +863,10 @@ namespace LiteNetLibManager
         protected void HandleServerPong(MessageHandlerData messageHandler)
         {
             PongMessage message = messageHandler.ReadMessage<PongMessage>();
-            Rtt = Timestamp - message.pingTime;
+            rtt = Timestamp - message.pingTime;
             // Calculate time offsets by device time offsets and RTT
-            ServerTimestampOffsets = message.serverTime - Timestamp + Rtt;
-            if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
+            ServerTimestampOffsets = (long)(message.serverTime - Timestamp + (Rtt * 0.5f));
+            if (LogDev) Logging.Log(LogTag, "Rtt: " + rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
         }
         #endregion
 
