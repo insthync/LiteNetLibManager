@@ -6,9 +6,9 @@ namespace LiteNetLibManager
     {
         public LiteNetLibGameManager Manager { get; protected set; }
         public long ConnectionId { get; protected set; }
-
         public bool IsReady { get; set; }
         public long Rtt { get; internal set; }
+        internal long LastPingTime { get; set; }
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
