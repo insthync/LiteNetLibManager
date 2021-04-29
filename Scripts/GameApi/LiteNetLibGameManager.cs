@@ -874,7 +874,7 @@ namespace LiteNetLibManager
                 rtt = Timestamp - message.pingTime;
                 // Calculate time offsets by device time offsets and RTT
                 ServerTimestampOffsets = (long)(message.serverTime - Timestamp + (Rtt * 0.5f));
-                if (LogDev) Logging.Log(LogTag, "Rtt: " + rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
+                if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
             }
         }
         #endregion
