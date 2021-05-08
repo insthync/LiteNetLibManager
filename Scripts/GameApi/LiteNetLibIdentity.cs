@@ -486,7 +486,10 @@ namespace LiteNetLibManager
 
             Manager.Assets.SpawnedObjects.Add(ObjectId, this);
             if (IsServer && ConnectionId >= 0)
+            {
                 Player.SpawnedObjects.Add(ObjectId, this);
+                Player.Subscribe(ObjectId);
+            }
 
             Manager.InterestManager.NotifyNewObject(this);
         }
