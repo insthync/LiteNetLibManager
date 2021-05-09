@@ -296,12 +296,10 @@ namespace LiteNetLibManager
                 // Remove from player spawned objects dictionary and add to target connection id
                 LiteNetLibPlayer playerA;
                 LiteNetLibPlayer playerB;
-                if (Manager.TryGetPlayer(spawnedObject.ConnectionId, out playerA) &&
-                    Manager.TryGetPlayer(connectionId, out playerB))
-                {
+                if (Manager.TryGetPlayer(spawnedObject.ConnectionId, out playerA))
                     playerA.SpawnedObjects.Remove(objectId);
+                if (Manager.TryGetPlayer(connectionId, out playerB))
                     playerB.SpawnedObjects[spawnedObject.ObjectId] = spawnedObject;
-                }
                 // Set connection id
                 spawnedObject.ConnectionId = connectionId;
                 // Call set owner client event
