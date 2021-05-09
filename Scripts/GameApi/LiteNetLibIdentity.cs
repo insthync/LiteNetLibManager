@@ -458,6 +458,8 @@ namespace LiteNetLibManager
         /// <summary>
         /// Initial Identity, will be called when spawned. If object id == 0, it will generate new object id
         /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="isSceneObject"></param>
         /// <param name="objectId"></param>
         /// <param name="connectionId"></param>
         internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectionId = -1)
