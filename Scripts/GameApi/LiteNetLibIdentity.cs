@@ -155,6 +155,8 @@ namespace LiteNetLibManager
             get; private set;
         }
 
+        private float? destroyTime;
+
         private void FixedUpdate()
         {
             NetworkUpdate(Time.fixedDeltaTime);
@@ -162,8 +164,14 @@ namespace LiteNetLibManager
 
         internal void NetworkUpdate(float deltaTime)
         {
-            if (Manager == null)
+            if (Manager == null || !IsSpawned)
                 return;
+
+            if (destroyTime.HasValue && Time.fixedTime >= destroyTime.Value)
+            {
+                DestroyFromAssets();
+                return;
+            }
 
             Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
             int loopCounter;
@@ -723,14 +731,14 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-
-            Invoke(nameof(DestroyFromAssets), delay);
+            destroyTime = Time.fixedTime + delay;
         }
 
         private void DestroyFromAssets()
         {
             if (!IsDestroyed && Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy))
                 IsDestroyed = true;
+            destroyTime = null;
         }
 
         internal void OnNetworkDestroy(byte reasons)
