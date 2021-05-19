@@ -128,7 +128,7 @@ namespace LiteNetLibManager
         /// Call this function to change gameplay scene at server, then the server will tell clients to change scene
         /// </summary>
         /// <param name="sceneName"></param>
-        public void ServerSceneChange(string sceneName)
+        public virtual void ServerSceneChange(string sceneName)
         {
             if (!IsServer)
                 return;
