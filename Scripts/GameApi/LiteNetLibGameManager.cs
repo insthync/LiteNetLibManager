@@ -820,7 +820,7 @@ namespace LiteNetLibManager
             HandleServerSceneChange(message.serverSceneName);
         }
 
-        protected virtual void HandleServerSceneChange(string serverSceneName)
+        protected void HandleServerSceneChange(string serverSceneName)
         {
             if (IsServer)
             {
