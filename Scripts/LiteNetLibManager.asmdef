@@ -1,8 +1,9 @@
 {
     "name": "LiteNetLibManager",
     "references": [
-        "LiteNetLibManagerPlugins",
-        "UniTask"
+        "GUID:d969dd435f4843f4a9b7e2a7c04f4839",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:19622d0c1901810479006eab0c2d3555"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
