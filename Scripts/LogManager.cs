@@ -9,7 +9,6 @@ namespace LiteNetLibManager
 {
     public static partial class LogManager
     {
-        const int RollSizeKB = 1024;
         static ILogger noTagLogger;
         static ILoggerFactory loggerFactory;
         public static ILoggerFactory LoggerFactory
