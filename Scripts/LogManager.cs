@@ -10,7 +10,7 @@ namespace LiteNetLibManager
     public static partial class LogManager
     {
         const int RollSizeKB = 1024;
-        static ILogger globalLogger;
+        static ILogger noTagLogger;
         static ILoggerFactory loggerFactory;
         public static ILoggerFactory LoggerFactory
         {
@@ -22,7 +22,7 @@ namespace LiteNetLibManager
                 LoggerByTypes.Clear();
                 LoggerByTags.Clear();
                 loggerFactory = value;
-                globalLogger = loggerFactory.CreateLogger("Global");
+                noTagLogger = loggerFactory.CreateLogger("No Tag");
             }
         }
         static readonly Dictionary<string, ILogger> LoggerByTypes = new Dictionary<string, ILogger>();
@@ -75,7 +75,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public static ILogger Logger => globalLogger;
+        public static ILogger Logger => noTagLogger;
 
         public static ILogger<T> GetLogger<T>() where T : class
         {
