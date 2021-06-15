@@ -41,13 +41,13 @@ namespace LiteNetLibManager
             }
         }
 
-        public delegate void OnChanged(Operation op, int itemIndex);
+        public delegate void OnOperationDelegate(Operation op, int itemIndex);
 
         [Tooltip("Sending data channel")]
         public byte dataChannel = 0;
         [Tooltip("If this is `TRUE`, this will update to owner client only, default is `FALSE`")]
         public bool forOwnerOnly = false;
-        public OnChanged onOperation;
+        public OnOperationDelegate onOperation;
 
         public abstract int Count { get; }
         public abstract Type GetFieldType();
