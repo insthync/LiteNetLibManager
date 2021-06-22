@@ -52,6 +52,7 @@ namespace LiteNetLibManager
                 // when quit, flush unfinished log entries.
                 if (loggerFactory != null)
                     loggerFactory.Dispose();
+                loggerFactory = null;
             };
         }
 
