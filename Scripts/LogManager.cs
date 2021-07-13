@@ -87,6 +87,8 @@ namespace LiteNetLibManager
 
         public static ILogger GetLogger(string tag)
         {
+            if (string.IsNullOrEmpty(tag))
+                return Logger;
             if (!LoggerByTags.ContainsKey(tag))
                 LoggerByTags.Add(tag, LoggerFactory.CreateLogger(tag));
             return LoggerByTags[tag];
