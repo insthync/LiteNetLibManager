@@ -7,7 +7,7 @@ namespace LiteNetLibManager
     public class LiteNetLibSpawnPoint : MonoBehaviour
     {
         [SerializeField]
-        private float radius;
+        private float radius = 0f;
 
         public Transform CacheTransform { get; private set; }
 
