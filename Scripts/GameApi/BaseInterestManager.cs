@@ -56,7 +56,7 @@ namespace LiteNetLibManager
         {
             if (subscriber == null || target == null)
                 return false;
-            return subscriber.ConnectionId != target.ConnectionId && !target.IsIdentityHideFromThis(subscriber) && (!checkRange || target.AlwaysVisible || Vector3.Distance(subscriber.transform.position, target.transform.position) <= GetVisibleRange(target));
+            return subscriber.ConnectionId != target.ConnectionId && !target.IsHideFrom(subscriber) && (!checkRange || target.AlwaysVisible || Vector3.Distance(subscriber.transform.position, target.transform.position) <= GetVisibleRange(target));
         }
 
         public virtual bool Subscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target)

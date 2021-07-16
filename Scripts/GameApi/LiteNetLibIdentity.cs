@@ -674,11 +674,11 @@ namespace LiteNetLibManager
             }
         }
 
-        public bool IsIdentityHideFromThis(LiteNetLibIdentity identity)
+        public bool IsHideFrom(LiteNetLibIdentity identity)
         {
             if (identity == null)
                 return true;
-            return identity.IsHide && !identity.HideExceptions.Contains(ConnectionId) && identity.ConnectionId != ConnectionId;
+            return IsHide && !HideExceptions.Contains(ConnectionId) && ConnectionId != identity.ConnectionId;
         }
 
         public void OnServerSubscribingAdded()
