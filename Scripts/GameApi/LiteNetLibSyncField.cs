@@ -88,7 +88,7 @@ namespace LiteNetLibManager
                 return;
 
             // Call `OnChange` if it's not called yet.
-            if (HasUpdate() && !onChangeCalled)
+            if ((alwaysSync || HasUpdate()) && !onChangeCalled)
             {
                 // Invoke on change function with initial state = false
                 switch (syncMode)
