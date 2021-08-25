@@ -10,6 +10,11 @@ namespace LiteNetLibManager
         [SerializeField]
         private string sceneName;
 
+        public Object SceneAsset
+        {
+            get { return sceneAsset; }
+        }
+
         public string SceneName
         {
             get { return sceneName; }
