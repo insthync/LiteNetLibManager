@@ -27,6 +27,8 @@ namespace LiteNetLibManager
         static readonly Dictionary<string, ILogger> LoggerByTypes = new Dictionary<string, ILogger>();
         static readonly Dictionary<string, ILogger> LoggerByTags = new Dictionary<string, ILogger>();
 
+        public static bool IsLoggerFactoryDisposed { get; private set; } = false;
+
         // Setup on first called GetLogger<T>.
         static LogManager()
         {
@@ -53,6 +55,7 @@ namespace LiteNetLibManager
                 if (loggerFactory != null)
                     loggerFactory.Dispose();
                 loggerFactory = null;
+                IsLoggerFactoryDisposed = true;
             };
         }
 
