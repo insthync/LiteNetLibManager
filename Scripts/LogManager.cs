@@ -46,7 +46,10 @@ namespace LiteNetLibManager
                 // * Warning/Critical -> LogType.Warning
                 // * Error without Exception -> LogType.Error
                 // * Error with Exception -> LogException
-                builder.AddZLoggerUnityDebug();
+                builder.AddZLoggerUnityDebug(options =>
+                {
+                    options.PrefixFormatter = PrefixFormatterConfigure;
+                });
             });
 
             UnityEngine.Application.quitting += () =>
