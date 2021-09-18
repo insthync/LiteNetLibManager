@@ -24,6 +24,8 @@ namespace LiteNetLibManager
         private float visibleRange = 0f;
         [Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects"), SerializeField]
         private bool alwaysVisible = false;
+        [Tooltip("If this is `TRUE` it will not destroy this network object when player disconnect the game"), SerializeField]
+        private bool doNotDestroyWhenDisconnect = false;
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -94,8 +96,9 @@ namespace LiteNetLibManager
             }
         }
         public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
-        public float VisibleRange { get { return visibleRange; } }
-        public bool AlwaysVisible { get { return alwaysVisible; } }
+        public float VisibleRange { get { return visibleRange; } set { visibleRange = value; } }
+        public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
+        public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
         public byte DataChannel { get; set; } = 0;
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object

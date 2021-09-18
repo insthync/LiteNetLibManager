@@ -257,7 +257,7 @@ namespace LiteNetLibManager
             {
                 LiteNetLibPlayer player = Players[connectionId];
                 player.ClearSubscribing(false);
-                player.DestroyAllObjects();
+                player.DestroyObjectsWhenDisconnect();
                 Players.Remove(connectionId);
             }
         }
@@ -977,7 +977,7 @@ namespace LiteNetLibManager
 
             player.IsReady = false;
             player.ClearSubscribing(true);
-            player.DestroyAllObjects();
+            player.DestroyObjectsWhenNotReady();
             return true;
         }
 

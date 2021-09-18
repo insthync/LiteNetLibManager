@@ -65,15 +65,24 @@ namespace LiteNetLibManager
             Subscribings.Clear();
         }
 
-        /// <summary>
-        /// Call this function to destroy all objects that spawned by this player
-        /// </summary>
-        internal void DestroyAllObjects()
+        internal void DestroyObjectsWhenNotReady()
         {
             List<uint> objectIds = new List<uint>(SpawnedObjects.Keys);
             foreach (uint objectId in objectIds)
                 Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
             SpawnedObjects.Clear();
+        }
+
+        internal void DestroyObjectsWhenDisconnect()
+        {
+            List<uint> objectIds = new List<uint>(SpawnedObjects.Keys);
+            foreach (uint objectId in objectIds)
+            {
+                if (SpawnedObjects[objectId].DoNotDestroyWhenDisconnect)
+                    continue;
+                Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
+                SpawnedObjects.Remove(objectId);
+            }
         }
 
         public bool TryGetSpawnedObject(uint objectId, out LiteNetLibIdentity identity)
