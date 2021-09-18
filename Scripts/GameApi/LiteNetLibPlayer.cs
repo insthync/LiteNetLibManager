@@ -79,10 +79,13 @@ namespace LiteNetLibManager
             foreach (uint objectId in objectIds)
             {
                 if (SpawnedObjects[objectId].DoNotDestroyWhenDisconnect)
+                {
+                    SpawnedObjects[objectId].ConnectionId = -1;
                     continue;
+                }
                 Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
-                SpawnedObjects.Remove(objectId);
             }
+            SpawnedObjects.Clear();
         }
 
         public bool TryGetSpawnedObject(uint objectId, out LiteNetLibIdentity identity)
