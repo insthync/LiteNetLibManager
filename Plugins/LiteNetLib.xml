@@ -96,6 +96,12 @@
             <param name="peer"></param>
             <param name="userData"></param>
         </member>
+        <member name="M:LiteNetLib.INtpEventListener.OnNtpResponse(LiteNetLib.Utils.NtpPacket)">
+            <summary>
+            Ntp response
+            </summary>
+            <param name="packet"></param>
+        </member>
         <member name="T:LiteNetLib.NatPunchModule">
             <summary>
             Module for UDP NAT Hole punching operations. Can be accessed from NetManager
@@ -129,6 +135,7 @@
         <member name="F:LiteNetLib.DeliveryMethod.ReliableSequenced">
             <summary>
             Reliable only last packet. Packets can be dropped (except the last one), won't be duplicated, will arrive in order.
+            Cannot be fragmented
             </summary>
         </member>
         <member name="T:LiteNetLib.NetConstants">
@@ -273,6 +280,16 @@
             IPv6 support
             </summary>
         </member>
+        <member name="F:LiteNetLib.NetManager.MtuOverride">
+            <summary>
+            Override MTU for all new peers registered in this NetManager, will ignores MTU Discovery!
+            </summary>
+        </member>
+        <member name="F:LiteNetLib.NetManager.UseSafeMtu">
+            <summary>
+            Sets initial MTU to lowest possible value according to RFC1191 (576 bytes)
+            </summary>
+        </member>
         <member name="P:LiteNetLib.NetManager.FirstPeer">
             <summary>
             First peer. Useful for Client mode
@@ -306,6 +323,18 @@
             </summary>
             <param name="listener">Network events listener (also can implement IDeliveryEventListener)</param>
             <param name="extraPacketLayer">Extra processing of packages, like CRC checksum or encryption. All connected NetManagers must have same layer.</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.ManualUpdate(System.Int32)">
+            <summary>
+            Update and send logic. Use this only when NetManager started in manual mode
+            </summary>
+            <param name="elapsedMilliseconds">elapsed milliseconds since last update call</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.ManualReceive">
+            <summary>
+            Receive logic. It will call Receive events immediately without need to use PollEvents or UnsyncedEvents
+            Use this only when NetManager started in manual mode
+            </summary>
         </member>
         <member name="M:LiteNetLib.NetManager.SendToAll(LiteNetLib.Utils.NetDataWriter,LiteNetLib.DeliveryMethod)">
             <summary>
@@ -435,6 +464,37 @@
         <member name="M:LiteNetLib.NetManager.Start(System.Int32)">
             <summary>
             Start logic thread and listening on selected port
+            </summary>
+            <param name="port">port to listen</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.StartInManualMode(System.Net.IPAddress,System.Net.IPAddress,System.Int32)">
+            <summary>
+            Start in manual mode and listening on selected port
+            In this mode you should use ManualReceive (without PollEvents) for receive packets
+            and ManualUpdate(...) for update and send packets
+            This mode useful mostly for single-threaded servers
+            </summary>
+            <param name="addressIPv4">bind to specific ipv4 address</param>
+            <param name="addressIPv6">bind to specific ipv6 address</param>
+            <param name="port">port to listen</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.StartInManualMode(System.String,System.String,System.Int32)">
+            <summary>
+            Start in manual mode and listening on selected port
+            In this mode you should use ManualReceive (without PollEvents) for receive packets
+            and ManualUpdate(...) for update and send packets
+            This mode useful mostly for single-threaded servers
+            </summary>
+            <param name="addressIPv4">bind to specific ipv4 address</param>
+            <param name="addressIPv6">bind to specific ipv6 address</param>
+            <param name="port">port to listen</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.StartInManualMode(System.Int32)">
+            <summary>
+            Start in manual mode and listening on selected port
+            In this mode you should use ManualReceive (without PollEvents) for receive packets
+            and ManualUpdate(...) for update and send packets
+            This mode useful mostly for single-threaded servers
             </summary>
             <param name="port">port to listen</param>
         </member>
@@ -584,6 +644,25 @@
             <param name="data">additional data</param>
             <param name="start">data start</param>
             <param name="count">data length</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.CreateNtpRequest(System.Net.IPEndPoint)">
+            <summary>
+            Create the requests for NTP server
+            </summary>
+            <param name="endPoint">NTP Server address.</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.CreateNtpRequest(System.String,System.Int32)">
+            <summary>
+            Create the requests for NTP server
+            </summary>
+            <param name="ntpServerAddress">NTP Server address.</param>
+            <param name="port">port</param>
+        </member>
+        <member name="M:LiteNetLib.NetManager.CreateNtpRequest(System.String)">
+            <summary>
+            Create the requests for NTP server (default port)
+            </summary>
+            <param name="ntpServerAddress">NTP Server address.</param>
         </member>
         <member name="T:LiteNetLib.ConnectionState">
             <summary>
@@ -842,6 +921,13 @@
             <param name="bytes">Source byte array</param>
             <param name="offset">Offset of array</param>
             <param name="length">Length of array</param>
+        </member>
+        <member name="M:LiteNetLib.Utils.NetDataWriter.SetPosition(System.Int32)">
+            <summary>
+            Sets position of NetDataWriter to rewrite previous values
+            </summary>
+            <param name="position">new byte position</param>
+            <returns>previous position of data writer</returns>
         </member>
         <member name="M:LiteNetLib.Utils.NetPacketProcessor.RegisterNestedType``1">
             <summary>
@@ -1279,80 +1365,6 @@
         <member name="F:LiteNetLib.Utils.NtpMode.Server">
             <summary>
             Identifies server-to-client SNTP packet.
-            </summary>
-        </member>
-        <member name="T:LiteNetLib.Utils.NtpRequest">
-            <summary>
-            Make NTP request.
-            <para>
-            1. Create the object by <see cref="M:LiteNetLib.Utils.NtpRequest.Create(System.Net.IPEndPoint,System.Action{LiteNetLib.Utils.NtpPacket})"/> method. 
-            </para>
-            <para>
-            2. Use <see cref="M:LiteNetLib.Utils.NtpRequest.Send"/> method to send requests.
-            </para>
-            <para>
-            3. Call <see cref="M:LiteNetLib.Utils.NtpRequest.Close"/> to release the socket AFTER you have received the response or some timeout.
-            If you close the socket too early, you may miss the response.
-            </para>
-            </summary>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.#ctor(System.Net.IPEndPoint,System.Action{LiteNetLib.Utils.NtpPacket})">
-            <summary>
-            Initialize object, open socket.
-            </summary>
-            <param name="endPoint">NTP Server endpoint</param>
-            <param name="onRequestComplete">callback (called from other thread!)</param>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.Create(System.Net.IPEndPoint,System.Action{LiteNetLib.Utils.NtpPacket})">
-            <summary>
-            Create the requests for NTP server, open socket.
-            </summary>
-            <param name="endPoint">NTP Server address.</param>
-            <param name="onRequestComplete">callback (called from other thread!)</param>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.Create(System.Net.IPAddress,System.Action{LiteNetLib.Utils.NtpPacket})">
-            <summary>
-            Create the requests for NTP server (default port), open socket.
-            </summary>
-            <param name="ipAddress">NTP Server address.</param>
-            <param name="onRequestComplete">callback (called from other thread!)</param>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.Create(System.String,System.Int32,System.Action{LiteNetLib.Utils.NtpPacket})">
-            <summary>
-            Create the requests for NTP server, open socket.
-            </summary>
-            <param name="ntpServerAddress">NTP Server address.</param>
-            <param name="port">port</param>
-            <param name="onRequestComplete">callback (called from other thread!)</param>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.Create(System.String,System.Action{LiteNetLib.Utils.NtpPacket})">
-            <summary>
-            Create the requests for NTP server (default port), open socket.
-            </summary>
-            <param name="ntpServerAddress">NTP Server address.</param>
-            <param name="onRequestComplete">callback (called from other thread!)</param>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.RequestAsync(System.String)">
-            <summary>
-            Requests asynchronously NTP server for time offset
-            </summary>
-            <param name="ntpServerAddress">NTP Server address.</param>
-            <returns>Scheduled task</returns>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.Send">
-            <summary>
-            Send request to the NTP server calls callback (if success).
-            In case of error the callback is called with null param.
-            </summary>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.Close">
-            <summary>
-            Close socket.
-            </summary>
-        </member>
-        <member name="M:LiteNetLib.Utils.NtpRequest.LiteNetLib#INetSocketListener#OnMessageReceived(System.Byte[],System.Int32,System.Net.Sockets.SocketError,System.Net.IPEndPoint)">
-            <summary>
-            Handle received data: transform bytes to NtpPacket, close socket and call the callback.
             </summary>
         </member>
     </members>
