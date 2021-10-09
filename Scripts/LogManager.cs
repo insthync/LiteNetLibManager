@@ -29,8 +29,8 @@ namespace LiteNetLibManager
 
         public static bool IsLoggerFactoryDisposed { get; private set; } = false;
 
-        // Setup on first called GetLogger<T>.
-        static LogManager()
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void Initialize()
         {
             // Standard LoggerFactory does not work on IL2CPP,
             // But you can use ZLogger's UnityLoggerFactory instead,
