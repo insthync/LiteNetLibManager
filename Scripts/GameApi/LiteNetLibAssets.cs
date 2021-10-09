@@ -1,10 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace LiteNetLibManager
 {
@@ -92,7 +88,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterPrefab - prefab is null.");
                 return;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, "RegisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
             GuidToPrefabs[prefab.HashAssetId] = prefab;
         }
 
@@ -103,7 +99,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterPrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, "UnregisterPrefab [" + prefab.HashAssetId + "] name [" + prefab.name + "]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
@@ -167,7 +163,7 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (!SceneObjects.TryGetValue(objectId, out identity))
             {
-                Logging.LogWarning(LogTag, "NetworkSpawnScene - Object Id: " + objectId + " is not registered.");
+                Logging.LogWarning(LogTag, $"NetworkSpawnScene - Object Id: {objectId} is not registered.");
                 return null;
             }
 
@@ -225,7 +221,7 @@ namespace LiteNetLibManager
                 return NetworkSpawn(Instantiate(spawningObject.gameObject, position, rotation), objectId, connectionId);
             // If object with hash asset id not exists
             if (Manager.LogWarn)
-                Logging.LogWarning(LogTag, "NetworkSpawn - Asset Id: " + hashAssetId + " is not registered.");
+                Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
             return null;
         }
 
@@ -268,7 +264,7 @@ namespace LiteNetLibManager
                 return true;
             }
             else if (Manager.LogWarn)
-                Logging.LogWarning(LogTag, "NetworkDestroy - Object Id: " + objectId + " is not spawned.");
+                Logging.LogWarning(LogTag, $"NetworkDestroy - Object Id: {objectId} is not spawned.");
             return false;
         }
 
@@ -307,7 +303,7 @@ namespace LiteNetLibManager
                 return true;
             }
             else if (Manager.LogWarn)
-                Logging.LogWarning(LogTag, "NetworkDestroy - Object Id: " + objectId + " is not spawned.");
+                Logging.LogWarning(LogTag, $"NetworkDestroy - Object Id: {objectId} is not spawned.");
 
             return false;
         }
