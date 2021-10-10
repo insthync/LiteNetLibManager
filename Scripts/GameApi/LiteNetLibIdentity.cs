@@ -26,7 +26,7 @@ namespace LiteNetLibManager
         private bool alwaysVisible = false;
         [Tooltip("If this is `TRUE` it will not destroy this network object when player disconnect the game"), SerializeField]
         private bool doNotDestroyWhenDisconnect = false;
-        [Tooltip("If this is > 0, it will get instance from pooling system")]
+        [Tooltip("If this is > 0, it will get instance from pooling system"), SerializeField]
         private int poolingSize = 0;
 
         /// <summary>
