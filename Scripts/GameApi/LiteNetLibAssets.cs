@@ -181,12 +181,12 @@ namespace LiteNetLibManager
             PooledObjects[hashAssetId] = queue;
         }
 
-        public LiteNetLibIdentity GetInstance(int hashAssetId)
+        public LiteNetLibIdentity GetObjectInstance(int hashAssetId)
         {
-            return GetInstance(hashAssetId, Vector3.zero, Quaternion.identity);
+            return GetObjectInstance(hashAssetId, Vector3.zero, Quaternion.identity);
         }
 
-        public LiteNetLibIdentity GetInstance(int hashAssetId, Vector3 position, Quaternion rotation)
+        public LiteNetLibIdentity GetObjectInstance(int hashAssetId, Vector3 position, Quaternion rotation)
         {
             if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects.Count > 0)
             {
@@ -333,7 +333,7 @@ namespace LiteNetLibManager
                     Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
                 return null;
             }
-            return NetworkSpawn(GetInstance(hashAssetId, position, rotation), objectId, connectionId);
+            return NetworkSpawn(GetObjectInstance(hashAssetId, position, rotation), objectId, connectionId);
         }
 
         public bool NetworkDestroy(GameObject gameObject, byte reasons)
