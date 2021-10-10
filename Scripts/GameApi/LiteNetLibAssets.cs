@@ -188,7 +188,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity GetObjectInstance(int hashAssetId, Vector3 position, Quaternion rotation)
         {
-            if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects.Count > 0)
+            if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects[hashAssetId].Count > 0)
             {
                 // Get pooled instance
                 LiteNetLibIdentity instance = PooledObjects[hashAssetId].Dequeue();
