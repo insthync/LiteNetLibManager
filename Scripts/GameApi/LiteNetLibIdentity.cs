@@ -780,5 +780,18 @@ namespace LiteNetLibManager
             Subscribers.Clear();
             IsSpawned = false;
         }
+
+        internal void OnGetInstance()
+        {
+            // Clear/reset syncing data
+            foreach (LiteNetLibSyncField field in SyncFields)
+            {
+                field.Reset();
+            }
+            foreach (LiteNetLibSyncList list in SyncLists)
+            {
+                list.Reset();
+            }
+        }
     }
 }

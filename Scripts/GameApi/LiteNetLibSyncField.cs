@@ -52,6 +52,7 @@ namespace LiteNetLibManager
 
         private float sendCountDown;
         private bool onChangeCalled;
+        protected object defaultValue;
 
         public abstract Type GetFieldType();
         public abstract object GetValue();
@@ -60,9 +61,15 @@ namespace LiteNetLibManager
         internal abstract bool HasUpdate();
         internal abstract void Updated();
 
+        internal void Reset()
+        {
+            SetValue(defaultValue);
+        }
+
         internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
+            defaultValue = GetValue();
             // Invoke on change function with initial state = true
             switch (syncMode)
             {

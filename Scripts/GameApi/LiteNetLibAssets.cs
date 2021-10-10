@@ -192,6 +192,7 @@ namespace LiteNetLibManager
             {
                 // Get pooled instance
                 LiteNetLibIdentity instance = PooledObjects[hashAssetId].Dequeue();
+                instance.OnGetInstance();
                 instance.transform.position = position;
                 instance.transform.rotation = rotation;
                 return instance;

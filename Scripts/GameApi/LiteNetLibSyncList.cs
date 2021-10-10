@@ -50,6 +50,7 @@ namespace LiteNetLibManager
         public OnOperationDelegate onOperation;
 
         public abstract int Count { get; }
+        internal abstract void Reset();
         public abstract Type GetFieldType();
         public abstract void SendOperation(Operation operation, int index);
         public abstract void SendOperation(long connectionId, Operation operation, int index);
@@ -233,6 +234,11 @@ namespace LiteNetLibManager
                 return;
             }
             SendOperation(Operation.Dirty, index);
+        }
+
+        internal override sealed void Reset()
+        {
+            list.Clear();
         }
 
         public override sealed Type GetFieldType()
