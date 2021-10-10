@@ -143,7 +143,15 @@ namespace LiteNetLibManager
             PooledObjects.Clear();
         }
 
-        public void InitPool(int hashAssetId)
+        public void InitPoolingObjects()
+        {
+            foreach (int hashAssetId in GuidToPrefabs.Keys)
+            {
+                InitPoolingObject(hashAssetId);
+            }
+        }
+
+        public void InitPoolingObject(int hashAssetId)
         {
             if (!GuidToPrefabs.ContainsKey(hashAssetId))
             {
