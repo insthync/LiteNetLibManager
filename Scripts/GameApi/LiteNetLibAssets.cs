@@ -188,28 +188,24 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity GetInstance(int hashAssetId, Vector3 position, Quaternion rotation)
         {
-            LiteNetLibIdentity instance = null;
-
             if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects.Count > 0)
             {
                 // Get pooled instance
-                instance = PooledObjects[hashAssetId].Dequeue();
+                LiteNetLibIdentity instance = PooledObjects[hashAssetId].Dequeue();
+                instance.transform.position = position;
+                instance.transform.rotation = rotation;
+                return instance;
             }
 
             if (GuidToPrefabs.ContainsKey(hashAssetId))
             {
                 // Create a new instance
-                instance = Instantiate(GuidToPrefabs[hashAssetId]);
+                LiteNetLibIdentity instance = Instantiate(GuidToPrefabs[hashAssetId], position, rotation);
+                instance.gameObject.SetActive(false);
+                return instance;
             }
 
-            if (instance != null)
-            {
-                instance.transform.position = position;
-                instance.transform.rotation = rotation;
-                instance.gameObject.SetActive(true);
-            }
-
-            return instance;
+            return null;
         }
 
         public void PushInstanceBack(LiteNetLibIdentity instance)
@@ -302,8 +298,11 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - gameObject is null.");
                 return null;
             }
+            return NetworkSpawn(gameObject.GetComponent<LiteNetLibIdentity>(), objectId, connectionId);
+        }
 
-            LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
+        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, uint objectId = 0, long connectionId = -1)
+        {
             if (identity == null)
             {
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - identity is null.");
@@ -334,7 +333,7 @@ namespace LiteNetLibManager
                     Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
                 return null;
             }
-            return NetworkSpawn(GetInstance(hashAssetId, position, rotation).gameObject, objectId, connectionId);
+            return NetworkSpawn(GetInstance(hashAssetId, position, rotation), objectId, connectionId);
         }
 
         public bool NetworkDestroy(GameObject gameObject, byte reasons)
