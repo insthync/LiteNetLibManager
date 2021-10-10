@@ -26,6 +26,8 @@ namespace LiteNetLibManager
         private bool alwaysVisible = false;
         [Tooltip("If this is `TRUE` it will not destroy this network object when player disconnect the game"), SerializeField]
         private bool doNotDestroyWhenDisconnect = false;
+        [Tooltip("If this is > 0, it will get instance from pooling system")]
+        private int poolingSize = 0;
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -99,6 +101,7 @@ namespace LiteNetLibManager
         public float VisibleRange { get { return visibleRange; } set { visibleRange = value; } }
         public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
+        public int PoolingSize { get { return poolingSize; } set { poolingSize = value; } }
         public byte DataChannel { get; set; } = 0;
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
@@ -109,6 +112,7 @@ namespace LiteNetLibManager
         /// </summary>
         public HashSet<long> HideExceptions { get; } = new HashSet<long>();
         public long ConnectionId { get; internal set; } = -1;
+        public bool IsPooledInstance { get; internal set; } = false;
         public LiteNetLibGameManager Manager { get; internal set; }
 
         private string logTag;

@@ -24,6 +24,7 @@ namespace LiteNetLibManager
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
 
         public LiteNetLibGameManager Manager { get; private set; }
         private string logTag;
@@ -54,6 +55,7 @@ namespace LiteNetLibManager
         public void Clear(bool doNotResetObjectId = false)
         {
             ClearSpawnedObjects();
+            ClearPooledObjects();
             CacheSpawnPoints.Clear();
             SceneObjects.Clear();
             ResetSpawnPositionCounter();
@@ -120,6 +122,108 @@ namespace LiteNetLibManager
                 }
             }
             SpawnedObjects.Clear();
+        }
+
+        public void ClearPooledObjects()
+        {
+            foreach (Queue<LiteNetLibIdentity> queue in PooledObjects.Values)
+            {
+                while (queue.Count > 0)
+                {
+                    LiteNetLibIdentity instance = queue.Dequeue();
+                    try
+                    {
+                        // I tried to avoid null exception but it still ocurring
+                        if (instance != null)
+                            Destroy(instance.gameObject);
+                    }
+                    catch { }
+                }
+            }
+            PooledObjects.Clear();
+        }
+
+        public void InitPool(int hashAssetId)
+        {
+            if (!GuidToPrefabs.ContainsKey(hashAssetId))
+            {
+                Debug.LogWarning($"Cannot init prefab: {hashAssetId}, can't find the registered prefab.");
+                return;
+            }
+
+            // Already init pool for the prefab
+            if (PooledObjects.ContainsKey(hashAssetId))
+                return;
+
+            LiteNetLibIdentity prefab = GuidToPrefabs[hashAssetId];
+            // Don't create an instance for this prefab, if pooling size < 0
+            if (prefab.PoolingSize <= 0)
+                return;
+
+            Queue<LiteNetLibIdentity> queue = new Queue<LiteNetLibIdentity>();
+            LiteNetLibIdentity tempInstance;
+            for (int i = 0; i < prefab.PoolingSize; ++i)
+            {
+                tempInstance = Instantiate(prefab);
+                tempInstance.IsPooledInstance = true;
+                tempInstance.gameObject.SetActive(false);
+                queue.Enqueue(tempInstance);
+            }
+
+            PooledObjects[hashAssetId] = queue;
+        }
+
+        public LiteNetLibIdentity GetInstance(int hashAssetId)
+        {
+            return GetInstance(hashAssetId, Vector3.zero, Quaternion.identity);
+        }
+
+        public LiteNetLibIdentity GetInstance(int hashAssetId, Vector3 position, Quaternion rotation)
+        {
+            LiteNetLibIdentity instance = null;
+
+            if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects.Count > 0)
+            {
+                // Get pooled instance
+                instance = PooledObjects[hashAssetId].Dequeue();
+            }
+
+            if (GuidToPrefabs.ContainsKey(hashAssetId))
+            {
+                // Create a new instance
+                instance = Instantiate(GuidToPrefabs[hashAssetId]);
+            }
+
+            if (instance != null)
+            {
+                instance.transform.position = position;
+                instance.transform.rotation = rotation;
+                instance.gameObject.SetActive(true);
+            }
+
+            return instance;
+        }
+
+        public void PushInstanceBack(LiteNetLibIdentity instance)
+        {
+            if (instance == null)
+            {
+                Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance's is empty.");
+                return;
+            }
+            if (!instance.IsPooledInstance)
+            {
+                Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance is not pooled instance.");
+                return;
+            }
+            Queue<LiteNetLibIdentity> queue;
+            if (!PooledObjects.TryGetValue(instance.HashAssetId, out queue))
+            {
+                Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance's prefab does not initailized yet.");
+                return;
+            }
+            instance.gameObject.SetActive(false);
+            queue.Enqueue(instance);
         }
 
         public void RegisterSceneObjects()
@@ -216,13 +320,13 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
         {
-            LiteNetLibIdentity spawningObject;
-            if (GuidToPrefabs.TryGetValue(hashAssetId, out spawningObject))
-                return NetworkSpawn(Instantiate(spawningObject.gameObject, position, rotation), objectId, connectionId);
-            // If object with hash asset id not exists
-            if (Manager.LogWarn)
-                Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
-            return null;
+            if (!GuidToPrefabs.ContainsKey(hashAssetId))
+            {
+                if (Manager.LogWarn)
+                    Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
+                return null;
+            }
+            return NetworkSpawn(GetInstance(hashAssetId, position, rotation).gameObject, objectId, connectionId);
         }
 
         public bool NetworkDestroy(GameObject gameObject, byte reasons)
@@ -258,13 +362,22 @@ namespace LiteNetLibManager
                     onObjectDestroy.Invoke(spawnedObject);
                 // If the object is scene object, don't destroy just hide it, else destroy
                 if (SceneObjects.ContainsKey(objectId))
+                {
                     spawnedObject.gameObject.SetActive(false);
+                }
                 else
-                    Destroy(spawnedObject.gameObject);
+                {
+                    if (spawnedObject.IsPooledInstance)
+                        PushInstanceBack(spawnedObject);
+                    else
+                        Destroy(spawnedObject.gameObject);
+                }
                 return true;
             }
             else if (Manager.LogWarn)
+            {
                 Logging.LogWarning(LogTag, $"NetworkDestroy - Object Id: {objectId} is not spawned.");
+            }
             return false;
         }
 
