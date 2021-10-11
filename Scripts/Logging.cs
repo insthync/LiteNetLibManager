@@ -7,38 +7,62 @@ namespace LiteNetLibManager
     {
         public static void Log(string tag, object message)
         {
-            if (message == null)
+            Log(tag, message.ToString());
+        }
+
+        public static void Log(string tag, string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
                 return;
             if (LogManager.IsLoggerFactoryDisposed)
             {
-                Debug.Log($"[{tag}] {message}");
+                if (args.Length > 0)
+                    Debug.Log(string.Format($"[{tag}] {message}", args));
+                else
+                    Debug.Log($"[{tag}] {message}");
                 return;
             }
-            LogManager.GetLogger(tag).LogInformation(message.ToString());
+            LogManager.GetLogger(tag).LogInformation(message, args);
         }
 
         public static void LogError(string tag, object message)
         {
-            if (message == null)
+            LogError(tag, message.ToString());
+        }
+
+        public static void LogError(string tag, string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
                 return;
             if (LogManager.IsLoggerFactoryDisposed)
             {
-                Debug.LogError($"[{tag}] {message}");
+                if (args.Length > 0)
+                    Debug.LogError(string.Format($"[{tag}] {message}", args));
+                else
+                    Debug.LogError($"[{tag}] {message}");
                 return;
             }
-            LogManager.GetLogger(tag).LogError(message.ToString());
+            LogManager.GetLogger(tag).LogError(message, args);
         }
 
         public static void LogWarning(string tag, object message)
         {
-            if (message == null)
+            LogWarning(tag, message.ToString());
+        }
+
+        public static void LogWarning(string tag, string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
                 return;
             if (LogManager.IsLoggerFactoryDisposed)
             {
-                Debug.LogWarning($"[{tag}] {message}");
+                if (args.Length > 0)
+                    Debug.LogWarning(string.Format($"[{tag}] {message}", args));
+                else
+                    Debug.LogWarning($"[{tag}] {message}");
                 return;
             }
-            LogManager.GetLogger(tag).LogWarning(message.ToString());
+            LogManager.GetLogger(tag).LogWarning(message, args);
         }
 
         public static void LogException(string tag, System.Exception ex)
@@ -55,38 +79,62 @@ namespace LiteNetLibManager
 
         public static void Log(object message)
         {
-            if (message == null)
+            Log(message.ToString());
+        }
+
+        public static void Log(string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
                 return;
             if (LogManager.IsLoggerFactoryDisposed)
             {
-                Debug.Log($"{message}");
+                if (args.Length > 0)
+                    Debug.Log(string.Format($"{message}", args));
+                else
+                    Debug.Log($"{message}");
                 return;
             }
-            LogManager.Logger.LogInformation(message.ToString());
+            LogManager.Logger.LogInformation(message, args);
         }
 
         public static void LogError(object message)
         {
-            if (message == null)
+            LogError(message.ToString());
+        }
+
+        public static void LogError(string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
                 return;
             if (LogManager.IsLoggerFactoryDisposed)
             {
-                Debug.LogError($"{message}");
+                if (args.Length > 0)
+                    Debug.LogError(string.Format($"{message}", args));
+                else
+                    Debug.LogError($"{message}");
                 return;
             }
-            LogManager.Logger.LogError(message.ToString());
+            LogManager.Logger.LogError(message, args);
         }
 
         public static void LogWarning(object message)
         {
-            if (message == null)
+            LogWarning(message.ToString());
+        }
+
+        public static void LogWarning(string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
                 return;
             if (LogManager.IsLoggerFactoryDisposed)
             {
-                Debug.LogWarning($"{message}");
+                if (args.Length > 0)
+                    Debug.LogWarning(string.Format($"{message}", args));
+                else
+                    Debug.LogWarning($"{message}");
                 return;
             }
-            LogManager.Logger.LogWarning(message.ToString());
+            LogManager.Logger.LogWarning(message, args);
         }
 
         public static void LogException(System.Exception ex)
