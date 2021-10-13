@@ -312,7 +312,7 @@ namespace LiteNetLibManager
 
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
-            identity.InitTransform(gameObject.transform.position, gameObject.transform.rotation);
+            identity.InitTransform(identity.transform.position, identity.transform.rotation);
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (Manager.IsServer)
                 identity.OnStartServer();
