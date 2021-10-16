@@ -34,20 +34,20 @@ namespace LiteNetLibManager
         public bool doNotSyncInitialDataImmediately = false;
         [Tooltip("How data changes handle and sync")]
         public SyncMode syncMode;
-
-        [Header("Server Sync Settings")]
-        [Tooltip("Sending data channel")]
-        public byte dataChannel = 0;
-        [Tooltip("Sending method type from server to clients, default is `Sequenced`")]
-        public DeliveryMethod deliveryMethod = DeliveryMethod.Sequenced;
-        [Tooltip("Interval to send network data")]
+        [Tooltip("Interval to send networking data")]
         [Range(0.01f, 2f)]
         public float sendInterval = 0.1f;
 
-        [Header("Client Sync Settings (`ClientMulticast` mode only)")]
-        [Tooltip("Sending data channel")]
+        [Header("Server Sync Settings")]
+        [Tooltip("Sending data channel from server to clients")]
+        public byte dataChannel = 0;
+        [Tooltip("Sending method type from server to clients, default is `Sequenced`")]
+        public DeliveryMethod deliveryMethod = DeliveryMethod.Sequenced;
+
+        [Header("Client Sync Settings (`syncMode` is `ClientMulticast` only)")]
+        [Tooltip("Sending data channel from clients to server (`syncMode` is `ClientMulticast` only)")]
         public byte clientDataChannel = 0;
-        [Tooltip("Sending method type, default is `Sequenced`")]
+        [Tooltip("Sending method type from clients to server (`syncMode` is `ClientMulticast` only), default is `Sequenced`")]
         public DeliveryMethod clientDeliveryMethod = DeliveryMethod.Sequenced;
 
         private float sendCountDown;

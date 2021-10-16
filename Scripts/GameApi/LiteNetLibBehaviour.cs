@@ -331,7 +331,10 @@ namespace LiteNetLibManager
                         CacheHookFunctions.Add(tempHookFunctionKey, tempOnChangeMethod);
                     }
                     tempSyncField = new LiteNetLibSyncFieldContainer(fieldInfo, this, tempOnChangeMethod);
+                    tempSyncField.dataChannel = tempAttribute.dataChannel;
                     tempSyncField.deliveryMethod = tempAttribute.deliveryMethod;
+                    tempSyncField.clientDataChannel = tempAttribute.clientDataChannel;
+                    tempSyncField.clientDeliveryMethod = tempAttribute.clientDeliveryMethod;
                     tempSyncField.sendInterval = tempAttribute.sendInterval;
                     tempSyncField.alwaysSync = tempAttribute.alwaysSync;
                     tempSyncField.doNotSyncInitialDataImmediately = tempAttribute.doNotSyncInitialDataImmediately;

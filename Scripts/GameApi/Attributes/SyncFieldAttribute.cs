@@ -7,9 +7,21 @@ namespace LiteNetLibManager
     public class SyncFieldAttribute : Attribute
     {
         /// <summary>
-        /// Sending method type
+        /// Sending data channel from server to clients
+        /// </summary>
+        public byte dataChannel = 0;
+        /// <summary>
+        /// Sending method type from server to clients
         /// </summary>
         public DeliveryMethod deliveryMethod = DeliveryMethod.ReliableOrdered;
+        /// <summary>
+        /// Sending data channel from clients to server (`syncMode` is `ClientMulticast` only)
+        /// </summary>
+        public byte clientDataChannel = 0;
+        /// <summary>
+        /// Sending method type from clients to server (`syncMode` is `ClientMulticast` only)
+        /// </summary>
+        public DeliveryMethod clientDeliveryMethod = DeliveryMethod.ReliableOrdered;
         /// <summary>
         /// Interval to send network data (0.01f to 2f)
         /// </summary>
