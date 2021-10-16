@@ -288,7 +288,10 @@ namespace LiteNetLibManager
                     tempOnChangeMethod = null;
                     if (!string.IsNullOrEmpty(tempAttribute.onChangeMethodName))
                     {
-                        tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, CacheOnChangeFunctions);
+                        tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, CacheOnChangeFunctions, (tempMethodParams) =>
+                        {
+                            return tempMethodParams != null && tempMethodParams.Length == 1 && tempMethodParams[0].ParameterType == fieldInfo.FieldType;
+                        });
                         if (tempOnChangeMethod == null)
                         {
                             if (Manager.LogError)
@@ -299,7 +302,10 @@ namespace LiteNetLibManager
                     tempOnUpdateMethod = null;
                     if (!string.IsNullOrEmpty(tempAttribute.onUpdateMethodName))
                     {
-                        tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, CacheOnUpdateFunctions);
+                        tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, CacheOnUpdateFunctions, (tempMethodParams) =>
+                        {
+                            return tempMethodParams == null || tempMethodParams.Length == 0;
+                        });
                         if (tempOnUpdateMethod == null)
                         {
                             if (Manager.LogError)
@@ -326,7 +332,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private MethodInfo FindAndCacheMethods(StringBuilder stringBuilder, string methodName, FieldInfo fieldInfo, Dictionary<string, MethodInfo> dictionary)
+        private MethodInfo FindAndCacheMethods(StringBuilder stringBuilder, string methodName, FieldInfo fieldInfo, Dictionary<string, MethodInfo> dictionary, Func<ParameterInfo[], bool> parameterValidator)
         {
             MethodInfo tempMethod;
             string key = stringBuilder.Clear().Append(TypeName).Append('.').Append(methodName).ToString();
@@ -348,10 +354,7 @@ namespace LiteNetLibManager
                             continue;
 
                         // Parameter not match
-                        ParameterInfo[] tempMethodParams = lookupMethod.GetParameters();
-                        if (tempMethodParams == null ||
-                            tempMethodParams.Length != 1 ||
-                            tempMethodParams[0].ParameterType != fieldInfo.FieldType)
+                        if (!parameterValidator.Invoke(lookupMethod.GetParameters()))
                             continue;
 
                         // Found the function
