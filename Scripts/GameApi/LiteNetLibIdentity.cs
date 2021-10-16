@@ -17,9 +17,9 @@ namespace LiteNetLibManager
     {
         public static uint HighestObjectId { get; private set; }
         [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
-        private string assetId;
+        private string assetId = string.Empty;
         [ReadOnly, SerializeField]
-        private uint objectId;
+        private uint objectId = 0;
         [Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting"), SerializeField]
         private float visibleRange = 0f;
         [Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects"), SerializeField]
