@@ -254,15 +254,21 @@ namespace LiteNetLibManager
         private MethodInfo onChangeMethod;
 
         /// <summary>
+        /// This method will be invoked after data sent
+        /// </summary>
+        private MethodInfo onUpdateMethod;
+
+        /// <summary>
         /// Use this value to check field's value changes
         /// </summary>
         private object value;
 
-        public LiteNetLibSyncFieldContainer(FieldInfo field, object instance, MethodInfo onChangeMethod)
+        public LiteNetLibSyncFieldContainer(FieldInfo field, object instance, MethodInfo onChangeMethod, MethodInfo onUpdateMethod)
         {
             this.field = field;
             this.instance = instance;
             this.onChangeMethod = onChangeMethod;
+            this.onUpdateMethod = onUpdateMethod;
             value = field.GetValue(instance);
         }
 
@@ -299,6 +305,8 @@ namespace LiteNetLibManager
 
         internal override void Updated()
         {
+            if (onUpdateMethod != null)
+                onUpdateMethod.Invoke(instance, new object[0]);
             hasUpdate = false;
         }
 
@@ -312,10 +320,16 @@ namespace LiteNetLibManager
     public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
         public delegate void OnChangeDelegate(bool initial, TType value);
+        public delegate void OnUpdatedDelegate();
         /// <summary>
-        /// Action with initial state and value, this will be invoked when data changes
+        /// Action with initial state and value, this will be invoked after data changed
         /// </summary>
         public OnChangeDelegate onChange;
+
+        /// <summary>
+        /// This will be invoked after data sent
+        /// </summary>
+        public OnUpdatedDelegate onUpdated;
 
         /// <summary>
         /// Use this variable to tell that it has to update after value changed
@@ -350,6 +364,8 @@ namespace LiteNetLibManager
 
         internal override void Updated()
         {
+            if (onUpdated != null)
+                onUpdated.Invoke();
             hasUpdate = false;
         }
 

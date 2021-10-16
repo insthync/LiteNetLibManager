@@ -39,8 +39,12 @@ namespace LiteNetLibManager
         /// </summary>
         public LiteNetLibSyncField.SyncMode syncMode = LiteNetLibSyncField.SyncMode.ServerToClients;
         /// <summary>
-        /// Function name which will be invoked when data changed
+        /// Method name which will be invoked when data changed
         /// </summary>
-        public string hook = string.Empty;
+        public string onChangeMethodName = string.Empty;
+        /// <summary>
+        /// Method name which will be invoked when data sent
+        /// </summary>
+        public string onUpdateMethodName = string.Empty;
     }
 }

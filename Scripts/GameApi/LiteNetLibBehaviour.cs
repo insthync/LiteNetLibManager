@@ -53,7 +53,8 @@ namespace LiteNetLibManager
         private static readonly Dictionary<string, CacheFunctions> CacheTargetRpcs = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, CacheFunctions> CacheAllRpcs = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, CacheFunctions> CacheServerRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, MethodInfo> CacheHookFunctions = new Dictionary<string, MethodInfo>();
+        private static readonly Dictionary<string, MethodInfo> CacheOnChangeFunctions = new Dictionary<string, MethodInfo>();
+        private static readonly Dictionary<string, MethodInfo> CacheOnUpdateFunctions = new Dictionary<string, MethodInfo>();
         private static readonly Dictionary<string, Type[]> CacheDyncnamicFunctionTypes = new Dictionary<string, Type[]>();
 
         private readonly Dictionary<string, int> targetRpcIds = new Dictionary<string, int>();
@@ -273,64 +274,32 @@ namespace LiteNetLibManager
             if (fieldInfos == null || fieldInfos.Count == 0)
                 return;
 
+            StringBuilder stringBuilder = new StringBuilder();
             SyncFieldAttribute tempAttribute;
             LiteNetLibSyncField tempSyncField;
             MethodInfo tempOnChangeMethod;
-            ParameterInfo[] tempOnChangeMethodParams;
-            string tempHookFunctionKey;
+            MethodInfo tempOnUpdateMethod;
             foreach (FieldInfo fieldInfo in fieldInfos)
             {
                 try
                 {
                     tempAttribute = fieldInfo.GetCustomAttribute<SyncFieldAttribute>();
-                    tempOnChangeMethod = null;
-                    tempHookFunctionKey = new StringBuilder(TypeName).Append('.').Append(tempAttribute.hook).ToString();
-                    if (!string.IsNullOrEmpty(tempAttribute.hook) &&
-                        !CacheHookFunctions.TryGetValue(tempHookFunctionKey, out tempOnChangeMethod))
+                    // Find on change method
+                    tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, CacheOnChangeFunctions);
+                    if (tempOnChangeMethod == null)
                     {
-                        // Not found hook function in cache dictionary, try find the function
-                        tempLookupType = ClassType;
-                        while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
-                        {
-                            tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                            foreach (MethodInfo lookupMethod in tempLookupMethods)
-                            {
-                                // Return type must be `void`
-                                if (lookupMethod.ReturnType != typeof(void))
-                                    continue;
-
-                                // Not the function it's looking for
-                                if (!lookupMethod.Name.Equals(tempAttribute.hook))
-                                    continue;
-
-                                // Parameter not match
-                                tempOnChangeMethodParams = lookupMethod.GetParameters();
-                                if (tempOnChangeMethodParams == null ||
-                                    tempOnChangeMethodParams.Length != 1 ||
-                                    tempOnChangeMethodParams[0].ParameterType != fieldInfo.FieldType)
-                                    continue;
-
-                                // Found the function
-                                tempOnChangeMethod = lookupMethod;
-                                break;
-                            }
-
-                            // Found the function so exit the loop, don't find the function in base class
-                            if (tempOnChangeMethod != null)
-                                break;
-
-                            tempLookupType = tempLookupType.BaseType;
-                        }
-                        // Tell developers that it can't find the function and clear the function's instance
-                        if (tempOnChangeMethod == null)
-                        {
-                            if (Manager.LogError)
-                                Logging.LogError(LogTag, "Cannot find invoking function named [" + tempAttribute.hook + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
-                        }
-                        // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
-                        CacheHookFunctions.Add(tempHookFunctionKey, tempOnChangeMethod);
+                        if (Manager.LogError)
+                            Logging.LogError(LogTag, "Cannot find `on change` method named [" + tempAttribute.onChangeMethodName + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
                     }
-                    tempSyncField = new LiteNetLibSyncFieldContainer(fieldInfo, this, tempOnChangeMethod);
+                    // Find on update method
+                    tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, CacheOnUpdateFunctions);
+                    if (tempOnUpdateMethod == null)
+                    {
+                        if (Manager.LogError)
+                            Logging.LogError(LogTag, "Cannot find `on update` method named [" + tempAttribute.onUpdateMethodName + "] from [" + TypeName + "], FYI the function must has 0 parameter.");
+                    }
+                    // Create new sync field container
+                    tempSyncField = new LiteNetLibSyncFieldContainer(fieldInfo, this, tempOnChangeMethod, tempOnUpdateMethod);
                     tempSyncField.dataChannel = tempAttribute.dataChannel;
                     tempSyncField.deliveryMethod = tempAttribute.deliveryMethod;
                     tempSyncField.clientDataChannel = tempAttribute.clientDataChannel;
@@ -347,6 +316,52 @@ namespace LiteNetLibManager
                         Logging.LogException(LogTag, ex);
                 }
             }
+        }
+
+        private MethodInfo FindAndCacheMethods(StringBuilder stringBuilder, string methodName, FieldInfo fieldInfo, Dictionary<string, MethodInfo> dictionary)
+        {
+            MethodInfo tempMethod = null;
+            string key = stringBuilder.Clear().Append(TypeName).Append('.').Append(methodName).ToString();
+            if (!string.IsNullOrEmpty(methodName) &&
+                !CacheOnChangeFunctions.TryGetValue(key, out tempMethod))
+            {
+                // Not found hook function in cache dictionary, try find the function
+                tempLookupType = ClassType;
+                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
+                {
+                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    foreach (MethodInfo lookupMethod in tempLookupMethods)
+                    {
+                        // Return type must be `void`
+                        if (lookupMethod.ReturnType != typeof(void))
+                            continue;
+
+                        // Not the function it's looking for
+                        if (!lookupMethod.Name.Equals(methodName))
+                            continue;
+
+                        // Parameter not match
+                        ParameterInfo[] tempMethodParams = lookupMethod.GetParameters();
+                        if (tempMethodParams == null ||
+                            tempMethodParams.Length != 1 ||
+                            tempMethodParams[0].ParameterType != fieldInfo.FieldType)
+                            continue;
+
+                        // Found the function
+                        tempMethod = lookupMethod;
+                        break;
+                    }
+
+                    // Found the function so exit the loop, don't find the function in base class
+                    if (tempMethod != null)
+                        break;
+
+                    tempLookupType = tempLookupType.BaseType;
+                }
+                // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
+                CacheOnChangeFunctions.Add(key, tempMethod);
+            }
+            return tempMethod;
         }
 
         private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<string, CacheFunctions> cacheDict)
