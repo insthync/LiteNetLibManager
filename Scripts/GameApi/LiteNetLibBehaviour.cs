@@ -285,18 +285,26 @@ namespace LiteNetLibManager
                 {
                     tempAttribute = fieldInfo.GetCustomAttribute<SyncFieldAttribute>();
                     // Find on change method
-                    tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, CacheOnChangeFunctions);
-                    if (tempOnChangeMethod == null)
+                    tempOnChangeMethod = null;
+                    if (!string.IsNullOrEmpty(tempAttribute.onChangeMethodName))
                     {
-                        if (Manager.LogError)
-                            Logging.LogError(LogTag, "Cannot find `on change` method named [" + tempAttribute.onChangeMethodName + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
+                        tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, CacheOnChangeFunctions);
+                        if (tempOnChangeMethod == null)
+                        {
+                            if (Manager.LogError)
+                                Logging.LogError(LogTag, "Cannot find `on change` method named [" + tempAttribute.onChangeMethodName + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
+                        }
                     }
                     // Find on update method
-                    tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, CacheOnUpdateFunctions);
-                    if (tempOnUpdateMethod == null)
+                    tempOnUpdateMethod = null;
+                    if (!string.IsNullOrEmpty(tempAttribute.onUpdateMethodName))
                     {
-                        if (Manager.LogError)
-                            Logging.LogError(LogTag, "Cannot find `on update` method named [" + tempAttribute.onUpdateMethodName + "] from [" + TypeName + "], FYI the function must has 0 parameter.");
+                        tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, CacheOnUpdateFunctions);
+                        if (tempOnUpdateMethod == null)
+                        {
+                            if (Manager.LogError)
+                                Logging.LogError(LogTag, "Cannot find `on update` method named [" + tempAttribute.onUpdateMethodName + "] from [" + TypeName + "], FYI the function must has 0 parameter.");
+                        }
                     }
                     // Create new sync field container
                     tempSyncField = new LiteNetLibSyncFieldContainer(fieldInfo, this, tempOnChangeMethod, tempOnUpdateMethod);
@@ -320,10 +328,9 @@ namespace LiteNetLibManager
 
         private MethodInfo FindAndCacheMethods(StringBuilder stringBuilder, string methodName, FieldInfo fieldInfo, Dictionary<string, MethodInfo> dictionary)
         {
-            MethodInfo tempMethod = null;
+            MethodInfo tempMethod;
             string key = stringBuilder.Clear().Append(TypeName).Append('.').Append(methodName).ToString();
-            if (!string.IsNullOrEmpty(methodName) &&
-                !CacheOnChangeFunctions.TryGetValue(key, out tempMethod))
+            if (!dictionary.TryGetValue(key, out tempMethod))
             {
                 // Not found hook function in cache dictionary, try find the function
                 tempLookupType = ClassType;
@@ -359,7 +366,7 @@ namespace LiteNetLibManager
                     tempLookupType = tempLookupType.BaseType;
                 }
                 // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
-                CacheOnChangeFunctions.Add(key, tempMethod);
+                dictionary.Add(key, tempMethod);
             }
             return tempMethod;
         }
