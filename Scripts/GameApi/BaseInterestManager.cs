@@ -56,6 +56,8 @@ namespace LiteNetLibManager
         {
             if (subscriber == null || target == null)
                 return false;
+            if (subscriber.ConnectionId >= 0 && subscriber.ConnectionId == target.ConnectionId)
+                return true;
             return subscriber.ConnectionId != target.ConnectionId && !target.IsHideFrom(subscriber) && (!checkRange || target.AlwaysVisible || Vector3.Distance(subscriber.transform.position, target.transform.position) <= GetVisibleRange(target));
         }
 
