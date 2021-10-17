@@ -393,7 +393,7 @@ namespace LiteNetLibManager
         {
             if (!Manager.IsNetworkActive)
             {
-                Logging.LogWarning(LogTag, "NetworkDestroy - Network is not active cannot set object owner");
+                Logging.LogWarning(LogTag, "SetObjectOwner - Network is not active cannot set object owner");
                 return false;
             }
             LiteNetLibIdentity spawnedObject;
@@ -424,7 +424,7 @@ namespace LiteNetLibManager
                 return true;
             }
             else if (Manager.LogWarn)
-                Logging.LogWarning(LogTag, $"NetworkDestroy - Object Id: {objectId} is not spawned.");
+                Logging.LogWarning(LogTag, $"SetObjectOwner - Object Id: {objectId} is not spawned.");
 
             return false;
         }
