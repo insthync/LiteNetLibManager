@@ -399,6 +399,9 @@ namespace LiteNetLibManager
             LiteNetLibIdentity spawnedObject;
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
             {
+                if (spawnedObject.ConnectionId == connectionId)
+                    return false;
+
                 // If this is server, send message to clients to set object owner
                 if (Manager.IsServer)
                 {
