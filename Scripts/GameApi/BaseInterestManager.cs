@@ -54,11 +54,11 @@ namespace LiteNetLibManager
 
         public virtual bool ShouldSubscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target, bool checkRange = true)
         {
-            if (subscriber == null || target == null)
+            if (subscriber == null || target == null || subscriber.ConnectionId < 0)
                 return false;
-            if (subscriber.ConnectionId >= 0 && subscriber.ConnectionId == target.ConnectionId)
+            if (subscriber.ConnectionId == target.ConnectionId)
                 return true;
-            return subscriber.ConnectionId != target.ConnectionId && !target.IsHideFrom(subscriber) && (!checkRange || target.AlwaysVisible || Vector3.Distance(subscriber.transform.position, target.transform.position) <= GetVisibleRange(target));
+            return !target.IsHideFrom(subscriber) && (!checkRange || target.AlwaysVisible || Vector3.Distance(subscriber.transform.position, target.transform.position) <= GetVisibleRange(target));
         }
 
         public virtual bool Subscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target)
