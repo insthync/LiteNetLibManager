@@ -2,6 +2,7 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
 #if !UNITY_WEBGL || UNITY_EDITOR
+using System.Security.Cryptography.X509Certificates;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 #endif
@@ -11,6 +12,8 @@ namespace LiteNetLibManager
     public class WebSocketTransport : ITransport
     {
         private bool secure;
+        private string certificateFilePath;
+        private string certificatePassword;
         private byte[] tempBuffers;
         private bool dirtyIsConnected;
         private WebSocket client;
@@ -56,10 +59,12 @@ namespace LiteNetLibManager
             }
         }
 
-        public WebSocketTransport(bool secure)
+        public WebSocketTransport(bool secure, string certificateFilePath, string certificatePassword)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
             this.secure = secure;
+            this.certificateFilePath = certificateFilePath;
+            this.certificatePassword = certificatePassword;
             serverPeers = new Dictionary<long, WebSocketServerBehavior>();
             serverEventQueue = new Queue<TransportEventData>();
 #endif
@@ -70,7 +75,9 @@ namespace LiteNetLibManager
             if (IsClientStarted)
                 return false;
             dirtyIsConnected = false;
-            client = new WebSocket(new System.Uri((secure ? "wss://" : "ws://") + address + ":" + port));
+            string url = (secure ? "wss://" : "ws://") + address + ":" + port;
+            Logging.Log(nameof(WebSocketTransport), $"Connecting to {url}");
+            client = new WebSocket(new System.Uri(url));
             client.Connect();
             return true;
         }
@@ -133,6 +140,8 @@ namespace LiteNetLibManager
             ServerMaxConnections = maxConnections;
             serverPeers.Clear();
             server = new WebSocketServer(port, secure);
+            if (secure)
+                server.SslConfiguration.ServerCertificate = new X509Certificate2(certificateFilePath, certificatePassword);
             server.AddWebSocketService<WebSocketServerBehavior>("/", (behavior) =>
             {
                 tempConnectionId = nextConnectionId++;
