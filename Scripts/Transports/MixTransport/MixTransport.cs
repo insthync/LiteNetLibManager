@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using LiteNetLib;
 using LiteNetLib.Utils;
 #if !UNITY_WEBGL || UNITY_EDITOR
@@ -14,6 +15,9 @@ namespace LiteNetLibManager
     {
         private long nextConnectionId = 1;
         private long tempConnectionId;
+        private bool webSocketSecure;
+        private string webSocketCertificateFilePath;
+        private string webSocketCertificatePassword;
 
         // WebSocket data
 #if UNITY_WEBGL
@@ -81,7 +85,7 @@ namespace LiteNetLibManager
 
         private readonly int webSocketPortOffset;
 
-        public MixTransport(string connectKey, int webSocketPortOffset, byte clientDataChannelsCount, byte serverDataChannelsCount)
+        public MixTransport(string connectKey, int webSocketPortOffset, bool webSocketSecure, string webSocketCertificateFilePath, string webSocketCertificatePassword, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
 #if !UNITY_WEBGL
@@ -93,6 +97,9 @@ namespace LiteNetLibManager
             this.serverDataChannelsCount = serverDataChannelsCount;
 #endif
             this.webSocketPortOffset = webSocketPortOffset;
+            this.webSocketSecure = webSocketSecure;
+            this.webSocketCertificateFilePath = webSocketCertificateFilePath;
+            this.webSocketCertificatePassword = webSocketCertificatePassword;
         }
 
         public bool StartClient(string address, int port)
@@ -100,7 +107,9 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL
             wsDirtyIsConnected = false;
             int wsPort = port + webSocketPortOffset;
-            wsClient = new WebSocket(new System.Uri("ws://" + address + ":" + wsPort));
+            string url = (webSocketSecure ? "wss://" : "ws://") + address + ":" + port;
+            Logging.Log(nameof(MixTransport), $"Connecting to {url}");
+            wsClient = new WebSocket(new System.Uri(url));
             wsClient.Connect();
             return true;
 #else
@@ -199,7 +208,9 @@ namespace LiteNetLibManager
             // Start WebSocket Server
             wsServerPeers.Clear();
             int wsPort = port + webSocketPortOffset;
-            wsServer = new WebSocketServer(wsPort);
+            wsServer = new WebSocketServer(wsPort, webSocketSecure);
+            if (webSocketSecure)
+                wsServer.SslConfiguration.ServerCertificate = new X509Certificate2(webSocketCertificateFilePath, webSocketCertificatePassword);
             wsServer.AddWebSocketService<WebSocketServerBehavior>("/", (behavior) =>
             {
                 tempConnectionId = GetNewConnectionID();

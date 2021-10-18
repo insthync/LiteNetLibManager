@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LiteNetLibManager
 {
@@ -9,6 +7,9 @@ namespace LiteNetLibManager
         public override bool CanUseWithWebGL { get { return true; } }
         public string connectKey = "SampleConnectKey";
         public int webSocketPortOffset = 100;
+        public bool webScoketSecure = false;
+        public string webScoketCertificateFilePath = string.Empty;
+        public string webScoketCertificatePassword = string.Empty;
         [Range(1, 64)]
         public byte clientDataChannelsCount = 16;
         [Range(1, 64)]
@@ -16,7 +17,7 @@ namespace LiteNetLibManager
 
         public override ITransport Build()
         {
-            return new MixTransport(connectKey, webSocketPortOffset, clientDataChannelsCount, serverDataChannelsCount);
+            return new MixTransport(connectKey, webSocketPortOffset, webScoketSecure, webScoketCertificateFilePath, webScoketCertificatePassword, clientDataChannelsCount, serverDataChannelsCount);
         }
     }
 }
