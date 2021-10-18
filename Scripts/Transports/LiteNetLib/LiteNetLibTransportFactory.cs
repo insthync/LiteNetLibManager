@@ -4,7 +4,6 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibTransportFactory : BaseTransportFactory
     {
-        public override bool CanUseWithWebGL { get { return false; } }
         public string connectKey = "SampleConnectKey";
         [Range(1, 64)]
         public byte clientDataChannelsCount = 16;

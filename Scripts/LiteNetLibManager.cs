@@ -38,6 +38,9 @@ namespace LiteNetLibManager
         public string networkAddress = "localhost";
         public int networkPort = 7770;
         public bool useWebSocket = false;
+        public bool webSocketSecure = false;
+        public string webSocketCertificateFilePath = string.Empty;
+        public string webSocketCertificatePassword = string.Empty;
 
         [Header("Server Only Settings")]
         public int maxConnections = 4;
@@ -81,13 +84,25 @@ namespace LiteNetLibManager
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Force to use websocket transport if it's running as webgl
-            if (transportFactory == null || !transportFactory.CanUseWithWebGL)
-                transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+            if (transportFactory == null || !(transportFactory is IWebSocketTransportFactory))
+            {
+                WebSocketTransportFactory webSocketTransportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+                webSocketTransportFactory.Secure = webSocketSecure;
+                webSocketTransportFactory.CertificateFilePath = webSocketCertificateFilePath;
+                webSocketTransportFactory.CertificatePassword = webSocketCertificatePassword;
+                transportFactory = webSocketTransportFactory;
+            }
 #else
             if (useWebSocket)
             {
-                if (transportFactory == null || !transportFactory.CanUseWithWebGL)
-                    transportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+                if (transportFactory == null || !(transportFactory is IWebSocketTransportFactory))
+                {
+                    WebSocketTransportFactory webSocketTransportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
+                    webSocketTransportFactory.Secure = webSocketSecure;
+                    webSocketTransportFactory.CertificateFilePath = webSocketCertificateFilePath;
+                    webSocketTransportFactory.CertificatePassword = webSocketCertificatePassword;
+                    transportFactory = webSocketTransportFactory;
+                }
             }
             else
             {

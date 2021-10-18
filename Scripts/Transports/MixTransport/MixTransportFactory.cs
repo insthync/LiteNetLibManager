@@ -2,9 +2,8 @@
 
 namespace LiteNetLibManager
 {
-    public class MixTransportFactory : BaseTransportFactory
+    public class MixTransportFactory : BaseTransportFactory, IWebSocketTransportFactory
     {
-        public override bool CanUseWithWebGL { get { return true; } }
         public string connectKey = "SampleConnectKey";
         public int webSocketPortOffset = 100;
         public bool webSocketSecure = false;
@@ -14,6 +13,10 @@ namespace LiteNetLibManager
         public byte clientDataChannelsCount = 16;
         [Range(1, 64)]
         public byte serverDataChannelsCount = 16;
+        public bool Secure { get { return webSocketSecure; } set { webSocketSecure = value; } }
+        public string CertificateFilePath { get { return webSocketCertificateFilePath; } set { webSocketCertificateFilePath = value; } }
+        public string CertificatePassword { get { return webSocketCertificatePassword; } set { webSocketCertificatePassword = value; } }
+
 
         public override ITransport Build()
         {
