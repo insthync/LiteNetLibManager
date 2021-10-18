@@ -61,10 +61,10 @@ namespace LiteNetLibManager
 
         public WebSocketTransport(bool secure, string certificateFilePath, string certificatePassword)
         {
-#if !UNITY_WEBGL || UNITY_EDITOR
             this.secure = secure;
             this.certificateFilePath = certificateFilePath;
             this.certificatePassword = certificatePassword;
+#if !UNITY_WEBGL || UNITY_EDITOR
             serverPeers = new Dictionary<long, WebSocketServerBehavior>();
             serverEventQueue = new Queue<TransportEventData>();
 #endif
