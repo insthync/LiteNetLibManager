@@ -10,6 +10,7 @@ namespace LiteNetLibManager
 {
     public class WebSocketTransport : ITransport
     {
+        private bool secure;
         private byte[] tempBuffers;
         private bool dirtyIsConnected;
         private WebSocket client;
@@ -55,9 +56,10 @@ namespace LiteNetLibManager
             }
         }
 
-        public WebSocketTransport()
+        public WebSocketTransport(bool secure)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
+            this.secure = secure;
             serverPeers = new Dictionary<long, WebSocketServerBehavior>();
             serverEventQueue = new Queue<TransportEventData>();
 #endif
@@ -68,7 +70,7 @@ namespace LiteNetLibManager
             if (IsClientStarted)
                 return false;
             dirtyIsConnected = false;
-            client = new WebSocket(new System.Uri("ws://" + address + ":" + port));
+            client = new WebSocket(new System.Uri((secure ? "wss://" : "ws://") + address + ":" + port));
             client.Connect();
             return true;
         }
@@ -130,7 +132,7 @@ namespace LiteNetLibManager
                 return false;
             ServerMaxConnections = maxConnections;
             serverPeers.Clear();
-            server = new WebSocketServer(port);
+            server = new WebSocketServer(port, secure);
             server.AddWebSocketService<WebSocketServerBehavior>("/", (behavior) =>
             {
                 tempConnectionId = nextConnectionId++;
