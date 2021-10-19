@@ -200,6 +200,12 @@ namespace LiteNetLibManager
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            Event evt = Event.current;
+            if (evt != null && evt.commandName == "Duplicate")
+            {
+                // Reset asset ID to regenerate it
+                assetId = string.Empty;
+            }
             SetupIDs();
         }
 
@@ -209,9 +215,12 @@ namespace LiteNetLibManager
             ReorderSceneObjectId();
         }
 
-        private void AssignAssetID(GameObject prefab)
+        internal void AssignAssetID(GameObject prefab, bool clearAssetId = false)
         {
-            if (!string.IsNullOrEmpty(assetId)) return;
+            if (clearAssetId)
+                assetId = string.Empty;
+            if (!string.IsNullOrEmpty(assetId))
+                return;
             assetId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
         }
 
@@ -239,7 +248,7 @@ namespace LiteNetLibManager
                 return false;
 #endif
 #if UNITY_2018_2_OR_NEWER
-            prefab = (GameObject)PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+            prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
 #else
             prefab = (GameObject)PrefabUtility.GetPrefabParent(gameObject);
 #endif
@@ -251,7 +260,7 @@ namespace LiteNetLibManager
             return true;
         }
 
-        private void SetupIDs()
+        internal void SetupIDs()
         {
             string oldAssetId = assetId;
             uint oldObjectId = objectId;
