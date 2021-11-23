@@ -19,9 +19,7 @@ namespace LiteNetLibManager
             public const byte Dirty = 5;
             public const byte RemoveFirst = 6;
             public const byte RemoveLast = 7;
-            public const byte AddRangeStart = 8;
-            public const byte AddRangeItem = 9;
-            public const byte AddRangeEnd = 10;
+            public const byte AddRange = 8;
 
             public Operation(byte value)
             {
@@ -52,10 +50,9 @@ namespace LiteNetLibManager
         public abstract int Count { get; }
         internal abstract void Reset();
         public abstract Type GetFieldType();
-        public abstract void SendOperation(Operation operation, int index);
-        public abstract void SendOperation(long connectionId, Operation operation, int index);
-        public abstract void DeserializeOperation(NetDataReader reader);
-        public abstract void SerializeOperation(NetDataWriter writer, Operation operation, int index);
+        public abstract void SendInitialList(long connectionId);
+        public abstract void SendOperations();
+        public abstract void ProcessOperations(NetDataReader reader);
 
         protected override bool CanSync()
         {
@@ -67,15 +64,22 @@ namespace LiteNetLibManager
             base.Setup(behaviour, elementId);
             if (Count > 0 && onOperation != null)
             {
-                onOperation.Invoke(Operation.AddRangeStart, 0);
-                onOperation.Invoke(Operation.AddRangeEnd, Count - 1);
+                onOperation.Invoke(Operation.AddRange, 0);
             }
         }
     }
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
     {
+        protected struct OperationEntry
+        {
+            public Operation operation;
+            public int index;
+            public int count;
+        }
+
         protected readonly List<TType> list = new List<TType>();
+        protected readonly List<OperationEntry> operationEntries = new List<OperationEntry>();
 
         public TType this[int index]
         {
@@ -88,7 +92,7 @@ namespace LiteNetLibManager
                     return;
                 }
                 list[index] = value;
-                SendOperation(Operation.Set, index);
+                PrepareOperation(Operation.Set, index);
             }
         }
 
@@ -114,40 +118,37 @@ namespace LiteNetLibManager
 
         public void Add(TType item)
         {
-            if (IsSetup && !IsServer)
+            if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
+            int index = list.Count;
             list.Add(item);
-            SendOperation(Operation.Add, list.Count - 1);
+            PrepareOperation(Operation.Add, index);
         }
 
         public void AddRange(IEnumerable<TType> collection)
         {
-            if (IsSetup && !IsServer)
+            if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
-            SendOperation(Operation.AddRangeStart, list.Count - 1);
-            foreach (TType item in collection)
-            {
-                list.Add(item);
-                SendOperation(Operation.AddRangeItem, list.Count - 1);
-            }
-            SendOperation(Operation.AddRangeEnd, list.Count - 1);
+            int index = list.Count;
+            list.AddRange(collection);
+            PrepareOperation(Operation.AddRange, index);
         }
 
         public void Insert(int index, TType item)
         {
-            if (IsSetup && !IsServer)
+            if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
             list.Insert(index, item);
-            SendOperation(Operation.Insert, index);
+            PrepareOperation(Operation.Insert, index);
         }
 
         public bool Contains(TType item)
@@ -162,7 +163,7 @@ namespace LiteNetLibManager
 
         public bool Remove(TType value)
         {
-            if (IsSetup && !IsServer)
+            if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return false;
@@ -178,7 +179,7 @@ namespace LiteNetLibManager
 
         public void RemoveAt(int index)
         {
-            if (IsSetup && !IsServer)
+            if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
@@ -186,29 +187,29 @@ namespace LiteNetLibManager
             if (index == 0)
             {
                 list.RemoveAt(index);
-                SendOperation(Operation.RemoveFirst, 0);
+                PrepareOperation(Operation.RemoveFirst, 0);
             }
             else if (index == list.Count - 1)
             {
                 list.RemoveAt(index);
-                SendOperation(Operation.RemoveLast, index);
+                PrepareOperation(Operation.RemoveLast, index);
             }
             else
             {
                 list.RemoveAt(index);
-                SendOperation(Operation.RemoveAt, index);
+                PrepareOperation(Operation.RemoveAt, index);
             }
         }
 
         public void Clear()
         {
-            if (IsSetup && !IsServer)
+            if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
             list.Clear();
-            SendOperation(Operation.Clear, -1);
+            PrepareOperation(Operation.Clear, -1);
         }
 
         public void CopyTo(TType[] array, int arrayIndex)
@@ -228,12 +229,12 @@ namespace LiteNetLibManager
 
         public void Dirty(int index)
         {
-            if (IsSetup && !IsServer)
+            if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
-            SendOperation(Operation.Dirty, index);
+            PrepareOperation(Operation.Dirty, index);
         }
 
         internal override sealed void Reset()
@@ -246,47 +247,92 @@ namespace LiteNetLibManager
             return typeof(TType);
         }
 
-        public override sealed void SendOperation(Operation operation, int index)
+        protected void PrepareOperation(Operation operation, int index)
         {
             OnOperation(operation, index);
+            switch (operation)
+            {
+                case Operation.AddRange:
+                    operationEntries.Add(new OperationEntry()
+                    {
+                        operation = operation,
+                        index = index,
+                        count = list.Count - index,
+                    });
+                    break;
+                case Operation.Clear:
+                    operationEntries.Add(new OperationEntry()
+                    {
+                        operation = operation,
+                        index = index,
+                        count = 0,
+                    });
+                    break;
+                default:
+                    operationEntries.Add(new OperationEntry()
+                    {
+                        operation = operation,
+                        index = index,
+                        count = 1,
+                    });
+                    break;
+            }
+        }
 
-            if (!CanSync())
+        protected void SendOperations(long connectionId)
+        {
+            SendingConnectionId = connectionId;
+            Manager.ServerSendPacket(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperations(writer));
+        }
+
+        public override sealed void SendInitialList(long connectionId)
+        {
+            PrepareOperation(Operation.AddRange, 0);
+            SendOperations(connectionId);
+            operationEntries.Clear();
+        }
+
+        public override sealed void SendOperations()
+        {
+            if (operationEntries.Count <= 0 || !CanSync())
                 return;
 
             if (forOwnerOnly)
             {
                 if (Manager.ContainsConnectionId(ConnectionId))
-                    SendOperation(ConnectionId, operation, index);
+                    SendOperations(ConnectionId);
             }
             else
             {
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        SendOperation(connectionId, operation, index);
+                        SendOperations(connectionId);
                 }
             }
+            operationEntries.Clear();
         }
 
-        public override sealed void SendOperation(long connectionId, Operation operation, int index)
+        public override sealed void ProcessOperations(NetDataReader reader)
         {
-            if (!CanSync())
+            int operationCount = reader.GetPackedInt();
+            for (int i = 0; i < operationCount; ++i)
             {
-                Logging.LogError(LogTag, "Error while send operation, behaviour is empty or not the server");
-                return;
+                DeserializeOperation(reader);
             }
-
-            SendingConnectionId = connectionId;
-            Manager.ServerSendPacket(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperation(writer, operation, index));
         }
 
-        protected void SerializeForSendOperation(NetDataWriter writer, Operation operation, int index)
+        protected void SerializeForSendOperations(NetDataWriter writer)
         {
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
-            SerializeOperation(writer, operation, index);
+            writer.PutPackedInt(operationEntries.Count);
+            for (int i = 0; i < operationEntries.Count; ++i)
+            {
+                SerializeOperation(writer, operationEntries[i].operation, operationEntries[i].index, operationEntries[i].count);
+            }
         }
 
-        public override sealed void DeserializeOperation(NetDataReader reader)
+        protected void DeserializeOperation(NetDataReader reader)
         {
             Operation operation = reader.GetByte();
             int index = -1;
@@ -294,18 +340,18 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
-                    index = list.Count;
                     item = DeserializeValueForAddOrInsert(index, reader);
+                    index = list.Count;
                     list.Add(item);
                     break;
-                case Operation.AddRangeStart:
-                case Operation.AddRangeEnd:
-                    index = list.Count - 1;
-                    break;
-                case Operation.AddRangeItem:
+                case Operation.AddRange:
                     index = list.Count;
-                    item = DeserializeValueForAddOrInsert(index, reader);
-                    list.Add(item);
+                    int count = reader.GetPackedInt();
+                    for (int i = index; i < count; ++i)
+                    {
+                        item = DeserializeValueForAddOrInsert(i, reader);
+                        list.Add(item);
+                    }
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
@@ -342,14 +388,20 @@ namespace LiteNetLibManager
             OnOperation(operation, index);
         }
 
-        public override sealed void SerializeOperation(NetDataWriter writer, Operation operation, int index)
+        protected void SerializeOperation(NetDataWriter writer, Operation operation, int index, int count)
         {
             writer.Put((byte)operation);
             switch (operation)
             {
                 case Operation.Add:
-                case Operation.AddRangeItem:
                     SerializeValueForAddOrInsert(index, writer, list[index]);
+                    break;
+                case Operation.AddRange:
+                    writer.PutPackedInt(count);
+                    for (int i = index; i < count; ++i)
+                    {
+                        SerializeValueForAddOrInsert(i, writer, list[i]);
+                    }
                     break;
                 case Operation.Insert:
                     writer.Put(index);
@@ -366,8 +418,6 @@ namespace LiteNetLibManager
                 case Operation.RemoveFirst:
                 case Operation.RemoveLast:
                 case Operation.Clear:
-                case Operation.AddRangeStart:
-                case Operation.AddRangeEnd:
                     break;
                 default:
                     writer.Put(index);
@@ -418,9 +468,6 @@ namespace LiteNetLibManager
 
         protected void OnOperation(Operation operation, int index)
         {
-            if (operation.Value == Operation.AddRangeItem)
-                return;
-
             if (onOperation != null)
                 onOperation.Invoke(operation, index);
         }
@@ -543,42 +590,6 @@ namespace LiteNetLibManager
 
     [Serializable]
     public class SyncListVector4 : LiteNetLibSyncList<Vector4>
-    {
-    }
-
-    [Serializable]
-    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
-    public class SyncListPackedUShort : LiteNetLibSyncList<PackedUShort>
-    {
-    }
-
-    [Serializable]
-    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
-    public class SyncListPackedUInt : LiteNetLibSyncList<PackedUInt>
-    {
-    }
-
-    [Serializable]
-    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
-    public class SyncListPackedULong : LiteNetLibSyncList<PackedULong>
-    {
-    }
-
-    [Serializable]
-    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
-    public class SyncListPackedShort : LiteNetLibSyncList<PackedShort>
-    {
-    }
-
-    [Serializable]
-    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
-    public class SyncListPackedInt : LiteNetLibSyncList<PackedInt>
-    {
-    }
-
-    [Serializable]
-    [Obsolete("SyncList<Int,Short,Long,UInt,UShort,ULong> already packed. So you don't have to use this class")]
-    public class SyncListPackedLong : LiteNetLibSyncList<PackedLong>
     {
     }
 

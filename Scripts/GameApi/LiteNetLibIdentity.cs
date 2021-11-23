@@ -180,11 +180,18 @@ namespace LiteNetLibManager
                 return;
             }
 
-            Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
             int loopCounter;
+            Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
             for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
             {
                 SyncFields[loopCounter].NetworkUpdate(deltaTime);
+            }
+            Profiler.EndSample();
+
+            Profiler.BeginSample("LiteNetLibIdentity - SyncLists Update");
+            for (loopCounter = 0; loopCounter < SyncLists.Count; ++loopCounter)
+            {
+                SyncLists[loopCounter].SendOperations();
             }
             Profiler.EndSample();
 
@@ -380,7 +387,7 @@ namespace LiteNetLibManager
         {
             if (syncList == null)
                 return null;
-            syncList.DeserializeOperation(reader);
+            syncList.ProcessOperations(reader);
             return syncList;
         }
 
@@ -449,8 +456,7 @@ namespace LiteNetLibManager
         {
             foreach (LiteNetLibSyncList list in SyncLists)
             {
-                for (int i = 0; i < list.Count; ++i)
-                    list.SendOperation(connectionId, LiteNetLibSyncList.Operation.Insert, i);
+                list.SendInitialList(connectionId);
             }
         }
 
