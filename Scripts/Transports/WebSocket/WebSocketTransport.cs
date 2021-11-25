@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using System.Net.Sockets;
+using System.Collections.Concurrent;
 #if !UNITY_WEBGL || UNITY_EDITOR
 using System.Security.Cryptography.X509Certificates;
 using WebSocketSharp;
@@ -15,8 +17,8 @@ namespace LiteNetLibManager
         private string certificateFilePath;
         private string certificatePassword;
         private byte[] tempBuffers;
-        private bool dirtyIsConnected;
-        private WebSocket client;
+        private NativeWebSocket.WebSocket client;
+        private readonly Queue<TransportEventData> clientEventQueue;
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer server;
         private long nextConnectionId = 1;
@@ -45,7 +47,7 @@ namespace LiteNetLibManager
         public int ServerMaxConnections { get; private set; }
         public bool IsClientStarted
         {
-            get { return client != null && client.IsConnected; }
+            get { return client != null && client.State == NativeWebSocket.WebSocketState.Open; }
         }
         public bool IsServerStarted
         {
@@ -64,6 +66,7 @@ namespace LiteNetLibManager
             this.secure = secure;
             this.certificateFilePath = certificateFilePath;
             this.certificatePassword = certificatePassword;
+            clientEventQueue = new Queue<TransportEventData>();
 #if !UNITY_WEBGL || UNITY_EDITOR
             serverPeers = new Dictionary<long, WebSocketServerBehavior>();
             serverEventQueue = new Queue<TransportEventData>();
@@ -74,19 +77,63 @@ namespace LiteNetLibManager
         {
             if (IsClientStarted)
                 return false;
-            dirtyIsConnected = false;
             string url = (secure ? "wss://" : "ws://") + address + ":" + port;
             Logging.Log(nameof(WebSocketTransport), $"Connecting to {url}");
-            client = new WebSocket(new System.Uri(url));
-            client.Connect();
+            client = new NativeWebSocket.WebSocket(url);
+            client.OnOpen += OnClientOpen;
+            client.OnMessage += OnClientMessage;
+            client.OnError += OnClientError;
+            client.OnClose += OnClientClose;
+            _ = client.Connect();
             return true;
         }
 
         public void StopClient()
         {
             if (client != null)
-                client.Close();
+                _ = client.Close();
             client = null;
+        }
+
+        private void OnClientOpen()
+        {
+            clientEventQueue.Enqueue(new TransportEventData()
+            {
+                type = ENetworkEvent.ConnectEvent,
+            });
+        }
+
+        private void OnClientMessage(byte[] data)
+        {
+            clientEventQueue.Enqueue(new TransportEventData()
+            {
+                type = ENetworkEvent.DataEvent,
+                reader = new NetDataReader(data),
+            });
+        }
+
+        private void OnClientError(string errorMsg)
+        {
+            clientEventQueue.Enqueue(new TransportEventData()
+            {
+                type = ENetworkEvent.ErrorEvent,
+                errorMessage = errorMsg,
+            });
+        }
+
+        private void OnClientClose(NativeWebSocket.WebSocketCloseCode closeCode)
+        {
+            clientEventQueue.Enqueue(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = GetDisconnectInfo(closeCode),
+            });
+        }
+
+        private DisconnectInfo GetDisconnectInfo(NativeWebSocket.WebSocketCloseCode closeCode)
+        {
+            DisconnectInfo info = new DisconnectInfo();
+            return info;
         }
 
         public bool ClientReceive(out TransportEventData eventData)
@@ -94,32 +141,11 @@ namespace LiteNetLibManager
             eventData = default(TransportEventData);
             if (client == null)
                 return false;
-            if (dirtyIsConnected != client.IsConnected)
-            {
-                dirtyIsConnected = client.IsConnected;
-                if (client.IsConnected)
-                {
-                    // Connect state changed to connected, so it's connect event
-                    eventData.type = ENetworkEvent.ConnectEvent;
-                }
-                else
-                {
-                    // Connect state changed to not connected, so it's disconnect event
-                    eventData.type = ENetworkEvent.DisconnectEvent;
-                }
-                return true;
-            }
-            else
-            {
-                tempBuffers = client.Recv();
-                if (tempBuffers != null)
-                {
-                    eventData.type = ENetworkEvent.DataEvent;
-                    eventData.reader = new NetDataReader(tempBuffers);
-                    return true;
-                }
-            }
-            return false;
+            client.DispatchMessageQueue();
+            if (clientEventQueue.Count == 0)
+                return false;
+            eventData = clientEventQueue.Dequeue();
+            return true;
         }
 
         public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
