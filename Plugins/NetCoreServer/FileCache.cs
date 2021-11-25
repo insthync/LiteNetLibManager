@@ -95,7 +95,8 @@ namespace NetCoreServer
         /// <returns>'true' if the cache path was setup, 'false' if failed to setup the cache path</returns>
         public bool InsertPath(string path, string prefix = "/", string filter = "*.*", TimeSpan timeout = new TimeSpan(), InsertHandler handler = null)
         {
-            handler ??= (FileCache cache, string key, byte[] value, TimeSpan timespan) => cache.Add(key, value, timespan);
+            if (handler == null)
+                handler = (FileCache cache, string key, byte[] value, TimeSpan timespan) => cache.Add(key, value, timespan);
 
             // Try to find and remove the previous path
             RemovePathInternal(path);
@@ -349,7 +350,7 @@ namespace NetCoreServer
                 // Iterate through all directory entries
                 foreach (var item in Directory.GetDirectories(path))
                 {
-                    string key = keyPrefix + HttpUtility.UrlDecode(Path.GetFileName(item));
+                    string key = keyPrefix + Uri.UnescapeDataString(Path.GetFileName(item));
 
                     // Recursively insert sub-directory
                     if (!InsertPathInternal(root, item, key, timeout, handler))
@@ -358,7 +359,7 @@ namespace NetCoreServer
 
                 foreach (var item in Directory.GetFiles(path))
                 {
-                    string key = keyPrefix + HttpUtility.UrlDecode(Path.GetFileName(item));
+                    string key = keyPrefix + Uri.UnescapeDataString(Path.GetFileName(item));
 
                     // Insert file into the cache
                     if (!InsertFileInternal(root, item, key, timeout, handler))

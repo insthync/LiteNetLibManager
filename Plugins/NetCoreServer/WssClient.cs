@@ -436,6 +436,7 @@ namespace NetCoreServer
         public virtual void OnWsPong(byte[] buffer, long offset, long size) {}
         public virtual void OnWsError(string error) { OnError(SocketError.SocketError); }
         public virtual void OnWsError(SocketError error) { OnError(error); }
+        public virtual void SendUpgrade(HttpResponse response) {}
 
         #endregion
 

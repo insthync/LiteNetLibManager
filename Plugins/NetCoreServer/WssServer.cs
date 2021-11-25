@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace NetCoreServer
@@ -158,5 +159,19 @@ namespace NetCoreServer
         #endregion
 
         protected override SslSession CreateSession() { return new WssSession(this); }
+
+        public void OnWsConnecting(HttpRequest request) { }
+        public void OnWsConnected(HttpResponse response) { }
+        public bool OnWsConnecting(HttpRequest request, HttpResponse response) { return true; }
+        public void OnWsConnected(HttpRequest request) { }
+        public void OnWsDisconnecting() { }
+        public void OnWsDisconnected() { }
+        public void OnWsReceived(byte[] buffer, long offset, long size) { }
+        public void OnWsClose(byte[] buffer, long offset, long size) { }
+        public void OnWsPing(byte[] buffer, long offset, long size) { }
+        public void OnWsPong(byte[] buffer, long offset, long size) { }
+        public void OnWsError(string error) { }
+        public void OnWsError(SocketError error) { }
+        public void SendUpgrade(HttpResponse response) { }
     }
 }

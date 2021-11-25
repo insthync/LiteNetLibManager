@@ -82,7 +82,15 @@ namespace NetCoreServer
         /// <summary>
         /// Get the HTTP request body as byte array
         /// </summary>
-        public byte[] BodyBytes { get { return _cache.Data[_bodyIndex..(_bodyIndex + _bodySize)]; } }
+        public byte[] BodyBytes
+        {
+            get
+            {
+                byte[] bodyBytes = new byte[_bodySize];
+                Array.Copy(_cache.Data, _bodyIndex, bodyBytes, 0, _bodySize);
+                return bodyBytes;
+            }
+        }
         /// <summary>
         /// Get the HTTP request body as read-only byte span
         /// </summary>
