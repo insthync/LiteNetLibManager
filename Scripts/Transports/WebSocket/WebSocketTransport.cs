@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using System.Net.Sockets;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Security.Authentication;
 #if !UNITY_WEBGL || UNITY_EDITOR
@@ -12,8 +10,9 @@ using NetCoreServer;
 
 namespace LiteNetLibManager
 {
-    public class WebSocketTransport : ITransport
+    public class WebSocketTransport : ITransport, ITransportConnectionGenerator
     {
+        private long nextConnectionId = 1;
         private bool secure;
         private string certificateFilePath;
         private string certificatePassword;
@@ -148,6 +147,7 @@ namespace LiteNetLibManager
 
         private DisconnectInfo GetDisconnectInfo(NativeWebSocket.WebSocketCloseCode closeCode)
         {
+            // TODO: Implement this
             DisconnectInfo info = new DisconnectInfo();
             return info;
         }
@@ -181,14 +181,14 @@ namespace LiteNetLibManager
                 return false;
             if (!secure)
             {
-                wsServer = new WsTransportServer(IPAddress.Any, port, maxConnections);
+                wsServer = new WsTransportServer(this, IPAddress.Any, port, maxConnections);
                 wsServer.OptionDualMode = true;
                 wsServer.OptionNoDelay = true;
                 return wsServer.Start();
             }
             else
             {
-                wssServer = new WssTransportServer(new SslContext(SslProtocols.Tls12, new X509Certificate2(certificateFilePath, certificatePassword)), IPAddress.Any, port, maxConnections);
+                wssServer = new WssTransportServer(this, new SslContext(SslProtocols.Tls12, new X509Certificate2(certificateFilePath, certificatePassword)), IPAddress.Any, port, maxConnections);
                 wssServer.OptionDualMode = true;
                 wssServer.OptionNoDelay = true;
                 return wssServer.Start();
@@ -254,6 +254,7 @@ namespace LiteNetLibManager
                 wssServer.Dispose();
             wsServer = null;
             wssServer = null;
+            nextConnectionId = 1;
 #endif
         }
 
@@ -261,6 +262,11 @@ namespace LiteNetLibManager
         {
             StopClient();
             StopServer();
+        }
+
+        public long GetNewConnectionID()
+        {
+            return nextConnectionId++;
         }
     }
 }

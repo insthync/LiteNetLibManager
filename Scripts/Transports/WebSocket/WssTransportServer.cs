@@ -11,19 +11,19 @@ namespace LiteNetLibManager
         public int PeersCount { get { return AcceptedClients.Count; } }
         public int MaxConnections { get; private set; }
 
-        private long _nextConnectionId;
+        private ITransportConnectionGenerator connectionGenerator;
 
-        public WssTransportServer(SslContext context, IPAddress address, int port, int maxConnections) : base(context, address, port)
+        public WssTransportServer(ITransportConnectionGenerator connectionGenerator, SslContext context, IPAddress address, int port, int maxConnections) : base(context, address, port)
         {
+            this.connectionGenerator = connectionGenerator;
             AcceptedClients = new ConcurrentDictionary<long, WssTransportSession>();
             EventQueue = new ConcurrentQueue<TransportEventData>();
             MaxConnections = maxConnections;
-            _nextConnectionId = 1;
         }
 
         protected override SslSession CreateSession()
         {
-            WssTransportSession newSession = new WssTransportSession(_nextConnectionId++, this);
+            WssTransportSession newSession = new WssTransportSession(connectionGenerator.GetNewConnectionID(), this);
             if (PeersCount >= MaxConnections)
             {
                 newSession.Disconnect();
