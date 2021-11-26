@@ -17,9 +17,9 @@ namespace LiteNetLibManager
             _server = server;
         }
 
-        public override void OnWsConnected(HttpRequest request)
+        protected override void OnConnected()
         {
-            base.OnWsConnected(request);
+            base.OnConnected();
             _server.EventQueue.Enqueue(new TransportEventData()
             {
                 connectionId = ConnectionId,
@@ -27,13 +27,23 @@ namespace LiteNetLibManager
             });
         }
 
-        public override void OnWsDisconnected()
+        protected override void OnDisconnected()
         {
-            base.OnWsDisconnected();
+            base.OnDisconnected();
             _server.EventQueue.Enqueue(new TransportEventData()
             {
                 connectionId = ConnectionId,
                 type = ENetworkEvent.DisconnectEvent,
+            });
+        }
+
+        public override void OnWsError(string error)
+        {
+            _server.EventQueue.Enqueue(new TransportEventData()
+            {
+                connectionId = ConnectionId,
+                type = ENetworkEvent.ErrorEvent,
+                errorMessage = error,
             });
         }
 
