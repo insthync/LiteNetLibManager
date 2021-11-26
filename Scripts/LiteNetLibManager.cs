@@ -40,7 +40,7 @@ namespace LiteNetLibManager
         public int networkPort = 7770;
         public bool useWebSocket = false;
         public bool webSocketSecure = false;
-        public SslProtocols webSocketSslProtocols = SslProtocols.None;
+        public SslProtocols webSocketSslProtocols = SslProtocols.Tls12;
         public string webSocketCertificateFilePath = string.Empty;
         public string webSocketCertificatePassword = string.Empty;
 

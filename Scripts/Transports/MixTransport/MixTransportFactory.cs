@@ -12,7 +12,7 @@ namespace LiteNetLibManager
         [SerializeField]
         private bool webSocketSecure = false;
         [SerializeField]
-        private SslProtocols webSocketSslProtocols = SslProtocols.None;
+        private SslProtocols webSocketSslProtocols = SslProtocols.Tls12;
         [SerializeField]
         private string webSocketCertificateFilePath = string.Empty;
         [SerializeField]

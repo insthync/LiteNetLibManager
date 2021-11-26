@@ -8,7 +8,7 @@ namespace LiteNetLibManager
         [SerializeField] 
         private bool secure = false;
         [SerializeField]
-        private SslProtocols sslProtocols = SslProtocols.None;
+        private SslProtocols sslProtocols = SslProtocols.Tls12;
         [SerializeField]
         private string certificateFilePath = string.Empty;
         [SerializeField]
