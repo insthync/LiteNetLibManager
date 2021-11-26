@@ -5,6 +5,7 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Cysharp.Threading.Tasks;
+using System.Security.Authentication;
 
 namespace LiteNetLibManager
 {
@@ -39,6 +40,7 @@ namespace LiteNetLibManager
         public int networkPort = 7770;
         public bool useWebSocket = false;
         public bool webSocketSecure = false;
+        public SslProtocols webSocketSslProtocols = SslProtocols.None;
         public string webSocketCertificateFilePath = string.Empty;
         public string webSocketCertificatePassword = string.Empty;
 
@@ -88,6 +90,7 @@ namespace LiteNetLibManager
             {
                 WebSocketTransportFactory webSocketTransportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
                 webSocketTransportFactory.Secure = webSocketSecure;
+                webSocketTransportFactory.SslProtocols = webSocketSslProtocols;
                 webSocketTransportFactory.CertificateFilePath = webSocketCertificateFilePath;
                 webSocketTransportFactory.CertificatePassword = webSocketCertificatePassword;
                 transportFactory = webSocketTransportFactory;
@@ -99,6 +102,7 @@ namespace LiteNetLibManager
                 {
                     WebSocketTransportFactory webSocketTransportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
                     webSocketTransportFactory.Secure = webSocketSecure;
+                    webSocketTransportFactory.SslProtocols = webSocketSslProtocols;
                     webSocketTransportFactory.CertificateFilePath = webSocketCertificateFilePath;
                     webSocketTransportFactory.CertificatePassword = webSocketCertificatePassword;
                     transportFactory = webSocketTransportFactory;
