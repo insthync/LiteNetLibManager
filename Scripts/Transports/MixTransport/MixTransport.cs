@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
-using System.Net;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using System.Net;
 using System.Security.Authentication;
-#if !UNITY_WEBGL || UNITY_EDITOR
 using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+#if !UNITY_WEBGL || UNITY_EDITOR
 using NetCoreServer;
 #endif
 
@@ -14,7 +15,6 @@ namespace LiteNetLibManager
     {
         private long nextConnectionId = 1;
         private bool webSocketSecure;
-        private SslProtocols webSocketSslProtocols;
         private string webSocketCertificateFilePath;
         private string webSocketCertificatePassword;
 
@@ -90,7 +90,7 @@ namespace LiteNetLibManager
 
         private readonly int webSocketPortOffset;
 
-        public MixTransport(string connectKey, int webSocketPortOffset, bool webSocketSecure, SslProtocols webSocketSslProtocols, string webSocketCertificateFilePath, string webSocketCertificatePassword, byte clientDataChannelsCount, byte serverDataChannelsCount)
+        public MixTransport(string connectKey, int webSocketPortOffset, bool webSocketSecure, string webSocketCertificateFilePath, string webSocketCertificatePassword, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
 #if !UNITY_WEBGL
@@ -102,7 +102,6 @@ namespace LiteNetLibManager
 #endif
             this.webSocketPortOffset = webSocketPortOffset;
             this.webSocketSecure = webSocketSecure;
-            this.webSocketSslProtocols = webSocketSslProtocols;
             this.webSocketCertificateFilePath = webSocketCertificateFilePath;
             this.webSocketCertificatePassword = webSocketCertificatePassword;
         }
@@ -245,7 +244,8 @@ namespace LiteNetLibManager
             }
             else
             {
-                wssServer = new WssTransportServer(this, new SslContext(webSocketSslProtocols, new X509Certificate2(webSocketCertificateFilePath, webSocketCertificatePassword)), IPAddress.Any, port + webSocketPortOffset, maxConnections);
+                SslContext context = new SslContext(SslProtocols.Tls12, new X509Certificate2(webSocketCertificateFilePath, webSocketCertificatePassword), CertValidationCallback);
+                wssServer = new WssTransportServer(this, context, IPAddress.Any, port + webSocketPortOffset, maxConnections);
                 wssServer.OptionDualMode = true;
                 wssServer.OptionNoDelay = true;
                 if (!wssServer.Start())
@@ -258,6 +258,11 @@ namespace LiteNetLibManager
             Server.ChannelsCount = serverDataChannelsCount;
             return Server.Start(port);
 #endif
+        }
+
+        private bool CertValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
         }
 
         public bool ServerReceive(out TransportEventData eventData)
