@@ -13,5 +13,6 @@ namespace LiteNetLibManager
         public DisconnectInfo disconnectInfo;
         public IPEndPoint endPoint;
         public SocketError socketError;
+        public string errorMessage;
     }
 }

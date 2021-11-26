@@ -1,10 +1,11 @@
 {
     "name": "LiteNetLibManager",
     "references": [
-        "GUID:d969dd435f4843f4a9b7e2a7c04f4839",
         "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:33661e06c33d31b4c9223810bf503247",
-        "GUID:19622d0c1901810479006eab0c2d3555"
+        "GUID:19622d0c1901810479006eab0c2d3555",
+        "GUID:d969dd435f4843f4a9b7e2a7c04f4839",
+        "GUID:302cce8bc3ee0014da34daebe3087f54"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
