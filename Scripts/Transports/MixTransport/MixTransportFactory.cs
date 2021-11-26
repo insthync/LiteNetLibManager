@@ -1,26 +1,37 @@
-﻿using UnityEngine;
+﻿using System.Security.Authentication;
+using UnityEngine;
 
 namespace LiteNetLibManager
 {
     public class MixTransportFactory : BaseTransportFactory, IWebSocketTransportFactory
     {
-        public string connectKey = "SampleConnectKey";
-        public int webSocketPortOffset = 100;
-        public bool webSocketSecure = false;
-        public string webSocketCertificateFilePath = string.Empty;
-        public string webSocketCertificatePassword = string.Empty;
+        [SerializeField]
+        private string connectKey = "SampleConnectKey";
+        [SerializeField]
+        private int webSocketPortOffset = 100;
+        [SerializeField]
+        private bool webSocketSecure = false;
+        [SerializeField]
+        private SslProtocols webSocketSslProtocols = SslProtocols.None;
+        [SerializeField]
+        private string webSocketCertificateFilePath = string.Empty;
+        [SerializeField]
+        private string webSocketCertificatePassword = string.Empty;
         [Range(1, 64)]
-        public byte clientDataChannelsCount = 16;
+        [SerializeField]
+        private byte clientDataChannelsCount = 16;
         [Range(1, 64)]
-        public byte serverDataChannelsCount = 16;
+        [SerializeField]
+        private byte serverDataChannelsCount = 16;
         public bool Secure { get { return webSocketSecure; } set { webSocketSecure = value; } }
+        public SslProtocols SslProtocols { get { return webSocketSslProtocols; } set { webSocketSslProtocols = value; } }
         public string CertificateFilePath { get { return webSocketCertificateFilePath; } set { webSocketCertificateFilePath = value; } }
         public string CertificatePassword { get { return webSocketCertificatePassword; } set { webSocketCertificatePassword = value; } }
 
 
         public override ITransport Build()
         {
-            return new MixTransport(connectKey, webSocketPortOffset, webSocketSecure, webSocketCertificateFilePath, webSocketCertificatePassword, clientDataChannelsCount, serverDataChannelsCount);
+            return new MixTransport(connectKey, webSocketPortOffset, webSocketSecure, webSocketSslProtocols, webSocketCertificateFilePath, webSocketCertificatePassword, clientDataChannelsCount, serverDataChannelsCount);
         }
     }
 }

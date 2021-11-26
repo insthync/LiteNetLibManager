@@ -14,6 +14,7 @@ namespace LiteNetLibManager
     {
         private long nextConnectionId = 1;
         private bool webSocketSecure;
+        private SslProtocols webSocketSslProtocols;
         private string webSocketCertificateFilePath;
         private string webSocketCertificatePassword;
 
@@ -89,7 +90,7 @@ namespace LiteNetLibManager
 
         private readonly int webSocketPortOffset;
 
-        public MixTransport(string connectKey, int webSocketPortOffset, bool webSocketSecure, string webSocketCertificateFilePath, string webSocketCertificatePassword, byte clientDataChannelsCount, byte serverDataChannelsCount)
+        public MixTransport(string connectKey, int webSocketPortOffset, bool webSocketSecure, SslProtocols webSocketSslProtocols, string webSocketCertificateFilePath, string webSocketCertificatePassword, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
 #if !UNITY_WEBGL
@@ -101,6 +102,7 @@ namespace LiteNetLibManager
 #endif
             this.webSocketPortOffset = webSocketPortOffset;
             this.webSocketSecure = webSocketSecure;
+            this.webSocketSslProtocols = webSocketSslProtocols;
             this.webSocketCertificateFilePath = webSocketCertificateFilePath;
             this.webSocketCertificatePassword = webSocketCertificatePassword;
         }
@@ -243,7 +245,7 @@ namespace LiteNetLibManager
             }
             else
             {
-                wssServer = new WssTransportServer(this, new SslContext(SslProtocols.Tls12, new X509Certificate2(webSocketCertificateFilePath, webSocketCertificatePassword)), IPAddress.Any, port + webSocketPortOffset, maxConnections);
+                wssServer = new WssTransportServer(this, new SslContext(webSocketSslProtocols, new X509Certificate2(webSocketCertificateFilePath, webSocketCertificatePassword)), IPAddress.Any, port + webSocketPortOffset, maxConnections);
                 wssServer.OptionDualMode = true;
                 wssServer.OptionNoDelay = true;
                 if (!wssServer.Start())
