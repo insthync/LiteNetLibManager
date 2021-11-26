@@ -108,7 +108,7 @@ namespace LiteNetLibManager
         public bool StartClient(string address, int port)
         {
 #if UNITY_WEBGL
-            string url = (secure ? "wss://" : "ws://") + address + ":" + (port + webSocketPortOffset);
+            string url = (webSocketSecure ? "wss://" : "ws://") + address + ":" + (port + webSocketPortOffset);
             Logging.Log(nameof(WebSocketTransport), $"Connecting to {url}");
             wsClient = new NativeWebSocket.WebSocket(url);
             wsClient.OnOpen += OnWsClientOpen;
