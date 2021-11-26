@@ -187,7 +187,6 @@ namespace LiteNetLibManager
             eventData = default(TransportEventData);
             if (wsClient == null)
                 return false;
-            wsClient.DispatchMessageQueue();
             if (clientEventQueue.Count == 0)
                 return false;
             eventData = clientEventQueue.Dequeue();

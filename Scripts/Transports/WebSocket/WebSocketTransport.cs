@@ -157,7 +157,9 @@ namespace LiteNetLibManager
             eventData = default(TransportEventData);
             if (client == null)
                 return false;
+#if !UNITY_WEBGL
             client.DispatchMessageQueue();
+#endif
             if (clientEventQueue.Count == 0)
                 return false;
             eventData = clientEventQueue.Dequeue();
