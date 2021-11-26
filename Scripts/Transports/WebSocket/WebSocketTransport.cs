@@ -2,9 +2,10 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Net;
+using System.Net.Security;
 using System.Security.Authentication;
-#if !UNITY_WEBGL || UNITY_EDITOR
 using System.Security.Cryptography.X509Certificates;
+#if !UNITY_WEBGL || UNITY_EDITOR
 using NetCoreServer;
 #endif
 
@@ -192,7 +193,8 @@ namespace LiteNetLibManager
             }
             else
             {
-                wssServer = new WssTransportServer(this, new SslContext(sslProtocols, new X509Certificate2(certificateFilePath, certificatePassword)), IPAddress.Any, port, maxConnections);
+                SslContext context = new SslContext(sslProtocols, new X509Certificate2(certificateFilePath, certificatePassword), CertValidationCallback);
+                wssServer = new WssTransportServer(this, context, IPAddress.Any, port, maxConnections);
                 wssServer.OptionDualMode = true;
                 wssServer.OptionNoDelay = true;
                 return wssServer.Start();
@@ -200,6 +202,11 @@ namespace LiteNetLibManager
 #else
             return false;
 #endif
+        }
+
+        private bool CertValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
         }
 
         public bool ServerReceive(out TransportEventData eventData)
