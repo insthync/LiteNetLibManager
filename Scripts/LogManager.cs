@@ -49,6 +49,8 @@ namespace LiteNetLibManager
                 builder.AddZLoggerUnityDebug();
             });
 
+            Logger.LogInformation("===== Logger Initialized =====");
+
             UnityEngine.Application.quitting += () =>
             {
                 // when quit, flush unfinished log entries.
