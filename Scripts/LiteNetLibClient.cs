@@ -90,7 +90,7 @@ namespace LiteNetLibManager
 
         public void SendMessage(byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
         {
-            SendMessage(-1, dataChannel, deliveryMethod, data);
+            SendMessage(dataChannel, deliveryMethod, data);
         }
 
         public void SendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
@@ -106,7 +106,7 @@ namespace LiteNetLibManager
             if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
                 return false;
             // Send request to server, so connection id will not being used
-            SendMessage(-1, DeliveryMethod.ReliableUnordered, writer.Data);
+            SendMessage(0, DeliveryMethod.ReliableUnordered, writer.Data);
             return true;
         }
 
@@ -125,7 +125,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to server, so connection id will not being used
-            SendMessage(-1, DeliveryMethod.ReliableUnordered, writer.Data);
+            SendMessage(0, DeliveryMethod.ReliableUnordered, writer.Data);
             // Wait for response
             do
             {
