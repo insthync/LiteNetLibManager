@@ -1,7 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -79,7 +78,7 @@ namespace LiteNetLibManager
             messageHandlers[messageType].Invoke(new MessageHandlerData(messageType, this, connectionId, reader));
         }
 
-        protected void WritePacket(
+        public void WritePacket(
             NetDataWriter writer,
             ushort messageType,
             SerializerDelegate extraSerializer)
@@ -90,7 +89,12 @@ namespace LiteNetLibManager
                 extraSerializer.Invoke(writer);
         }
 
-        protected abstract void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer);
+        public byte[] GetPacket()
+        {
+            return writer.Data;
+        }
+
+        public abstract void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, byte[] data);
 
         private uint CreateRequest(
             LiteNetLibResponseHandler responseHandler,
@@ -177,7 +181,7 @@ namespace LiteNetLibManager
             if (responseSerializer != null)
                 responseSerializer.Invoke(writer);
             // Send response
-            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, writer.Data);
         }
 
         private void ProceedResponse(long connectionId, NetDataReader reader)
