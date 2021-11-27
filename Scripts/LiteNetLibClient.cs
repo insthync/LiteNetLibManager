@@ -83,21 +83,16 @@ namespace LiteNetLibManager
             }
         }
 
-        public override void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
+        protected override void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            Transport.ClientSend(dataChannel, deliveryMethod, data);
-        }
-
-        public void SendMessage(byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
-        {
-            SendMessage(dataChannel, deliveryMethod, data);
+            Transport.ClientSend(dataChannel, deliveryMethod, writer);
         }
 
         public void SendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             WritePacket(writer, msgType, serializer);
             // Send packet to server, so connection id will not being used
-            SendMessage(dataChannel, deliveryMethod, writer.Data);
+            SendMessage(-1, dataChannel, deliveryMethod, writer);
         }
 
         public bool SendRequest<TRequest>(ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraSerializer = null)
@@ -106,7 +101,7 @@ namespace LiteNetLibManager
             if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
                 return false;
             // Send request to server, so connection id will not being used
-            SendMessage(0, DeliveryMethod.ReliableUnordered, writer.Data);
+            SendMessage(-1, 0, DeliveryMethod.ReliableUnordered, writer);
             return true;
         }
 
@@ -125,7 +120,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to server, so connection id will not being used
-            SendMessage(0, DeliveryMethod.ReliableUnordered, writer.Data);
+            SendMessage(-1, 0, DeliveryMethod.ReliableUnordered, writer);
             // Wait for response
             do
             {
