@@ -41,33 +41,43 @@ namespace LiteNetLibManager
             // Clear and reset request Id
             requestCallbacks.Clear();
             nextRequestId = 1;
-            return isNetworkActive = Transport.StartClient(address, port);
+            if (isNetworkActive = Transport.StartClient(address, port))
+            {
+                OnStartClient();
+                return true;
+            }
+            return false;
         }
+
+        protected virtual void OnStartClient() { }
 
         public void StopClient()
         {
             Transport.StopClient();
             isNetworkActive = false;
+            OnStopClient();
         }
+
+        protected virtual void OnStopClient() { }
 
         public virtual void OnClientReceive(TransportEventData eventData)
         {
             switch (eventData.type)
             {
                 case ENetworkEvent.ConnectEvent:
-                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerConnected");
+                    if (Manager.LogInfo) Logging.Log(LogTag, "OnClientConnected");
                     Manager.OnClientConnected();
                     break;
                 case ENetworkEvent.DataEvent:
                     ReadPacket(-1, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
-                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
+                    if (Manager.LogInfo) Logging.Log(LogTag, "OnClientDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
                     Manager.StopClient();
                     Manager.OnClientDisconnected(eventData.disconnectInfo);
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Logging.LogError(LogTag, "OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
+                    if (Manager.LogError) Logging.LogError(LogTag, "OnClientNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
                     Manager.OnClientNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }

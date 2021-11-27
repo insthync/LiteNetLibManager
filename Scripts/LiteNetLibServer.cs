@@ -47,15 +47,25 @@ namespace LiteNetLibManager
             nextRequestId = 1;
             // Store server port, it will be used by local client to connect when start hosting
             ServerPort = port;
-            return isNetworkActive = Transport.StartServer(port, maxConnections);
+            if (isNetworkActive = Transport.StartServer(port, maxConnections))
+            {
+                OnStartServer();
+                return true;
+            }
+            return false;
         }
+
+        protected virtual void OnStartServer() { }
 
         public void StopServer()
         {
             Transport.StopServer();
             ServerPort = 0;
             isNetworkActive = false;
+            OnStopServer();
         }
+
+        protected virtual void OnStopServer() { }
 
         public virtual void OnServerReceive(TransportEventData eventData)
         {
@@ -75,7 +85,7 @@ namespace LiteNetLibManager
                     Manager.OnPeerDisconnected(eventData.connectionId, eventData.disconnectInfo);
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Logging.LogError(LogTag, "OnNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
+                    if (Manager.LogError) Logging.LogError(LogTag, "OnPeerNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
                     Manager.OnPeerNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }
