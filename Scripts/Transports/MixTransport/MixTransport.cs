@@ -151,14 +151,14 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
         {
 #if UNITY_WEBGL
-            return wsClient.ClientSend(dataChannel, deliveryMethod, writer);
+            return wsClient.ClientSend(dataChannel, deliveryMethod, data);
 #else
             if (IsClientStarted)
             {
-                Client.FirstPeer.Send(writer, dataChannel, deliveryMethod);
+                Client.FirstPeer.Send(data, dataChannel, deliveryMethod);
                 return true;
             }
 #endif
@@ -238,25 +238,25 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
         {
 #if !UNITY_WEBGL
             // WebSocket Server Send
             if (!webSocketSecure)
             {
-                if (wsServer != null && wsServer.SendAsync(connectionId, writer.Data))
+                if (wsServer != null && wsServer.SendAsync(connectionId, data))
                     return true;
             }
             else
             {
-                if (wssServer != null && wssServer.SendAsync(connectionId, writer.Data))
+                if (wssServer != null && wssServer.SendAsync(connectionId, data))
                     return true;
             }
 
             // LiteNetLib Server Send
             if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
-                serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
+                serverPeers[connectionId].Send(data, dataChannel, deliveryMethod);
                 return true;
             }
 #endif

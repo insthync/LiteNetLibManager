@@ -109,9 +109,9 @@ namespace LiteNetLibManager
             return wsClient.ClientReceive(out eventData);
         }
 
-        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
         {
-            return wsClient.ClientSend(dataChannel, deliveryMethod, writer);
+            return wsClient.ClientSend(dataChannel, deliveryMethod, data);
         }
 
         public bool StartServer(int port, int maxConnections)
@@ -167,13 +167,13 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (!secure)
-                return wsServer != null && wsServer.SendAsync(connectionId, writer.Data);
+                return wsServer != null && wsServer.SendAsync(connectionId, data);
             else
-                return wssServer != null && wssServer.SendAsync(connectionId, writer.Data);
+                return wssServer != null && wssServer.SendAsync(connectionId, data);
 #else
             return false;
 #endif

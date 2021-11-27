@@ -114,15 +114,15 @@ namespace LiteNetLibManager
             return clientEventQueue.TryDequeue(out eventData);
         }
 
-        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
         {
             if (!IsClientStarted)
                 return false;
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (secure)
-                return wssClient.SendBinaryAsync(writer.Data, 0, writer.Data.Length);
+                return wssClient.SendBinaryAsync(data, 0, data.Length);
 #endif
-            wsClient.Send(writer.Data);
+            wsClient.Send(data);
             return true;
         }
 
