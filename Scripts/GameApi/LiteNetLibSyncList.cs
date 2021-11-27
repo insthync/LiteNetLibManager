@@ -19,7 +19,6 @@ namespace LiteNetLibManager
             public const byte Dirty = 5;
             public const byte RemoveFirst = 6;
             public const byte RemoveLast = 7;
-            public const byte AddRange = 8;
 
             public Operation(byte value)
             {
@@ -64,7 +63,10 @@ namespace LiteNetLibManager
             base.Setup(behaviour, elementId);
             if (Count > 0 && onOperation != null)
             {
-                onOperation.Invoke(Operation.AddRange, 0);
+                for (int i = 0; i < Count; ++i)
+                {
+                    onOperation.Invoke(Operation.Add, i);
+                }
             }
         }
     }
@@ -75,6 +77,7 @@ namespace LiteNetLibManager
         {
             public Operation operation;
             public int index;
+            public TType data;
             public int count;
         }
 
@@ -135,9 +138,10 @@ namespace LiteNetLibManager
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
-            int index = list.Count;
-            list.AddRange(collection);
-            PrepareOperation(Operation.AddRange, index);
+            foreach (TType item in collection)
+            {
+                Add(item);
+            }
         }
 
         public void Insert(int index, TType item)
@@ -252,14 +256,6 @@ namespace LiteNetLibManager
             OnOperation(operation, index);
             switch (operation)
             {
-                case Operation.AddRange:
-                    operationEntries.Add(new OperationEntry()
-                    {
-                        operation = operation,
-                        index = index,
-                        count = list.Count - index,
-                    });
-                    break;
                 case Operation.Clear:
                     operationEntries.Add(new OperationEntry()
                     {
@@ -268,11 +264,22 @@ namespace LiteNetLibManager
                         count = 0,
                     });
                     break;
+                case Operation.RemoveAt:
+                case Operation.RemoveFirst:
+                case Operation.RemoveLast:
+                    operationEntries.Add(new OperationEntry()
+                    {
+                        operation = operation,
+                        index = index,
+                        count = 1,
+                    });
+                    break;
                 default:
                     operationEntries.Add(new OperationEntry()
                     {
                         operation = operation,
                         index = index,
+                        data = list[index],
                         count = 1,
                     });
                     break;
@@ -287,7 +294,10 @@ namespace LiteNetLibManager
 
         public override sealed void SendInitialList(long connectionId)
         {
-            PrepareOperation(Operation.AddRange, 0);
+            for (int i = 0; i < Count; ++i)
+            {
+                PrepareOperation(Operation.Add, i);
+            }
             SendOperations(connectionId);
             operationEntries.Clear();
         }
@@ -328,7 +338,7 @@ namespace LiteNetLibManager
             writer.PutPackedInt(operationEntries.Count);
             for (int i = 0; i < operationEntries.Count; ++i)
             {
-                SerializeOperation(writer, operationEntries[i].operation, operationEntries[i].index, operationEntries[i].count);
+                SerializeOperation(writer, operationEntries[i]);
             }
         }
 
@@ -343,15 +353,6 @@ namespace LiteNetLibManager
                     item = DeserializeValueForAddOrInsert(index, reader);
                     index = list.Count;
                     list.Add(item);
-                    break;
-                case Operation.AddRange:
-                    index = list.Count;
-                    int count = reader.GetPackedInt();
-                    for (int i = index; i < count; ++i)
-                    {
-                        item = DeserializeValueForAddOrInsert(i, reader);
-                        list.Add(item);
-                    }
                     break;
                 case Operation.Insert:
                     index = reader.GetInt();
@@ -388,40 +389,33 @@ namespace LiteNetLibManager
             OnOperation(operation, index);
         }
 
-        protected void SerializeOperation(NetDataWriter writer, Operation operation, int index, int count)
+        protected void SerializeOperation(NetDataWriter writer, OperationEntry entry)
         {
-            writer.Put((byte)operation);
-            switch (operation)
+            writer.Put((byte)entry.operation);
+            switch (entry.operation)
             {
                 case Operation.Add:
-                    SerializeValueForAddOrInsert(index, writer, list[index]);
-                    break;
-                case Operation.AddRange:
-                    writer.PutPackedInt(count);
-                    for (int i = index; i < count; ++i)
-                    {
-                        SerializeValueForAddOrInsert(i, writer, list[i]);
-                    }
+                    SerializeValueForAddOrInsert(entry.index, writer, entry.data);
                     break;
                 case Operation.Insert:
-                    writer.Put(index);
-                    SerializeValueForAddOrInsert(index, writer, list[index]);
+                    writer.Put(entry.index);
+                    SerializeValueForAddOrInsert(entry.index, writer, entry.data);
                     break;
                 case Operation.Set:
                 case Operation.Dirty:
-                    writer.Put(index);
-                    SerializeValueForSetOrDirty(index, writer, list[index]);
+                    writer.Put(entry.index);
+                    SerializeValueForSetOrDirty(entry.index, writer, entry.data);
                     break;
                 case Operation.RemoveAt:
-                    writer.Put(index);
+                    writer.Put(entry.index);
                     break;
                 case Operation.RemoveFirst:
                 case Operation.RemoveLast:
                 case Operation.Clear:
                     break;
                 default:
-                    writer.Put(index);
-                    SerializeValueForCustomDirty(index, operation, writer, list[index]);
+                    writer.Put(entry.index);
+                    SerializeValueForCustomDirty(entry.index, entry.operation, writer, entry.data);
                     break;
             }
         }
