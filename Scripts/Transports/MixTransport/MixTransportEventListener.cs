@@ -1,5 +1,5 @@
 ﻿using LiteNetLib;
-using LiteNetLib.Utils;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -9,18 +9,18 @@ namespace LiteNetLibManager
     public class MixTransportEventListener : INetEventListener
     {
         private MixTransport mixTransport;
-        private Queue<TransportEventData> eventQueue;
+        private ConcurrentQueue<TransportEventData> eventQueue;
         private Dictionary<long, NetPeer> peersDict;
         private Dictionary<long, long> peerIdsDict;
 
-        public MixTransportEventListener(MixTransport mixTransport, Queue<TransportEventData> eventQueue)
+        public MixTransportEventListener(MixTransport mixTransport, ConcurrentQueue<TransportEventData> eventQueue)
         {
             // This is constructor for client
             this.mixTransport = mixTransport;
             this.eventQueue = eventQueue;
         }
 
-        public MixTransportEventListener(MixTransport mixTransport, Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> peersDict) : this(mixTransport, eventQueue)
+        public MixTransportEventListener(MixTransport mixTransport, ConcurrentQueue<TransportEventData> eventQueue, Dictionary<long, NetPeer> peersDict) : this(mixTransport, eventQueue)
         {
             // This is constructor for server
             this.peersDict = peersDict;
