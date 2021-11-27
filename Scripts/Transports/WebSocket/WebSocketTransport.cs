@@ -1,10 +1,11 @@
 ﻿using LiteNetLib;
 using LiteNetLib.Utils;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.Collections.Concurrent;
+using System.Threading;
 #if !UNITY_WEBGL || UNITY_EDITOR
 using NetCoreServer;
 #endif
@@ -211,7 +212,7 @@ namespace LiteNetLibManager
 
         public long GetNewConnectionID()
         {
-            return nextConnectionId++;
+            return Interlocked.Increment(ref nextConnectionId);
         }
     }
 }
