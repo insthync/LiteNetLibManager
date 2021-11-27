@@ -17,9 +17,8 @@ namespace LiteNetLibManager
             _server = server;
         }
 
-        protected override void OnConnected()
+        public override void OnWsConnected(HttpRequest request)
         {
-            base.OnConnected();
             _server.EventQueue.Enqueue(new TransportEventData()
             {
                 connectionId = ConnectionId,

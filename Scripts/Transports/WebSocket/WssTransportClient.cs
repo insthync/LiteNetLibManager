@@ -28,9 +28,8 @@ namespace LiteNetLibManager
             request.Cache.Append("\r\n");
         }
 
-        protected override void OnConnected()
+        public override void OnWsConnected(HttpResponse response)
         {
-            base.OnConnected();
             eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
