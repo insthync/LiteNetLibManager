@@ -72,11 +72,11 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsClientStarted)
             {
-                Client.FirstPeer.Send(data, dataChannel, deliveryMethod);
+                Client.FirstPeer.Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
             return false;
@@ -106,11 +106,11 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
-                serverPeers[connectionId].Send(data, dataChannel, deliveryMethod);
+                serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
             return false;

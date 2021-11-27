@@ -42,12 +42,12 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            TransportEventData eventData = new TransportEventData();
-            eventData.type = ENetworkEvent.DataEvent;
-            eventData.reader = new NetDataReader(data);
-            clientData.Enqueue(eventData);
+            TransportEventData data = new TransportEventData();
+            data.type = ENetworkEvent.DataEvent;
+            data.reader = new NetDataReader(writer.CopyData());
+            clientData.Enqueue(data);
             return true;
         }
 
@@ -81,12 +81,12 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, byte[] data)
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            TransportEventData eventData = new TransportEventData();
-            eventData.type = ENetworkEvent.DataEvent;
-            eventData.reader = new NetDataReader(data);
-            serverData.Enqueue(eventData);
+            TransportEventData data = new TransportEventData();
+            data.type = ENetworkEvent.DataEvent;
+            data.reader = new NetDataReader(writer.CopyData());
+            serverData.Enqueue(data);
             return true;
         }
 
