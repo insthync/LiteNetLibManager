@@ -431,7 +431,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (long connectionId in ConnectionIds)
+            foreach (long connectionId in Server.ConnectionIds)
             {
                 SendServerError(connectionId, shouldDisconnect, errorMessage);
             }
@@ -455,7 +455,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            foreach (long connectionId in ConnectionIds)
+            foreach (long connectionId in Server.ConnectionIds)
             {
                 if (IsClientConnected && connectionId == ClientConnectionId)
                     continue;
@@ -583,7 +583,7 @@ namespace LiteNetLibManager
                     if (!identity.IsOwnerClient)
                         syncField.Deserialize(messageHandler.Reader, true);
                     // Send to other clients
-                    foreach (long connectionId in GetConnectionIds())
+                    foreach (long connectionId in Server.ConnectionIds)
                     {
                         // Don't send the update to owner client because it was updated before send update to server
                         if (connectionId == messageHandler.ConnectionId)
@@ -614,7 +614,7 @@ namespace LiteNetLibManager
                     if (!identity.IsOwnerClient)
                         syncField.Deserialize(messageHandler.Reader, false);
                     // Send to other clients
-                    foreach (long connectionId in GetConnectionIds())
+                    foreach (long connectionId in Server.ConnectionIds)
                     {
                         // Don't send the update to owner client because it was updated before send update to server
                         if (connectionId == messageHandler.ConnectionId)
