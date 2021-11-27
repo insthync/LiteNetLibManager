@@ -54,9 +54,8 @@ namespace LiteNetLibManager
         public LiteNetLibAssets Assets { get; protected set; }
         public BaseInterestManager InterestManager { get; protected set; }
 
-        protected override void Awake()
+        protected virtual void Awake()
         {
-            base.Awake();
             Assets = GetComponent<LiteNetLibAssets>();
             InterestManager = GetComponent<BaseInterestManager>();
             if (InterestManager == null)

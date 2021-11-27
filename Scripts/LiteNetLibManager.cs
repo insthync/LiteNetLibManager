@@ -77,7 +77,7 @@ namespace LiteNetLibManager
 
         protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
 
-        protected virtual void Awake()
+        protected virtual void Start()
         {
             InitTransportAndHandlers();
         }
