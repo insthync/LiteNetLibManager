@@ -91,7 +91,7 @@ namespace LiteNetLibManager
             }
         }
 
-        protected override void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        public override void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             Transport.ServerSend(connectionId, dataChannel, deliveryMethod, writer);
         }

@@ -90,7 +90,7 @@ namespace LiteNetLibManager
                 extraSerializer.Invoke(writer);
         }
 
-        protected abstract void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer);
+        public abstract void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer);
 
         private uint CreateRequest(
             LiteNetLibResponseHandler responseHandler,
