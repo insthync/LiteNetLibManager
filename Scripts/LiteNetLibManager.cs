@@ -75,8 +75,6 @@ namespace LiteNetLibManager
             }
         }
 
-        protected readonly HashSet<long> ConnectionIds = new HashSet<long>();
-
         protected virtual void Start()
         {
             InitTransportAndHandlers();
@@ -251,24 +249,14 @@ namespace LiteNetLibManager
             }
         }
 
-        public void AddConnectionId(long connectionId)
-        {
-            ConnectionIds.Add(connectionId);
-        }
-
-        public bool RemoveConnectionId(long connectionId)
-        {
-            return ConnectionIds.Remove(connectionId);
-        }
-
         public bool ContainsConnectionId(long connectionId)
         {
-            return ConnectionIds.Contains(connectionId);
+            return Server.ConnectionIds.Contains(connectionId);
         }
 
         public IEnumerable<long> GetConnectionIds()
         {
-            return ConnectionIds;
+            return Server.ConnectionIds;
         }
 
         #region Packets send / read
@@ -366,26 +354,22 @@ namespace LiteNetLibManager
         #region Relates components functions
         public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
-            foreach (long connectionId in ConnectionIds)
-            {
-                ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, serializer);
-            }
+            Server.SendPacketToAllConnections(dataChannel, deliveryMethod, msgType, serializer);
         }
 
-        public void ServerSendPacketToAllConnections<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData) where T : INetSerializable
+        public void ServerSendPacketToAllConnections<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            foreach (long connectionId in ConnectionIds)
+            Server.SendPacketToAllConnections(dataChannel, deliveryMethod, msgType, (writer) =>
             {
-                ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, messageData);
-            }
+                messageData.Serialize(writer);
+                if (extraSerializer != null)
+                    extraSerializer.Invoke(writer);
+            });
         }
 
         public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
         {
-            foreach (long connectionId in ConnectionIds)
-            {
-                ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType);
-            }
+            Server.SendPacketToAllConnections(dataChannel, deliveryMethod, msgType, null);
         }
 
         public void RegisterServerMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
