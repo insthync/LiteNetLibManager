@@ -378,16 +378,16 @@ namespace NetCoreServer
 
         #region Web socket handlers
 
-        public virtual void OnWsConnecting(HttpRequest request) {}
-        public virtual void OnWsConnected(HttpResponse response) {}
+        public virtual void OnWsConnecting(HttpRequest request) { }
+        public virtual void OnWsConnected(HttpResponse response) { }
         public virtual bool OnWsConnecting(HttpRequest request, HttpResponse response) { return true; }
-        public virtual void OnWsConnected(HttpRequest request) {}
-        public virtual void OnWsDisconnecting() {}
-        public virtual void OnWsDisconnected() {}
-        public virtual void OnWsReceived(byte[] buffer, long offset, long size) {}
+        public virtual void OnWsConnected(HttpRequest request) { }
+        public virtual void OnWsDisconnecting() { }
+        public virtual void OnWsDisconnected() { }
+        public virtual void OnWsReceived(byte[] buffer, long offset, long size) { }
         public virtual void OnWsClose(byte[] buffer, long offset, long size) { Close(1000); }
         public virtual void OnWsPing(byte[] buffer, long offset, long size) { SendPongAsync(buffer, offset, size); }
-        public virtual void OnWsPong(byte[] buffer, long offset, long size) {}
+        public virtual void OnWsPong(byte[] buffer, long offset, long size) { }
         public virtual void OnWsError(string error) { OnError(SocketError.SocketError); }
         public virtual void OnWsError(SocketError error) { OnError(error); }
 
