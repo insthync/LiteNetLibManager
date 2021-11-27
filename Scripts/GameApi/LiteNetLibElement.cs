@@ -76,8 +76,6 @@ namespace LiteNetLibManager
             get { return IsSetup && Behaviour.IsOwnerClient; }
         }
 
-        public long SendingConnectionId { get; protected set; }
-
         public bool IsSetup { get; private set; }
 
         [ReadOnly, SerializeField]

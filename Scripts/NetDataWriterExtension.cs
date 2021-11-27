@@ -150,12 +150,6 @@ namespace LiteNetLib.Utils
             throw new ArgumentException("NetDataWriter cannot write type " + value.GetType().Name);
         }
 
-        public static void PutValue<TType>(this NetDataWriter writer, LiteNetLibElement element, TType value)
-            where TType : INetSerializableWithElement
-        {
-            value.Serialize(writer, element);
-        }
-
         public static void PutColor(this NetDataWriter writer, Color value)
         {
             byte r = (byte)(value.r * 100f);

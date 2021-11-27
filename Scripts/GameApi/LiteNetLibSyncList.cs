@@ -288,7 +288,6 @@ namespace LiteNetLibManager
 
         protected void SendOperations(long connectionId)
         {
-            SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperations(writer));
         }
 
@@ -464,21 +463,6 @@ namespace LiteNetLibManager
         {
             if (onOperation != null)
                 onOperation.Invoke(operation, index);
-        }
-    }
-
-    [Serializable]
-    public class LiteNetLibSyncListWithElement<TType> : LiteNetLibSyncList<TType>
-        where TType : INetSerializableWithElement, new()
-    {
-        protected override TType DeserializeValue(NetDataReader reader)
-        {
-            return reader.GetValue<TType>(this);
-        }
-
-        protected override void SerializeValue(NetDataWriter writer, TType value)
-        {
-            writer.PutValue(this, value);
         }
     }
 

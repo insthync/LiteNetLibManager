@@ -211,7 +211,6 @@ namespace LiteNetLibManager
             if (!CanSync() || !IsServer)
                 return;
 
-            SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod,
                 (isInitial ?
                 GameMsgTypes.InitialSyncField :
@@ -393,21 +392,6 @@ namespace LiteNetLibManager
         public static implicit operator TType(LiteNetLibSyncField<TType> field)
         {
             return field.Value;
-        }
-    }
-
-    [Serializable]
-    public class LiteNetLibSyncFieldWithElement<TType> : LiteNetLibSyncField<TType>
-        where TType : INetSerializableWithElement, new()
-    {
-        internal override void DeserializeValue(NetDataReader reader)
-        {
-            Value = reader.GetValue<TType>(this);
-        }
-
-        internal override void SerializeValue(NetDataWriter writer)
-        {
-            writer.PutValue(this, value);
         }
     }
 

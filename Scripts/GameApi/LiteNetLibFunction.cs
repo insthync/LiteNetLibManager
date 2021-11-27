@@ -52,7 +52,6 @@ namespace LiteNetLibManager
 
         protected void ServerSendCall(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod)
         {
-            SendingConnectionId = connectionId;
             Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod, GameMsgTypes.CallFunction, (writer) => SerializeForSend(writer));
         }
 
