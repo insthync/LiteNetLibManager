@@ -21,8 +21,8 @@ namespace LiteNetLibManager
             Fatal = 5,
         }
 
-        public LiteNetLibClient Client { get; private set; }
-        public LiteNetLibServer Server { get; private set; }
+        public LiteNetLibClient Client { get; protected set; }
+        public LiteNetLibServer Server { get; protected set; }
         public bool IsServer { get; private set; }
         public bool IsClient { get; private set; }
         public bool IsClientConnected { get { return Client.IsNetworkActive; } }
@@ -53,6 +53,7 @@ namespace LiteNetLibManager
         public BaseTransportFactory TransportFactory
         {
             get { return transportFactory; }
+            set { transportFactory = value; }
         }
 
         private ITransport offlineTransport;
