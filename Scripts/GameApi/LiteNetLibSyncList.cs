@@ -251,9 +251,14 @@ namespace LiteNetLibManager
             return typeof(TType);
         }
 
-        protected void PrepareOperation(Operation operation, int index)
+        protected void PrepareOperation(Operation operation, int index, bool invokeEvents = true)
         {
             OnOperation(operation, index);
+            PrepareOperation(operationEntries, operation, index);
+        }
+
+        protected void PrepareOperation(List<OperationEntry> operationEntries, Operation operation, int index)
+        {
             switch (operation)
             {
                 case Operation.Clear:
@@ -286,19 +291,19 @@ namespace LiteNetLibManager
             }
         }
 
-        protected void SendOperations(long connectionId)
+        protected void SendOperations(long connectionId, List<OperationEntry> operationEntries)
         {
-            Manager.ServerSendPacket(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperations(writer));
+            Manager.ServerSendPacket(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperations(writer, operationEntries));
         }
 
         public override sealed void SendInitialList(long connectionId)
         {
+            List<OperationEntry> operationEntries = new List<OperationEntry>();
             for (int i = 0; i < Count; ++i)
             {
-                PrepareOperation(Operation.Add, i);
+                PrepareOperation(operationEntries, Operation.Add, i);
             }
-            SendOperations(connectionId);
-            operationEntries.Clear();
+            SendOperations(connectionId, operationEntries);
         }
 
         public override sealed void SendOperations()
@@ -309,14 +314,14 @@ namespace LiteNetLibManager
             if (forOwnerOnly)
             {
                 if (Manager.ContainsConnectionId(ConnectionId))
-                    SendOperations(ConnectionId);
+                    SendOperations(ConnectionId, operationEntries);
             }
             else
             {
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        SendOperations(connectionId);
+                        SendOperations(connectionId, operationEntries);
                 }
             }
             operationEntries.Clear();
@@ -331,7 +336,7 @@ namespace LiteNetLibManager
             }
         }
 
-        protected void SerializeForSendOperations(NetDataWriter writer)
+        protected void SerializeForSendOperations(NetDataWriter writer, List<OperationEntry> operationEntries)
         {
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             writer.PutPackedInt(operationEntries.Count);
