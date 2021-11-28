@@ -50,16 +50,6 @@ namespace LiteNetLibManager
             callback.Invoke();
         }
 
-        protected void ServerSendCall(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod)
-        {
-            Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod, GameMsgTypes.CallFunction, (writer) => SerializeForSend(writer));
-        }
-
-        protected void ClientSendCall(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
-        {
-            Manager.ClientSendPacket(dataChannel, deliveryMethod, GameMsgTypes.CallFunction, (writer) => SerializeForClient(writer, receivers, targetConnectionId));
-        }
-
         protected void SendCall(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
             LiteNetLibGameManager manager = Manager;
@@ -71,14 +61,21 @@ namespace LiteNetLibManager
                     case FunctionReceivers.Target:
                         if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
+                            // Prepare packet
+                            TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.CallFunction);
+                            SerializeForSend(GlobalVariables.Writer);
                             // Send function call message from server to target client by target connection Id
-                            ServerSendCall(targetConnectionId, dataChannel, deliveryMethod);
+                            manager.Server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
                         }
                         break;
                     case FunctionReceivers.All:
+                        // Prepare packet
+                        TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.CallFunction);
+                        SerializeForSend(GlobalVariables.Writer);
+                        // Send to all connections
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
-                            if (Manager.ClientConnectionId == connectionId)
+                            if (manager.ClientConnectionId == connectionId)
                             {
                                 // This is host's networking oject, so hook callback immediately
                                 // Don't have to send message to the client, because it is currently run as both server and client
@@ -87,10 +84,10 @@ namespace LiteNetLibManager
                             else if (Identity.HasSubscriberOrIsOwning(connectionId))
                             {
                                 // Send message to subscribing clients
-                                ServerSendCall(connectionId, dataChannel, deliveryMethod);
+                                manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
                             }
                         }
-                        if (!Manager.IsClientConnected)
+                        if (!manager.IsClientConnected)
                         {
                             // It's not a host(client+host), it's just a server
                             // So hook callback immediately to do the function at server
@@ -106,9 +103,12 @@ namespace LiteNetLibManager
             }
             else if (manager.IsClientConnected)
             {
+                // Prepare packet
+                TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.CallFunction);
+                SerializeForClient(GlobalVariables.Writer, receivers, targetConnectionId);
                 // Client send net function call to server
                 // Then the server will hook callback or forward message to other clients
-                ClientSendCall(dataChannel, deliveryMethod, receivers, targetConnectionId);
+                manager.Client.SendMessage(targetConnectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
             }
         }
 
