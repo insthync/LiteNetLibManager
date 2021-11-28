@@ -261,6 +261,11 @@ namespace LiteNetLibManager
         }
 
         #region Packets send / read
+        public void ClientSendMessage(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            Client.SendMessage(dataChannel, deliveryMethod, writer);
+        }
+
         public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             Client.SendPacket(dataChannel, deliveryMethod, msgType, serializer);
@@ -279,6 +284,11 @@ namespace LiteNetLibManager
         public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
         {
             ClientSendPacket(dataChannel, deliveryMethod, msgType, null);
+        }
+
+        public void ServerSendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            Server.SendMessage(connectionId, dataChannel, deliveryMethod, writer);
         }
 
         public void ServerSendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
