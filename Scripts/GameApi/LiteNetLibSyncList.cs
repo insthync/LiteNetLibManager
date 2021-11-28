@@ -291,11 +291,6 @@ namespace LiteNetLibManager
             }
         }
 
-        protected void SendOperations(long connectionId, List<OperationEntry> operationEntries)
-        {
-            Manager.ServerSendPacket(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GameMsgTypes.OperateSyncList, (writer) => SerializeForSendOperations(writer, operationEntries));
-        }
-
         public override sealed void SendInitialList(long connectionId)
         {
             List<OperationEntry> operationEntries = new List<OperationEntry>();
@@ -303,7 +298,9 @@ namespace LiteNetLibManager
             {
                 PrepareOperation(operationEntries, Operation.Add, i);
             }
-            SendOperations(connectionId, operationEntries);
+            TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.OperateSyncList);
+            SerializeForSendOperations(GlobalVariables.Writer, operationEntries);
+            Manager.Server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GlobalVariables.Writer);
         }
 
         public override sealed void SendOperations()
@@ -311,20 +308,22 @@ namespace LiteNetLibManager
             if (operationEntries.Count <= 0 || !CanSync())
                 return;
 
+            TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.OperateSyncList);
+            SerializeForSendOperations(GlobalVariables.Writer, operationEntries);
+            operationEntries.Clear();
             if (forOwnerOnly)
             {
                 if (Manager.ContainsConnectionId(ConnectionId))
-                    SendOperations(ConnectionId, operationEntries);
+                    Manager.Server.SendMessage(ConnectionId, dataChannel, DeliveryMethod.ReliableOrdered, GlobalVariables.Writer);
             }
             else
             {
                 foreach (long connectionId in Manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        SendOperations(connectionId, operationEntries);
+                        Manager.Server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GlobalVariables.Writer);
                 }
             }
-            operationEntries.Clear();
         }
 
         public override sealed void ProcessOperations(NetDataReader reader)

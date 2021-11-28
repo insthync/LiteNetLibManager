@@ -79,13 +79,20 @@ namespace LiteNetLibManager
             messageHandlers[messageType].Invoke(new MessageHandlerData(messageType, this, connectionId, reader));
         }
 
-        protected void WritePacket(
+        public static void WritePacket(
+            NetDataWriter writer,
+            ushort messageType)
+        {
+            writer.Reset();
+            writer.PutPackedUShort(messageType);
+        }
+
+        public static void WritePacket(
             NetDataWriter writer,
             ushort messageType,
             SerializerDelegate extraSerializer)
         {
-            writer.Reset();
-            writer.PutPackedUShort(messageType);
+            WritePacket(writer, messageType);
             if (extraSerializer != null)
                 extraSerializer.Invoke(writer);
         }
