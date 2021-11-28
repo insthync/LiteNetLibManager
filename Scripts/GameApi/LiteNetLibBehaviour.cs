@@ -1619,11 +1619,11 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            TransportHandler.WritePacket(GlobalVariables.Writer, msgType, serializerDelegate);
+            TransportHandler.WritePacket(Manager.Server.Writer, msgType, serializerDelegate);
             foreach (long connectionId in Manager.GetConnectionIds())
             {
                 if (Identity.HasSubscriber(connectionId))
-                    Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+                    Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, Manager.Server.Writer);
             }
         }
 

@@ -95,18 +95,18 @@ namespace LiteNetLibManager
 
         public void SendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
-            WritePacket(writer, msgType, serializer);
+            WritePacket(Writer, msgType, serializer);
             // Send packet to server, so connection id will not being used
-            SendMessage(dataChannel, deliveryMethod, writer);
+            SendMessage(dataChannel, deliveryMethod, Writer);
         }
 
         public bool SendRequest<TRequest>(ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraSerializer = null)
             where TRequest : INetSerializable, new()
         {
-            if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
+            if (!CreateAndWriteRequest(Writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
                 return false;
             // Send request to server, so connection id will not being used
-            SendMessage(0, DeliveryMethod.ReliableUnordered, writer);
+            SendMessage(0, DeliveryMethod.ReliableUnordered, Writer);
             return true;
         }
 
@@ -117,7 +117,7 @@ namespace LiteNetLibManager
             bool done = false;
             AsyncResponseData<TResponse> responseData = default;
             // Create request
-            CreateAndWriteRequest(writer, requestType, request, (requestHandler, responseCode, response) =>
+            CreateAndWriteRequest(Writer, requestType, request, (requestHandler, responseCode, response) =>
             {
                 if (!(response is TResponse))
                     response = default(TResponse);
@@ -125,7 +125,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to server, so connection id will not being used
-            SendMessage(0, DeliveryMethod.ReliableUnordered, writer);
+            SendMessage(0, DeliveryMethod.ReliableUnordered, Writer);
             // Wait for response
             do
             {

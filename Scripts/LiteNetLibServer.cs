@@ -98,8 +98,8 @@ namespace LiteNetLibManager
 
         public void SendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
-            WritePacket(writer, msgType, serializer);
-            SendMessage(connectionId, dataChannel, deliveryMethod, writer);
+            WritePacket(Writer, msgType, serializer);
+            SendMessage(connectionId, dataChannel, deliveryMethod, Writer);
         }
 
         public void SendMessageToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, NetDataWriter writer)
@@ -112,16 +112,16 @@ namespace LiteNetLibManager
 
         public void SendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
-            WritePacket(writer, msgType, serializer);
-            SendMessageToAllConnections(dataChannel, deliveryMethod, msgType, writer);
+            WritePacket(Writer, msgType, serializer);
+            SendMessageToAllConnections(dataChannel, deliveryMethod, msgType, Writer);
         }
 
         public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
             where TRequest : INetSerializable, new()
         {
-            if (!CreateAndWriteRequest(writer, requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer))
+            if (!CreateAndWriteRequest(Writer, requestType, request, responseDelegate, millisecondsTimeout, extraRequestSerializer))
                 return false;
-            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, Writer);
             return true;
         }
 
@@ -132,7 +132,7 @@ namespace LiteNetLibManager
             bool done = false;
             AsyncResponseData<TResponse> responseData = default;
             // Create request
-            CreateAndWriteRequest(writer, requestType, request, (requestHandler, responseCode, response) =>
+            CreateAndWriteRequest(Writer, requestType, request, (requestHandler, responseCode, response) =>
             {
                 if (!(response is TResponse))
                     response = default(TResponse);
@@ -140,7 +140,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to target client
-            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, Writer);
             // Wait for response
             do
             {

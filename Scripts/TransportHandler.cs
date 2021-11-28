@@ -9,7 +9,7 @@ namespace LiteNetLibManager
 {
     public abstract class TransportHandler
     {
-        protected readonly NetDataWriter writer = new NetDataWriter();
+        internal readonly NetDataWriter Writer = new NetDataWriter();
         public abstract string LogTag { get; }
         public abstract bool IsNetworkActive { get; }
         public ITransport Transport { get; set; }
@@ -176,15 +176,15 @@ namespace LiteNetLibManager
         private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate responseSerializer)
         {
             // Write response
-            writer.Reset();
-            writer.PutPackedUShort(ResponseMessageType);
-            writer.PutPackedUInt(requestId);
-            writer.PutValue(responseCode);
-            response.Serialize(writer);
+            Writer.Reset();
+            Writer.PutPackedUShort(ResponseMessageType);
+            Writer.PutPackedUInt(requestId);
+            Writer.PutValue(responseCode);
+            response.Serialize(Writer);
             if (responseSerializer != null)
-                responseSerializer.Invoke(writer);
+                responseSerializer.Invoke(Writer);
             // Send response
-            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, writer);
+            SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, Writer);
         }
 
         private void ProceedResponse(long connectionId, NetDataReader reader)
