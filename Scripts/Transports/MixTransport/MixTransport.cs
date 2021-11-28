@@ -23,7 +23,7 @@ namespace LiteNetLibManager
 
         // WebSocket data
 #if UNITY_WEBGL
-        private WsTransportClientWrapper wsClient;
+        private WsClientWrapper wsClient;
 #endif
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WsTransportServer wsServer;
@@ -109,7 +109,7 @@ namespace LiteNetLibManager
             this.webSocketCertificateFilePath = webSocketCertificateFilePath;
             this.webSocketCertificatePassword = webSocketCertificatePassword;
 #if UNITY_WEBGL
-            wsClient = new WsTransportClientWrapper(clientEventQueue, webSocketSecure, webSocketSslProtocols);
+            wsClient = new WsClientWrapper(clientEventQueue, webSocketSecure, webSocketSslProtocols);
 #endif
         }
 
