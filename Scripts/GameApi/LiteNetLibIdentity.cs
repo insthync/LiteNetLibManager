@@ -448,7 +448,7 @@ namespace LiteNetLibManager
             {
                 if (!field.doNotSyncInitialDataImmediately)
                     continue;
-                field.SendUpdate(true, connectionId, DeliveryMethod.ReliableOrdered);
+                field.SendUpdate(true, connectionId);
             }
         }
 

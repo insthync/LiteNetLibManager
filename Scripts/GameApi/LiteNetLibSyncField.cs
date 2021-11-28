@@ -158,6 +158,17 @@ namespace LiteNetLibManager
             writer.PutValue(GetFieldType(), GetValue());
         }
 
+        internal void SendUpdate(bool isInitial, long connectionId)
+        {
+            if (!CanSync() || !IsServer)
+                return;
+
+            TransportHandler.WritePacket(GlobalVariables.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+            SerializeForSend(GlobalVariables.Writer);
+            if (Manager.ContainsConnectionId(connectionId))
+                Manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+        }
+
         internal void SendUpdate(bool isInitial)
         {
             if (!CanSync())
@@ -166,56 +177,37 @@ namespace LiteNetLibManager
                 return;
             }
 
+            TransportHandler.WritePacket(GlobalVariables.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+            SerializeForSend(GlobalVariables.Writer);
             switch (syncMode)
             {
                 case SyncMode.ServerToClients:
                     foreach (long connectionId in Manager.GetConnectionIds())
                     {
                         if (Identity.HasSubscriberOrIsOwning(connectionId))
-                            SendUpdate(isInitial, connectionId);
+                            Manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
                     }
                     break;
                 case SyncMode.ServerToOwnerClient:
                     if (Manager.ContainsConnectionId(ConnectionId))
-                        SendUpdate(isInitial, ConnectionId);
+                        Manager.Server.SendMessage(ConnectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
                     break;
                 case SyncMode.ClientMulticast:
                     if (IsOwnerClient)
                     {
                         // Client send data to server, then server send to other clients, it should be reliable-ordered
-                        Manager.ClientSendPacket(clientDataChannel, clientDeliveryMethod,
-                            (isInitial ?
-                            GameMsgTypes.InitialSyncField :
-                            GameMsgTypes.UpdateSyncField),
-                            SerializeForSend);
+                        Manager.Client.SendMessage(clientDataChannel, clientDeliveryMethod, GlobalVariables.Writer);
                     }
                     else if (IsServer)
                     {
                         foreach (long connectionId in Manager.GetConnectionIds())
                         {
                             if (Identity.HasSubscriberOrIsOwning(connectionId))
-                                SendUpdate(isInitial, connectionId);
+                                Manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
                         }
                     }
                     break;
             }
-        }
-
-        internal void SendUpdate(bool isInitial, long connectionId)
-        {
-            SendUpdate(isInitial, connectionId, deliveryMethod);
-        }
-
-        internal void SendUpdate(bool isInitial, long connectionId, DeliveryMethod deliveryMethod)
-        {
-            if (!CanSync() || !IsServer)
-                return;
-
-            Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod,
-                (isInitial ?
-                GameMsgTypes.InitialSyncField :
-                GameMsgTypes.UpdateSyncField),
-                SerializeForSend);
         }
 
         private void SerializeForSend(NetDataWriter writer)
