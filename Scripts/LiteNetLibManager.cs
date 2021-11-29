@@ -11,31 +11,21 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibManager : MonoBehaviour
     {
-        public enum LogLevel : byte
-        {
-            Developer = 0,
-            Debug = 1,
-            Info = 2,
-            Warn = 3,
-            Error = 4,
-            Fatal = 5,
-        }
-
         public LiteNetLibClient Client { get; protected set; }
         public LiteNetLibServer Server { get; protected set; }
         public bool IsServer { get; private set; }
         public bool IsClient { get; private set; }
         public bool IsClientConnected { get { return Client.IsNetworkActive; } }
         public bool IsNetworkActive { get { return Server.IsNetworkActive || Client.IsNetworkActive; } }
-        public bool LogDev { get { return currentLogLevel <= LogLevel.Developer; } }
-        public bool LogDebug { get { return currentLogLevel <= LogLevel.Debug; } }
-        public bool LogInfo { get { return currentLogLevel <= LogLevel.Info; } }
-        public bool LogWarn { get { return currentLogLevel <= LogLevel.Warn; } }
-        public bool LogError { get { return currentLogLevel <= LogLevel.Error; } }
-        public bool LogFatal { get { return currentLogLevel <= LogLevel.Fatal; } }
+        public bool LogDev { get { return currentLogLevel.IsLogDev(); } }
+        public bool LogDebug { get { return currentLogLevel.IsLogDebug(); } }
+        public bool LogInfo { get { return currentLogLevel.IsLogInfo(); } }
+        public bool LogWarn { get { return currentLogLevel.IsLogWarn(); } }
+        public bool LogError { get { return currentLogLevel.IsLogError(); } }
+        public bool LogFatal { get { return currentLogLevel.IsLogFatal(); } }
 
         [Header("Client & Server Settings")]
-        public LogLevel currentLogLevel = LogLevel.Info;
+        public ELogLevel currentLogLevel = ELogLevel.Info;
         public string networkAddress = "localhost";
         public int networkPort = 7770;
         public bool useWebSocket = false;
@@ -57,10 +47,15 @@ namespace LiteNetLibManager
         }
 
         private ITransport offlineTransport;
-        private ITransport onlineTransport;
-        public ITransport Transport
+        private ITransport clientTransport;
+        public ITransport ClientTransport
         {
-            get { return IsOfflineConnection ? offlineTransport : onlineTransport; }
+            get { return IsOfflineConnection ? offlineTransport : clientTransport; }
+        }
+        private ITransport serverTransport;
+        public ITransport ServerTransport
+        {
+            get { return IsOfflineConnection ? offlineTransport : serverTransport; }
         }
 
         public bool IsOfflineConnection { get; protected set; }
@@ -81,7 +76,7 @@ namespace LiteNetLibManager
             InitTransportAndHandlers();
         }
 
-        protected void InitTransportAndHandlers()
+        protected void PrepareTransportFactory()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Force to use websocket transport if it's running as webgl
@@ -113,8 +108,27 @@ namespace LiteNetLibManager
                     transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
             }
 #endif
+        }
+
+        public void PrepareClientTransport()
+        {
+            PrepareTransportFactory();
+            if (clientTransport != null)
+                clientTransport.Destroy();
+            clientTransport = transportFactory.Build();
+        }
+
+        public void PrepareServerTransport()
+        {
+            PrepareTransportFactory();
+            if (serverTransport != null)
+                serverTransport.Destroy();
+            serverTransport = transportFactory.Build();
+        }
+
+        protected void InitTransportAndHandlers()
+        {
             offlineTransport = new OfflineTransport();
-            onlineTransport = TransportFactory.Build();
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
             RegisterMessages();
@@ -131,16 +145,20 @@ namespace LiteNetLibManager
         protected virtual void OnDestroy()
         {
             StopHost();
-            if (Transport != null)
-                Transport.Destroy();
+            if (clientTransport != null)
+                clientTransport.Destroy();
+            if (serverTransport != null)
+                serverTransport.Destroy();
         }
 
         protected virtual void OnApplicationQuit()
         {
 #if UNITY_EDITOR
             StopHost();
-            if (Transport != null)
-                Transport.Destroy();
+            if (clientTransport != null)
+                clientTransport.Destroy();
+            if (serverTransport != null)
+                serverTransport.Destroy();
 #endif
         }
 
@@ -156,7 +174,8 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, "Cannot start server because it was started.");
                 return false;
             }
-            Server.Transport = Transport;
+            PrepareServerTransport();
+            Server.Transport = ServerTransport;
             if (!Server.StartServer(networkPort, maxConnections))
             {
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
@@ -182,7 +201,8 @@ namespace LiteNetLibManager
             this.networkAddress = networkAddress;
             this.networkPort = networkPort;
             if (LogDev) Logging.Log(LogTag, $"Connecting to {networkAddress}:{networkPort}.");
-            Client.Transport = Transport;
+            PrepareClientTransport();
+            Client.Transport = ClientTransport;
             if (!Client.StartClient(networkAddress, networkPort))
             {
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");

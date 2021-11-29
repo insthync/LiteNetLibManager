@@ -15,7 +15,7 @@ namespace LiteNetLibManager
 
         public HashSet<long> ConnectionIds { get; private set; } = new HashSet<long>();
 
-        public LiteNetLibServer(LiteNetLibManager manager) : base(manager.Transport)
+        public LiteNetLibServer(LiteNetLibManager manager) : base()
         {
             Manager = manager;
         }

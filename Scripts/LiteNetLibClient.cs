@@ -11,7 +11,7 @@ namespace LiteNetLibManager
         private bool isNetworkActive;
         public override bool IsNetworkActive { get { return isNetworkActive; } }
 
-        public LiteNetLibClient(LiteNetLibManager manager) : base(manager.Transport)
+        public LiteNetLibClient(LiteNetLibManager manager) : base()
         {
             Manager = manager;
         }
