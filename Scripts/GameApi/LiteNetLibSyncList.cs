@@ -19,6 +19,7 @@ namespace LiteNetLibManager
             public const byte Dirty = 5;
             public const byte RemoveFirst = 6;
             public const byte RemoveLast = 7;
+            public const byte AddInitial = 8;
 
             public Operation(byte value)
             {
@@ -46,12 +47,12 @@ namespace LiteNetLibManager
         public bool forOwnerOnly = false;
         public OnOperationDelegate onOperation;
 
+        public abstract Type FieldType { get; }
         public abstract int Count { get; }
         internal abstract void Reset();
-        public abstract Type GetFieldType();
-        public abstract void SendInitialList(long connectionId);
-        public abstract void SendOperations();
-        public abstract void ProcessOperations(NetDataReader reader);
+        internal abstract void SendInitialList(long connectionId);
+        internal abstract void SendOperations();
+        internal abstract void ProcessOperations(NetDataReader reader);
 
         protected override bool CanSync()
         {
@@ -65,7 +66,7 @@ namespace LiteNetLibManager
             {
                 for (int i = 0; i < Count; ++i)
                 {
-                    onOperation.Invoke(Operation.Add, i);
+                    onOperation.Invoke(Operation.AddInitial, i);
                 }
             }
         }
@@ -97,6 +98,11 @@ namespace LiteNetLibManager
                 list[index] = value;
                 PrepareOperation(Operation.Set, index);
             }
+        }
+
+        public override sealed Type FieldType
+        {
+            get { return typeof(TType); }
         }
 
         public override sealed int Count
@@ -246,12 +252,7 @@ namespace LiteNetLibManager
             list.Clear();
         }
 
-        public override sealed Type GetFieldType()
-        {
-            return typeof(TType);
-        }
-
-        protected void PrepareOperation(Operation operation, int index, bool invokeEvents = true)
+        protected void PrepareOperation(Operation operation, int index)
         {
             OnOperation(operation, index);
             PrepareOperation(operationEntries, operation, index);
@@ -291,42 +292,57 @@ namespace LiteNetLibManager
             }
         }
 
-        public override sealed void SendInitialList(long connectionId)
+        internal override sealed void SendInitialList(long connectionId)
         {
-            List<OperationEntry> operationEntries = new List<OperationEntry>();
+            if (!CanSync())
+                return;
+            List<OperationEntry> addInitialOperationEntries = new List<OperationEntry>();
             for (int i = 0; i < Count; ++i)
             {
-                PrepareOperation(operationEntries, Operation.Add, i);
+                if (!ContainsAddOperation(i))
+                    PrepareOperation(addInitialOperationEntries, Operation.AddInitial, i);
             }
-            TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(GlobalVariables.Writer, operationEntries);
-            Manager.Server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GlobalVariables.Writer);
+            LiteNetLibServer server = Manager.Server;
+            TransportHandler.WritePacket(server.Writer, GameMsgTypes.OperateSyncList);
+            SerializeForSendOperations(server.Writer, addInitialOperationEntries);
+            server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, server.Writer);
         }
 
-        public override sealed void SendOperations()
+        private bool ContainsAddOperation(int index)
+        {
+            for (int i = 0; i < operationEntries.Count; ++i)
+            {
+                if (operationEntries[i].operation == Operation.Add && operationEntries[i].index == index)
+                    return true;
+            }
+            return false;
+        }
+
+        internal override sealed void SendOperations()
         {
             if (operationEntries.Count <= 0 || !CanSync())
                 return;
-
-            TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(GlobalVariables.Writer, operationEntries);
+            LiteNetLibGameManager manager = Manager;
+            LiteNetLibServer server = manager.Server;
+            TransportHandler.WritePacket(manager.Server.Writer, GameMsgTypes.OperateSyncList);
+            SerializeForSendOperations(manager.Server.Writer, operationEntries);
             operationEntries.Clear();
             if (forOwnerOnly)
             {
-                if (Manager.ContainsConnectionId(ConnectionId))
-                    Manager.Server.SendMessage(ConnectionId, dataChannel, DeliveryMethod.ReliableOrdered, GlobalVariables.Writer);
+                if (manager.ContainsConnectionId(ConnectionId))
+                    server.SendMessage(ConnectionId, dataChannel, DeliveryMethod.ReliableOrdered, server.Writer);
             }
             else
             {
-                foreach (long connectionId in Manager.GetConnectionIds())
+                foreach (long connectionId in manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        Manager.Server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, GlobalVariables.Writer);
+                        server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, server.Writer);
                 }
             }
         }
 
-        public override sealed void ProcessOperations(NetDataReader reader)
+        internal override sealed void ProcessOperations(NetDataReader reader)
         {
             int operationCount = reader.GetPackedInt();
             for (int i = 0; i < operationCount; ++i)
@@ -353,6 +369,7 @@ namespace LiteNetLibManager
             switch (operation)
             {
                 case Operation.Add:
+                case Operation.AddInitial:
                     item = DeserializeValueForAddOrInsert(index, reader);
                     index = list.Count;
                     list.Add(item);
@@ -398,6 +415,7 @@ namespace LiteNetLibManager
             switch (entry.operation)
             {
                 case Operation.Add:
+                case Operation.AddInitial:
                     SerializeValueForAddOrInsert(entry.index, writer, entry.data);
                     break;
                 case Operation.Insert:

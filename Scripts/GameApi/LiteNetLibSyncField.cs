@@ -162,11 +162,12 @@ namespace LiteNetLibManager
         {
             if (!CanSync() || !IsServer)
                 return;
-
-            TransportHandler.WritePacket(GlobalVariables.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
-            SerializeForSend(GlobalVariables.Writer);
-            if (Manager.ContainsConnectionId(connectionId))
-                Manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+            LiteNetLibGameManager manager = Manager;
+            LiteNetLibServer server = manager.Server;
+            TransportHandler.WritePacket(server.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+            SerializeForSend(server.Writer);
+            if (manager.ContainsConnectionId(connectionId))
+                server.SendMessage(connectionId, dataChannel, deliveryMethod, server.Writer);
         }
 
         internal void SendUpdate(bool isInitial)
@@ -176,34 +177,44 @@ namespace LiteNetLibManager
                 Logging.LogError(LogTag, "Error while set value, behaviour is empty");
                 return;
             }
-
-            TransportHandler.WritePacket(GlobalVariables.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
-            SerializeForSend(GlobalVariables.Writer);
+            LiteNetLibGameManager manager = Manager;
+            LiteNetLibServer server = manager.Server;
+            LiteNetLibClient client = manager.Client;
             switch (syncMode)
             {
                 case SyncMode.ServerToClients:
-                    foreach (long connectionId in Manager.GetConnectionIds())
+                    TransportHandler.WritePacket(server.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                    SerializeForSend(server.Writer);
+                    foreach (long connectionId in manager.GetConnectionIds())
                     {
                         if (Identity.HasSubscriberOrIsOwning(connectionId))
-                            Manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+                            server.SendMessage(connectionId, dataChannel, deliveryMethod, server.Writer);
                     }
                     break;
                 case SyncMode.ServerToOwnerClient:
-                    if (Manager.ContainsConnectionId(ConnectionId))
-                        Manager.Server.SendMessage(ConnectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+                    if (manager.ContainsConnectionId(ConnectionId))
+                    {
+                        TransportHandler.WritePacket(server.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                        SerializeForSend(server.Writer);
+                        server.SendMessage(ConnectionId, dataChannel, deliveryMethod, server.Writer);
+                    }
                     break;
                 case SyncMode.ClientMulticast:
                     if (IsOwnerClient)
                     {
+                        TransportHandler.WritePacket(client.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                        SerializeForSend(client.Writer);
                         // Client send data to server, then server send to other clients, it should be reliable-ordered
-                        Manager.Client.SendMessage(clientDataChannel, clientDeliveryMethod, GlobalVariables.Writer);
+                        client.SendMessage(clientDataChannel, clientDeliveryMethod, client.Writer);
                     }
                     else if (IsServer)
                     {
-                        foreach (long connectionId in Manager.GetConnectionIds())
+                        TransportHandler.WritePacket(server.Writer, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                        SerializeForSend(server.Writer);
+                        foreach (long connectionId in manager.GetConnectionIds())
                         {
                             if (Identity.HasSubscriberOrIsOwning(connectionId))
-                                Manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+                                server.SendMessage(connectionId, dataChannel, deliveryMethod, server.Writer);
                         }
                     }
                     break;

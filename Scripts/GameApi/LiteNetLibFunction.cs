@@ -53,7 +53,8 @@ namespace LiteNetLibManager
         protected void SendCall(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
         {
             LiteNetLibGameManager manager = Manager;
-
+            LiteNetLibServer server = manager.Server;
+            LiteNetLibClient client = manager.Client;
             if (manager.IsServer)
             {
                 switch (receivers)
@@ -62,16 +63,16 @@ namespace LiteNetLibManager
                         if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
                             // Prepare packet
-                            TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.CallFunction);
-                            SerializeForServerSending(GlobalVariables.Writer);
+                            TransportHandler.WritePacket(server.Writer, GameMsgTypes.CallFunction);
+                            SerializeForSend(server.Writer);
                             // Send function call message from server to target client by target connection Id
-                            manager.Server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+                            server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, server.Writer);
                         }
                         break;
                     case FunctionReceivers.All:
                         // Prepare packet
-                        TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.CallFunction);
-                        SerializeForServerSending(GlobalVariables.Writer);
+                        TransportHandler.WritePacket(server.Writer, GameMsgTypes.CallFunction);
+                        SerializeForSend(server.Writer);
                         // Send to all connections
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
@@ -84,7 +85,7 @@ namespace LiteNetLibManager
                             else if (Identity.HasSubscriberOrIsOwning(connectionId))
                             {
                                 // Send message to subscribing clients
-                                manager.Server.SendMessage(connectionId, dataChannel, deliveryMethod, GlobalVariables.Writer);
+                                server.SendMessage(connectionId, dataChannel, deliveryMethod, server.Writer);
                             }
                         }
                         if (!manager.IsClientConnected)
@@ -104,11 +105,11 @@ namespace LiteNetLibManager
             else if (manager.IsClientConnected)
             {
                 // Prepare packet
-                TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.CallFunction);
-                SerializeForClientSending(GlobalVariables.Writer, receivers, targetConnectionId);
+                TransportHandler.WritePacket(client.Writer, GameMsgTypes.CallFunction);
+                SerializeForClientSend(client.Writer, receivers, targetConnectionId);
                 // Client send net function call to server
                 // Then the server will hook callback or forward message to other clients
-                manager.Client.SendMessage(dataChannel, deliveryMethod, GlobalVariables.Writer);
+                client.SendMessage(dataChannel, deliveryMethod, client.Writer);
             }
         }
 
@@ -156,15 +157,15 @@ namespace LiteNetLibManager
             SendCall(0, DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
         }
 
-        protected void SerializeForClientSending(NetDataWriter writer, FunctionReceivers receivers, long connectionId)
+        private void SerializeForClientSend(NetDataWriter writer, FunctionReceivers receivers, long connectionId)
         {
             writer.Put((byte)receivers);
             if (receivers == FunctionReceivers.Target)
                 writer.PutPackedLong(connectionId);
-            SerializeForServerSending(writer);
+            SerializeForSend(writer);
         }
 
-        protected void SerializeForServerSending(NetDataWriter writer)
+        private void SerializeForSend(NetDataWriter writer)
         {
             LiteNetLibElementInfo.SerializeInfo(GetInfo(), writer);
             SerializeParameters(writer);

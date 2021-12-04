@@ -174,12 +174,14 @@ namespace LiteNetLibManager
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
             if (ShouldSyncBehaviour())
             {
-                TransportHandler.WritePacket(GlobalVariables.Writer, GameMsgTypes.ServerSyncBehaviour);
-                Serialize(GlobalVariables.Writer);
-                foreach (long connectionId in Manager.GetConnectionIds())
+                LiteNetLibGameManager manager = Manager;
+                LiteNetLibServer server = manager.Server;
+                TransportHandler.WritePacket(server.Writer, GameMsgTypes.ServerSyncBehaviour);
+                Serialize(server.Writer);
+                foreach (long connectionId in manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        Manager.Server.SendMessage(connectionId, dataChannel, sendOptions, GlobalVariables.Writer);
+                        server.SendMessage(connectionId, dataChannel, sendOptions, server.Writer);
                 }
             }
             Profiler.EndSample();
