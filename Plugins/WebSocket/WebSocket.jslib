@@ -5,7 +5,7 @@ var LibraryWebSockets = {
 	// Events: DataEvent = 0, ConnectEvent = 1, DisconnectEvent = 2, ErrorEvent = 3
 	SocketCreate: function(url)
 	{
-		var str = Pointer_stringify(url);
+		var str = UTF8ToString(url);
 		var socket = {
 			socket: new WebSocket(str),
 			buffer: new Uint8Array(0),
