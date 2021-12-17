@@ -16,7 +16,6 @@ namespace LiteNetLibManager
     {
         private long nextConnectionId = 1;
         private bool secure;
-        private SslProtocols sslProtocols;
         private string certificateFilePath;
         private string certificatePassword;
         private readonly ConcurrentQueue<TransportEventData> clientEventQueue;
@@ -83,14 +82,13 @@ namespace LiteNetLibManager
             }
         }
 
-        public WebSocketTransport(bool secure, SslProtocols sslProtocols, string certificateFilePath, string certificatePassword)
+        public WebSocketTransport(bool secure, string certificateFilePath, string certificatePassword)
         {
             this.secure = secure;
-            this.sslProtocols = sslProtocols;
             this.certificateFilePath = certificateFilePath;
             this.certificatePassword = certificatePassword;
             clientEventQueue = new ConcurrentQueue<TransportEventData>();
-            wsClient = new WsClientWrapper(clientEventQueue, secure, sslProtocols);
+            wsClient = new WsClientWrapper(clientEventQueue, secure, SslProtocols.Tls12);
         }
 
         public bool StartClient(string address, int port)
@@ -128,7 +126,7 @@ namespace LiteNetLibManager
             }
             else
             {
-                SslContext context = new SslContext(sslProtocols, new X509Certificate2(certificateFilePath, certificatePassword), CertValidationCallback);
+                SslContext context = new SslContext(SslProtocols.Tls12, new X509Certificate2(certificateFilePath, certificatePassword), CertValidationCallback);
                 wssServer = new WssTransportServer(this, context, IPAddress.Any, port, maxConnections);
                 wssServer.OptionDualMode = true;
                 wssServer.OptionNoDelay = true;
