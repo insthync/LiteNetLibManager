@@ -159,6 +159,7 @@ namespace LiteNetLibManager
                 Client.FirstPeer.Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
+            return false;
 #endif
         }
 
