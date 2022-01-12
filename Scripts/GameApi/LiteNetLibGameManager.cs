@@ -176,6 +176,7 @@ namespace LiteNetLibManager
                 if (online)
                 {
                     Assets.Initialize();
+                    Assets.InitPoolingObjects();
                     if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.Initialize()");
                     if (IsClient)
                     {
@@ -186,7 +187,6 @@ namespace LiteNetLibManager
                     {
                         ServerSceneName = sceneName;
                         Assets.SpawnSceneObjects();
-                        Assets.InitPoolingObjects();
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
                         OnServerOnlineSceneLoaded();
                         if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnServerOnlineSceneLoaded()");
@@ -837,6 +837,7 @@ namespace LiteNetLibManager
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
             {
                 Assets.Initialize();
+                Assets.InitPoolingObjects();
                 OnClientOnlineSceneLoaded();
                 SendClientReady();
             }
