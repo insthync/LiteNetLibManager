@@ -6,8 +6,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
 using LiteNetLib.Utils;
+using UnityEngine.Events;
 using UnityEngine.Profiling;
-using LiteNetLib;
 using UnityEngine.Rendering;
 
 namespace LiteNetLibManager
@@ -28,6 +28,9 @@ namespace LiteNetLibManager
         private bool doNotDestroyWhenDisconnect = false;
         [Tooltip("If this is > 0, it will get instance from pooling system"), SerializeField]
         private int poolingSize = 0;
+
+        [Header("Events")]
+        public UnityEvent onGetInstance = new UnityEvent();
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -807,6 +810,7 @@ namespace LiteNetLibManager
             {
                 list.Reset();
             }
+            onGetInstance.Invoke();
         }
     }
 }
