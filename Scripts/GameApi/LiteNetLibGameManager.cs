@@ -512,7 +512,7 @@ namespace LiteNetLibManager
             if (responseCode == AckResponseCode.Success)
             {
                 ClientConnectionId = response.connectionId;
-                if (!IsServer || !IsClientConnected)
+                if (IsClientConnected)
                     HandleServerSceneChange(response.serverSceneName);
             }
             else
@@ -957,7 +957,6 @@ namespace LiteNetLibManager
             LiteNetLibPlayer player = Players[connectionId];
             if (player.IsReady)
                 return false;
-
             player.IsReady = true;
             if (!await DeserializeClientReadyData(SpawnPlayer(connectionId), connectionId, reader))
             {
