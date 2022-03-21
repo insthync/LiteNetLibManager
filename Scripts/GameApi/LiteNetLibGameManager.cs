@@ -11,6 +11,7 @@ namespace LiteNetLibManager
     public class LiteNetLibGameManager : LiteNetLibManager
     {
         [Header("Game manager configs")]
+        public uint packetVersion = 1;
         public float pingDuration = 1f;
         public bool doNotEnterGameOnConnect;
         public bool doNotDestroyOnSceneChanges;
@@ -95,7 +96,7 @@ namespace LiteNetLibManager
 
         public virtual uint PacketVersion()
         {
-            return 8;
+            return packetVersion;
         }
 
         public bool TryGetPlayer(long connectionId, out LiteNetLibPlayer player)
