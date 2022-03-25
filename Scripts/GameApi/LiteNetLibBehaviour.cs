@@ -121,6 +121,11 @@ namespace LiteNetLibManager
             get { return Identity.Manager; }
         }
 
+        public LiteNetLibPlayer Player
+        {
+            get { return Identity.Player; }
+        }
+
         public bool IsServer
         {
             get { return Identity.IsServer; }
