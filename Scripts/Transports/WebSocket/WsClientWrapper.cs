@@ -37,7 +37,7 @@ namespace LiteNetLibManager
         [DllImport("__Internal")]
         private static extern void SocketClose(int wsNativeInstance);
 
-        private int wsNativeInstance = 0;
+        private int wsNativeInstance = -1;
         private byte[] tempBuffers;
         private bool dirtyIsConnected = false;
 #endif
@@ -75,11 +75,17 @@ namespace LiteNetLibManager
         public bool StartClient(string address, int port)
         {
             if (IsClientStarted)
+            {
+                Logging.Log(nameof(WsClientWrapper), "Client started, so it can't be started again");
                 return false;
+            }
 #if !UNITY_WEBGL || UNITY_EDITOR
             IPAddress[] ipAddresses = Dns.GetHostAddresses(address);
             if (ipAddresses.Length == 0)
+            {
+                Logging.Log(nameof(WsClientWrapper), "Cannot find IP addresses from " + address);
                 return false;
+            }
 
             int indexOfAddress = -1;
             for (int i = 0; i < ipAddresses.Length; ++i)
@@ -92,7 +98,10 @@ namespace LiteNetLibManager
             }
 
             if (indexOfAddress < 0)
+            {
+                Logging.Log(nameof(WsClientWrapper), "Cannot find index of address from " + address);
                 return false;
+            }
 
             string url = (secure ? "wss://" : "ws://") + ipAddresses[indexOfAddress] + ":" + port;
             Logging.Log(nameof(WsClientWrapper), $"Connecting to {url}");
