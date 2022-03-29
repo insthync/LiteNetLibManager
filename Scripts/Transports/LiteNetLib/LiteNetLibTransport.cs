@@ -46,7 +46,10 @@ namespace LiteNetLibManager
         public bool StartClient(string address, int port)
         {
             if (IsClientStarted)
+            {
+                Logging.Log(nameof(LiteNetLibTransport), "Client started, so it can't be started again");
                 return false;
+            }
             clientEventQueue.Clear();
             Client = new NetManager(new LiteNetLibTransportClientEventListener(clientEventQueue));
             Client.ChannelsCount = clientDataChannelsCount;
