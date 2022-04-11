@@ -149,7 +149,7 @@ namespace LiteNetLibManager
             writer.PutPackedUShort(RequestMessageType);
             writer.PutPackedUShort(requestType);
             writer.PutPackedUInt(requestId);
-            request.Serialize(writer);
+            writer.Put(request);
             if (extraRequestSerializer != null)
                 extraRequestSerializer.Invoke(writer);
             return true;
@@ -179,7 +179,7 @@ namespace LiteNetLibManager
             Writer.PutPackedUShort(ResponseMessageType);
             Writer.PutPackedUInt(requestId);
             Writer.PutValue(responseCode);
-            response.Serialize(Writer);
+            Writer.Put(response);
             if (responseSerializer != null)
                 responseSerializer.Invoke(Writer);
             // Send response
