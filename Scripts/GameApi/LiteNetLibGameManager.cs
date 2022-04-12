@@ -519,7 +519,7 @@ namespace LiteNetLibManager
             else
             {
                 if (LogError) Logging.LogError(LogTag, "Enter game request was refused by server, disconnecting...");
-                StopClient();
+                OnClientConnectionRefused();
             }
         }
 
@@ -938,6 +938,14 @@ namespace LiteNetLibManager
         public virtual void OnClientOnlineSceneLoaded()
         {
 
+        }
+
+        /// <summary>
+        /// Override this function to do anything after refused from server
+        /// </summary>
+        public virtual void OnClientConnectionRefused()
+        {
+            StopClient();
         }
 
         /// <summary>
