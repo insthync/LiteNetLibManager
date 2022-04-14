@@ -380,6 +380,11 @@ namespace LiteNetLibManager
         #endregion
 
         #region Relates components functions
+        public void ServerSendMessageToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            Server.SendMessageToAllConnections(dataChannel, deliveryMethod, writer);
+        }
+
         public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             Server.SendPacketToAllConnections(dataChannel, deliveryMethod, msgType, serializer);

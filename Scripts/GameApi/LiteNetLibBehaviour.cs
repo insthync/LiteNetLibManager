@@ -1611,11 +1611,25 @@ namespace LiteNetLibManager
             Identity.NetworkDestroy(delay);
         }
 
+        public void ClientSendMessage(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            if (!IsClient)
+                return;
+            Manager.ClientSendMessage(dataChannel, deliveryMethod, writer);
+        }
+
         public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
         {
             if (!IsClient)
                 return;
             Manager.ClientSendPacket(dataChannel, deliveryMethod, msgType, serializerDelegate);
+        }
+
+        public void ServerSendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            if (!IsServer)
+                return;
+            Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, writer);
         }
 
         public void ServerSendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
@@ -1625,11 +1639,29 @@ namespace LiteNetLibManager
             Manager.ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, serializerDelegate);
         }
 
+        public void ServerSendMessageToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            if (!IsServer)
+                return;
+            Manager.ServerSendMessageToAllConnections(dataChannel, deliveryMethod, writer);
+        }
+
         public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
         {
             if (!IsServer)
                 return;
             Manager.ServerSendPacketToAllConnections(dataChannel, deliveryMethod, msgType, serializerDelegate);
+        }
+
+        public void ServerSendMessageToSubscribers(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            if (!IsServer)
+                return;
+            foreach (long connectionId in Manager.GetConnectionIds())
+            {
+                if (Identity.HasSubscriber(connectionId))
+                    Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, writer);
+            }
         }
 
         public void ServerSendPacketToSubscribers(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializerDelegate)
@@ -1641,17 +1673,6 @@ namespace LiteNetLibManager
             {
                 if (Identity.HasSubscriber(connectionId))
                     Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, Manager.Server.Writer);
-            }
-        }
-
-        public void ServerSendMessageToSubscribers(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
-        {
-            if (!IsServer)
-                return;
-            foreach (long connectionId in Manager.GetConnectionIds())
-            {
-                if (Identity.HasSubscriber(connectionId))
-                    Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, writer);
             }
         }
 
