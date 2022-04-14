@@ -102,7 +102,7 @@ namespace LiteNetLibManager
             SendMessage(connectionId, dataChannel, deliveryMethod, Writer);
         }
 
-        public void SendMessageToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, NetDataWriter writer)
+        public void SendMessageToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             foreach (long connectionId in ConnectionIds)
             {
@@ -113,7 +113,7 @@ namespace LiteNetLibManager
         public void SendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
             WritePacket(Writer, msgType, serializer);
-            SendMessageToAllConnections(dataChannel, deliveryMethod, msgType, Writer);
+            SendMessageToAllConnections(dataChannel, deliveryMethod, Writer);
         }
 
         public bool SendRequest<TRequest>(long connectionId, ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraRequestSerializer = null)
