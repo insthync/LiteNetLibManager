@@ -14,6 +14,9 @@ namespace LiteNetLibManager
 
     public class LiteNetLibFunction : LiteNetLibElement
     {
+        protected readonly static NetDataWriter ServerWriter = new NetDataWriter();
+        protected readonly static NetDataWriter ClientWriter = new NetDataWriter();
+
         public readonly Type[] ParameterTypes;
         public readonly object[] Parameters;
         public bool CanCallByEveryone { get; set; }
@@ -63,16 +66,13 @@ namespace LiteNetLibManager
                         if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
                             // Prepare packet
-                            TransportHandler.WritePacket(server.Writer, GameMsgTypes.CallFunction);
-                            SerializeForSend(server.Writer);
+                            TransportHandler.WritePacket(ServerWriter, GameMsgTypes.CallFunction);
+                            SerializeForSend(ServerWriter);
                             // Send function call message from server to target client by target connection Id
-                            server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, server.Writer);
+                            server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, ServerWriter);
                         }
                         break;
                     case FunctionReceivers.All:
-                        // Prepare packet
-                        TransportHandler.WritePacket(server.Writer, GameMsgTypes.CallFunction);
-                        SerializeForSend(server.Writer);
                         // Send to all connections
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
@@ -84,8 +84,11 @@ namespace LiteNetLibManager
                             }
                             else if (Identity.HasSubscriberOrIsOwning(connectionId))
                             {
+                                // Prepare packet
+                                TransportHandler.WritePacket(ServerWriter, GameMsgTypes.CallFunction);
+                                SerializeForSend(ServerWriter);
                                 // Send message to subscribing clients
-                                server.SendMessage(connectionId, dataChannel, deliveryMethod, server.Writer);
+                                server.SendMessage(connectionId, dataChannel, deliveryMethod, ServerWriter);
                             }
                         }
                         if (!manager.IsClientConnected)
@@ -105,11 +108,11 @@ namespace LiteNetLibManager
             else if (manager.IsClientConnected)
             {
                 // Prepare packet
-                TransportHandler.WritePacket(client.Writer, GameMsgTypes.CallFunction);
-                SerializeForClientSend(client.Writer, receivers, targetConnectionId);
+                TransportHandler.WritePacket(ClientWriter, GameMsgTypes.CallFunction);
+                SerializeForClientSend(ClientWriter, receivers, targetConnectionId);
                 // Client send net function call to server
                 // Then the server will hook callback or forward message to other clients
-                client.SendMessage(dataChannel, deliveryMethod, client.Writer);
+                client.SendMessage(dataChannel, deliveryMethod, ClientWriter);
             }
         }
 
