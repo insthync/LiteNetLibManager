@@ -9,6 +9,8 @@ namespace LiteNetLibManager
 {
     public abstract partial class LiteNetLibSyncList : LiteNetLibElement
     {
+        protected readonly static NetDataWriter Writer = new NetDataWriter();
+
         public partial struct Operation
         {
             public const byte Add = 0;
@@ -303,9 +305,9 @@ namespace LiteNetLibManager
                     PrepareOperation(addInitialOperationEntries, Operation.AddInitial, i);
             }
             LiteNetLibServer server = Manager.Server;
-            TransportHandler.WritePacket(server.Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(server.Writer, addInitialOperationEntries);
-            server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, server.Writer);
+            TransportHandler.WritePacket(Writer, GameMsgTypes.OperateSyncList);
+            SerializeForSendOperations(Writer, addInitialOperationEntries);
+            server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, Writer);
         }
 
         private bool ContainsAddOperation(int index)
@@ -324,20 +326,20 @@ namespace LiteNetLibManager
                 return;
             LiteNetLibGameManager manager = Manager;
             LiteNetLibServer server = manager.Server;
-            TransportHandler.WritePacket(manager.Server.Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(manager.Server.Writer, operationEntries);
+            TransportHandler.WritePacket(Writer, GameMsgTypes.OperateSyncList);
+            SerializeForSendOperations(Writer, operationEntries);
             operationEntries.Clear();
             if (forOwnerOnly)
             {
                 if (manager.ContainsConnectionId(ConnectionId))
-                    server.SendMessage(ConnectionId, dataChannel, DeliveryMethod.ReliableOrdered, server.Writer);
+                    server.SendMessage(ConnectionId, dataChannel, DeliveryMethod.ReliableOrdered, Writer);
             }
             else
             {
                 foreach (long connectionId in manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, server.Writer);
+                        server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, Writer);
                 }
             }
         }
