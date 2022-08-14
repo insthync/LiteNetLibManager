@@ -5,7 +5,6 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Cysharp.Threading.Tasks;
-using System.Security.Authentication;
 
 namespace LiteNetLibManager
 {
