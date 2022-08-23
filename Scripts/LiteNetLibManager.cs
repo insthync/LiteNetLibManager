@@ -101,6 +101,8 @@ namespace LiteNetLibManager
             else
             {
                 if (transportFactory == null)
+                    transportFactory = GetComponent<BaseTransportFactory>();
+                if (transportFactory == null)
                     transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
             }
 #endif
