@@ -16,8 +16,8 @@ namespace LiteNetLibManager
         public ushort RequestMessageType { get; protected set; }
         public ushort ResponseMessageType { get; protected set; }
         protected readonly Dictionary<ushort, MessageHandlerDelegate> messageHandlers = new Dictionary<ushort, MessageHandlerDelegate>();
-        protected readonly Dictionary<ushort, LiteNetLibRequestHandler> requestHandlers = new Dictionary<ushort, LiteNetLibRequestHandler>();
-        protected readonly Dictionary<ushort, LiteNetLibResponseHandler> responseHandlers = new Dictionary<ushort, LiteNetLibResponseHandler>();
+        protected readonly Dictionary<ushort, ILiteNetLibRequestHandler> requestHandlers = new Dictionary<ushort, ILiteNetLibRequestHandler>();
+        protected readonly Dictionary<ushort, ILiteNetLibResponseHandler> responseHandlers = new Dictionary<ushort, ILiteNetLibResponseHandler>();
         protected readonly ConcurrentDictionary<uint, LiteNetLibRequestCallback> requestCallbacks = new ConcurrentDictionary<uint, LiteNetLibRequestCallback>();
         protected uint nextRequestId;
         protected TransportEventData tempEventData;
@@ -98,19 +98,30 @@ namespace LiteNetLibManager
 
         public abstract void SendMessage(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer);
 
+        /// <summary>
+        /// Create new request callback with a new request ID
+        /// </summary>
+        /// <param name="responseHandler"></param>
+        /// <param name="responseDelegate"></param>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
         private uint CreateRequest(
-            LiteNetLibResponseHandler responseHandler,
-            ResponseDelegate<INetSerializable> responseDelegate,
-            int millisecondsTimeout)
+            ILiteNetLibResponseHandler responseHandler,
+            ResponseDelegate<INetSerializable> responseDelegate)
         {
             uint requestId = nextRequestId++;
             // Get response callback by request type
             requestCallbacks.TryAdd(requestId, new LiteNetLibRequestCallback(requestId, this, responseHandler, responseDelegate));
-            RequestTimeout(requestId, millisecondsTimeout).Forget();
             return requestId;
         }
 
-        private async UniTaskVoid RequestTimeout(uint requestId, int millisecondsTimeout)
+        /// <summary>
+        /// Delay and do something when request timeout
+        /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
+        private async UniTaskVoid HandleRequestTimeout(uint requestId, int millisecondsTimeout)
         {
             if (millisecondsTimeout > 0)
             {
@@ -121,6 +132,17 @@ namespace LiteNetLibManager
             }
         }
 
+        /// <summary>
+        /// Create a new request will being sent to target later
+        /// </summary>
+        /// <typeparam name="TRequest"></typeparam>
+        /// <param name="writer"></param>
+        /// <param name="requestType"></param>
+        /// <param name="request"></param>
+        /// <param name="responseDelegate"></param>
+        /// <param name="millisecondsTimeout"></param>
+        /// <param name="extraRequestSerializer"></param>
+        /// <returns></returns>
         protected bool CreateAndWriteRequest<TRequest>(
             NetDataWriter writer,
             ushort requestType,
@@ -143,7 +165,8 @@ namespace LiteNetLibManager
                 return false;
             }
             // Create request
-            uint requestId = CreateRequest(responseHandlers[requestType], responseDelegate, millisecondsTimeout);
+            uint requestId = CreateRequest(responseHandlers[requestType], responseDelegate);
+            HandleRequestTimeout(requestId, millisecondsTimeout).Forget();
             // Write request
             writer.Reset();
             writer.PutPackedUShort(RequestMessageType);
@@ -155,6 +178,11 @@ namespace LiteNetLibManager
             return true;
         }
 
+        /// <summary>
+        /// Proceed request which reveived from server or client
+        /// </summary>
+        /// <param name="connectionId"></param>
+        /// <param name="requestMessage"></param>
         private void ProceedRequest(
             long connectionId,
             NetDataReader reader)
@@ -172,7 +200,15 @@ namespace LiteNetLibManager
             requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, requestId, this, connectionId, reader), RequestProceeded);
         }
 
-        private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate responseSerializer)
+        /// <summary>
+        /// Send response to the requester
+        /// </summary>
+        /// <param name="connectionId"></param>
+        /// <param name="requestId"></param>
+        /// <param name="responseCode"></param>
+        /// <param name="response"></param>
+        /// <param name="extraResponseSerializer"></param>
+        private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate extraResponseSerializer)
         {
             // Write response
             Writer.Reset();
@@ -180,12 +216,17 @@ namespace LiteNetLibManager
             Writer.PutPackedUInt(requestId);
             Writer.PutValue(responseCode);
             Writer.Put(response);
-            if (responseSerializer != null)
-                responseSerializer.Invoke(Writer);
+            if (extraResponseSerializer != null)
+                extraResponseSerializer.Invoke(Writer);
             // Send response
             SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, Writer);
         }
 
+        /// <summary>
+        /// Proceed response which reveived from server or client
+        /// </summary>
+        /// <param name="networkConnection"></param>
+        /// <param name="responseMessage"></param>
         private void ProceedResponse(long connectionId, NetDataReader reader)
         {
             uint requestId = reader.GetPackedUInt();

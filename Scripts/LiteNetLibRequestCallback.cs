@@ -6,13 +6,13 @@ namespace LiteNetLibManager
     {
         public uint RequestId { get; private set; }
         public TransportHandler TransportHandler { get; private set; }
-        public LiteNetLibResponseHandler ResponseHandler { get; private set; }
+        public ILiteNetLibResponseHandler ResponseHandler { get; private set; }
         public ResponseDelegate<INetSerializable> ResponseDelegate { get; private set; }
 
         public LiteNetLibRequestCallback(
             uint requestId,
             TransportHandler transportHandler,
-            LiteNetLibResponseHandler responseHandler,
+            ILiteNetLibResponseHandler responseHandler,
             ResponseDelegate<INetSerializable> responseDelegate)
         {
             RequestId = requestId;
