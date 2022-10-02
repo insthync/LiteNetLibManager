@@ -3,36 +3,36 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public interface LiteNetLibResponseHandler
+    public interface ILiteNetLibResponseHandler
     {
-        void InvokeResponse(ResponseHandlerData responseHandler, AckResponseCode responseCode, ResponseDelegate<INetSerializable> responseDelegate);
+        void InvokeResponse(ResponseHandlerData responseHandlerData, AckResponseCode responseCode, ResponseDelegate<INetSerializable> anotherResponseHandler);
         bool IsRequestTypeValid(Type type);
     }
 
-    public struct LiteNetLibResponseHandler<TRequest, TResponse> : LiteNetLibResponseHandler
+    public struct LiteNetLibResponseHandler<TRequest, TResponse> : ILiteNetLibResponseHandler
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new()
     {
-        private ResponseDelegate<TResponse> registeredDelegate;
+        private ResponseDelegate<TResponse> responseHandler;
 
-        public LiteNetLibResponseHandler(ResponseDelegate<TResponse> responseDelegate)
+        public LiteNetLibResponseHandler(ResponseDelegate<TResponse> responseHandler)
         {
-            registeredDelegate = responseDelegate;
+            this.responseHandler = responseHandler;
         }
 
-        public void InvokeResponse(ResponseHandlerData responseHandler, AckResponseCode responseCode, ResponseDelegate<INetSerializable> responseDelegate)
+        public void InvokeResponse(ResponseHandlerData responseHandlerData, AckResponseCode responseCode, ResponseDelegate<INetSerializable> anotherResponseHandler)
         {
             TResponse response = new TResponse();
             if (responseCode != AckResponseCode.Timeout &&
                 responseCode != AckResponseCode.Unimplemented)
             {
-                if (responseHandler.Reader != null)
-                    response.Deserialize(responseHandler.Reader);
+                if (responseHandlerData.Reader != null)
+                    response.Deserialize(responseHandlerData.Reader);
             }
-            if (registeredDelegate != null)
-                registeredDelegate.Invoke(responseHandler, responseCode, response);
-            if (responseDelegate != null)
-                responseDelegate.Invoke(responseHandler, responseCode, response);
+            if (responseHandler != null)
+                responseHandler.Invoke(responseHandlerData, responseCode, response);
+            if (anotherResponseHandler != null)
+                anotherResponseHandler.Invoke(responseHandlerData, responseCode, response);
         }
 
         public bool IsRequestTypeValid(Type type)

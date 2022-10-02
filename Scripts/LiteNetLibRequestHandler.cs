@@ -1,35 +1,31 @@
-﻿using System;
-using LiteNetLib.Utils;
+﻿using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public interface LiteNetLibRequestHandler
+    public interface ILiteNetLibRequestHandler
     {
-        void InvokeRequest(RequestHandlerData requestHandler, RequestProceededDelegate responseProceedResult);
+        void InvokeRequest(RequestHandlerData requestHandlerData, RequestProceededDelegate responseProceedHandler);
     }
 
-    public struct LiteNetLibRequestHandler<TRequest, TResponse> : LiteNetLibRequestHandler
+    public struct LiteNetLibRequestHandler<TRequest, TResponse> : ILiteNetLibRequestHandler
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new()
     {
-        private RequestDelegate<TRequest, TResponse> requestDelegate;
+        private RequestDelegate<TRequest, TResponse> requestHandler;
 
-        public LiteNetLibRequestHandler(RequestDelegate<TRequest, TResponse> requestDelegate)
+        public LiteNetLibRequestHandler(RequestDelegate<TRequest, TResponse> requestHandler)
         {
-            this.requestDelegate = requestDelegate;
+            this.requestHandler = requestHandler;
         }
 
-        public void InvokeRequest(RequestHandlerData requestHandler, RequestProceededDelegate responseProceedResult)
+        public void InvokeRequest(RequestHandlerData requestHandlerData, RequestProceededDelegate responseProceedHandler)
         {
             TRequest request = new TRequest();
-            if (requestHandler.Reader != null)
-                request.Deserialize(requestHandler.Reader);
-            if (requestDelegate != null)
+            if (requestHandlerData.Reader != null)
+                request.Deserialize(requestHandlerData.Reader);
+            if (requestHandler != null)
             {
-                requestDelegate.Invoke(requestHandler, request, (responseCode, response, responseSerializer) =>
-                {
-                    responseProceedResult.Invoke(requestHandler.ConnectionId, requestHandler.RequestId, responseCode, response, responseSerializer);
-                });
+                requestHandler.Invoke(requestHandlerData, request, (responseCode, response, extraResponseSerializer) => responseProceedHandler.Invoke(requestHandlerData.ConnectionId, requestHandlerData.RequestId, responseCode, response, extraResponseSerializer));
             }
         }
     }
