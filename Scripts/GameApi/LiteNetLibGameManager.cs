@@ -824,16 +824,9 @@ namespace LiteNetLibManager
 
         protected void HandleServerSceneChange(string serverSceneName)
         {
+            // Scene loaded at server, if this is host (client and server) then skip it.
             if (IsServer)
-            {
-                // If it is host (both client and server) it will send ready state to spawn player's character without scene load
-                if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
-                {
-                    OnClientOnlineSceneLoaded();
-                    SendClientReady();
-                }
                 return;
-            }
 
             if (string.IsNullOrEmpty(serverSceneName) || serverSceneName.Equals(SceneManager.GetActiveScene().name))
             {
