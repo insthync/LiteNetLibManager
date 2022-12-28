@@ -19,23 +19,23 @@ namespace LiteNetLibManager
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
-        private static extern int SocketCreate(string url);
+        private static extern int SocketCreate_LnlM(string url);
         [DllImport("__Internal")]
-        private static extern int GetSocketState(int wsNativeInstance);
+        private static extern int GetSocketState_LnlM(int wsNativeInstance);
         [DllImport("__Internal")]
-        private static extern int GetSocketEventType(int wsNativeInstance);
+        private static extern int GetSocketEventType_LnlM(int wsNativeInstance);
         [DllImport("__Internal")]
-        private static extern int GetSocketErrorCode(int wsNativeInstance);
+        private static extern int GetSocketErrorCode_LnlM(int wsNativeInstance);
         [DllImport("__Internal")]
-        private static extern int GetSocketDataLength(int wsNativeInstance);
+        private static extern int GetSocketDataLength_LnlM(int wsNativeInstance);
         [DllImport("__Internal")]
-        private static extern void GetSocketData(int wsNativeInstance, byte[] ptr, int length);
+        private static extern void GetSocketData_LnlM(int wsNativeInstance, byte[] ptr, int length);
         [DllImport("__Internal")]
-        private static extern void SocketEventDequeue(int wsNativeInstance);
+        private static extern void SocketEventDequeue_LnlM(int wsNativeInstance);
         [DllImport("__Internal")]
-        private static extern void SocketSend(int wsNativeInstance, byte[] ptr, int length);
+        private static extern void SocketSend_LnlM(int wsNativeInstance, byte[] ptr, int length);
         [DllImport("__Internal")]
-        private static extern void SocketClose(int wsNativeInstance);
+        private static extern void SocketClose_LnlM(int wsNativeInstance);
 
         private int wsNativeInstance = -1;
         private byte[] tempBuffers;
@@ -60,7 +60,7 @@ namespace LiteNetLibManager
                 else
                     return wsClient != null && wsClient.IsConnected;
 #else
-                return GetSocketState(wsNativeInstance) == 1;
+                return GetSocketState_LnlM(wsNativeInstance) == 1;
 #endif
             }
         }
@@ -123,7 +123,7 @@ namespace LiteNetLibManager
 #else
             string url = (secure ? "wss://" : "ws://") + address + ":" + port;
             Logging.Log(nameof(WsClientWrapper), $"Connecting to {url}");
-            wsNativeInstance = SocketCreate(url.ToString());
+            wsNativeInstance = SocketCreate_LnlM(url.ToString());
             return true;
 #endif
         }
@@ -138,7 +138,7 @@ namespace LiteNetLibManager
                 wsClient.Dispose();
             wsClient = null;
 #else
-            SocketClose(wsNativeInstance);
+            SocketClose_LnlM(wsNativeInstance);
 #endif
         }
 
@@ -155,7 +155,7 @@ namespace LiteNetLibManager
                 return false;
             return clientEventQueue.TryDequeue(out eventData);
 #else
-            int eventType = GetSocketEventType(wsNativeInstance);
+            int eventType = GetSocketEventType_LnlM(wsNativeInstance);
             if (eventType < 0)
                 return false;
             switch ((ENetworkEvent)eventType)
@@ -169,14 +169,14 @@ namespace LiteNetLibManager
                     break;
                 case ENetworkEvent.DisconnectEvent:
                     eventData.type = ENetworkEvent.DisconnectEvent;
-                    eventData.disconnectInfo = GetDisconnectInfo(GetSocketErrorCode(wsNativeInstance));
+                    eventData.disconnectInfo = GetDisconnectInfo(GetSocketErrorCode_LnlM(wsNativeInstance));
                     break;
                 case ENetworkEvent.ErrorEvent:
                     eventData.type = ENetworkEvent.ErrorEvent;
-                    eventData.errorMessage = GetErrorMessage(GetSocketErrorCode(wsNativeInstance));
+                    eventData.errorMessage = GetErrorMessage(GetSocketErrorCode_LnlM(wsNativeInstance));
                     break;
             }
-            SocketEventDequeue(wsNativeInstance);
+            SocketEventDequeue_LnlM(wsNativeInstance);
             return true;
 #endif
         }
@@ -184,11 +184,11 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL && !UNITY_EDITOR
         private byte[] GetSocketData()
         {
-            int length = GetSocketDataLength(wsNativeInstance);
+            int length = GetSocketDataLength_LnlM(wsNativeInstance);
             if (length == 0)
                 return null;
             byte[] buffer = new byte[length];
-            GetSocketData(wsNativeInstance, buffer, length);
+            GetSocketData_LnlM(wsNativeInstance, buffer, length);
             return buffer;
         }
 #endif
@@ -219,7 +219,7 @@ namespace LiteNetLibManager
             else
                 return wsClient.SendBinaryAsync(writer.Data, 0, writer.Data.Length);
 #else
-            SocketSend(wsNativeInstance, writer.Data, writer.Data.Length);
+            SocketSend_LnlM(wsNativeInstance, writer.Data, writer.Data.Length);
             return true;
 #endif
         }

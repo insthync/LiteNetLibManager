@@ -1,9 +1,9 @@
-var LibraryWebSockets = {
-	$webSocketInstances: [],
+var LibraryWebSockets_LnlM = {
+	$webSocketInstances_LnlM: [],
 
 	// Create instance and connect to server
 	// Events: DataEvent = 0, ConnectEvent = 1, DisconnectEvent = 2, ErrorEvent = 3
-	SocketCreate: function(url)
+	SocketCreate_LnlM: function(url)
 	{
 		var str = UTF8ToString(url);
 		var socket = {
@@ -61,14 +61,14 @@ var LibraryWebSockets = {
 		};
 
 		// Return instance pointer
-		var instance = webSocketInstances.push(socket) - 1;
+		var instance = webSocketInstances_LnlM.push(socket) - 1;
 		return instance;
 	},
 
 	// Get connection state
-	GetSocketState: function (socketInstance)
+	GetSocketState_LnlM: function (socketInstance)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		// Ref: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
 		if (!socket)
 			return 3;
@@ -76,68 +76,68 @@ var LibraryWebSockets = {
 	},
 
 	// Get latest event type
-	GetSocketEventType: function(socketInstance)
+	GetSocketEventType_LnlM: function(socketInstance)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		if (!socket || socket.events.length == 0)
 			return -1;
 		return socket.events[0].type;
 	},
 
 	// Get latest error code
-	GetSocketErrorCode: function(socketInstance)
+	GetSocketErrorCode_LnlM: function(socketInstance)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		if (!socket || socket.events.length == 0 || (socket.events[0].type != 3 && socket.events[0].type != 2))
 			return 0;
 		return socket.events[0].code;
 	},
 
 	// Get latest data length
-	GetSocketDataLength: function(socketInstance)
+	GetSocketDataLength_LnlM: function(socketInstance)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		if (!socket || socket.events.length == 0 || socket.events[0].type != 0 || socket.events[0].data.length == 0)
 			return 0;
 		return socket.events[0].data.length;
 	},
 
 	// Get latest data byte array
-	GetSocketData: function(socketInstance, ptr, length)
+	GetSocketData_LnlM: function(socketInstance, ptr, length)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		if (!socket || socket.events.length == 0 || socket.events[0].type != 0 || socket.events[0].data.length == 0 || socket.events[0].data.length > length)
 			return;
 		HEAPU8.set(socket.events[0].data, ptr);
 	},
 
 	// Dequeue network event
-	SocketEventDequeue: function(socketInstance)
+	SocketEventDequeue_LnlM: function(socketInstance)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		if (!socket || socket.events.length == 0)
 			return;
 		socket.events = socket.events.slice(1);
 	},
 
 	// Send message
-	SocketSend: function (socketInstance, ptr, length)
+	SocketSend_LnlM: function (socketInstance, ptr, length)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		if (!socket)
 			return;
 		socket.socket.send(HEAPU8.buffer.slice(ptr, ptr + length));
 	},
 
 	// Close connection
-	SocketClose: function (socketInstance)
+	SocketClose_LnlM: function (socketInstance)
 	{
-		var socket = webSocketInstances[socketInstance];
+		var socket = webSocketInstances_LnlM[socketInstance];
 		if (!socket)
 			return;
 		socket.socket.close();
 	}
 };
 
-autoAddDeps(LibraryWebSockets, '$webSocketInstances');
-mergeInto(LibraryManager.library, LibraryWebSockets);
+autoAddDeps(LibraryWebSockets_LnlM, '$webSocketInstances_LnlM');
+mergeInto(LibraryManager.library, LibraryWebSockets_LnlM);
