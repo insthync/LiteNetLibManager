@@ -18,6 +18,7 @@
         public const ushort ServerSetObjectOwner = 15;
         public const ushort Ping = 16;
         public const ushort Pong = 17;
-        public const ushort Highest = 17;
+        public const ushort Disconnect = 18;
+        public const ushort Highest = 18;
     }
 }

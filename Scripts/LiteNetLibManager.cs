@@ -485,8 +485,9 @@ namespace LiteNetLibManager
         /// This event will be called at server when any client disconnected
         /// </summary>
         /// <param name="connectionId"></param>
-        /// <param name="disconnectInfo"></param>
-        public virtual void OnPeerDisconnected(long connectionId, DisconnectInfo disconnectInfo) { }
+        /// <param name="reason"></param>
+        /// <param name="socketError"></param>
+        public virtual void OnPeerDisconnected(long connectionId, DisconnectReason reason, SocketError socketError) { }
 
         /// <summary>
         /// This event will be called at client when there are any network error
@@ -503,7 +504,10 @@ namespace LiteNetLibManager
         /// <summary>
         /// This event will be called at client when disconnected from server
         /// </summary>
-        public virtual void OnClientDisconnected(DisconnectInfo disconnectInfo) { }
+        /// <param name="reason"></param>
+        /// <param name="socketError"></param>
+        /// <param name="data"></param>
+        public virtual void OnClientDisconnected(DisconnectReason reason, SocketError socketError, byte[] data) { }
         #endregion
 
         #region Start / Stop Callbacks
