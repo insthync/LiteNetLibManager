@@ -103,7 +103,6 @@ namespace LiteNetLibManager
         /// </summary>
         /// <param name="responseHandler"></param>
         /// <param name="responseDelegate"></param>
-        /// <param name="millisecondsTimeout"></param>
         /// <returns></returns>
         private uint CreateRequest(
             ILiteNetLibResponseHandler responseHandler,
@@ -182,7 +181,7 @@ namespace LiteNetLibManager
         /// Proceed request which reveived from server or client
         /// </summary>
         /// <param name="connectionId"></param>
-        /// <param name="requestMessage"></param>
+        /// <param name="reader"></param>
         private void ProceedRequest(
             long connectionId,
             NetDataReader reader)
