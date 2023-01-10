@@ -82,7 +82,7 @@ namespace LiteNetLibManager
                 case ENetworkEvent.DisconnectEvent:
                     if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerDisconnected peer.ConnectionId: " + eventData.connectionId + " disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
                     ConnectionIds.Remove(eventData.connectionId);
-                    Manager.OnPeerDisconnected(eventData.connectionId, eventData.disconnectInfo);
+                    Manager.OnPeerDisconnected(eventData.connectionId, eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode);
                     break;
                 case ENetworkEvent.ErrorEvent:
                     if (Manager.LogError) Logging.LogError(LogTag, "OnPeerNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);

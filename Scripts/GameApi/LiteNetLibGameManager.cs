@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
+using System.Net.Sockets;
 
 namespace LiteNetLibManager
 {
@@ -242,6 +243,16 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
             RegisterClientMessage(GameMsgTypes.Ping, HandleServerPing);
             RegisterClientMessage(GameMsgTypes.Pong, HandleServerPong);
+            RegisterClientMessage(GameMsgTypes.Disconnect, HandleServerDisconnect);
+        }
+
+        public async void KickClient(long connectionId, byte[] data)
+        {
+            if (!IsServer)
+                return;
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.Disconnect, (writer) => writer.PutBytesWithLength(data));
+            await UniTask.Delay(500);
+            ServerTransport.ServerDisconnect(connectionId);
         }
 
         public override void OnPeerConnected(long connectionId)
@@ -251,9 +262,9 @@ namespace LiteNetLibManager
                 Players.Add(connectionId, new LiteNetLibPlayer(this, connectionId));
         }
 
-        public override void OnPeerDisconnected(long connectionId, DisconnectInfo disconnectInfo)
+        public override void OnPeerDisconnected(long connectionId, DisconnectReason reason, SocketError socketError)
         {
-            base.OnPeerDisconnected(connectionId, disconnectInfo);
+            base.OnPeerDisconnected(connectionId, reason, socketError);
             if (Players.ContainsKey(connectionId))
             {
                 LiteNetLibPlayer player = Players[connectionId];
@@ -872,6 +883,11 @@ namespace LiteNetLibManager
                 ServerTimestampOffsets = (long)(message.serverTime - Timestamp + (Rtt * 0.5f));
                 if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
             }
+        }
+
+        protected void HandleServerDisconnect(MessageHandlerData messageHandler)
+        {
+            Client.SetDisconnectData(messageHandler.Reader.GetBytesWithLength());
         }
         #endregion
 

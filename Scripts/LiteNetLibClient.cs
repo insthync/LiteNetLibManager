@@ -10,6 +10,7 @@ namespace LiteNetLibManager
         public override string LogTag { get { return (Manager == null ? "(No Manager)" : Manager.LogTag) + "->LiteNetLibClient"; } }
         private bool isNetworkActive;
         public override bool IsNetworkActive { get { return isNetworkActive; } }
+        private byte[] disconnectData;
 
         public LiteNetLibClient(LiteNetLibManager manager) : base()
         {
@@ -19,6 +20,11 @@ namespace LiteNetLibManager
         public LiteNetLibClient(ITransport transport) : base(transport)
         {
 
+        }
+
+        public void SetDisconnectData(byte[] data)
+        {
+            disconnectData = data;
         }
 
         public void Update()
@@ -74,7 +80,8 @@ namespace LiteNetLibManager
                 case ENetworkEvent.DisconnectEvent:
                     if (Manager.LogInfo) Logging.Log(LogTag, "OnClientDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
                     Manager.StopClient();
-                    Manager.OnClientDisconnected(eventData.disconnectInfo);
+                    Manager.OnClientDisconnected(eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode, disconnectData);
+                    disconnectData = null;
                     break;
                 case ENetworkEvent.ErrorEvent:
                     if (Manager.LogError) Logging.LogError(LogTag, "OnClientNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
