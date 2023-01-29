@@ -6,27 +6,63 @@ using ZLogger;
 
 namespace LiteNetLibManager
 {
+    public class LoggerManager
+    {
+        ILogger _defaultLogger;
+        ILoggerFactory _loggerFactory;
+        public ILoggerFactory LoggerFactory
+        {
+            get => _loggerFactory;
+        }
+
+        public ILogger Logger => _defaultLogger;
+
+        public bool IsDisposed { get; private set; } = false;
+
+        readonly Dictionary<string, ILogger> _loggerByTypes = new Dictionary<string, ILogger>();
+        readonly Dictionary<string, ILogger> _loggerByTags = new Dictionary<string, ILogger>();
+
+        public LoggerManager(ILoggerFactory loggerFactory)
+        {
+            _loggerByTypes.Clear();
+            _loggerByTags.Clear();
+            _loggerFactory = loggerFactory;
+            _defaultLogger = loggerFactory.CreateLogger("No Tag");
+
+            UnityEngine.Application.quitting += () =>
+            {
+                // when quit, flush unfinished log entries.
+                if (_loggerFactory != null)
+                    _loggerFactory.Dispose();
+                _loggerFactory = null;
+                IsDisposed = true;
+            };
+        }
+
+        public ILogger<T> GetLogger<T>() where T : class
+        {
+            string typeFullName = typeof(T).FullName;
+            if (!_loggerByTypes.ContainsKey(typeFullName))
+                _loggerByTypes.Add(typeFullName, LoggerFactory.CreateLogger<T>());
+            return _loggerByTypes[typeFullName] as ILogger<T>;
+        }
+
+        public ILogger GetLogger(string tag)
+        {
+            if (string.IsNullOrEmpty(tag))
+                return Logger;
+            if (!_loggerByTags.ContainsKey(tag))
+                _loggerByTags.Add(tag, LoggerFactory.CreateLogger(tag));
+            return _loggerByTags[tag];
+        }
+    }
+
     public static partial class LogManager
     {
-        static ILogger noTagLogger;
-        static ILoggerFactory loggerFactory;
-        public static ILoggerFactory LoggerFactory
-        {
-            get => loggerFactory;
-            set
-            {
-                if (loggerFactory != null)
-                    loggerFactory.Dispose();
-                LoggerByTypes.Clear();
-                LoggerByTags.Clear();
-                loggerFactory = value;
-                noTagLogger = loggerFactory.CreateLogger("No Tag");
-            }
-        }
-        static readonly Dictionary<string, ILogger> LoggerByTypes = new Dictionary<string, ILogger>();
-        static readonly Dictionary<string, ILogger> LoggerByTags = new Dictionary<string, ILogger>();
+        public static LoggerManager DefaultLoggerManager { get; set; }
+        public static LoggerManager WarningLoggerManager { get; set; }
+        public static LoggerManager ErrorLoggerManager { get; set; }
 
-        public static bool IsLoggerFactoryDisposed { get; private set; } = false;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Initialize()
@@ -34,7 +70,7 @@ namespace LiteNetLibManager
             // Standard LoggerFactory does not work on IL2CPP,
             // But you can use ZLogger's UnityLoggerFactory instead,
             // it works on IL2CPP, all platforms(includes mobile).
-            LoggerFactory = UnityLoggerFactory.Create(builder =>
+            DefaultLoggerManager = new LoggerManager(UnityLoggerFactory.Create(builder =>
             {
                 // or more configuration, you can use builder.AddFilter
                 builder.SetMinimumLevel(LogLevel.Trace);
@@ -45,19 +81,13 @@ namespace LiteNetLibManager
                 // * Warning/Critical -> LogType.Warning
                 // * Error without Exception -> LogType.Error
                 // * Error with Exception -> LogException
-                builder.AddZLoggerUnityDebug();
-            });
+                builder.AddZLoggerUnityDebug(options =>
+                {
+                    options.PrefixFormatter = PrefixFormatterConfigure;
+                });
+            }));
 
-            Logger.LogInformation("===== Logger Initialized =====");
-
-            UnityEngine.Application.quitting += () =>
-            {
-                // when quit, flush unfinished log entries.
-                if (loggerFactory != null)
-                    loggerFactory.Dispose();
-                loggerFactory = null;
-                IsLoggerFactoryDisposed = true;
-            };
+            DefaultLoggerManager.Logger.LogInformation("===== Logger Initialized =====");
         }
 
         public static void PrefixFormatterConfigure(IBufferWriter<byte> writer, LogInfo info)
@@ -79,23 +109,42 @@ namespace LiteNetLibManager
             }
         }
 
-        public static ILogger Logger => noTagLogger;
+        public static bool IsLoggerDisposed => DefaultLoggerManager.IsDisposed;
+        public static bool IsWarningLoggerDisposed => WarningLoggerManager != null ? WarningLoggerManager.IsDisposed : IsLoggerDisposed;
+        public static bool IsErrorLoggerDisposed => ErrorLoggerManager != null ? ErrorLoggerManager.IsDisposed : IsLoggerDisposed;
+
+        public static ILogger Logger => DefaultLoggerManager.Logger;
+        public static ILogger WarningLogger => WarningLoggerManager != null ? WarningLoggerManager.Logger : Logger;
+        public static ILogger ErrorLogger => ErrorLoggerManager != null ? ErrorLoggerManager.Logger : Logger;
 
         public static ILogger<T> GetLogger<T>() where T : class
         {
-            string typeFullName = typeof(T).FullName;
-            if (!LoggerByTypes.ContainsKey(typeFullName))
-                LoggerByTypes.Add(typeFullName, LoggerFactory.CreateLogger<T>());
-            return LoggerByTypes[typeFullName] as ILogger<T>;
+            return DefaultLoggerManager.GetLogger<T>();
         }
 
         public static ILogger GetLogger(string tag)
         {
-            if (string.IsNullOrEmpty(tag))
-                return Logger;
-            if (!LoggerByTags.ContainsKey(tag))
-                LoggerByTags.Add(tag, LoggerFactory.CreateLogger(tag));
-            return LoggerByTags[tag];
+            return DefaultLoggerManager.GetLogger(tag);
+        }
+
+        public static ILogger<T> GetWarningLogger<T>() where T : class
+        {
+            return WarningLoggerManager.GetLogger<T>();
+        }
+
+        public static ILogger GetWarningLogger(string tag)
+        {
+            return WarningLoggerManager.GetLogger(tag);
+        }
+
+        public static ILogger<T> GetErrorLogger<T>() where T : class
+        {
+            return ErrorLoggerManager.GetLogger<T>();
+        }
+
+        public static ILogger GetErrorLogger(string tag)
+        {
+            return ErrorLoggerManager.GetLogger(tag);
         }
     }
 }
