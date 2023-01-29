@@ -129,21 +129,29 @@ namespace LiteNetLibManager
 
         public static ILogger<T> GetWarningLogger<T>() where T : class
         {
+            if (WarningLoggerManager == null)
+                return GetLogger<T>();
             return WarningLoggerManager.GetLogger<T>();
         }
 
         public static ILogger GetWarningLogger(string tag)
         {
+            if (WarningLoggerManager == null)
+                return GetLogger(tag);
             return WarningLoggerManager.GetLogger(tag);
         }
 
         public static ILogger<T> GetErrorLogger<T>() where T : class
         {
+            if (ErrorLoggerManager == null)
+                return GetLogger<T>();
             return ErrorLoggerManager.GetLogger<T>();
         }
 
         public static ILogger GetErrorLogger(string tag)
         {
+            if (ErrorLoggerManager == null)
+                return GetLogger(tag);
             return ErrorLoggerManager.GetLogger(tag);
         }
     }
