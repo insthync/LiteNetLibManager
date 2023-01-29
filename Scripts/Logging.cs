@@ -14,7 +14,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.Log(string.Format($"[{tag}] {message}", args));
@@ -34,7 +34,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsErrorLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogError(string.Format($"[{tag}] {message}", args));
@@ -42,7 +42,7 @@ namespace LiteNetLibManager
                     Debug.LogError($"[{tag}] {message}");
                 return;
             }
-            LogManager.GetLogger(tag).LogError(message, args);
+            LogManager.GetErrorLogger(tag).LogError(message, args);
         }
 
         public static void LogWarning(string tag, object message)
@@ -54,7 +54,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsWarningLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogWarning(string.Format($"[{tag}] {message}", args));
@@ -62,19 +62,19 @@ namespace LiteNetLibManager
                     Debug.LogWarning($"[{tag}] {message}");
                 return;
             }
-            LogManager.GetLogger(tag).LogWarning(message, args);
+            LogManager.GetWarningLogger(tag).LogWarning(message, args);
         }
 
         public static void LogException(string tag, System.Exception ex)
         {
             if (ex == null)
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsErrorLoggerDisposed)
             {
                 Debug.LogError($"[{tag}] {ex}");
                 return;
             }
-            LogManager.GetLogger(tag).LogError(ex.ToString());
+            LogManager.GetErrorLogger(tag).LogError(ex.ToString());
         }
 
         public static void Log(object message)
@@ -86,7 +86,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.Log(string.Format($"{message}", args));
@@ -106,7 +106,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsErrorLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogError(string.Format($"{message}", args));
@@ -114,7 +114,7 @@ namespace LiteNetLibManager
                     Debug.LogError($"{message}");
                 return;
             }
-            LogManager.Logger.LogError(message, args);
+            LogManager.ErrorLogger.LogError(message, args);
         }
 
         public static void LogWarning(object message)
@@ -126,7 +126,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsWarningLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogWarning(string.Format($"{message}", args));
@@ -134,19 +134,19 @@ namespace LiteNetLibManager
                     Debug.LogWarning($"{message}");
                 return;
             }
-            LogManager.Logger.LogWarning(message, args);
+            LogManager.WarningLogger.LogWarning(message, args);
         }
 
         public static void LogException(System.Exception ex)
         {
             if (ex == null)
                 return;
-            if (LogManager.IsLoggerFactoryDisposed)
+            if (LogManager.IsErrorLoggerDisposed)
             {
                 Debug.LogError($"{ex}");
                 return;
             }
-            LogManager.Logger.LogError(ex.ToString());
+            LogManager.ErrorLogger.LogError(ex.ToString());
         }
     }
 }
