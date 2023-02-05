@@ -44,7 +44,6 @@ namespace LiteNetLibManager
             }
             // Clear and reset request Id
             requestCallbacks.Clear();
-            nextRequestId = 1;
             // Store server port, it will be used by local client to connect when start hosting
             ServerPort = port;
             if (isNetworkActive = Transport.StartServer(port, maxConnections))
