@@ -46,7 +46,6 @@ namespace LiteNetLibManager
             }
             // Clear and reset request Id
             requestCallbacks.Clear();
-            nextRequestId = 1;
             if (isNetworkActive = Transport.StartClient(address, port))
             {
                 OnStartClient();
