@@ -260,8 +260,8 @@ namespace LiteNetLibManager
                     tempLookupType = tempLookupType.BaseType;
                 }
                 // Sort name to make sure the fields will be sync correctly by its index
-                tempCacheFields.syncFields.Sort((a, b) => a.Name.CompareTo(b.Name));
-                tempCacheFields.syncLists.Sort((a, b) => a.Name.CompareTo(b.Name));
+                tempCacheFields.syncFields.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
+                tempCacheFields.syncLists.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
                 CacheSyncElements.Add(TypeName, tempCacheFields);
             }
             SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields);
