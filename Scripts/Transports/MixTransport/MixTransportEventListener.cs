@@ -49,7 +49,7 @@ namespace LiteNetLibManager
         {
         }
 
-        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
+        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
             long tempConnectionId = 0;
             if (peerIdsDict != null && peersDict != null)
