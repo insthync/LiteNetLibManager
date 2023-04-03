@@ -135,7 +135,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void _clientListener_NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
+        private void _clientListener_NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
 
         }
@@ -177,7 +177,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void _serverListener_NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
+        private void _serverListener_NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
 
         }
