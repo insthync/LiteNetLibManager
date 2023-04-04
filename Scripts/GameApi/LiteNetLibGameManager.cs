@@ -385,7 +385,7 @@ namespace LiteNetLibManager
                 connectionId = identity.ConnectionId,
                 position = identity.transform.position,
                 rotation = identity.transform.rotation,
-            }, identity.WriteInitialSyncFields);
+            }, identity.WriteInitSyncFields);
             return true;
         }
 
@@ -403,7 +403,7 @@ namespace LiteNetLibManager
                 connectionId = identity.ConnectionId,
                 position = identity.transform.position,
                 rotation = identity.transform.rotation,
-            }, identity.WriteInitialSyncFields);
+            }, identity.WriteInitSyncFields);
             return true;
         }
 
@@ -726,7 +726,7 @@ namespace LiteNetLibManager
                 if (!IsServer)
                 {
                     identity.ResetSyncData();
-                    identity.ReadInitialSyncFields(messageHandler.Reader);
+                    identity.ReadInitSyncFields(messageHandler.Reader);
                 }
                 // If it is host, it may hidden so show it
                 if (IsServer)
@@ -744,7 +744,7 @@ namespace LiteNetLibManager
             {
                 // If it is not server, read its initial data
                 if (!IsServer)
-                    identity.ReadInitialSyncFields(messageHandler.Reader);
+                    identity.ReadInitSyncFields(messageHandler.Reader);
                 // If it is host, it may hidden so show it
                 if (IsServer)
                     identity.OnServerSubscribingAdded();

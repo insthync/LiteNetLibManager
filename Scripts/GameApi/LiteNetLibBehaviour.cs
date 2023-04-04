@@ -338,8 +338,7 @@ namespace LiteNetLibManager
                     tempSyncField.clientDataChannel = tempAttribute.clientDataChannel;
                     tempSyncField.clientDeliveryMethod = tempAttribute.clientDeliveryMethod;
                     tempSyncField.sendInterval = tempAttribute.sendInterval;
-                    tempSyncField.alwaysSync = tempAttribute.alwaysSync;
-                    tempSyncField.doNotSyncInitialDataImmediately = tempAttribute.doNotSyncInitialDataImmediately;
+                    tempSyncField.syncBehaviour = tempAttribute.syncBehaviour;
                     tempSyncField.syncMode = tempAttribute.syncMode;
                     RegisterSyncElement(tempSyncField, Identity.SyncFields);
                 }
