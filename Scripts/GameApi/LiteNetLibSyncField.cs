@@ -33,14 +33,14 @@ namespace LiteNetLibManager
         [Flags]
         public enum SyncBehaviour : byte
         {
-            Default = SyncInitialDataImmediately,
+            Default = 0,
             AlwaysSync = 1 << 0,
-            SyncInitialDataImmediately = 1 << 1,
-            SyncOnlyInitialData = 1 << 2,
+            DoNotSyncInitialDataImmediately = 1 << 1,
+            DoNotSyncUpdate = 1 << 2,
         }
 
         [Header("Generic Settings")]
-        [Tooltip("How it will sync data. If always sync, it will sync data although it has no changes. If sync initial data immediately, it will sync when spawn networked object, If sync only initial data it will sync only when spawn networked object")]
+        [Tooltip("How it will sync data. If always sync, it will sync data although it has no changes. If don't sync initial data immediately, it will not sync initial data immdediately with networked object spawning message, it will sync later after spanwed. If don't sync update, it will not sync when data has changes.")]
         public SyncBehaviour syncBehaviour;
         [Tooltip("Who can sync data and sync to whom")]
         public SyncMode syncMode;
@@ -106,7 +106,7 @@ namespace LiteNetLibManager
                 return;
 
             // Won't update
-            if (HasSyncBehaviourFlag(SyncBehaviour.SyncOnlyInitialData))
+            if (HasSyncBehaviourFlag(SyncBehaviour.DoNotSyncUpdate))
                 return;
 
             // No update

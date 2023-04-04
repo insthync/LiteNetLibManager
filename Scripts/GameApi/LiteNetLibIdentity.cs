@@ -443,7 +443,7 @@ namespace LiteNetLibManager
         {
             foreach (LiteNetLibSyncField field in SyncFields)
             {
-                if (!field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.SyncInitialDataImmediately))
+                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
                     continue;
                 field.Serialize(writer);
             }
@@ -457,17 +457,21 @@ namespace LiteNetLibManager
         {
             foreach (LiteNetLibSyncField field in SyncFields)
             {
-                if (!field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.SyncInitialDataImmediately))
+                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
                     continue;
                 field.Deserialize(reader, true);
             }
         }
 
+        /// <summary>
+        /// This function will be called after networked object spawning message was sent
+        /// </summary>
+        /// <param name="connectionId"></param>
         internal void SendInitSyncFields(long connectionId)
         {
             foreach (LiteNetLibSyncField field in SyncFields)
             {
-                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.SyncInitialDataImmediately))
+                if (!field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
                     continue;
                 field.SendUpdate(true, connectionId);
             }
