@@ -724,7 +724,10 @@ namespace LiteNetLibManager
             {
                 // If it is not server, read its initial data
                 if (!IsServer)
+                {
+                    identity.ResetSyncData();
                     identity.ReadInitialSyncFields(messageHandler.Reader);
+                }
                 // If it is host, it may hidden so show it
                 if (IsServer)
                     identity.OnServerSubscribingAdded();

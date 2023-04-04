@@ -811,6 +811,12 @@ namespace LiteNetLibManager
 
         internal void OnGetInstance()
         {
+            ResetSyncData();
+            onGetInstance.Invoke();
+        }
+
+        internal void ResetSyncData()
+        {
             // Clear/reset syncing data
             foreach (LiteNetLibSyncField field in SyncFields)
             {
@@ -820,7 +826,6 @@ namespace LiteNetLibManager
             {
                 list.Reset();
             }
-            onGetInstance.Invoke();
         }
     }
 }
