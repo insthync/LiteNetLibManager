@@ -252,6 +252,7 @@ namespace LiteNetLibManager
         internal override sealed void Reset()
         {
             list.Clear();
+            operationEntries.Clear();
         }
 
         protected void PrepareOperation(Operation operation, int index)
