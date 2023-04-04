@@ -27,15 +27,11 @@ namespace LiteNetLibManager
         /// </summary>
         public float sendInterval = 0.1f;
         /// <summary>
-        /// If this is `TRUE` it will syncing although no changes
+        /// How it will sync data. If always sync, it will sync data although it has no changes. If sync initial data immediately, it will sync when spawn networked object, If sync only initial data it will sync only when spawn networked object
         /// </summary>
-        public bool alwaysSync = false;
+        public LiteNetLibSyncField.SyncBehaviour syncBehaviour = LiteNetLibSyncField.SyncBehaviour.Default;
         /// <summary>
-        /// If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later)
-        /// </summary>
-        public bool doNotSyncInitialDataImmediately = false;
-        /// <summary>
-        /// How data changes handle and sync
+        /// Who can sync data and sync to whom
         /// </summary>
         public LiteNetLibSyncField.SyncMode syncMode = LiteNetLibSyncField.SyncMode.ServerToClients;
         /// <summary>

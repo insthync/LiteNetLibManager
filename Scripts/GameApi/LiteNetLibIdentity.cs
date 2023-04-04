@@ -435,21 +435,29 @@ namespace LiteNetLibManager
             return behaviour != null;
         }
 
-        internal void WriteInitialSyncFields(NetDataWriter writer)
+        /// <summary>
+        /// This function will be called when send networked object spawning message, to write sync field data
+        /// </summary>
+        /// <param name="writer"></param>
+        internal void WriteInitSyncFields(NetDataWriter writer)
         {
             foreach (LiteNetLibSyncField field in SyncFields)
             {
-                if (field.doNotSyncInitialDataImmediately)
+                if (!field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.SyncInitialDataImmediately))
                     continue;
                 field.Serialize(writer);
             }
         }
 
-        internal void ReadInitialSyncFields(NetDataReader reader)
+        /// <summary>
+        /// This function will be called when receive networked object spawning message, to read sync field data
+        /// </summary>
+        /// <param name="reader"></param>
+        internal void ReadInitSyncFields(NetDataReader reader)
         {
             foreach (LiteNetLibSyncField field in SyncFields)
             {
-                if (field.doNotSyncInitialDataImmediately)
+                if (!field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.SyncInitialDataImmediately))
                     continue;
                 field.Deserialize(reader, true);
             }
@@ -459,7 +467,7 @@ namespace LiteNetLibManager
         {
             foreach (LiteNetLibSyncField field in SyncFields)
             {
-                if (!field.doNotSyncInitialDataImmediately)
+                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.SyncInitialDataImmediately))
                     continue;
                 field.SendUpdate(true, connectionId);
             }

@@ -30,12 +30,19 @@ namespace LiteNetLibManager
             ClientMulticast
         }
 
+        [Flags]
+        public enum SyncBehaviour : byte
+        {
+            Default = SyncInitialDataImmediately,
+            AlwaysSync = 1 << 0,
+            SyncInitialDataImmediately = 1 << 1,
+            SyncOnlyInitialData = 1 << 2,
+        }
+
         [Header("Generic Settings")]
-        [Tooltip("If this is `TRUE` it will syncing although no changes, default is `FALSE`")]
-        public bool alwaysSync = false;
-        [Tooltip("If this is `TRUE` it will not sync initial data immdediately with spawn message (it will sync later), default is `FALSE`")]
-        public bool doNotSyncInitialDataImmediately = false;
-        [Tooltip("How data changes handle and sync")]
+        [Tooltip("How it will sync data. If always sync, it will sync data although it has no changes. If sync initial data immediately, it will sync when spawn networked object, If sync only initial data it will sync only when spawn networked object")]
+        public SyncBehaviour syncBehaviour;
+        [Tooltip("Who can sync data and sync to whom")]
         public SyncMode syncMode;
         [Tooltip("Interval to send networking data")]
         [Range(0.01f, 2f)]
@@ -63,6 +70,11 @@ namespace LiteNetLibManager
         internal abstract void OnChange(bool initial);
         internal abstract bool HasUpdate();
         internal abstract void Updated();
+
+        public bool HasSyncBehaviourFlag(SyncBehaviour flag)
+        {
+            return (syncBehaviour & flag) == flag;
+        }
 
         internal void Reset()
         {
@@ -93,12 +105,16 @@ namespace LiteNetLibManager
             if (!CanSync())
                 return;
 
+            // Won't update
+            if (HasSyncBehaviourFlag(SyncBehaviour.SyncOnlyInitialData))
+                return;
+
             // No update
-            if (!alwaysSync && !HasUpdate())
+            if (!HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) && !HasUpdate())
                 return;
 
             // Call `OnChange` if it's not called yet.
-            if ((alwaysSync || HasUpdate()) && !onChangeCalled)
+            if ((HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) || HasUpdate()) && !onChangeCalled)
             {
                 // Invoke on change function with initial state = false
                 switch (syncMode)
