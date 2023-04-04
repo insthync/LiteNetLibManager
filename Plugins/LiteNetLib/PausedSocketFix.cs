@@ -19,7 +19,8 @@ namespace LiteNetLib
             _ipv6 = ipv6;
             _port = port;
             _manualMode = manualMode;
-            UnityEngine.Application.focusChanged += Application_focusChanged;
+            // NOTE: Disable paused socket fix, because it is not working properly
+            //UnityEngine.Application.focusChanged += Application_focusChanged;
             _initialized = true;
         }
 
