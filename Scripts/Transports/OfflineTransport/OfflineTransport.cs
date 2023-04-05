@@ -7,20 +7,24 @@ namespace LiteNetLibManager
     public sealed class OfflineTransport : ITransport
     {
         // Connection Id always 0 (first client id)
+        private readonly Queue<TransportEventData> _clientData = new Queue<TransportEventData>();
+        private readonly Queue<TransportEventData> _serverData = new Queue<TransportEventData>();
 
-        private readonly Queue<TransportEventData> clientData = new Queue<TransportEventData>();
-        private readonly Queue<TransportEventData> serverData = new Queue<TransportEventData>();
         public int ServerPeersCount { get; private set; }
         public int ServerMaxConnections { get { return 1; } }
         public bool IsClientStarted { get; private set; }
         public bool IsServerStarted { get; private set; }
+        public bool HasImplementedPing
+        {
+            get { return true; }
+        }
 
         public bool StartClient(string address, int port)
         {
-            clientData.Clear();
+            _clientData.Clear();
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.ConnectEvent;
-            clientData.Enqueue(data);
+            _clientData.Enqueue(data);
             IsClientStarted = true;
             return true;
         }
@@ -29,16 +33,16 @@ namespace LiteNetLibManager
         {
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DisconnectEvent;
-            clientData.Enqueue(data);
+            _clientData.Enqueue(data);
             IsClientStarted = false;
         }
 
         public bool ClientReceive(out TransportEventData eventData)
         {
             eventData = default(TransportEventData);
-            if (serverData.Count == 0)
+            if (_serverData.Count == 0)
                 return false;
-            eventData = serverData.Dequeue(); 
+            eventData = _serverData.Dequeue(); 
             return true;
         }
 
@@ -47,13 +51,13 @@ namespace LiteNetLibManager
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DataEvent;
             data.reader = new NetDataReader(writer.CopyData());
-            clientData.Enqueue(data);
+            _clientData.Enqueue(data);
             return true;
         }
 
         public bool StartServer(int port, int maxConnections)
         {
-            serverData.Clear();
+            _serverData.Clear();
             ServerPeersCount = 0;
             IsServerStarted = true;
             return true;
@@ -62,15 +66,15 @@ namespace LiteNetLibManager
         public bool ServerReceive(out TransportEventData eventData)
         {
             eventData = default(TransportEventData);
-            if (clientData.Count == 0)
+            if (_clientData.Count == 0)
                 return false;
-            eventData = clientData.Dequeue();
+            eventData = _clientData.Dequeue();
             switch (eventData.type)
             {
                 case ENetworkEvent.ConnectEvent:
                     TransportEventData data = new TransportEventData();
                     data.type = ENetworkEvent.ConnectEvent;
-                    serverData.Enqueue(data);
+                    _serverData.Enqueue(data);
                     ServerPeersCount++;
                     break;
                 case ENetworkEvent.DisconnectEvent:
@@ -86,7 +90,7 @@ namespace LiteNetLibManager
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DataEvent;
             data.reader = new NetDataReader(writer.CopyData());
-            serverData.Enqueue(data);
+            _serverData.Enqueue(data);
             return true;
         }
 
@@ -94,7 +98,7 @@ namespace LiteNetLibManager
         {
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DisconnectEvent;
-            serverData.Enqueue(data);
+            _serverData.Enqueue(data);
             return false;
         }
 
@@ -102,7 +106,7 @@ namespace LiteNetLibManager
         {
             TransportEventData data = new TransportEventData();
             data.type = ENetworkEvent.DisconnectEvent;
-            serverData.Enqueue(data);
+            _serverData.Enqueue(data);
             IsServerStarted = false;
         }
 
@@ -110,6 +114,16 @@ namespace LiteNetLibManager
         {
             StopClient();
             StopServer();
+        }
+
+        public long GetClientRtt()
+        {
+            return 0;
+        }
+
+        public long GetServerRtt(long connectionId)
+        {
+            return 0;
         }
     }
 }
