@@ -6,6 +6,12 @@ namespace LiteNetLibManager
 {
     public sealed class LiteNetLibTransport : ITransport
     {
+        private readonly Dictionary<long, NetPeer> _serverPeers;
+        private readonly Queue<TransportEventData> _clientEventQueue;
+        private readonly Queue<TransportEventData> _serverEventQueue;
+        private readonly byte _clientDataChannelsCount;
+        private readonly byte _serverDataChannelsCount;
+
         public NetManager Client { get; private set; }
         public NetManager Server { get; private set; }
         public string ConnectKey { get; private set; }
@@ -27,20 +33,20 @@ namespace LiteNetLibManager
         {
             get { return Server != null; }
         }
-        private readonly Dictionary<long, NetPeer> serverPeers;
-        private readonly Queue<TransportEventData> clientEventQueue;
-        private readonly Queue<TransportEventData> serverEventQueue;
-        private readonly byte clientDataChannelsCount;
-        private readonly byte serverDataChannelsCount;
+
+        public bool HasImplementedPing
+        {
+            get { return true; }
+        }
 
         public LiteNetLibTransport(string connectKey, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
-            serverPeers = new Dictionary<long, NetPeer>();
-            clientEventQueue = new Queue<TransportEventData>();
-            serverEventQueue = new Queue<TransportEventData>();
-            this.clientDataChannelsCount = clientDataChannelsCount;
-            this.serverDataChannelsCount = serverDataChannelsCount;
+            _serverPeers = new Dictionary<long, NetPeer>();
+            _clientEventQueue = new Queue<TransportEventData>();
+            _serverEventQueue = new Queue<TransportEventData>();
+            _clientDataChannelsCount = clientDataChannelsCount;
+            _serverDataChannelsCount = serverDataChannelsCount;
         }
 
         public bool StartClient(string address, int port)
@@ -50,9 +56,9 @@ namespace LiteNetLibManager
                 Logging.Log(nameof(LiteNetLibTransport), "Client started, so it can't be started again");
                 return false;
             }
-            clientEventQueue.Clear();
-            Client = new NetManager(new LiteNetLibTransportClientEventListener(clientEventQueue));
-            Client.ChannelsCount = clientDataChannelsCount;
+            _clientEventQueue.Clear();
+            Client = new NetManager(new LiteNetLibTransportClientEventListener(_clientEventQueue));
+            Client.ChannelsCount = _clientDataChannelsCount;
             return Client.Start() && Client.Connect(address, port, ConnectKey) != null;
         }
 
@@ -69,9 +75,9 @@ namespace LiteNetLibManager
             if (Client == null)
                 return false;
             Client.PollEvents();
-            if (clientEventQueue.Count == 0)
+            if (_clientEventQueue.Count == 0)
                 return false;
-            eventData = clientEventQueue.Dequeue();
+            eventData = _clientEventQueue.Dequeue();
             return true;
         }
 
@@ -90,10 +96,10 @@ namespace LiteNetLibManager
             if (IsServerStarted)
                 return false;
             ServerMaxConnections = maxConnections;
-            serverPeers.Clear();
-            serverEventQueue.Clear();
-            Server = new NetManager(new LiteNetLibTransportServerEventListener(this, ConnectKey, serverEventQueue, serverPeers));
-            Server.ChannelsCount = serverDataChannelsCount;
+            _serverPeers.Clear();
+            _serverEventQueue.Clear();
+            Server = new NetManager(new LiteNetLibTransportServerEventListener(this, ConnectKey, _serverEventQueue, _serverPeers));
+            Server.ChannelsCount = _serverDataChannelsCount;
             return Server.Start(port);
         }
 
@@ -103,17 +109,17 @@ namespace LiteNetLibManager
             if (Server == null)
                 return false;
             Server.PollEvents();
-            if (serverEventQueue.Count == 0)
+            if (_serverEventQueue.Count == 0)
                 return false;
-            eventData = serverEventQueue.Dequeue();
+            eventData = _serverEventQueue.Dequeue();
             return true;
         }
 
         public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
+            if (IsServerStarted && _serverPeers.ContainsKey(connectionId) && _serverPeers.ContainsKey(connectionId) && _serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
-                serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
+                _serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
             return false;
@@ -121,10 +127,10 @@ namespace LiteNetLibManager
 
         public bool ServerDisconnect(long connectionId)
         {
-            if (IsServerStarted && serverPeers.ContainsKey(connectionId))
+            if (IsServerStarted && _serverPeers.ContainsKey(connectionId))
             {
-                Server.DisconnectPeer(serverPeers[connectionId]);
-                serverPeers.Remove(connectionId);
+                Server.DisconnectPeer(_serverPeers[connectionId]);
+                _serverPeers.Remove(connectionId);
                 return true;
             }
             return false;
@@ -141,6 +147,16 @@ namespace LiteNetLibManager
         {
             StopClient();
             StopServer();
+        }
+
+        public long GetClientRtt()
+        {
+            return Client.FirstPeer.RoundTripTime;
+        }
+
+        public long GetServerRtt(long connectionId)
+        {
+            return _serverPeers[connectionId].RoundTripTime;
         }
     }
 }

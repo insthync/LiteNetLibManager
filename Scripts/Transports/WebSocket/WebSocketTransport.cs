@@ -14,102 +14,110 @@ namespace LiteNetLibManager
 {
     public class WebSocketTransport : ITransport, ITransportConnectionGenerator
     {
-        private long nextConnectionId = 1;
-        private bool secure;
-        private string certificateFilePath;
-        private string certificatePassword;
-        private readonly ConcurrentQueue<TransportEventData> clientEventQueue;
-        private WsClientWrapper wsClient;
+        private long _nextConnectionId = 1;
+        private bool _secure;
+        private string _certificateFilePath;
+        private string _certificatePassword;
+        private readonly ConcurrentQueue<TransportEventData> _clientEventQueue;
+        private WsClientWrapper _wsClient;
 #if !UNITY_WEBGL || UNITY_EDITOR
-        private WsTransportServer wsServer;
-        private WssTransportServer wssServer;
+        private WsTransportServer _wsServer;
+        private WssTransportServer _wssServer;
 #endif
 
         public bool IsClientStarted
         {
-            get { return wsClient.IsClientStarted; }
+            get { return _wsClient.IsClientStarted; }
         }
+
         public bool IsServerStarted
         {
             get
             {
 #if !UNITY_WEBGL || UNITY_EDITOR
-                if (!secure)
-                    return wsServer != null && wsServer.IsStarted;
+                if (!_secure)
+                    return _wsServer != null && _wsServer.IsStarted;
                 else
-                    return wssServer != null && wssServer.IsStarted;
+                    return _wssServer != null && _wssServer.IsStarted;
 #else
                 return false;
 #endif
             }
         }
+
         public int ServerPeersCount
         {
             get
             {
 #if !UNITY_WEBGL || UNITY_EDITOR
-                if (!secure)
+                if (!_secure)
                 {
-                    if (wsServer != null)
-                        return wsServer.PeersCount;
+                    if (_wsServer != null)
+                        return _wsServer.PeersCount;
                 }
                 else
                 {
-                    if (wssServer != null)
-                        return wssServer.PeersCount;
+                    if (_wssServer != null)
+                        return _wssServer.PeersCount;
                 }
 #endif
                 return 0;
             }
         }
+
         public int ServerMaxConnections
         {
             get
             {
 #if !UNITY_WEBGL || UNITY_EDITOR
-                if (!secure)
+                if (!_secure)
                 {
-                    if (wsServer != null)
-                        return wsServer.MaxConnections;
+                    if (_wsServer != null)
+                        return _wsServer.MaxConnections;
                 }
                 else
                 {
-                    if (wssServer != null)
-                        return wssServer.MaxConnections;
+                    if (_wssServer != null)
+                        return _wssServer.MaxConnections;
                 }
 #endif
                 return 0;
             }
         }
 
+        public bool HasImplementedPing
+        {
+            get { return false; }
+        }
+
         public WebSocketTransport(bool secure, string certificateFilePath, string certificatePassword)
         {
-            this.secure = secure;
-            this.certificateFilePath = certificateFilePath;
-            this.certificatePassword = certificatePassword;
-            clientEventQueue = new ConcurrentQueue<TransportEventData>();
-            wsClient = new WsClientWrapper(clientEventQueue, secure, SslProtocols.Tls12);
+            _secure = secure;
+            _certificateFilePath = certificateFilePath;
+            _certificatePassword = certificatePassword;
+            _clientEventQueue = new ConcurrentQueue<TransportEventData>();
+            _wsClient = new WsClientWrapper(_clientEventQueue, secure, SslProtocols.Tls12);
         }
 
         public bool StartClient(string address, int port)
         {
-            while (clientEventQueue.TryDequeue(out _)) { }
-            return wsClient.StartClient(address, port);
+            while (_clientEventQueue.TryDequeue(out _)) { }
+            return _wsClient.StartClient(address, port);
         }
 
         public void StopClient()
         {
-            wsClient.StopClient();
+            _wsClient.StopClient();
         }
 
         public bool ClientReceive(out TransportEventData eventData)
         {
-            return wsClient.ClientReceive(out eventData);
+            return _wsClient.ClientReceive(out eventData);
         }
 
         public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            return wsClient.ClientSend(dataChannel, deliveryMethod, writer);
+            return _wsClient.ClientSend(dataChannel, deliveryMethod, writer);
         }
 
         public bool StartServer(int port, int maxConnections)
@@ -117,20 +125,20 @@ namespace LiteNetLibManager
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (IsServerStarted)
                 return false;
-            if (!secure)
+            if (!_secure)
             {
-                wsServer = new WsTransportServer(this, IPAddress.Any, port, maxConnections);
-                wsServer.OptionDualMode = true;
-                wsServer.OptionNoDelay = true;
-                return wsServer.Start();
+                _wsServer = new WsTransportServer(this, IPAddress.Any, port, maxConnections);
+                _wsServer.OptionDualMode = true;
+                _wsServer.OptionNoDelay = true;
+                return _wsServer.Start();
             }
             else
             {
-                SslContext context = new SslContext(SslProtocols.Tls12, new X509Certificate2(certificateFilePath, certificatePassword), CertValidationCallback);
-                wssServer = new WssTransportServer(this, context, IPAddress.Any, port, maxConnections);
-                wssServer.OptionDualMode = true;
-                wssServer.OptionNoDelay = true;
-                return wssServer.Start();
+                SslContext context = new SslContext(SslProtocols.Tls12, new X509Certificate2(_certificateFilePath, _certificatePassword), CertValidationCallback);
+                _wssServer = new WssTransportServer(this, context, IPAddress.Any, port, maxConnections);
+                _wssServer.OptionDualMode = true;
+                _wssServer.OptionNoDelay = true;
+                return _wssServer.Start();
             }
 #else
             return false;
@@ -148,17 +156,17 @@ namespace LiteNetLibManager
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (!IsServerStarted)
                 return false;
-            if (!secure)
+            if (!_secure)
             {
-                if (wsServer.EventQueue.Count == 0)
+                if (_wsServer.EventQueue.Count == 0)
                     return false;
-                return wsServer.EventQueue.TryDequeue(out eventData);
+                return _wsServer.EventQueue.TryDequeue(out eventData);
             }
             else
             {
-                if (wssServer.EventQueue.Count == 0)
+                if (_wssServer.EventQueue.Count == 0)
                     return false;
-                return wssServer.EventQueue.TryDequeue(out eventData);
+                return _wssServer.EventQueue.TryDequeue(out eventData);
             }
 #else
             return false;
@@ -168,10 +176,10 @@ namespace LiteNetLibManager
         public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            if (!secure)
-                return wsServer != null && wsServer.SendAsync(connectionId, writer.Data);
+            if (!_secure)
+                return _wsServer != null && _wsServer.SendAsync(connectionId, writer.Data);
             else
-                return wssServer != null && wssServer.SendAsync(connectionId, writer.Data);
+                return _wssServer != null && _wssServer.SendAsync(connectionId, writer.Data);
 #else
             return false;
 #endif
@@ -180,10 +188,10 @@ namespace LiteNetLibManager
         public bool ServerDisconnect(long connectionId)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            if (!secure)
-                return wsServer != null && wsServer.Disconnect(connectionId);
+            if (!_secure)
+                return _wsServer != null && _wsServer.Disconnect(connectionId);
             else
-                return wssServer != null && wssServer.Disconnect(connectionId);
+                return _wssServer != null && _wssServer.Disconnect(connectionId);
 #else
             return false;
 #endif
@@ -192,13 +200,13 @@ namespace LiteNetLibManager
         public void StopServer()
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            if (wsServer != null)
-                wsServer.Dispose();
-            if (wssServer != null)
-                wssServer.Dispose();
-            wsServer = null;
-            wssServer = null;
-            nextConnectionId = 1;
+            if (_wsServer != null)
+                _wsServer.Dispose();
+            if (_wssServer != null)
+                _wssServer.Dispose();
+            _wsServer = null;
+            _wssServer = null;
+            _nextConnectionId = 1;
 #endif
         }
 
@@ -210,7 +218,17 @@ namespace LiteNetLibManager
 
         public long GetNewConnectionID()
         {
-            return Interlocked.Increment(ref nextConnectionId);
+            return Interlocked.Increment(ref _nextConnectionId);
+        }
+
+        public long GetClientRtt()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public long GetServerRtt(long connectionId)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
