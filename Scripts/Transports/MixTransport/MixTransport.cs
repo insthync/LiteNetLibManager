@@ -97,9 +97,9 @@ namespace LiteNetLibManager
             }
         }
 
-        private readonly Dictionary<long, NetPeer> _serverPeers;
-        private readonly ConcurrentQueue<TransportEventData> _clientEventQueue;
-        private readonly ConcurrentQueue<TransportEventData> _serverEventQueue;
+        private readonly Dictionary<long, NetPeer> _serverPeers = new Dictionary<long, NetPeer>();
+        private readonly ConcurrentQueue<TransportEventData> _clientEventQueue = new ConcurrentQueue<TransportEventData>();
+        private readonly ConcurrentQueue<TransportEventData> _serverEventQueue = new ConcurrentQueue<TransportEventData>();
         private readonly byte _clientDataChannelsCount;
         private readonly byte _serverDataChannelsCount;
         private readonly int _webSocketPortOffset;
@@ -107,19 +107,14 @@ namespace LiteNetLibManager
         public MixTransport(string connectKey, int webSocketPortOffset, bool webSocketSecure, string webSocketCertificateFilePath, string webSocketCertificatePassword, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
-#if !UNITY_WEBGL
-            _serverPeers = new Dictionary<long, NetPeer>();
-            _clientEventQueue = new ConcurrentQueue<TransportEventData>();
-            _serverEventQueue = new ConcurrentQueue<TransportEventData>();
-            this._clientDataChannelsCount = clientDataChannelsCount;
-            this._serverDataChannelsCount = serverDataChannelsCount;
-#endif
-            this._webSocketPortOffset = webSocketPortOffset;
-            this._webSocketSecure = webSocketSecure;
-            this._webSocketCertificateFilePath = webSocketCertificateFilePath;
-            this._webSocketCertificatePassword = webSocketCertificatePassword;
+            _clientDataChannelsCount = clientDataChannelsCount;
+            _serverDataChannelsCount = serverDataChannelsCount;
+            _webSocketPortOffset = webSocketPortOffset;
+            _webSocketSecure = webSocketSecure;
+            _webSocketCertificateFilePath = webSocketCertificateFilePath;
+            _webSocketCertificatePassword = webSocketCertificatePassword;
 #if UNITY_WEBGL
-            _wsClient = new WsClientWrapper(clientEventQueue, webSocketSecure, SslProtocols.Tls12);
+            _wsClient = new WsClientWrapper(_clientEventQueue, webSocketSecure, SslProtocols.Tls12);
 #endif
         }
 
