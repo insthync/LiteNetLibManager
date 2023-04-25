@@ -53,17 +53,15 @@ namespace LiteNetLibManager
 
         internal void ClearSubscribing(bool destroyObjectsOnPeer)
         {
-            // Remove this from identities subscriber list
+            // Remove player's subscribing and remove this player from subscribers
             LiteNetLibIdentity identity;
             foreach (uint objectId in Subscribings)
             {
-                // Don't call for remove subscribing 
-                // because it's going to clear in this function
-                if (destroyObjectsOnPeer && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
-                {
-                    identity.RemoveSubscriber(ConnectionId);
+                if (!Manager.Assets.TryGetSpawnedObject(objectId, out identity))
+                    continue;
+                identity.RemoveSubscriber(ConnectionId);
+                if (destroyObjectsOnPeer)
                     Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
-                }
             }
             Subscribings.Clear();
         }
