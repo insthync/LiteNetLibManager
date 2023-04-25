@@ -46,7 +46,7 @@ namespace LiteNetLibManager
             get { return 1f / sendInterval; }
         }
 
-        private float sendCountDown;
+        private float nextSyncTime;
 
         private static readonly Dictionary<string, CacheFields> CacheSyncElements = new Dictionary<string, CacheFields>();
         private static readonly Dictionary<string, CacheFunctions> CacheElasticRpcs = new Dictionary<string, CacheFunctions>();
@@ -172,19 +172,18 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void NetworkUpdate(float deltaTime)
+        internal void NetworkUpdate(float currentTime)
         {
             // Sync behaviour
             if (!IsServer || !CanSyncBehaviour())
                 return;
 
-            // It's time to send update?
-            sendCountDown -= deltaTime;
-            if (sendCountDown > 0)
+            // Is it time to sync?
+            if (currentTime >= nextSyncTime)
                 return;
 
-            // Set count down
-            sendCountDown = sendInterval;
+            // Set next sync time
+            nextSyncTime = currentTime + sendInterval;
 
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
             if (ShouldSyncBehaviour())
