@@ -60,7 +60,7 @@ namespace LiteNetLibManager
         [Tooltip("Sending method type from clients to server (`syncMode` is `ClientMulticast` only), default is `Sequenced`")]
         public DeliveryMethod clientDeliveryMethod = DeliveryMethod.Sequenced;
 
-        private float sendCountDown;
+        private float nextSyncTime;
         private bool onChangeCalled;
         protected object defaultValue;
 
@@ -100,7 +100,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void NetworkUpdate(float deltaTime)
+        internal void NetworkUpdate(float currentTime)
         {
             if (!CanSync())
                 return;
@@ -132,13 +132,12 @@ namespace LiteNetLibManager
                 onChangeCalled = true;
             }
 
-            // It's time to send update?
-            sendCountDown -= deltaTime;
-            if (sendCountDown > 0f)
+            // Is it time to sync?
+            if (currentTime >= nextSyncTime)
                 return;
 
-            // Set count down
-            sendCountDown = sendInterval;
+            // Set next sync time
+            nextSyncTime = currentTime + sendInterval;
 
             // Send the update
             SendUpdate(false);
@@ -152,8 +151,8 @@ namespace LiteNetLibManager
 
         public void UpdateImmediately()
         {
-            sendCountDown = 0f;
-            NetworkUpdate(0f);
+            float currentTime = nextSyncTime + sendInterval;
+            NetworkUpdate(currentTime);
         }
 
         internal void Deserialize(NetDataReader reader, bool isInitial)

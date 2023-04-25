@@ -179,17 +179,23 @@ namespace LiteNetLibManager
 
         private void FixedUpdate()
         {
-            NetworkUpdate(Time.fixedDeltaTime);
+            NetworkUpdate(Time.fixedTime);
         }
 
-        internal void NetworkUpdate(float deltaTime)
+        internal void NetworkUpdate(float currentTime)
         {
             if (Manager == null || !IsSpawned)
                 return;
 
-            if (destroyTime.HasValue && Time.fixedTime >= destroyTime.Value)
+            if (destroyTime.HasValue && currentTime >= destroyTime.Value)
             {
                 DestroyFromAssets();
+                return;
+            }
+
+            if (CountSubscribers() == 0)
+            {
+                // Don't update if there is no subscribers
                 return;
             }
 
@@ -197,7 +203,7 @@ namespace LiteNetLibManager
             Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
             for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
             {
-                SyncFields[loopCounter].NetworkUpdate(deltaTime);
+                SyncFields[loopCounter].NetworkUpdate(currentTime);
             }
             Profiler.EndSample();
 
@@ -211,7 +217,7 @@ namespace LiteNetLibManager
             Profiler.BeginSample("LiteNetLibIdentity - SyncBehaviours Update");
             for (loopCounter = 0; loopCounter < SyncBehaviours.Count; ++loopCounter)
             {
-                SyncBehaviours[loopCounter].NetworkUpdate(deltaTime);
+                SyncBehaviours[loopCounter].NetworkUpdate(currentTime);
             }
             Profiler.EndSample();
         }
