@@ -110,17 +110,6 @@ namespace LiteNetLibManager
                 serverTransport.Destroy();
         }
 
-        protected virtual void OnApplicationQuit()
-        {
-#if UNITY_EDITOR
-            StopHost();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            if (serverTransport != null)
-                serverTransport.Destroy();
-#endif
-        }
-
         /// <summary>
         /// Override this function to register messages
         /// </summary>
