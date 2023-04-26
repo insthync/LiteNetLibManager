@@ -124,7 +124,7 @@ namespace LiteNetLibManager
         {
             if (millisecondsTimeout > 0)
             {
-                await Task.Delay(millisecondsTimeout);
+                await UniTask.Delay(millisecondsTimeout);
                 LiteNetLibRequestCallback callback;
                 if (requestCallbacks.TryRemove(requestId, out callback))
                     callback.ResponseTimeout();

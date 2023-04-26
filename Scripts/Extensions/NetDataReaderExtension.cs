@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace LiteNetLib.Utils
 {
@@ -56,6 +57,29 @@ namespace LiteNetLib.Utils
                 return reader.GetPackedUShort();
             #endregion
 
+            #region Unity Values
+            if (type == typeof(Color))
+                return reader.GetColor();
+
+            if (type == typeof(Quaternion))
+                return reader.GetQuaternion();
+
+            if (type == typeof(Vector2))
+                return reader.GetVector2();
+
+            if (type == typeof(Vector2Int))
+                return reader.GetVector2Int();
+
+            if (type == typeof(Vector3))
+                return reader.GetVector3();
+
+            if (type == typeof(Vector3Int))
+                return reader.GetVector3Int();
+
+            if (type == typeof(Vector4))
+                return reader.GetVector4();
+            #endregion
+
             if (typeof(INetSerializable).IsAssignableFrom(type))
             {
                 object instance = Activator.CreateInstance(type);
@@ -64,6 +88,46 @@ namespace LiteNetLib.Utils
             }
 
             throw new ArgumentException("NetDataReader cannot read type " + type.Name);
+        }
+
+        public static Color GetColor(this NetDataReader reader)
+        {
+            float r = reader.GetByte() * 0.01f;
+            float g = reader.GetByte() * 0.01f;
+            float b = reader.GetByte() * 0.01f;
+            float a = reader.GetByte() * 0.01f;
+            return new Color(r, g, b, a);
+        }
+
+        public static Quaternion GetQuaternion(this NetDataReader reader)
+        {
+            Vector3 vector3 = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+            return vector3.sqrMagnitude <= 0 ? Quaternion.identity : Quaternion.Euler(vector3);
+        }
+
+        public static Vector2 GetVector2(this NetDataReader reader)
+        {
+            return new Vector2(reader.GetFloat(), reader.GetFloat());
+        }
+
+        public static Vector2Int GetVector2Int(this NetDataReader reader)
+        {
+            return new Vector2Int(reader.GetInt(), reader.GetInt());
+        }
+
+        public static Vector3 GetVector3(this NetDataReader reader)
+        {
+            return new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
+        }
+
+        public static Vector3Int GetVector3Int(this NetDataReader reader)
+        {
+            return new Vector3Int(reader.GetInt(), reader.GetInt(), reader.GetInt());
+        }
+
+        public static Vector4 GetVector4(this NetDataReader reader)
+        {
+            return new Vector4(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
 
         public static TValue[] GetArray<TValue>(this NetDataReader reader)
