@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace LiteNetLib.Utils
 {
@@ -96,50 +95,6 @@ namespace LiteNetLib.Utils
             }
             #endregion
 
-            #region Unity Values
-            if (type == typeof(Color))
-            {
-                writer.PutColor((Color)value);
-                return;
-            }
-
-            if (type == typeof(Quaternion))
-            {
-                writer.PutQuaternion((Quaternion)value);
-                return;
-            }
-
-            if (type == typeof(Vector2))
-            {
-                writer.PutVector2((Vector2)value);
-                return;
-            }
-
-            if (type == typeof(Vector2Int))
-            {
-                writer.PutVector2Int((Vector2Int)value);
-                return;
-            }
-
-            if (type == typeof(Vector3))
-            {
-                writer.PutVector3((Vector3)value);
-                return;
-            }
-
-            if (type == typeof(Vector3Int))
-            {
-                writer.PutVector3Int((Vector3Int)value);
-                return;
-            }
-
-            if (type == typeof(Vector4))
-            {
-                writer.PutVector4((Vector4)value);
-                return;
-            }
-            #endregion
-
             if (typeof(INetSerializable).IsAssignableFrom(type))
             {
                 (value as INetSerializable).Serialize(writer);
@@ -147,59 +102,6 @@ namespace LiteNetLib.Utils
             }
 
             throw new ArgumentException("NetDataWriter cannot write type " + value.GetType().Name);
-        }
-
-        public static void PutColor(this NetDataWriter writer, Color value)
-        {
-            byte r = (byte)(value.r * 100f);
-            byte g = (byte)(value.g * 100f);
-            byte b = (byte)(value.b * 100f);
-            byte a = (byte)(value.a * 100f);
-            writer.Put(r);
-            writer.Put(g);
-            writer.Put(b);
-            writer.Put(a);
-        }
-
-        public static void PutQuaternion(this NetDataWriter writer, Quaternion value)
-        {
-            writer.Put(value.eulerAngles.x);
-            writer.Put(value.eulerAngles.y);
-            writer.Put(value.eulerAngles.z);
-        }
-
-        public static void PutVector2(this NetDataWriter writer, Vector2 value)
-        {
-            writer.Put(value.x);
-            writer.Put(value.y);
-        }
-
-        public static void PutVector2Int(this NetDataWriter writer, Vector2Int value)
-        {
-            writer.Put(value.x);
-            writer.Put(value.y);
-        }
-
-        public static void PutVector3(this NetDataWriter writer, Vector3 value)
-        {
-            writer.Put(value.x);
-            writer.Put(value.y);
-            writer.Put(value.z);
-        }
-
-        public static void PutVector3Int(this NetDataWriter writer, Vector3Int value)
-        {
-            writer.Put(value.x);
-            writer.Put(value.y);
-            writer.Put(value.z);
-        }
-
-        public static void PutVector4(this NetDataWriter writer, Vector4 value)
-        {
-            writer.Put(value.x);
-            writer.Put(value.y);
-            writer.Put(value.z);
-            writer.Put(value.w);
         }
 
         public static void PutArray<TValue>(this NetDataWriter writer, TValue[] array)

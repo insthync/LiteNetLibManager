@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Cysharp.Threading.Tasks;
 
 namespace LiteNetLibManager
 {
-    public class LiteNetLibManager : MonoBehaviour
+    public class LiteNetLibManager
     {
         public LiteNetLibClient Client { get; protected set; }
         public LiteNetLibServer Server { get; protected set; }
@@ -23,20 +22,10 @@ namespace LiteNetLibManager
         public bool LogError { get { return currentLogLevel.IsLogError(); } }
         public bool LogFatal { get { return currentLogLevel.IsLogFatal(); } }
 
-        [Header("Client & Server Settings")]
         public ELogLevel currentLogLevel = ELogLevel.Info;
         public string networkAddress = "localhost";
         public int networkPort = 7770;
-        public bool useWebSocket = false;
-        public bool webSocketSecure = false;
-        public string webSocketCertificateFilePath = string.Empty;
-        public string webSocketCertificatePassword = string.Empty;
-
-        [Header("Server Only Settings")]
         public int maxConnections = 4;
-
-        [Header("Transport Layer Settings")]
-        [SerializeField]
         private BaseTransportFactory transportFactory;
         public BaseTransportFactory TransportFactory
         {
@@ -64,48 +53,20 @@ namespace LiteNetLibManager
             get
             {
                 if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{name}({GetType().Name})";
+                    logTag = $"{GetType().Name}";
                 return logTag;
             }
         }
 
-        protected virtual void Start()
+        public LiteNetLibManager()
         {
             InitTransportAndHandlers();
         }
 
         protected void PrepareTransportFactory()
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            // Force to use websocket transport if it's running as webgl
-            if (transportFactory == null || !(transportFactory is IWebSocketTransportFactory))
-            {
-                WebSocketTransportFactory webSocketTransportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
-                webSocketTransportFactory.Secure = webSocketSecure;
-                webSocketTransportFactory.CertificateFilePath = webSocketCertificateFilePath;
-                webSocketTransportFactory.CertificatePassword = webSocketCertificatePassword;
-                transportFactory = webSocketTransportFactory;
-            }
-#else
-            if (useWebSocket)
-            {
-                if (transportFactory == null || !(transportFactory is IWebSocketTransportFactory))
-                {
-                    WebSocketTransportFactory webSocketTransportFactory = gameObject.AddComponent<WebSocketTransportFactory>();
-                    webSocketTransportFactory.Secure = webSocketSecure;
-                    webSocketTransportFactory.CertificateFilePath = webSocketCertificateFilePath;
-                    webSocketTransportFactory.CertificatePassword = webSocketCertificatePassword;
-                    transportFactory = webSocketTransportFactory;
-                }
-            }
-            else
-            {
-                if (transportFactory == null)
-                    transportFactory = GetComponent<BaseTransportFactory>();
-                if (transportFactory == null)
-                    transportFactory = gameObject.AddComponent<LiteNetLibTransportFactory>();
-            }
-#endif
+            if (transportFactory == null)
+                transportFactory = new LiteNetLibTransportFactory();
         }
 
         public void PrepareClientTransport()

@@ -1,8 +1,6 @@
-﻿using UnityEngine;
-
-namespace LiteNetLibManager
+﻿namespace LiteNetLibManager
 {
-    public abstract class BaseTransportFactory : MonoBehaviour
+    public abstract class BaseTransportFactory
     {
         public abstract ITransport Build();
     }
