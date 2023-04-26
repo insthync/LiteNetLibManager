@@ -9,3 +9,4 @@ The document: https://insthync.github.io/LiteNetLibManager
 - UniTask
 - ZLogger
 - ZString
+- NetCoreServer
