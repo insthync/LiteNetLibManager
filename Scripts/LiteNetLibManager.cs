@@ -111,6 +111,11 @@ namespace LiteNetLibManager
             RegisterMessages();
         }
 
+        public void ProcessUpdate()
+        {
+            FixedUpdate();
+        }
+
         protected virtual void FixedUpdate()
         {
             if (IsServer)
