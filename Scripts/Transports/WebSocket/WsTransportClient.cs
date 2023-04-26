@@ -18,9 +18,9 @@ namespace LiteNetLibManager
 
         public override void OnWsConnecting(HttpRequest request)
         {
-            Uri uri = new Uri($"wss://{Endpoint.Address}:{Endpoint.Port}");
+            Uri uri = new Uri($"wss://{((IPEndPoint)Endpoint).Address}:{((IPEndPoint)Endpoint).Port}");
             request.SetBegin("GET", uri.PathAndQuery);
-            request.SetHeader("Host", Endpoint.Port == 80 ? uri.DnsSafeHost : uri.Authority);
+            request.SetHeader("Host", ((IPEndPoint)Endpoint).Port == 80 ? uri.DnsSafeHost : uri.Authority);
             request.SetHeader("Upgrade", "websocket");
             request.SetHeader("Connection", "Upgrade");
             request.SetHeader("Sec-WebSocket-Key", Convert.ToBase64String(WsNonce));
