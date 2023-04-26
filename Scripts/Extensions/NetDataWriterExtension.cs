@@ -163,9 +163,10 @@ namespace LiteNetLib.Utils
 
         public static void PutQuaternion(this NetDataWriter writer, Quaternion value)
         {
-            writer.Put(value.eulerAngles.x);
-            writer.Put(value.eulerAngles.y);
-            writer.Put(value.eulerAngles.z);
+            writer.Put(value.x);
+            writer.Put(value.y);
+            writer.Put(value.z);
+            writer.Put(value.w);
         }
 
         public static void PutVector2(this NetDataWriter writer, Vector2 value)
