@@ -28,15 +28,6 @@ namespace LiteNetLibManager
             _loggerByTags.Clear();
             _loggerFactory = loggerFactory;
             _defaultLogger = loggerFactory.CreateLogger("No Tag");
-
-            UnityEngine.Application.quitting += () =>
-            {
-                // when quit, flush unfinished log entries.
-                if (_loggerFactory != null)
-                    _loggerFactory.Dispose();
-                _loggerFactory = null;
-                IsDisposed = true;
-            };
         }
 
         public ILogger<T> GetLogger<T>() where T : class
@@ -63,28 +54,22 @@ namespace LiteNetLibManager
         public static LoggerManager WarningLoggerManager { get; set; }
         public static LoggerManager ErrorLoggerManager { get; set; }
 
+        static LogManager()
+        {
+            Initialize();
+        }
 
-        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Initialize()
         {
             // Standard LoggerFactory does not work on IL2CPP,
             // But you can use ZLogger's UnityLoggerFactory instead,
             // it works on IL2CPP, all platforms(includes mobile).
-            DefaultLoggerManager = new LoggerManager(UnityLoggerFactory.Create(builder =>
+            DefaultLoggerManager = new LoggerManager(LoggerFactory.Create(builder =>
             {
                 // or more configuration, you can use builder.AddFilter
+                builder.ClearProviders();
                 builder.SetMinimumLevel(LogLevel.Trace);
-
-                // AddZLoggerUnityDebug is only available for Unity, it send log to UnityEngine.Debug.Log.
-                // LogLevels are translate to
-                // * Trace/Debug/Information -> LogType.Log
-                // * Warning/Critical -> LogType.Warning
-                // * Error without Exception -> LogType.Error
-                // * Error with Exception -> LogException
-                builder.AddZLoggerUnityDebug(options =>
-                {
-                    options.PrefixFormatter = PrefixFormatterConfigure;
-                });
+                builder.AddZLoggerConsole();
             }));
 
             DefaultLoggerManager.Logger.LogInformation("===== Logger Initialized =====");
