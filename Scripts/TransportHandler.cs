@@ -43,7 +43,7 @@ namespace LiteNetLibManager
                 messageHandlers.ContainsKey(requestMessageType) ||
                 messageHandlers.ContainsKey(responseMessageType))
             {
-                Logging.LogError($"Cannot enable request-response feature, request/response message type must be different and not registered.");
+                Logging.LogError(LogTag, $"Cannot enable request-response feature, request/response message type must be different and not registered.");
                 DisableRequestResponse();
                 return false;
             }
@@ -154,13 +154,13 @@ namespace LiteNetLibManager
             if (!responseHandlers.ContainsKey(requestType))
             {
                 responseDelegate.Invoke(new ResponseHandlerData(nextRequestId++, this, -1, null), AckResponseCode.Unimplemented, EmptyMessage.Value);
-                Logging.LogError($"Cannot create request. Request type: {requestType} not registered.");
+                Logging.LogError(LogTag, $"Cannot create request. Request type: {requestType} not registered.");
                 return false;
             }
             if (!responseHandlers[requestType].IsRequestTypeValid(typeof(TRequest)))
             {
                 responseDelegate.Invoke(new ResponseHandlerData(nextRequestId++, this, -1, null), AckResponseCode.Unimplemented, EmptyMessage.Value);
-                Logging.LogError($"Cannot create request. Request type: {requestType}, {typeof(TRequest)} is not valid message type.");
+                Logging.LogError(LogTag, $"Cannot create request. Request type: {requestType}, {typeof(TRequest)} is not valid message type.");
                 return false;
             }
             // Create request
@@ -192,7 +192,7 @@ namespace LiteNetLibManager
             {
                 // No request-response handler
                 RequestProceeded(connectionId, requestId, AckResponseCode.Unimplemented, EmptyMessage.Value, null);
-                Logging.LogError($"Cannot proceed request {requestType} not registered.");
+                Logging.LogError(LogTag, $"Cannot proceed request {requestType} not registered.");
                 return;
             }
             // Invoke request and create response
@@ -290,7 +290,7 @@ namespace LiteNetLibManager
         {
             if (RequestResponseEnabled && (RequestMessageType == messageType || ResponseMessageType == messageType))
             {
-                Logging.LogError($"Cannot register message, message type must be difference to request/response message types.");
+                Logging.LogError(LogTag, $"Cannot register message, message type must be difference to request/response message types.");
                 return;
             }
             messageHandlers[messageType] = handlerDelegate;
