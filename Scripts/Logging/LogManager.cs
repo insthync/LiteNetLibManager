@@ -61,15 +61,14 @@ namespace LiteNetLibManager
 
         public static void Initialize()
         {
-            // Standard LoggerFactory does not work on IL2CPP,
-            // But you can use ZLogger's UnityLoggerFactory instead,
-            // it works on IL2CPP, all platforms(includes mobile).
             DefaultLoggerManager = new LoggerManager(LoggerFactory.Create(builder =>
             {
                 // or more configuration, you can use builder.AddFilter
-                builder.ClearProviders();
                 builder.SetMinimumLevel(LogLevel.Trace);
-                builder.AddZLoggerConsole();
+                builder.AddZLoggerConsole((options) =>
+                {
+                    options.PrefixFormatter = PrefixFormatterConfigure;
+                });
             }));
 
             DefaultLoggerManager.Logger.LogInformation("===== Logger Initialized =====");
