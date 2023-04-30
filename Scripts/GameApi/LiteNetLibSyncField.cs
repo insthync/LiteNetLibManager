@@ -133,7 +133,7 @@ namespace LiteNetLibManager
             }
 
             // Is it time to sync?
-            if (currentTime >= nextSyncTime)
+            if (currentTime < nextSyncTime)
                 return;
 
             // Set next sync time
@@ -151,7 +151,8 @@ namespace LiteNetLibManager
 
         public void UpdateImmediately()
         {
-            float currentTime = nextSyncTime + sendInterval;
+            float currentTime = Time.fixedTime;
+            nextSyncTime = currentTime;
             NetworkUpdate(currentTime);
         }
 
