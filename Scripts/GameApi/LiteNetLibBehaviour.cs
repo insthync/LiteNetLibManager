@@ -179,7 +179,7 @@ namespace LiteNetLibManager
                 return;
 
             // Is it time to sync?
-            if (currentTime >= nextSyncTime)
+            if (currentTime < nextSyncTime)
                 return;
 
             // Set next sync time

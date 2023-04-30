@@ -193,12 +193,6 @@ namespace LiteNetLibManager
                 return;
             }
 
-            if (CountSubscribers() == 0)
-            {
-                // Don't update if there is no subscribers
-                return;
-            }
-
             int loopCounter;
             Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
             for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
