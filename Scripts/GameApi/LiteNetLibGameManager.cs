@@ -58,6 +58,8 @@ namespace LiteNetLibManager
         public LiteNetLibAssets Assets { get; protected set; }
         public BaseInterestManager InterestManager { get; protected set; }
 
+        protected HashSet<LiteNetLibIdentity> _setOfUpdatingIdentity = new HashSet<LiteNetLibIdentity>();
+
         protected virtual void Awake()
         {
             Assets = GetComponent<LiteNetLibAssets>();
@@ -71,30 +73,56 @@ namespace LiteNetLibManager
 
         protected override void FixedUpdate()
         {
-            if (_loadSceneAsyncOperation == null)
+            if (_loadSceneAsyncOperation != null)
+                return;
+            if (!IsNetworkActive)
+                return;
+            if (IsClientConnected)
             {
-                if (IsClientConnected)
+                // Send ping from client
+                _clientSendPingCountDown -= Time.fixedDeltaTime;
+                if (_clientSendPingCountDown <= 0f)
                 {
-                    // Send ping from client
-                    _clientSendPingCountDown -= Time.fixedDeltaTime;
-                    if (_clientSendPingCountDown <= 0f)
-                    {
-                        SendClientPing();
-                        _clientSendPingCountDown = pingDuration;
-                    }
-                }
-                if (IsServer)
-                {
-                    // Send ping from server
-                    _serverSendPingCountDown -= Time.fixedDeltaTime;
-                    if (_serverSendPingCountDown <= 0f)
-                    {
-                        SendServerPing();
-                        _serverSendPingCountDown = pingDuration;
-                    }
+                    SendClientPing();
+                    _clientSendPingCountDown = pingDuration;
                 }
             }
+            if (IsServer)
+            {
+                // Send ping from server
+                _serverSendPingCountDown -= Time.fixedDeltaTime;
+                if (_serverSendPingCountDown <= 0f)
+                {
+                    SendServerPing();
+                    _serverSendPingCountDown = pingDuration;
+                }
+            }
+            UpdateRegisteredIdentities();
             base.FixedUpdate();
+        }
+
+        private void UpdateRegisteredIdentities()
+        {
+            float currentTime = Time.fixedTime;
+            foreach (LiteNetLibIdentity identity in _setOfUpdatingIdentity)
+            {
+                if (identity != null)
+                    identity.NetworkUpdate(currentTime);
+            }
+        }
+
+        internal void RegisterIdentityUpdating(LiteNetLibIdentity identity)
+        {
+            if (identity == null || _setOfUpdatingIdentity.Contains(identity))
+                return;
+            _setOfUpdatingIdentity.Add(identity);
+        }
+
+        internal void UnregisterIdentityUpdating(LiteNetLibIdentity identity)
+        {
+            if (identity == null || !_setOfUpdatingIdentity.Contains(identity))
+                return;
+            _setOfUpdatingIdentity.Remove(identity);
         }
 
         public virtual uint PacketVersion()
@@ -310,6 +338,7 @@ namespace LiteNetLibManager
                 ServerSceneName = Assets.onlineScene.SceneName;
                 LoadSceneRoutine(Assets.onlineScene.SceneName, true).Forget();
             }
+            _setOfUpdatingIdentity.Clear();
         }
 
         public override void OnStopServer()

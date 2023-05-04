@@ -74,12 +74,12 @@ namespace LiteNetLibManager
         internal readonly HashSet<long> Subscribers = new HashSet<long>();
 
         public string AssetId { get { return assetId; } }
-        private int? hashAssetId;
+        private int? _hashAssetId;
         public int HashAssetId
         {
             get
             {
-                if (!hashAssetId.HasValue)
+                if (!_hashAssetId.HasValue)
                 {
                     unchecked
                     {
@@ -94,10 +94,10 @@ namespace LiteNetLibManager
                             hash2 = ((hash2 << 5) + hash2) ^ AssetId[i + 1];
                         }
 
-                        hashAssetId = hash1 + (hash2 * 1566083941);
+                        _hashAssetId = hash1 + (hash2 * 1566083941);
                     }
                 }
-                return hashAssetId.Value;
+                return _hashAssetId.Value;
             }
         }
         public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
@@ -118,14 +118,14 @@ namespace LiteNetLibManager
         public bool IsPooledInstance { get; internal set; } = false;
         public LiteNetLibGameManager Manager { get; internal set; }
 
-        private string logTag;
+        private string _logTag;
         public string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
-                return logTag;
+                if (string.IsNullOrEmpty(_logTag))
+                    _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                return _logTag;
             }
         }
 
@@ -175,45 +175,57 @@ namespace LiteNetLibManager
             get; private set;
         }
 
-        private float? destroyTime;
-
-        private void FixedUpdate()
-        {
-            NetworkUpdate(Time.fixedTime);
-        }
+        private float? _destroyTime;
 
         internal void NetworkUpdate(float currentTime)
         {
             if (Manager == null || !IsSpawned)
                 return;
 
-            if (destroyTime.HasValue && currentTime >= destroyTime.Value)
+            if (_destroyTime.HasValue && currentTime >= _destroyTime.Value)
             {
                 DestroyFromAssets();
                 return;
             }
 
+            bool stillHaveSomethingToSend = false;
             int loopCounter;
             Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
             for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
             {
-                SyncFields[loopCounter].NetworkUpdate(currentTime);
+                if (!SyncFields[loopCounter].NetworkUpdate(currentTime))
+                    stillHaveSomethingToSend = true;
             }
             Profiler.EndSample();
 
             Profiler.BeginSample("LiteNetLibIdentity - SyncLists Update");
             for (loopCounter = 0; loopCounter < SyncLists.Count; ++loopCounter)
             {
-                SyncLists[loopCounter].SendOperations();
+                if (!SyncLists[loopCounter].SendOperations())
+                    stillHaveSomethingToSend = true;
             }
             Profiler.EndSample();
 
             Profiler.BeginSample("LiteNetLibIdentity - SyncBehaviours Update");
             for (loopCounter = 0; loopCounter < SyncBehaviours.Count; ++loopCounter)
             {
-                SyncBehaviours[loopCounter].NetworkUpdate(currentTime);
+                if (!SyncBehaviours[loopCounter].NetworkUpdate(currentTime))
+                    stillHaveSomethingToSend = true;
             }
             Profiler.EndSample();
+
+            if (!stillHaveSomethingToSend && !_destroyTime.HasValue)
+                UnregisterUpdating();
+        }
+
+        internal void RegisterUpdating()
+        {
+            Manager.RegisterIdentityUpdating(this);
+        }
+
+        internal void UnregisterUpdating()
+        {
+            Manager.UnregisterIdentityUpdating(this);
         }
 
         #region IDs generate in Editor
@@ -780,14 +792,15 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            destroyTime = Time.fixedTime + delay;
+            _destroyTime = Time.fixedTime + delay;
         }
 
         private void DestroyFromAssets()
         {
             if (!IsDestroyed && Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy))
                 IsDestroyed = true;
-            destroyTime = null;
+            _destroyTime = null;
+            UnregisterUpdating();
         }
 
         internal void OnNetworkDestroy(byte reasons)

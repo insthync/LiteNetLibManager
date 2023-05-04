@@ -46,28 +46,28 @@ namespace LiteNetLibManager
             get { return 1f / sendInterval; }
         }
 
-        private float nextSyncTime;
+        private float _nextSyncTime;
 
-        private static readonly Dictionary<string, CacheFields> CacheSyncElements = new Dictionary<string, CacheFields>();
-        private static readonly Dictionary<string, CacheFunctions> CacheElasticRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, CacheFunctions> CacheTargetRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, CacheFunctions> CacheAllRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, CacheFunctions> CacheServerRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, MethodInfo> CacheOnChangeFunctions = new Dictionary<string, MethodInfo>();
-        private static readonly Dictionary<string, MethodInfo> CacheOnUpdateFunctions = new Dictionary<string, MethodInfo>();
-        private static readonly Dictionary<string, Type[]> CacheDyncnamicFunctionTypes = new Dictionary<string, Type[]>();
+        private static readonly Dictionary<string, CacheFields> s_CacheSyncElements = new Dictionary<string, CacheFields>();
+        private static readonly Dictionary<string, CacheFunctions> s_CacheElasticRpcs = new Dictionary<string, CacheFunctions>();
+        private static readonly Dictionary<string, CacheFunctions> s_CacheTargetRpcs = new Dictionary<string, CacheFunctions>();
+        private static readonly Dictionary<string, CacheFunctions> s_CacheAllRpcs = new Dictionary<string, CacheFunctions>();
+        private static readonly Dictionary<string, CacheFunctions> s_CacheServerRpcs = new Dictionary<string, CacheFunctions>();
+        private static readonly Dictionary<string, MethodInfo> s_CacheOnChangeFunctions = new Dictionary<string, MethodInfo>();
+        private static readonly Dictionary<string, MethodInfo> s_CacheOnUpdateFunctions = new Dictionary<string, MethodInfo>();
+        private static readonly Dictionary<string, Type[]> s_CacheDyncnamicFunctionTypes = new Dictionary<string, Type[]>();
 
-        private readonly Dictionary<string, int> targetRpcIds = new Dictionary<string, int>();
-        private readonly Dictionary<string, int> allRpcIds = new Dictionary<string, int>();
-        private readonly Dictionary<string, int> serverRpcIds = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _targetRpcIds = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _allRpcIds = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _serverRpcIds = new Dictionary<string, int>();
 
         // Optimize garbage collector
-        private Type tempLookupType;
-        private HashSet<string> tempLookupNames = new HashSet<string>();
-        private FieldInfo[] tempLookupFields;
-        private MethodInfo[] tempLookupMethods;
+        private Type _tempLookupType;
+        private HashSet<string> _tempLookupNames = new HashSet<string>();
+        private FieldInfo[] _tempLookupFields;
+        private MethodInfo[] _tempLookupMethods;
 
-        private Type classType;
+        private Type _classType;
         /// <summary>
         /// This will be used when setup sync fields and sync lists
         /// </summary>
@@ -75,9 +75,9 @@ namespace LiteNetLibManager
         {
             get
             {
-                if (classType == null)
-                    classType = GetType();
-                return classType;
+                if (_classType == null)
+                    _classType = GetType();
+                return _classType;
             }
         }
 
@@ -90,19 +90,19 @@ namespace LiteNetLibManager
         }
 
         private bool isFoundIdentity;
-        private LiteNetLibIdentity identity;
+        private LiteNetLibIdentity _identity;
         public LiteNetLibIdentity Identity
         {
             get
             {
                 if (!isFoundIdentity)
                 {
-                    identity = GetComponent<LiteNetLibIdentity>();
-                    if (identity == null)
-                        identity = GetComponentInParent<LiteNetLibIdentity>();
-                    isFoundIdentity = identity != null;
+                    _identity = GetComponent<LiteNetLibIdentity>();
+                    if (_identity == null)
+                        _identity = GetComponentInParent<LiteNetLibIdentity>();
+                    isFoundIdentity = _identity != null;
                 }
-                return identity;
+                return _identity;
             }
         }
 
@@ -161,32 +161,35 @@ namespace LiteNetLibManager
             get { return Identity.IsSceneObject; }
         }
 
-        private string logTag;
+        private string _logTag;
         public virtual string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
-                return logTag;
+                if (string.IsNullOrEmpty(_logTag))
+                    _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                return _logTag;
             }
         }
 
-        internal void NetworkUpdate(float currentTime)
+        internal bool NetworkUpdate(float currentTime)
         {
             // Sync behaviour
             if (!IsServer || !CanSyncBehaviour())
-                return;
+                return true;
 
             // Is it time to sync?
-            if (currentTime < nextSyncTime)
-                return;
+            if (currentTime < _nextSyncTime)
+                return false;
 
             // Set next sync time
-            nextSyncTime = currentTime + sendInterval;
+            _nextSyncTime = currentTime + sendInterval;
+
+            // Should not sync yet, will sync next time
+            if (ShouldSyncBehaviour())
+                return false;
 
             Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
-            if (ShouldSyncBehaviour())
             {
                 LiteNetLibGameManager manager = Manager;
                 LiteNetLibServer server = manager.Server;
@@ -199,6 +202,7 @@ namespace LiteNetLibManager
                 }
             }
             Profiler.EndSample();
+            return true;
         }
 
         public void Setup(byte behaviourIndex)
@@ -206,18 +210,18 @@ namespace LiteNetLibManager
             this.behaviourIndex = behaviourIndex;
             OnSetup();
             CacheElements();
-            CacheRpcs<ElasticRpcAttribute>(serverRpcIds, CacheElasticRpcs);
-            CacheRpcs<ElasticRpcAttribute>(allRpcIds, CacheElasticRpcs);
-            CacheRpcs<ElasticRpcAttribute>(targetRpcIds, CacheElasticRpcs);
-            CacheRpcs<ServerRpcAttribute>(serverRpcIds, CacheServerRpcs);
-            CacheRpcs<AllRpcAttribute>(allRpcIds, CacheAllRpcs);
-            CacheRpcs<TargetRpcAttribute>(targetRpcIds, CacheTargetRpcs);
+            CacheRpcs<ElasticRpcAttribute>(_serverRpcIds, s_CacheElasticRpcs);
+            CacheRpcs<ElasticRpcAttribute>(_allRpcIds, s_CacheElasticRpcs);
+            CacheRpcs<ElasticRpcAttribute>(_targetRpcIds, s_CacheElasticRpcs);
+            CacheRpcs<ServerRpcAttribute>(_serverRpcIds, s_CacheServerRpcs);
+            CacheRpcs<AllRpcAttribute>(_allRpcIds, s_CacheAllRpcs);
+            CacheRpcs<TargetRpcAttribute>(_targetRpcIds, s_CacheTargetRpcs);
         }
 
         private void CacheElements()
         {
             CacheFields tempCacheFields;
-            if (!CacheSyncElements.TryGetValue(TypeName, out tempCacheFields))
+            if (!s_CacheSyncElements.TryGetValue(TypeName, out tempCacheFields))
             {
                 tempCacheFields = new CacheFields()
                 {
@@ -225,17 +229,17 @@ namespace LiteNetLibManager
                     syncLists = new List<FieldInfo>(),
                     syncFieldsWithAttribute = new List<FieldInfo>()
                 };
-                tempLookupNames.Clear();
-                tempLookupType = ClassType;
+                _tempLookupNames.Clear();
+                _tempLookupType = ClassType;
                 SyncFieldAttribute tempAttribute = null;
                 // Find for sync field and sync list from the class
-                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
+                while (_tempLookupType != null && _tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    tempLookupFields = tempLookupType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    foreach (FieldInfo lookupField in tempLookupFields)
+                    _tempLookupFields = _tempLookupType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    foreach (FieldInfo lookupField in _tempLookupFields)
                     {
                         // Avoid duplicate fields
-                        if (tempLookupNames.Contains(lookupField.Name))
+                        if (_tempLookupNames.Contains(lookupField.Name))
                             continue;
 
                         if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
@@ -254,14 +258,14 @@ namespace LiteNetLibManager
                                 tempCacheFields.syncFieldsWithAttribute.Add(lookupField);
                         }
 
-                        tempLookupNames.Add(lookupField.Name);
+                        _tempLookupNames.Add(lookupField.Name);
                     }
-                    tempLookupType = tempLookupType.BaseType;
+                    _tempLookupType = _tempLookupType.BaseType;
                 }
                 // Sort name to make sure the fields will be sync correctly by its index
                 tempCacheFields.syncFields.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
                 tempCacheFields.syncLists.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
-                CacheSyncElements.Add(TypeName, tempCacheFields);
+                s_CacheSyncElements.Add(TypeName, tempCacheFields);
             }
             SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields);
             SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists);
@@ -306,7 +310,7 @@ namespace LiteNetLibManager
                     tempOnChangeMethod = null;
                     if (!string.IsNullOrEmpty(tempAttribute.onChangeMethodName))
                     {
-                        tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, CacheOnChangeFunctions, (tempMethodParams) =>
+                        tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, s_CacheOnChangeFunctions, (tempMethodParams) =>
                         {
                             return tempMethodParams != null && tempMethodParams.Length == 1 && tempMethodParams[0].ParameterType == fieldInfo.FieldType;
                         });
@@ -320,7 +324,7 @@ namespace LiteNetLibManager
                     tempOnUpdateMethod = null;
                     if (!string.IsNullOrEmpty(tempAttribute.onUpdateMethodName))
                     {
-                        tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, CacheOnUpdateFunctions, (tempMethodParams) =>
+                        tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, s_CacheOnUpdateFunctions, (tempMethodParams) =>
                         {
                             return tempMethodParams == null || tempMethodParams.Length == 0;
                         });
@@ -356,11 +360,11 @@ namespace LiteNetLibManager
             if (!dictionary.TryGetValue(key, out tempMethod))
             {
                 // Not found hook function in cache dictionary, try find the function
-                tempLookupType = ClassType;
-                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
+                _tempLookupType = ClassType;
+                while (_tempLookupType != null && _tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    foreach (MethodInfo lookupMethod in tempLookupMethods)
+                    _tempLookupMethods = _tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    foreach (MethodInfo lookupMethod in _tempLookupMethods)
                     {
                         // Return type must be `void`
                         if (lookupMethod.ReturnType != typeof(void))
@@ -383,7 +387,7 @@ namespace LiteNetLibManager
                     if (tempMethod != null)
                         break;
 
-                    tempLookupType = tempLookupType.BaseType;
+                    _tempLookupType = _tempLookupType.BaseType;
                 }
                 // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
                 dictionary.Add(key, tempMethod);
@@ -402,17 +406,17 @@ namespace LiteNetLibManager
                     functions = new List<MethodInfo>(),
                     functionsCanCallByEveryone = new List<MethodInfo>()
                 };
-                tempLookupNames.Clear();
-                tempLookupType = ClassType;
+                _tempLookupNames.Clear();
+                _tempLookupType = ClassType;
                 RpcType tempAttribute;
                 // Find for function with [Rpc] attribute to register as RPC
-                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
+                while (_tempLookupType != null && _tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    foreach (MethodInfo lookupMethod in tempLookupMethods)
+                    _tempLookupMethods = _tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    foreach (MethodInfo lookupMethod in _tempLookupMethods)
                     {
                         // Avoid duplicate functions
-                        if (tempLookupNames.Contains(lookupMethod.Name))
+                        if (_tempLookupNames.Contains(lookupMethod.Name))
                             continue;
 
                         // Must have [Rpc] attribute
@@ -432,9 +436,9 @@ namespace LiteNetLibManager
                             tempCacheFunctions.functions.Add(lookupMethod);
                         else
                             tempCacheFunctions.functionsCanCallByEveryone.Add(lookupMethod);
-                        tempLookupNames.Add(lookupMethod.Name);
+                        _tempLookupNames.Add(lookupMethod.Name);
                     }
-                    tempLookupType = tempLookupType.BaseType;
+                    _tempLookupType = _tempLookupType.BaseType;
                 }
                 cacheDict.Add(TypeName, tempCacheFunctions);
             }
@@ -452,10 +456,10 @@ namespace LiteNetLibManager
             foreach (MethodInfo methodInfo in methodInfos)
             {
                 tempFunctionId = MakeNetFunctionId(methodInfo);
-                if (!CacheDyncnamicFunctionTypes.TryGetValue(tempFunctionId, out tempParamTypes))
+                if (!s_CacheDyncnamicFunctionTypes.TryGetValue(tempFunctionId, out tempParamTypes))
                 {
                     tempParamTypes = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
-                    CacheDyncnamicFunctionTypes[tempFunctionId] = tempParamTypes;
+                    s_CacheDyncnamicFunctionTypes[tempFunctionId] = tempParamTypes;
                 }
                 RegisterRPC(ids, tempFunctionId, new LiteNetLibFunctionDynamic(tempParamTypes, this, methodInfo), canCallByEveryone);
             }
@@ -571,244 +575,244 @@ namespace LiteNetLibManager
 
         public void RegisterElasticRPC(NetFunctionDelegate func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC(NetFunctionDelegate func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(serverRpcIds, func, canCallByEveryone);
+            RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC(NetFunctionDelegate func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(allRpcIds, func, canCallByEveryone);
+            RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc(NetFunctionDelegate func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
         public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(targetRpcIds, func, canCallByEveryone);
+            RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
         #endregion
 
@@ -1478,7 +1482,7 @@ namespace LiteNetLibManager
             switch (receivers)
             {
                 case FunctionReceivers.All:
-                    if (allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+                    if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
                     {
                         Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
@@ -1489,7 +1493,7 @@ namespace LiteNetLibManager
                     }
                     break;
                 case FunctionReceivers.Server:
-                    if (serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+                    if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
                     {
                         Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
@@ -1526,11 +1530,11 @@ namespace LiteNetLibManager
         public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, params object[] parameters)
         {
             int elementId;
-            if (allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+            if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
                 Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.All, parameters);
             }
-            else if (serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+            else if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
                 Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.Server, parameters);
             }
@@ -1558,7 +1562,7 @@ namespace LiteNetLibManager
         public void RPC(string methodName, long connectionId, params object[] parameters)
         {
             int elementId;
-            if (targetRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+            if (_targetRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
             {
                 Identity.NetFunctions[elementId].Call(0, DeliveryMethod.ReliableOrdered, connectionId, parameters);
             }
