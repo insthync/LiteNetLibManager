@@ -98,6 +98,14 @@ namespace LiteNetLibManager
                         OnChange(true);
                     break;
             }
+            RegisterUpdating();
+        }
+
+        protected void RegisterUpdating()
+        {
+            if (!IsSetup)
+                return;
+            Manager.RegisterSyncFieldUpdating(this);
         }
 
         internal virtual bool NetworkUpdate(float currentTime)
@@ -107,11 +115,11 @@ namespace LiteNetLibManager
 
             // Won't update
             if (HasSyncBehaviourFlag(SyncBehaviour.DoNotSyncUpdate))
-                return false;
+                return true;
 
             // No update
             if (!HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) && !HasUpdate())
-                return false;
+                return true;
 
             // Call `OnChange` if it's not called yet.
             if ((HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) || HasUpdate()) && !_onChangeCalled)

@@ -9,6 +9,7 @@ using LiteNetLib.Utils;
 using UnityEngine.Events;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
+using Cysharp.Threading.Tasks;
 
 namespace LiteNetLibManager
 {
@@ -173,59 +174,6 @@ namespace LiteNetLibManager
         public bool IsSceneObject
         {
             get; private set;
-        }
-
-        private float? _destroyTime;
-
-        internal void NetworkUpdate(float currentTime)
-        {
-            if (Manager == null || !IsSpawned)
-                return;
-
-            if (_destroyTime.HasValue && currentTime >= _destroyTime.Value)
-            {
-                DestroyFromAssets();
-                return;
-            }
-
-            bool stillHaveSomethingToSend = false;
-            int loopCounter;
-            Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
-            for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
-            {
-                if (!SyncFields[loopCounter].NetworkUpdate(currentTime))
-                    stillHaveSomethingToSend = true;
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("LiteNetLibIdentity - SyncLists Update");
-            for (loopCounter = 0; loopCounter < SyncLists.Count; ++loopCounter)
-            {
-                if (!SyncLists[loopCounter].SendOperations())
-                    stillHaveSomethingToSend = true;
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("LiteNetLibIdentity - SyncBehaviours Update");
-            for (loopCounter = 0; loopCounter < SyncBehaviours.Count; ++loopCounter)
-            {
-                if (!SyncBehaviours[loopCounter].NetworkUpdate(currentTime))
-                    stillHaveSomethingToSend = true;
-            }
-            Profiler.EndSample();
-
-            if (!stillHaveSomethingToSend && !_destroyTime.HasValue)
-                UnregisterUpdating();
-        }
-
-        internal void RegisterUpdating()
-        {
-            Manager.RegisterIdentityUpdating(this);
-        }
-
-        internal void UnregisterUpdating()
-        {
-            Manager.UnregisterIdentityUpdating(this);
         }
 
         #region IDs generate in Editor
@@ -792,15 +740,19 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            _destroyTime = Time.fixedTime + delay;
+            InternalNetworkDestroy(delay).Forget();
+        }
+
+        private async UniTaskVoid InternalNetworkDestroy(float delay)
+        {
+            await UniTask.Delay((int)(1000 * delay));
+            DestroyFromAssets();
         }
 
         private void DestroyFromAssets()
         {
             if (!IsDestroyed && Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy))
                 IsDestroyed = true;
-            _destroyTime = null;
-            UnregisterUpdating();
         }
 
         internal void OnNetworkDestroy(byte reasons)
