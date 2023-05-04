@@ -95,11 +95,19 @@ namespace LiteNetLibManager
             this.behaviour = behaviour;
             this.elementId = elementId;
             IsSetup = true;
+            RegisterUpdating();
         }
 
         protected virtual bool CanSync()
         {
             return IsSetup;
+        }
+
+        protected void RegisterUpdating()
+        {
+            if (!IsSetup)
+                return;
+            Identity.RegisterUpdating();
         }
     }
 }

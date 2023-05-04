@@ -8,8 +8,8 @@ namespace LiteNetLibManager
 {
     public abstract class LiteNetLibSyncField : LiteNetLibElement
     {
-        protected readonly static NetDataWriter ServerWriter = new NetDataWriter();
-        protected readonly static NetDataWriter ClientWriter = new NetDataWriter();
+        protected readonly static NetDataWriter s_ServerWriter = new NetDataWriter();
+        protected readonly static NetDataWriter s_ClientWriter = new NetDataWriter();
 
         public enum SyncMode : byte
         {
@@ -60,9 +60,9 @@ namespace LiteNetLibManager
         [Tooltip("Sending method type from clients to server (`syncMode` is `ClientMulticast` only), default is `Sequenced`")]
         public DeliveryMethod clientDeliveryMethod = DeliveryMethod.Sequenced;
 
-        private float nextSyncTime;
-        private bool onChangeCalled;
-        protected object defaultValue;
+        private float _nextSyncTime;
+        private bool _onChangeCalled;
+        protected object _defaultValue;
 
         public abstract Type GetFieldType();
         public abstract object GetValue();
@@ -78,13 +78,13 @@ namespace LiteNetLibManager
 
         internal void Reset()
         {
-            SetValue(defaultValue);
+            SetValue(_defaultValue);
         }
 
         internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
-            defaultValue = GetValue();
+            _defaultValue = GetValue();
             // Invoke on change function with initial state = true
             switch (syncMode)
             {
@@ -100,21 +100,21 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void NetworkUpdate(float currentTime)
+        internal virtual bool NetworkUpdate(float currentTime)
         {
             if (!CanSync())
-                return;
+                return false;
 
             // Won't update
             if (HasSyncBehaviourFlag(SyncBehaviour.DoNotSyncUpdate))
-                return;
+                return false;
 
             // No update
             if (!HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) && !HasUpdate())
-                return;
+                return false;
 
             // Call `OnChange` if it's not called yet.
-            if ((HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) || HasUpdate()) && !onChangeCalled)
+            if ((HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) || HasUpdate()) && !_onChangeCalled)
             {
                 // Invoke on change function with initial state = false
                 switch (syncMode)
@@ -129,15 +129,15 @@ namespace LiteNetLibManager
                             OnChange(false);
                         break;
                 }
-                onChangeCalled = true;
+                _onChangeCalled = true;
             }
 
             // Is it time to sync?
-            if (currentTime < nextSyncTime)
-                return;
+            if (currentTime < _nextSyncTime)
+                return false;
 
             // Set next sync time
-            nextSyncTime = currentTime + sendInterval;
+            _nextSyncTime = currentTime + sendInterval;
 
             // Send the update
             SendUpdate(false);
@@ -146,13 +146,16 @@ namespace LiteNetLibManager
             Updated();
 
             // Reset on change called state to call `OnChange` later when has update
-            onChangeCalled = false;
+            _onChangeCalled = false;
+
+            // Keep update next frame if it is `always sync`
+            return !HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync);
         }
 
         public void UpdateImmediately()
         {
             float currentTime = Time.fixedTime;
-            nextSyncTime = currentTime;
+            _nextSyncTime = currentTime;
             NetworkUpdate(currentTime);
         }
 
@@ -183,10 +186,10 @@ namespace LiteNetLibManager
                 return;
             LiteNetLibGameManager manager = Manager;
             LiteNetLibServer server = manager.Server;
-            TransportHandler.WritePacket(ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
-            SerializeForSend(ServerWriter);
+            TransportHandler.WritePacket(s_ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+            SerializeForSend(s_ServerWriter);
             if (manager.ContainsConnectionId(connectionId))
-                server.SendMessage(connectionId, dataChannel, deliveryMethod, ServerWriter);
+                server.SendMessage(connectionId, dataChannel, deliveryMethod, s_ServerWriter);
         }
 
         internal void SendUpdate(bool isInitial)
@@ -202,38 +205,38 @@ namespace LiteNetLibManager
             switch (syncMode)
             {
                 case SyncMode.ServerToClients:
-                    TransportHandler.WritePacket(ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
-                    SerializeForSend(ServerWriter);
+                    TransportHandler.WritePacket(s_ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                    SerializeForSend(s_ServerWriter);
                     foreach (long connectionId in manager.GetConnectionIds())
                     {
                         if (Identity.HasSubscriberOrIsOwning(connectionId))
-                            server.SendMessage(connectionId, dataChannel, deliveryMethod, ServerWriter);
+                            server.SendMessage(connectionId, dataChannel, deliveryMethod, s_ServerWriter);
                     }
                     break;
                 case SyncMode.ServerToOwnerClient:
                     if (manager.ContainsConnectionId(ConnectionId))
                     {
-                        TransportHandler.WritePacket(ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
-                        SerializeForSend(ServerWriter);
-                        server.SendMessage(ConnectionId, dataChannel, deliveryMethod, ServerWriter);
+                        TransportHandler.WritePacket(s_ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                        SerializeForSend(s_ServerWriter);
+                        server.SendMessage(ConnectionId, dataChannel, deliveryMethod, s_ServerWriter);
                     }
                     break;
                 case SyncMode.ClientMulticast:
                     if (IsOwnerClient)
                     {
-                        TransportHandler.WritePacket(ClientWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
-                        SerializeForSend(ClientWriter);
+                        TransportHandler.WritePacket(s_ClientWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                        SerializeForSend(s_ClientWriter);
                         // Client send data to server, then server send to other clients, it should be reliable-ordered
-                        client.SendMessage(clientDataChannel, clientDeliveryMethod, ClientWriter);
+                        client.SendMessage(clientDataChannel, clientDeliveryMethod, s_ClientWriter);
                     }
                     else if (IsServer)
                     {
-                        TransportHandler.WritePacket(ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
-                        SerializeForSend(ServerWriter);
+                        TransportHandler.WritePacket(s_ServerWriter, isInitial ? GameMsgTypes.InitialSyncField : GameMsgTypes.UpdateSyncField);
+                        SerializeForSend(s_ServerWriter);
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
                             if (Identity.HasSubscriberOrIsOwning(connectionId))
-                                server.SendMessage(connectionId, dataChannel, deliveryMethod, ServerWriter);
+                                server.SendMessage(connectionId, dataChannel, deliveryMethod, s_ServerWriter);
                         }
                     }
                     break;
@@ -308,6 +311,13 @@ namespace LiteNetLibManager
             field.SetValue(instance, value);
         }
 
+        internal override sealed bool NetworkUpdate(float currentTime)
+        {
+            base.NetworkUpdate(currentTime);
+            // Always returns FALSE to keep updating
+            return false;
+        }
+
         internal override sealed bool HasUpdate()
         {
             if (hasUpdate)
@@ -355,7 +365,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// Use this variable to tell that it has to update after value changed
         /// </summary>
-        protected bool hasUpdate;
+        protected bool _hasUpdate;
 
         [SerializeField]
         protected TType value;
@@ -368,7 +378,10 @@ namespace LiteNetLibManager
                 {
                     this.value = value;
                     if (CanSync())
-                        hasUpdate = true;
+                    {
+                        _hasUpdate = true;
+                        RegisterUpdating();
+                    }
                 }
             }
         }
@@ -380,14 +393,14 @@ namespace LiteNetLibManager
 
         internal override bool HasUpdate()
         {
-            return hasUpdate;
+            return _hasUpdate;
         }
 
         internal override void Updated()
         {
             if (onUpdated != null)
                 onUpdated.Invoke();
-            hasUpdate = false;
+            _hasUpdate = false;
         }
 
         public override sealed Type GetFieldType()
@@ -426,7 +439,11 @@ namespace LiteNetLibManager
             set
             {
                 Value[i] = value;
-                hasUpdate = true;
+                if (CanSync())
+                {
+                    _hasUpdate = true;
+                    RegisterUpdating();
+                }
             }
         }
 

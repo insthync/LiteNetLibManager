@@ -44,28 +44,28 @@ namespace LiteNetLibManager
             set { transportFactory = value; }
         }
 
-        private ITransport offlineTransport;
-        private ITransport clientTransport;
+        private ITransport _offlineTransport;
+        private ITransport _clientTransport;
         public ITransport ClientTransport
         {
-            get { return IsOfflineConnection ? offlineTransport : clientTransport; }
+            get { return IsOfflineConnection ? _offlineTransport : _clientTransport; }
         }
-        private ITransport serverTransport;
+        private ITransport _serverTransport;
         public ITransport ServerTransport
         {
-            get { return IsOfflineConnection ? offlineTransport : serverTransport; }
+            get { return IsOfflineConnection ? _offlineTransport : _serverTransport; }
         }
 
         public bool IsOfflineConnection { get; protected set; }
 
-        private string logTag;
+        private string _logTag;
         public virtual string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{name}({GetType().Name})";
-                return logTag;
+                if (string.IsNullOrEmpty(_logTag))
+                    _logTag = $"{name}({GetType().Name})";
+                return _logTag;
             }
         }
 
@@ -111,22 +111,22 @@ namespace LiteNetLibManager
         public void PrepareClientTransport()
         {
             PrepareTransportFactory();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            clientTransport = transportFactory.Build();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            _clientTransport = transportFactory.Build();
         }
 
         public void PrepareServerTransport()
         {
             PrepareTransportFactory();
-            if (serverTransport != null)
-                serverTransport.Destroy();
-            serverTransport = transportFactory.Build();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
+            _serverTransport = transportFactory.Build();
         }
 
         protected void InitTransportAndHandlers()
         {
-            offlineTransport = new OfflineTransport();
+            _offlineTransport = new OfflineTransport();
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
             RegisterMessages();
@@ -143,20 +143,20 @@ namespace LiteNetLibManager
         protected virtual void OnDestroy()
         {
             StopHost();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            if (serverTransport != null)
-                serverTransport.Destroy();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
         }
 
         protected virtual void OnApplicationQuit()
         {
 #if UNITY_EDITOR
             StopHost();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            if (serverTransport != null)
-                serverTransport.Destroy();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
 #endif
         }
 
