@@ -371,6 +371,13 @@ namespace LiteNetLibManager
             }
         }
 
+        private void LateUpdate()
+        {
+            if (!IsServer)
+                return;
+            Manager.RegisterSyncBehaviourUpdating(this);
+        }
+
         private void UpdateTransform(float deltaTime)
         {
             if (ShouldSnap(endInterpResult.position))

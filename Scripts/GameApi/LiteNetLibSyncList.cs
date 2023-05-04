@@ -71,6 +71,14 @@ namespace LiteNetLibManager
                     onOperation.Invoke(Operation.AddInitial, i);
                 }
             }
+            RegisterUpdating();
+        }
+
+        protected void RegisterUpdating()
+        {
+            if (!IsSetup)
+                return;
+            Manager.RegisterSyncListUpdating(this);
         }
     }
 
@@ -84,8 +92,8 @@ namespace LiteNetLibManager
             public int count;
         }
 
-        protected readonly List<TType> _list = new List<TType>();
-        protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>();
+        protected readonly List<TType> _list = new List<TType>(128);
+        protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>(16);
 
         public TType this[int index]
         {
@@ -293,6 +301,7 @@ namespace LiteNetLibManager
                     });
                     break;
             }
+            RegisterUpdating();
         }
 
         internal override sealed void SendInitialList(long connectionId)

@@ -1,10 +1,11 @@
-﻿using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using Cysharp.Threading.Tasks;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.Profiling;
 
 namespace LiteNetLibManager
 {
@@ -58,7 +59,9 @@ namespace LiteNetLibManager
         public LiteNetLibAssets Assets { get; protected set; }
         public BaseInterestManager InterestManager { get; protected set; }
 
-        protected HashSet<LiteNetLibIdentity> _setOfUpdatingIdentity = new HashSet<LiteNetLibIdentity>();
+        protected readonly List<LiteNetLibSyncField> _updatingSyncFields = new List<LiteNetLibSyncField>(1024);
+        protected readonly List<LiteNetLibSyncList> _updatingSyncLists = new List<LiteNetLibSyncList>(1024);
+        protected readonly List<LiteNetLibBehaviour> _updatingSyncBehaviours = new List<LiteNetLibBehaviour>(128);
 
         protected virtual void Awake()
         {
@@ -97,32 +100,79 @@ namespace LiteNetLibManager
                     _serverSendPingCountDown = pingDuration;
                 }
             }
-            UpdateRegisteredIdentities();
+            UpdateRegisteredSyncElements();
             base.FixedUpdate();
         }
 
-        private void UpdateRegisteredIdentities()
+        private void UpdateRegisteredSyncElements()
         {
             float currentTime = Time.fixedTime;
-            foreach (LiteNetLibIdentity identity in _setOfUpdatingIdentity)
+            int i;
+            Profiler.BeginSample("SyncFields Update");
+            for (i = _updatingSyncFields.Count - 1; i >= 0; --i)
             {
-                if (identity != null)
-                    identity.NetworkUpdate(currentTime);
+                if (_updatingSyncFields[i] == null || _updatingSyncFields[i].NetworkUpdate(currentTime))
+                    _updatingSyncFields.RemoveAt(i);
             }
+            Profiler.EndSample();
+
+            Profiler.BeginSample("SyncLists Update");
+            for (i = _updatingSyncLists.Count - 1; i >= 0; --i)
+            {
+                if (_updatingSyncLists[i] == null || _updatingSyncLists[i].SendOperations())
+                    _updatingSyncLists.RemoveAt(i);
+            }
+            Profiler.EndSample();
+
+            Profiler.BeginSample("SyncBehaviours Update");
+            for (i = _updatingSyncBehaviours.Count - 1; i >= 0; --i)
+            {
+                if (_updatingSyncBehaviours[i] == null || _updatingSyncBehaviours[i].NetworkUpdate(currentTime))
+                    _updatingSyncBehaviours.RemoveAt(i);
+            }
+            Profiler.EndSample();
         }
 
-        internal void RegisterIdentityUpdating(LiteNetLibIdentity identity)
+        internal void RegisterSyncFieldUpdating(LiteNetLibSyncField element)
         {
-            if (identity == null || _setOfUpdatingIdentity.Contains(identity))
+            if (element == null || _updatingSyncFields.Contains(element))
                 return;
-            _setOfUpdatingIdentity.Add(identity);
+            _updatingSyncFields.Add(element);
         }
 
-        internal void UnregisterIdentityUpdating(LiteNetLibIdentity identity)
+        internal void UnregisterSyncFieldUpdating(LiteNetLibSyncField element)
         {
-            if (identity == null || !_setOfUpdatingIdentity.Contains(identity))
+            if (element == null)
                 return;
-            _setOfUpdatingIdentity.Remove(identity);
+            _updatingSyncFields.Remove(element);
+        }
+
+        internal void RegisterSyncListUpdating(LiteNetLibSyncList element)
+        {
+            if (element == null || _updatingSyncLists.Contains(element))
+                return;
+            _updatingSyncLists.Add(element);
+        }
+
+        internal void UnregisterSyncListUpdating(LiteNetLibSyncList element)
+        {
+            if (element == null)
+                return;
+            _updatingSyncLists.Remove(element);
+        }
+
+        internal void RegisterSyncBehaviourUpdating(LiteNetLibBehaviour element)
+        {
+            if (element == null || _updatingSyncBehaviours.Contains(element))
+                return;
+            _updatingSyncBehaviours.Add(element);
+        }
+
+        internal void UnregisterSyncBehaviourUpdating(LiteNetLibBehaviour element)
+        {
+            if (element == null)
+                return;
+            _updatingSyncBehaviours.Remove(element);
         }
 
         public virtual uint PacketVersion()
@@ -338,7 +388,9 @@ namespace LiteNetLibManager
                 ServerSceneName = Assets.onlineScene.SceneName;
                 LoadSceneRoutine(Assets.onlineScene.SceneName, true).Forget();
             }
-            _setOfUpdatingIdentity.Clear();
+            _updatingSyncFields.Clear();
+            _updatingSyncLists.Clear();
+            _updatingSyncBehaviours.Clear();
         }
 
         public override void OnStopServer()
