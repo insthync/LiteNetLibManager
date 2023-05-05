@@ -172,6 +172,11 @@ namespace LiteNetLibManager
             }
         }
 
+        /// <summary>
+        /// Return `TRUE` to determine that the update is done and unregister updating
+        /// </summary>
+        /// <param name="currentTime"></param>
+        /// <returns></returns>
         internal bool NetworkUpdate(float currentTime)
         {
             // Sync behaviour
