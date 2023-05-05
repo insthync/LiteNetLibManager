@@ -330,6 +330,10 @@ namespace LiteNetLibManager
             return false;
         }
 
+        /// <summary>
+        /// Return `TRUE` to determine that the update is done and unregister updating
+        /// </summary>
+        /// <returns></returns>
         internal override sealed bool SendOperations()
         {
             if (!CanSync())
