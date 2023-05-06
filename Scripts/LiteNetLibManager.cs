@@ -69,6 +69,9 @@ namespace LiteNetLibManager
             }
         }
 
+        private GameUpdater _serverUpdater;
+        private GameUpdater _clientUpdater;
+
         protected virtual void Start()
         {
             InitTransportAndHandlers();
@@ -132,12 +135,26 @@ namespace LiteNetLibManager
             RegisterMessages();
         }
 
-        protected virtual void FixedUpdate()
+        protected virtual void Update()
         {
             if (IsServer)
+            {
+                _serverUpdater.Update();
                 Server.Update();
+            }
             if (IsClient)
+            {
+                _clientUpdater.Update();
                 Client.Update();
+            }
+        }
+
+        protected virtual void OnServerUpdate(GameUpdater updater)
+        {
+        }
+
+        protected virtual void OnClientUpdate(GameUpdater updater)
+        {
         }
 
         protected virtual void OnDestroy()
@@ -179,6 +196,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
                 return false;
             }
+            if (_serverUpdater != null)
+                _serverUpdater.Stop();
+            _serverUpdater = new GameUpdater(30, OnServerUpdate);
+            _serverUpdater.Start();
             IsServer = true;
             OnStartServer();
             return true;
@@ -206,6 +227,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
                 return false;
             }
+            if (_clientUpdater != null)
+                _clientUpdater.Stop();
+            _clientUpdater = new GameUpdater(30, OnClientUpdate);
+            _clientUpdater.Start();
             IsClient = true;
             OnStartClient(Client);
             return true;
@@ -240,6 +265,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopServer");
+            if (_serverUpdater != null)
+                _serverUpdater.Stop();
             IsServer = false;
             Server.StopServer();
             OnStopServer();
@@ -257,6 +284,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopClient");
+            if (_clientUpdater != null)
+                _clientUpdater.Stop();
             IsClient = false;
             Client.StopClient();
             OnStopClient();
