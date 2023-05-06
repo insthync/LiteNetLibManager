@@ -20,8 +20,8 @@ namespace LiteNetLibManager
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
-        private float _clientSendPingCountDown;
-        private float _serverSendPingCountDown;
+        private double _clientSendPingCountDown;
+        private double _serverSendPingCountDown;
         private AsyncOperation _loadSceneAsyncOperation;
 
         public long ClientConnectionId { get; protected set; }
@@ -74,34 +74,29 @@ namespace LiteNetLibManager
                 DontDestroyOnLoad(gameObject);
         }
 
-        protected override void FixedUpdate()
+        protected override void OnServerUpdate(GameUpdater updater)
         {
-            if (_loadSceneAsyncOperation != null)
-                return;
-            if (!IsNetworkActive)
-                return;
-            if (IsClientConnected)
-            {
-                // Send ping from client
-                _clientSendPingCountDown -= Time.fixedDeltaTime;
-                if (_clientSendPingCountDown <= 0f)
-                {
-                    SendClientPing();
-                    _clientSendPingCountDown = pingDuration;
-                }
-            }
-            if (IsServer)
-            {
-                // Send ping from server
-                _serverSendPingCountDown -= Time.fixedDeltaTime;
-                if (_serverSendPingCountDown <= 0f)
-                {
-                    SendServerPing();
-                    _serverSendPingCountDown = pingDuration;
-                }
-            }
             UpdateRegisteredSyncElements();
-            base.FixedUpdate();
+            // Send ping from server
+            _serverSendPingCountDown -= updater.DeltaTime;
+            if (_serverSendPingCountDown <= 0f)
+            {
+                SendServerPing();
+                _serverSendPingCountDown = pingDuration;
+            }
+        }
+
+        protected override void OnClientUpdate(GameUpdater updater)
+        {
+            if (!IsServer)
+                UpdateRegisteredSyncElements();
+            // Send ping from client
+            _clientSendPingCountDown -= updater.DeltaTime;
+            if (_clientSendPingCountDown <= 0f)
+            {
+                SendClientPing();
+                _clientSendPingCountDown = pingDuration;
+            }
         }
 
         private void UpdateRegisteredSyncElements()
