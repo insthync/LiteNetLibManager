@@ -7,7 +7,6 @@ using UnityEditor.SceneManagement;
 #endif
 using LiteNetLib.Utils;
 using UnityEngine.Events;
-using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 using Cysharp.Threading.Tasks;
 
@@ -32,6 +31,8 @@ namespace LiteNetLibManager
 
         [Header("Events")]
         public UnityEvent onGetInstance = new UnityEvent();
+        public LiteNetLibConnectionIdEvent onSubscriberAdded = new LiteNetLibConnectionIdEvent();
+        public LiteNetLibConnectionIdEvent onSubscriberRemoved = new LiteNetLibConnectionIdEvent();
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -612,12 +613,22 @@ namespace LiteNetLibManager
 
         public bool AddSubscriber(long connectionId)
         {
-            return Subscribers.Add(connectionId);
+            if (Subscribers.Add(connectionId))
+            {
+                onSubscriberAdded.Invoke(connectionId);
+                return true;
+            }
+            return false;
         }
 
         public bool RemoveSubscriber(long connectionId)
         {
-            return Subscribers.Remove(connectionId);
+            if (Subscribers.Remove(connectionId))
+            {
+                onSubscriberRemoved.Invoke(connectionId);
+                return true;
+            }
+            return false;
         }
 
         public bool HasSubscriber(long connectionId)
