@@ -30,8 +30,6 @@ namespace LiteNetLibManager
         private readonly double _stopwatchFrequency;
         private readonly GameUpdateDelegate _action;
 
-        protected ushort _tick;
-
         public GameUpdater(byte framesPerSecond, GameUpdateDelegate action)
         {
             FramesPerSecond = framesPerSecond;
@@ -55,7 +53,6 @@ namespace LiteNetLibManager
 
         public void Reset()
         {
-            _tick = 0;
             VisualDeltaTime = 0.0;
             _accumulator = 0;
             _lastTime = 0;
@@ -89,7 +86,6 @@ namespace LiteNetLibManager
                     return;
                 }
                 OnAction();
-                _tick++;
 
                 _accumulator -= _deltaTimeTicks;
                 updates++;

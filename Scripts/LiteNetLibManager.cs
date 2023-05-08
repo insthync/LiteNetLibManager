@@ -31,9 +31,10 @@ namespace LiteNetLibManager
         public bool webSocketSecure = false;
         public string webSocketCertificateFilePath = string.Empty;
         public string webSocketCertificatePassword = string.Empty;
+        public byte updateFps = 20; 
 
         [Header("Server Only Settings")]
-        public int maxConnections = 4;
+        public int maxConnections = 4;        
 
         [Header("Transport Layer Settings")]
         [SerializeField]
@@ -198,7 +199,7 @@ namespace LiteNetLibManager
             }
             if (_serverUpdater != null)
                 _serverUpdater.Stop();
-            _serverUpdater = new GameUpdater(30, OnServerUpdate);
+            _serverUpdater = new GameUpdater(updateFps, OnServerUpdate);
             _serverUpdater.Start();
             IsServer = true;
             OnStartServer();
@@ -229,7 +230,7 @@ namespace LiteNetLibManager
             }
             if (_clientUpdater != null)
                 _clientUpdater.Stop();
-            _clientUpdater = new GameUpdater(30, OnClientUpdate);
+            _clientUpdater = new GameUpdater(updateFps, OnClientUpdate);
             _clientUpdater.Start();
             IsClient = true;
             OnStartClient(Client);
