@@ -31,9 +31,10 @@ namespace LiteNetLibManager
         public bool webSocketSecure = false;
         public string webSocketCertificateFilePath = string.Empty;
         public string webSocketCertificatePassword = string.Empty;
+        public byte updateFps = 20; 
 
         [Header("Server Only Settings")]
-        public int maxConnections = 4;
+        public int maxConnections = 4;        
 
         [Header("Transport Layer Settings")]
         [SerializeField]
@@ -44,30 +45,33 @@ namespace LiteNetLibManager
             set { transportFactory = value; }
         }
 
-        private ITransport offlineTransport;
-        private ITransport clientTransport;
+        private ITransport _offlineTransport;
+        private ITransport _clientTransport;
         public ITransport ClientTransport
         {
-            get { return IsOfflineConnection ? offlineTransport : clientTransport; }
+            get { return IsOfflineConnection ? _offlineTransport : _clientTransport; }
         }
-        private ITransport serverTransport;
+        private ITransport _serverTransport;
         public ITransport ServerTransport
         {
-            get { return IsOfflineConnection ? offlineTransport : serverTransport; }
+            get { return IsOfflineConnection ? _offlineTransport : _serverTransport; }
         }
 
         public bool IsOfflineConnection { get; protected set; }
 
-        private string logTag;
+        private string _logTag;
         public virtual string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{name}({GetType().Name})";
-                return logTag;
+                if (string.IsNullOrEmpty(_logTag))
+                    _logTag = $"{name}({GetType().Name})";
+                return _logTag;
             }
         }
+
+        private GameUpdater _serverUpdater;
+        private GameUpdater _clientUpdater;
 
         protected virtual void Start()
         {
@@ -111,52 +115,66 @@ namespace LiteNetLibManager
         public void PrepareClientTransport()
         {
             PrepareTransportFactory();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            clientTransport = transportFactory.Build();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            _clientTransport = transportFactory.Build();
         }
 
         public void PrepareServerTransport()
         {
             PrepareTransportFactory();
-            if (serverTransport != null)
-                serverTransport.Destroy();
-            serverTransport = transportFactory.Build();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
+            _serverTransport = transportFactory.Build();
         }
 
         protected void InitTransportAndHandlers()
         {
-            offlineTransport = new OfflineTransport();
+            _offlineTransport = new OfflineTransport();
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
             RegisterMessages();
         }
 
-        protected virtual void FixedUpdate()
+        protected virtual void Update()
         {
             if (IsServer)
+            {
+                _serverUpdater.Update();
                 Server.Update();
+            }
             if (IsClient)
+            {
+                _clientUpdater.Update();
                 Client.Update();
+            }
+        }
+
+        protected virtual void OnServerUpdate(GameUpdater updater)
+        {
+        }
+
+        protected virtual void OnClientUpdate(GameUpdater updater)
+        {
         }
 
         protected virtual void OnDestroy()
         {
             StopHost();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            if (serverTransport != null)
-                serverTransport.Destroy();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
         }
 
         protected virtual void OnApplicationQuit()
         {
 #if UNITY_EDITOR
             StopHost();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            if (serverTransport != null)
-                serverTransport.Destroy();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
 #endif
         }
 
@@ -179,6 +197,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
                 return false;
             }
+            if (_serverUpdater != null)
+                _serverUpdater.Stop();
+            _serverUpdater = new GameUpdater(updateFps, OnServerUpdate);
+            _serverUpdater.Start();
             IsServer = true;
             OnStartServer();
             return true;
@@ -206,6 +228,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
                 return false;
             }
+            if (_clientUpdater != null)
+                _clientUpdater.Stop();
+            _clientUpdater = new GameUpdater(updateFps, OnClientUpdate);
+            _clientUpdater.Start();
             IsClient = true;
             OnStartClient(Client);
             return true;
@@ -240,6 +266,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopServer");
+            if (_serverUpdater != null)
+                _serverUpdater.Stop();
             IsServer = false;
             Server.StopServer();
             OnStopServer();
@@ -257,6 +285,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopClient");
+            if (_clientUpdater != null)
+                _clientUpdater.Stop();
             IsClient = false;
             Client.StopClient();
             OnStopClient();

@@ -1,10 +1,11 @@
-﻿using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using Cysharp.Threading.Tasks;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.Profiling;
 
 namespace LiteNetLibManager
 {
@@ -19,8 +20,8 @@ namespace LiteNetLibManager
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
-        private float _clientSendPingCountDown;
-        private float _serverSendPingCountDown;
+        private double _clientSendPingCountDown;
+        private double _serverSendPingCountDown;
         private AsyncOperation _loadSceneAsyncOperation;
 
         public long ClientConnectionId { get; protected set; }
@@ -58,6 +59,10 @@ namespace LiteNetLibManager
         public LiteNetLibAssets Assets { get; protected set; }
         public BaseInterestManager InterestManager { get; protected set; }
 
+        protected readonly List<LiteNetLibSyncField> _updatingSyncFields = new List<LiteNetLibSyncField>(1024);
+        protected readonly List<LiteNetLibSyncList> _updatingSyncLists = new List<LiteNetLibSyncList>(1024);
+        protected readonly List<LiteNetLibBehaviour> _updatingSyncBehaviours = new List<LiteNetLibBehaviour>(128);
+
         protected virtual void Awake()
         {
             Assets = GetComponent<LiteNetLibAssets>();
@@ -69,32 +74,100 @@ namespace LiteNetLibManager
                 DontDestroyOnLoad(gameObject);
         }
 
-        protected override void FixedUpdate()
+        protected override void OnServerUpdate(GameUpdater updater)
         {
-            if (_loadSceneAsyncOperation == null)
+            UpdateRegisteredSyncElements();
+            // Send ping from server
+            _serverSendPingCountDown -= updater.DeltaTime;
+            if (_serverSendPingCountDown <= 0f)
             {
-                if (IsClientConnected)
-                {
-                    // Send ping from client
-                    _clientSendPingCountDown -= Time.fixedDeltaTime;
-                    if (_clientSendPingCountDown <= 0f)
-                    {
-                        SendClientPing();
-                        _clientSendPingCountDown = pingDuration;
-                    }
-                }
-                if (IsServer)
-                {
-                    // Send ping from server
-                    _serverSendPingCountDown -= Time.fixedDeltaTime;
-                    if (_serverSendPingCountDown <= 0f)
-                    {
-                        SendServerPing();
-                        _serverSendPingCountDown = pingDuration;
-                    }
-                }
+                SendServerPing();
+                _serverSendPingCountDown = pingDuration;
             }
-            base.FixedUpdate();
+        }
+
+        protected override void OnClientUpdate(GameUpdater updater)
+        {
+            if (!IsServer)
+                UpdateRegisteredSyncElements();
+            // Send ping from client
+            _clientSendPingCountDown -= updater.DeltaTime;
+            if (_clientSendPingCountDown <= 0f)
+            {
+                SendClientPing();
+                _clientSendPingCountDown = pingDuration;
+            }
+        }
+
+        private void UpdateRegisteredSyncElements()
+        {
+            float currentTime = Time.fixedTime;
+            int i;
+            Profiler.BeginSample("SyncFields Update");
+            for (i = _updatingSyncFields.Count - 1; i >= 0; --i)
+            {
+                if (_updatingSyncFields[i] == null || _updatingSyncFields[i].NetworkUpdate(currentTime))
+                    _updatingSyncFields.RemoveAt(i);
+            }
+            Profiler.EndSample();
+
+            Profiler.BeginSample("SyncLists Update");
+            for (i = _updatingSyncLists.Count - 1; i >= 0; --i)
+            {
+                if (_updatingSyncLists[i] == null || _updatingSyncLists[i].SendOperations())
+                    _updatingSyncLists.RemoveAt(i);
+            }
+            Profiler.EndSample();
+
+            Profiler.BeginSample("SyncBehaviours Update");
+            for (i = _updatingSyncBehaviours.Count - 1; i >= 0; --i)
+            {
+                if (_updatingSyncBehaviours[i] == null || _updatingSyncBehaviours[i].NetworkUpdate(currentTime))
+                    _updatingSyncBehaviours.RemoveAt(i);
+            }
+            Profiler.EndSample();
+        }
+
+        internal void RegisterSyncFieldUpdating(LiteNetLibSyncField element)
+        {
+            if (element == null || _updatingSyncFields.Contains(element))
+                return;
+            _updatingSyncFields.Add(element);
+        }
+
+        internal void UnregisterSyncFieldUpdating(LiteNetLibSyncField element)
+        {
+            if (element == null)
+                return;
+            _updatingSyncFields.Remove(element);
+        }
+
+        internal void RegisterSyncListUpdating(LiteNetLibSyncList element)
+        {
+            if (element == null || _updatingSyncLists.Contains(element))
+                return;
+            _updatingSyncLists.Add(element);
+        }
+
+        internal void UnregisterSyncListUpdating(LiteNetLibSyncList element)
+        {
+            if (element == null)
+                return;
+            _updatingSyncLists.Remove(element);
+        }
+
+        internal void RegisterSyncBehaviourUpdating(LiteNetLibBehaviour element)
+        {
+            if (element == null || _updatingSyncBehaviours.Contains(element))
+                return;
+            _updatingSyncBehaviours.Add(element);
+        }
+
+        internal void UnregisterSyncBehaviourUpdating(LiteNetLibBehaviour element)
+        {
+            if (element == null)
+                return;
+            _updatingSyncBehaviours.Remove(element);
         }
 
         public virtual uint PacketVersion()
@@ -310,6 +383,9 @@ namespace LiteNetLibManager
                 ServerSceneName = Assets.onlineScene.SceneName;
                 LoadSceneRoutine(Assets.onlineScene.SceneName, true).Forget();
             }
+            _updatingSyncFields.Clear();
+            _updatingSyncLists.Clear();
+            _updatingSyncBehaviours.Clear();
         }
 
         public override void OnStopServer()

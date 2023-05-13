@@ -7,8 +7,8 @@ using UnityEditor.SceneManagement;
 #endif
 using LiteNetLib.Utils;
 using UnityEngine.Events;
-using UnityEngine.Profiling;
 using UnityEngine.Rendering;
+using Cysharp.Threading.Tasks;
 
 namespace LiteNetLibManager
 {
@@ -31,6 +31,8 @@ namespace LiteNetLibManager
 
         [Header("Events")]
         public UnityEvent onGetInstance = new UnityEvent();
+        public LiteNetLibConnectionIdEvent onSubscriberAdded = new LiteNetLibConnectionIdEvent();
+        public LiteNetLibConnectionIdEvent onSubscriberRemoved = new LiteNetLibConnectionIdEvent();
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -74,12 +76,12 @@ namespace LiteNetLibManager
         internal readonly HashSet<long> Subscribers = new HashSet<long>();
 
         public string AssetId { get { return assetId; } }
-        private int? hashAssetId;
+        private int? _hashAssetId;
         public int HashAssetId
         {
             get
             {
-                if (!hashAssetId.HasValue)
+                if (!_hashAssetId.HasValue)
                 {
                     unchecked
                     {
@@ -94,10 +96,10 @@ namespace LiteNetLibManager
                             hash2 = ((hash2 << 5) + hash2) ^ AssetId[i + 1];
                         }
 
-                        hashAssetId = hash1 + (hash2 * 1566083941);
+                        _hashAssetId = hash1 + (hash2 * 1566083941);
                     }
                 }
-                return hashAssetId.Value;
+                return _hashAssetId.Value;
             }
         }
         public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
@@ -118,14 +120,14 @@ namespace LiteNetLibManager
         public bool IsPooledInstance { get; internal set; } = false;
         public LiteNetLibGameManager Manager { get; internal set; }
 
-        private string logTag;
+        private string _logTag;
         public string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
-                return logTag;
+                if (string.IsNullOrEmpty(_logTag))
+                    _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                return _logTag;
             }
         }
 
@@ -173,47 +175,6 @@ namespace LiteNetLibManager
         public bool IsSceneObject
         {
             get; private set;
-        }
-
-        private float? destroyTime;
-
-        private void FixedUpdate()
-        {
-            NetworkUpdate(Time.fixedTime);
-        }
-
-        internal void NetworkUpdate(float currentTime)
-        {
-            if (Manager == null || !IsSpawned)
-                return;
-
-            if (destroyTime.HasValue && currentTime >= destroyTime.Value)
-            {
-                DestroyFromAssets();
-                return;
-            }
-
-            int loopCounter;
-            Profiler.BeginSample("LiteNetLibIdentity - SyncFields Update");
-            for (loopCounter = 0; loopCounter < SyncFields.Count; ++loopCounter)
-            {
-                SyncFields[loopCounter].NetworkUpdate(currentTime);
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("LiteNetLibIdentity - SyncLists Update");
-            for (loopCounter = 0; loopCounter < SyncLists.Count; ++loopCounter)
-            {
-                SyncLists[loopCounter].SendOperations();
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("LiteNetLibIdentity - SyncBehaviours Update");
-            for (loopCounter = 0; loopCounter < SyncBehaviours.Count; ++loopCounter)
-            {
-                SyncBehaviours[loopCounter].NetworkUpdate(currentTime);
-            }
-            Profiler.EndSample();
         }
 
         #region IDs generate in Editor
@@ -652,12 +613,22 @@ namespace LiteNetLibManager
 
         public bool AddSubscriber(long connectionId)
         {
-            return Subscribers.Add(connectionId);
+            if (Subscribers.Add(connectionId))
+            {
+                onSubscriberAdded.Invoke(connectionId);
+                return true;
+            }
+            return false;
         }
 
         public bool RemoveSubscriber(long connectionId)
         {
-            return Subscribers.Remove(connectionId);
+            if (Subscribers.Remove(connectionId))
+            {
+                onSubscriberRemoved.Invoke(connectionId);
+                return true;
+            }
+            return false;
         }
 
         public bool HasSubscriber(long connectionId)
@@ -780,14 +751,19 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            destroyTime = Time.fixedTime + delay;
+            InternalNetworkDestroy(delay).Forget();
+        }
+
+        private async UniTaskVoid InternalNetworkDestroy(float delay)
+        {
+            await UniTask.Delay((int)(1000 * delay));
+            DestroyFromAssets();
         }
 
         private void DestroyFromAssets()
         {
             if (!IsDestroyed && Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy))
                 IsDestroyed = true;
-            destroyTime = null;
         }
 
         internal void OnNetworkDestroy(byte reasons)
