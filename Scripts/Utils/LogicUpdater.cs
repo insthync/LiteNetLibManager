@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace LiteNetLibManager
 {
-    public class GameUpdater
+    public class LogicUpdater
     {
         private const int MaxTicksPerUpdate = 5;
         /// <summary>
@@ -28,9 +28,9 @@ namespace LiteNetLibManager
 
         private readonly Stopwatch _stopwatch;
         private readonly double _stopwatchFrequency;
-        private readonly GameUpdateDelegate _action;
+        private readonly LogicUpdateDelegate _action;
 
-        public GameUpdater(byte framesPerSecond, GameUpdateDelegate action)
+        public LogicUpdater(byte framesPerSecond, LogicUpdateDelegate action)
         {
             FramesPerSecond = framesPerSecond;
             DeltaTime = 1.0 / framesPerSecond;
