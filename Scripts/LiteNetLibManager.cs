@@ -29,38 +29,43 @@ namespace LiteNetLibManager
         public bool webSocketSecure = false;
         public string webSocketCertificateFilePath = string.Empty;
         public string webSocketCertificatePassword = string.Empty;
+        public byte updateFps = 20;
         public int maxConnections = 4;
-        private BaseTransportFactory transportFactory;
+
+        private BaseTransportFactory _transportFactory;
         public BaseTransportFactory TransportFactory
         {
-            get { return transportFactory; }
-            set { transportFactory = value; }
+            get { return _transportFactory; }
+            set { _transportFactory = value; }
         }
 
-        private ITransport offlineTransport;
-        private ITransport clientTransport;
+        private ITransport _offlineTransport;
+        private ITransport _clientTransport;
         public ITransport ClientTransport
         {
-            get { return IsOfflineConnection ? offlineTransport : clientTransport; }
+            get { return IsOfflineConnection ? _offlineTransport : _clientTransport; }
         }
-        private ITransport serverTransport;
+        private ITransport _serverTransport;
         public ITransport ServerTransport
         {
-            get { return IsOfflineConnection ? offlineTransport : serverTransport; }
+            get { return IsOfflineConnection ? _offlineTransport : _serverTransport; }
         }
 
         public bool IsOfflineConnection { get; protected set; }
 
-        private string logTag;
+        private string _logTag;
         public virtual string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{GetType().Name}";
-                return logTag;
+                if (string.IsNullOrEmpty(_logTag))
+                    _logTag = $"{GetType().Name}";
+                return _logTag;
             }
         }
+
+        private LogicUpdater _serverUpdater;
+        private LogicUpdater _clientUpdater;
 
         public LiteNetLibManager()
         {
@@ -71,41 +76,41 @@ namespace LiteNetLibManager
         {
             if (useWebSocket)
             {
-                if (transportFactory == null || !(transportFactory is IWebSocketTransportFactory))
+                if (_transportFactory == null || !(_transportFactory is IWebSocketTransportFactory))
                 {
                     WebSocketTransportFactory webSocketTransportFactory = new WebSocketTransportFactory();
                     webSocketTransportFactory.Secure = webSocketSecure;
                     webSocketTransportFactory.CertificateFilePath = webSocketCertificateFilePath;
                     webSocketTransportFactory.CertificatePassword = webSocketCertificatePassword;
-                    transportFactory = webSocketTransportFactory;
+                    _transportFactory = webSocketTransportFactory;
                 }
             }
             else
             {
-                if (transportFactory == null)
-                    transportFactory = new LiteNetLibTransportFactory();
+                if (_transportFactory == null)
+                    _transportFactory = new LiteNetLibTransportFactory();
             }
         }
 
         public void PrepareClientTransport()
         {
             PrepareTransportFactory();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            clientTransport = transportFactory.Build();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            _clientTransport = _transportFactory.Build();
         }
 
         public void PrepareServerTransport()
         {
             PrepareTransportFactory();
-            if (serverTransport != null)
-                serverTransport.Destroy();
-            serverTransport = transportFactory.Build();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
+            _serverTransport = _transportFactory.Build();
         }
 
         protected void InitTransportAndHandlers()
         {
-            offlineTransport = new OfflineTransport();
+            _offlineTransport = new OfflineTransport();
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
             RegisterMessages();
@@ -113,24 +118,49 @@ namespace LiteNetLibManager
 
         public void ProcessUpdate()
         {
-            FixedUpdate();
+            Update();
         }
 
-        protected virtual void FixedUpdate()
+        protected virtual void Update()
         {
             if (IsServer)
+            {
+                _serverUpdater.Update();
                 Server.Update();
+            }
             if (IsClient)
+            {
+                _clientUpdater.Update();
                 Client.Update();
+            }
+        }
+
+        protected virtual void OnServerUpdate(LogicUpdater updater)
+        {
+        }
+
+        protected virtual void OnClientUpdate(LogicUpdater updater)
+        {
         }
 
         protected virtual void OnDestroy()
         {
             StopHost();
-            if (clientTransport != null)
-                clientTransport.Destroy();
-            if (serverTransport != null)
-                serverTransport.Destroy();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
+        }
+
+        protected virtual void OnApplicationQuit()
+        {
+#if UNITY_EDITOR
+            StopHost();
+            if (_clientTransport != null)
+                _clientTransport.Destroy();
+            if (_serverTransport != null)
+                _serverTransport.Destroy();
+#endif
         }
 
         /// <summary>
@@ -152,6 +182,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
                 return false;
             }
+            if (_serverUpdater != null)
+                _serverUpdater.Stop();
+            _serverUpdater = new LogicUpdater(updateFps, OnServerUpdate);
+            _serverUpdater.Start();
             IsServer = true;
             OnStartServer();
             return true;
@@ -179,6 +213,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
                 return false;
             }
+            if (_clientUpdater != null)
+                _clientUpdater.Stop();
+            _clientUpdater = new LogicUpdater(updateFps, OnClientUpdate);
+            _clientUpdater.Start();
             IsClient = true;
             OnStartClient(Client);
             return true;
@@ -213,6 +251,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopServer");
+            if (_serverUpdater != null)
+                _serverUpdater.Stop();
             IsServer = false;
             Server.StopServer();
             OnStopServer();
@@ -230,6 +270,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopClient");
+            if (_clientUpdater != null)
+                _clientUpdater.Stop();
             IsClient = false;
             Client.StopClient();
             OnStopClient();
