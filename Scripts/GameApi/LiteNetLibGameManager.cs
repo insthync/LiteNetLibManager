@@ -74,7 +74,7 @@ namespace LiteNetLibManager
                 DontDestroyOnLoad(gameObject);
         }
 
-        protected override void OnServerUpdate(GameUpdater updater)
+        protected override void OnServerUpdate(LogicUpdater updater)
         {
             UpdateRegisteredSyncElements();
             // Send ping from server
@@ -86,7 +86,7 @@ namespace LiteNetLibManager
             }
         }
 
-        protected override void OnClientUpdate(GameUpdater updater)
+        protected override void OnClientUpdate(LogicUpdater updater)
         {
             if (!IsServer)
                 UpdateRegisteredSyncElements();

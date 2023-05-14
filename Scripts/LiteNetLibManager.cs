@@ -70,8 +70,8 @@ namespace LiteNetLibManager
             }
         }
 
-        private GameUpdater _serverUpdater;
-        private GameUpdater _clientUpdater;
+        private LogicUpdater _serverUpdater;
+        private LogicUpdater _clientUpdater;
 
         protected virtual void Start()
         {
@@ -150,11 +150,11 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual void OnServerUpdate(GameUpdater updater)
+        protected virtual void OnServerUpdate(LogicUpdater updater)
         {
         }
 
-        protected virtual void OnClientUpdate(GameUpdater updater)
+        protected virtual void OnClientUpdate(LogicUpdater updater)
         {
         }
 
@@ -199,7 +199,7 @@ namespace LiteNetLibManager
             }
             if (_serverUpdater != null)
                 _serverUpdater.Stop();
-            _serverUpdater = new GameUpdater(updateFps, OnServerUpdate);
+            _serverUpdater = new LogicUpdater(updateFps, OnServerUpdate);
             _serverUpdater.Start();
             IsServer = true;
             OnStartServer();
@@ -230,7 +230,7 @@ namespace LiteNetLibManager
             }
             if (_clientUpdater != null)
                 _clientUpdater.Stop();
-            _clientUpdater = new GameUpdater(updateFps, OnClientUpdate);
+            _clientUpdater = new LogicUpdater(updateFps, OnClientUpdate);
             _clientUpdater.Start();
             IsClient = true;
             OnStartClient(Client);
