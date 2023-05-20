@@ -238,14 +238,12 @@ namespace LiteNetLibManager
                 }
 
                 if (LogDev) Logging.Log(LogTag, "Loading Scene: " + sceneName + " is online: " + online);
-                if (Assets.onLoadSceneStart != null)
-                    Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
+                Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
 
                 _loadSceneAsyncOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
                 while (_loadSceneAsyncOperation != null && !_loadSceneAsyncOperation.isDone)
                 {
-                    if (Assets.onLoadSceneProgress != null)
-                        Assets.onLoadSceneProgress.Invoke(sceneName, online, _loadSceneAsyncOperation.progress);
+                    Assets.onLoadSceneProgress.Invoke(sceneName, online, _loadSceneAsyncOperation.progress);
                     await UniTask.Yield();
                 }
                 _loadSceneAsyncOperation = null;
@@ -285,8 +283,7 @@ namespace LiteNetLibManager
                 }
 
                 if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " is online: " + online);
-                if (Assets.onLoadSceneFinish != null)
-                    Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
+                Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
             }
         }
 

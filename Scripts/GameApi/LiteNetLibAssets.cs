@@ -6,19 +6,20 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibAssets : MonoBehaviour
     {
-        private static int spawnPositionCounter = 0;
+        private static int s_spawnPositionCounter = 0;
+
         public bool playerSpawnRandomly;
         public LiteNetLibIdentity playerPrefab;
-        public LiteNetLibIdentity[] spawnablePrefabs;
+        public LiteNetLibIdentity[] spawnablePrefabs = new LiteNetLibIdentity[0];
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         public SceneField offlineScene;
         public SceneField onlineScene;
-        public UnityEvent onInitialize;
-        public LiteNetLibLoadSceneEvent onLoadSceneStart;
-        public LiteNetLibLoadSceneEvent onLoadSceneProgress;
-        public LiteNetLibLoadSceneEvent onLoadSceneFinish;
-        public LiteNetLibIdentityEvent onObjectSpawn;
-        public LiteNetLibIdentityEvent onObjectDestroy;
+        public UnityEvent onInitialize = new UnityEvent();
+        public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
+        public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
+        public LiteNetLibLoadSceneEvent onLoadSceneFinish = new LiteNetLibLoadSceneEvent();
+        public LiteNetLibIdentityEvent onObjectSpawn = new LiteNetLibIdentityEvent();
+        public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
 
         internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
@@ -27,14 +28,14 @@ namespace LiteNetLibManager
         internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
 
         public LiteNetLibGameManager Manager { get; private set; }
-        private string logTag;
+        private string _logTag;
         public string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(logTag))
-                    logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
-                return logTag;
+                if (string.IsNullOrEmpty(_logTag))
+                    _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                return _logTag;
             }
         }
 
@@ -447,9 +448,9 @@ namespace LiteNetLibManager
                 return CacheSpawnPoints[Random.Range(0, CacheSpawnPoints.Count)].GetRandomPosition();
             else
             {
-                if (spawnPositionCounter >= CacheSpawnPoints.Count)
-                    spawnPositionCounter = 0;
-                return CacheSpawnPoints[spawnPositionCounter++].GetRandomPosition();
+                if (s_spawnPositionCounter >= CacheSpawnPoints.Count)
+                    s_spawnPositionCounter = 0;
+                return CacheSpawnPoints[s_spawnPositionCounter++].GetRandomPosition();
             }
         }
 
@@ -509,7 +510,7 @@ namespace LiteNetLibManager
 
         public static void ResetSpawnPositionCounter()
         {
-            spawnPositionCounter = 0;
+            s_spawnPositionCounter = 0;
         }
     }
 }
