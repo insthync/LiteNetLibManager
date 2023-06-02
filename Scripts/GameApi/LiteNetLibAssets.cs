@@ -383,10 +383,7 @@ namespace LiteNetLibManager
                 }
                 else
                 {
-                    if (spawnedObject.IsPooledInstance)
-                        PushInstanceBack(spawnedObject);
-                    else
-                        Destroy(spawnedObject.gameObject);
+                    DestroyObjectInstance(spawnedObject);
                 }
                 return true;
             }
@@ -395,6 +392,17 @@ namespace LiteNetLibManager
                 Logging.LogWarning(LogTag, $"NetworkDestroy - Object Id: {objectId} is not spawned.");
             }
             return false;
+        }
+
+        public void DestroyObjectInstance(LiteNetLibIdentity instance)
+        {
+            if (instance == null)
+                return;
+
+            if (instance.IsPooledInstance)
+                PushInstanceBack(instance);
+            else
+                Destroy(instance.gameObject);
         }
 
         public bool SetObjectOwner(uint objectId, long connectionId)
