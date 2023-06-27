@@ -232,7 +232,7 @@ namespace LiteNetLib.Utils
             }
         }
 
-        public static void PutList<TValue>(this NetDataWriter writer, List<TValue> list)
+        public static void PutList<TValue>(this NetDataWriter writer, IList<TValue> list)
         {
             if (list == null)
             {
@@ -246,7 +246,7 @@ namespace LiteNetLib.Utils
             }
         }
 
-        public static void PutDictionary<TKey, TValue>(this NetDataWriter writer, Dictionary<TKey, TValue> dict)
+        public static void PutDictionary<TKey, TValue>(this NetDataWriter writer, IDictionary<TKey, TValue> dict)
         {
             if (dict == null)
             {
