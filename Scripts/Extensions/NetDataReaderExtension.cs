@@ -129,28 +129,6 @@ namespace LiteNetLib.Utils
             return new Vector4(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
 
-        public static TValue[] GetArray<TValue>(this NetDataReader reader)
-        {
-            int count = reader.GetInt();
-            TValue[] result = new TValue[count];
-            for (int i = 0; i < count; ++i)
-            {
-                result[i] = reader.GetValue<TValue>();
-            }
-            return result;
-        }
-
-        public static object GetArray(this NetDataReader reader, Type type)
-        {
-            int count = reader.GetInt();
-            Array array = Array.CreateInstance(type, count);
-            for (int i = 0; i < count; ++i)
-            {
-                array.SetValue(reader.GetValue(type), i);
-            }
-            return array;
-        }
-
         public static List<TValue> GetList<TValue>(this NetDataReader reader)
         {
             int count = reader.GetInt();
