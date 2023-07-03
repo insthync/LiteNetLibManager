@@ -203,6 +203,35 @@ namespace LiteNetLib.Utils
             writer.Put(value.w);
         }
 
+        public static void PutArray<TValue>(this NetDataWriter writer, TValue[] array)
+        {
+            if (array == null)
+            {
+                writer.Put(0);
+                return;
+            }
+            writer.Put(array.Length);
+            foreach (TValue value in array)
+            {
+                writer.PutValue(value);
+            }
+        }
+
+        public static void PutArray(this NetDataWriter writer, Type type, object array)
+        {
+            if (array == null)
+            {
+                writer.Put(0);
+                return;
+            }
+            Array castedArray = array as Array;
+            writer.Put(castedArray.Length);
+            foreach (object value in castedArray)
+            {
+                writer.PutValue(type, value);
+            }
+        }
+
         public static void PutList<TValue>(this NetDataWriter writer, IList<TValue> list)
         {
             if (list == null)
