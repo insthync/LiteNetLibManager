@@ -14,13 +14,13 @@ namespace LiteNetLibManager
 
     public class LiteNetLibFunction : LiteNetLibElement
     {
-        protected readonly static NetDataWriter ServerWriter = new NetDataWriter();
-        protected readonly static NetDataWriter ClientWriter = new NetDataWriter();
+        protected readonly static NetDataWriter s_ServerWriter = new NetDataWriter();
+        protected readonly static NetDataWriter s_ClientWriter = new NetDataWriter();
 
         public readonly Type[] ParameterTypes;
         public readonly object[] Parameters;
         public bool CanCallByEveryone { get; set; }
-        private NetFunctionDelegate callback;
+        private NetFunctionDelegate _callback;
 
         protected LiteNetLibFunction() : this(0)
         {
@@ -40,7 +40,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate callback) : this()
         {
-            this.callback = callback;
+            this._callback = callback;
         }
 
         protected override bool CanSync()
@@ -50,7 +50,7 @@ namespace LiteNetLibManager
 
         internal virtual void HookCallback()
         {
-            callback.Invoke();
+            _callback.Invoke();
         }
 
         protected void SendCall(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
@@ -66,10 +66,10 @@ namespace LiteNetLibManager
                         if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
                             // Prepare packet
-                            TransportHandler.WritePacket(ServerWriter, GameMsgTypes.CallFunction);
-                            SerializeForSend(ServerWriter);
+                            TransportHandler.WritePacket(s_ServerWriter, GameMsgTypes.CallFunction);
+                            SerializeForSend(s_ServerWriter);
                             // Send function call message from server to target client by target connection Id
-                            server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, ServerWriter);
+                            server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, s_ServerWriter);
                         }
                         break;
                     case FunctionReceivers.All:
@@ -85,10 +85,10 @@ namespace LiteNetLibManager
                             else if (Identity.HasSubscriberOrIsOwning(connectionId))
                             {
                                 // Prepare packet
-                                TransportHandler.WritePacket(ServerWriter, GameMsgTypes.CallFunction);
-                                SerializeForSend(ServerWriter);
+                                TransportHandler.WritePacket(s_ServerWriter, GameMsgTypes.CallFunction);
+                                SerializeForSend(s_ServerWriter);
                                 // Send message to subscribing clients
-                                server.SendMessage(connectionId, dataChannel, deliveryMethod, ServerWriter);
+                                server.SendMessage(connectionId, dataChannel, deliveryMethod, s_ServerWriter);
                             }
                         }
                         if (!manager.IsClientConnected)
@@ -108,11 +108,11 @@ namespace LiteNetLibManager
             else if (manager.IsClientConnected)
             {
                 // Prepare packet
-                TransportHandler.WritePacket(ClientWriter, GameMsgTypes.CallFunction);
-                SerializeForClientSend(ClientWriter, receivers, targetConnectionId);
+                TransportHandler.WritePacket(s_ClientWriter, GameMsgTypes.CallFunction);
+                SerializeForClientSend(s_ClientWriter, receivers, targetConnectionId);
                 // Client send net function call to server
                 // Then the server will hook callback or forward message to other clients
-                client.SendMessage(dataChannel, deliveryMethod, ClientWriter);
+                client.SendMessage(dataChannel, deliveryMethod, s_ClientWriter);
             }
         }
 
