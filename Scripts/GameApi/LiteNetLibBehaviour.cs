@@ -198,12 +198,12 @@ namespace LiteNetLibManager
             {
                 LiteNetLibGameManager manager = Manager;
                 LiteNetLibServer server = manager.Server;
-                TransportHandler.WritePacket(server.Writer, GameMsgTypes.ServerSyncBehaviour);
-                Serialize(server.Writer);
+                TransportHandler.WritePacket(server.s_Writer, GameMsgTypes.ServerSyncBehaviour);
+                Serialize(server.s_Writer);
                 foreach (long connectionId in manager.GetConnectionIds())
                 {
                     if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        server.SendMessage(connectionId, dataChannel, sendOptions, server.Writer);
+                        server.SendMessage(connectionId, dataChannel, sendOptions, server.s_Writer);
                 }
             }
             Profiler.EndSample();
@@ -1675,11 +1675,11 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            TransportHandler.WritePacket(Manager.Server.Writer, msgType, serializerDelegate);
+            TransportHandler.WritePacket(Manager.Server.s_Writer, msgType, serializerDelegate);
             foreach (long connectionId in Manager.GetConnectionIds())
             {
                 if (Identity.HasSubscriber(connectionId))
-                    Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, Manager.Server.Writer);
+                    Manager.ServerSendMessage(connectionId, dataChannel, deliveryMethod, Manager.Server.s_Writer);
             }
         }
 

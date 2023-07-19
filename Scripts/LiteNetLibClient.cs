@@ -8,9 +8,9 @@ namespace LiteNetLibManager
     {
         public LiteNetLibManager Manager { get; protected set; }
         public override string LogTag { get { return (Manager == null ? "(No Manager)" : Manager.LogTag) + "->LiteNetLibClient"; } }
-        private bool isNetworkActive;
-        public override bool IsNetworkActive { get { return isNetworkActive; } }
-        private byte[] disconnectData;
+        private bool _isNetworkActive;
+        public override bool IsNetworkActive { get { return _isNetworkActive; } }
+        private byte[] _disconnectData;
 
         public LiteNetLibClient(LiteNetLibManager manager) : base()
         {
@@ -24,14 +24,14 @@ namespace LiteNetLibManager
 
         public void SetDisconnectData(byte[] data)
         {
-            disconnectData = data;
+            _disconnectData = data;
         }
 
         public void Update()
         {
             if (!IsNetworkActive)
                 return;
-            while (Transport.ClientReceive(out tempEventData))
+            while (Transport.ClientReceive(out TransportEventData tempEventData))
             {
                 OnClientReceive(tempEventData);
             }
@@ -45,8 +45,8 @@ namespace LiteNetLibManager
                 return false;
             }
             // Clear and reset request Id
-            requestCallbacks.Clear();
-            if (isNetworkActive = Transport.StartClient(address, port))
+            _requestCallbacks.Clear();
+            if (_isNetworkActive = Transport.StartClient(address, port))
             {
                 OnStartClient();
                 return true;
@@ -59,7 +59,7 @@ namespace LiteNetLibManager
         public void StopClient()
         {
             Transport.StopClient();
-            isNetworkActive = false;
+            _isNetworkActive = false;
             OnStopClient();
         }
 
@@ -79,8 +79,8 @@ namespace LiteNetLibManager
                 case ENetworkEvent.DisconnectEvent:
                     if (Manager.LogInfo) Logging.Log(LogTag, "OnClientDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
                     Manager.StopClient();
-                    Manager.OnClientDisconnected(eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode, disconnectData);
-                    disconnectData = null;
+                    Manager.OnClientDisconnected(eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode, _disconnectData);
+                    _disconnectData = null;
                     break;
                 case ENetworkEvent.ErrorEvent:
                     if (Manager.LogError) Logging.LogError(LogTag, "OnClientNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
@@ -101,18 +101,18 @@ namespace LiteNetLibManager
 
         public void SendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, SerializerDelegate serializer)
         {
-            WritePacket(Writer, msgType, serializer);
+            WritePacket(s_Writer, msgType, serializer);
             // Send packet to server, so connection id will not being used
-            SendMessage(dataChannel, deliveryMethod, Writer);
+            SendMessage(dataChannel, deliveryMethod, s_Writer);
         }
 
         public bool SendRequest<TRequest>(ushort requestType, TRequest request, ResponseDelegate<INetSerializable> responseDelegate = null, int millisecondsTimeout = 30000, SerializerDelegate extraSerializer = null)
             where TRequest : INetSerializable, new()
         {
-            if (!CreateAndWriteRequest(Writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
+            if (!CreateAndWriteRequest(s_Writer, requestType, request, responseDelegate, millisecondsTimeout, extraSerializer))
                 return false;
             // Send request to server, so connection id will not being used
-            SendMessage(0, DeliveryMethod.ReliableUnordered, Writer);
+            SendMessage(0, DeliveryMethod.ReliableUnordered, s_Writer);
             return true;
         }
 
@@ -123,7 +123,7 @@ namespace LiteNetLibManager
             bool done = false;
             AsyncResponseData<TResponse> responseData = default;
             // Create request
-            CreateAndWriteRequest(Writer, requestType, request, (requestHandler, responseCode, response) =>
+            CreateAndWriteRequest(s_Writer, requestType, request, (requestHandler, responseCode, response) =>
             {
                 if (!(response is TResponse))
                     response = default(TResponse);
@@ -131,7 +131,7 @@ namespace LiteNetLibManager
                 done = true;
             }, millisecondsTimeout, extraSerializer);
             // Send request to server, so connection id will not being used
-            SendMessage(0, DeliveryMethod.ReliableUnordered, Writer);
+            SendMessage(0, DeliveryMethod.ReliableUnordered, s_Writer);
             // Wait for response
             do
             {
