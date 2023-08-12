@@ -989,7 +989,7 @@ namespace LiteNetLibManager
         #endregion
 
         /// <summary>
-        /// Overrride this function to send custom data when send enter game message
+        /// Overrride this function to send custom data when send enter game message, enter game message will be sent from client to request to join a game before client's scene loading
         /// </summary>
         /// <param name="writer"></param>
         public virtual void SerializeEnterGameData(NetDataWriter writer)
@@ -998,7 +998,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// Override this function to read custom data that come with enter game message
+        /// Override this function to read custom data that come with enter game message, enter game message will be sent from client to request to join a game before client's scene loading
         /// </summary>
         /// <param name="connectionId"></param>
         /// <param name="reader"></param>
@@ -1009,7 +1009,7 @@ namespace LiteNetLibManager
             return true;
         }
         /// <summary>
-        /// Overrride this function to send custom data when send client ready message
+        /// Overrride this function to send custom data when send client ready message, client ready message will be sent from client when client's scene loaded
         /// </summary>
         /// <param name="writer"></param>
         public virtual void SerializeClientReadyData(NetDataWriter writer)
@@ -1018,7 +1018,7 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
-        /// Override this function to read custom data that come with client ready message
+        /// Override this function to read custom data that come with client ready message, client ready message will be sent from client when client's scene loaded
         /// </summary>
         /// <param name="playerIdentity"></param>
         /// <param name="connectionId"></param>
