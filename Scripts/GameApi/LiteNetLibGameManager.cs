@@ -57,7 +57,21 @@ namespace LiteNetLibManager
         }
         public string ServerSceneName { get; protected set; }
         public LiteNetLibAssets Assets { get; protected set; }
-        public BaseInterestManager InterestManager { get; set; }
+
+        protected BaseInterestManager _interestManager;
+        public BaseInterestManager InterestManager
+        {
+            get { return _interestManager; }
+            set
+            {
+                if (value == null)
+                    return;
+                if (value == _interestManager)
+                    return;
+                _interestManager = value;
+                _interestManager.Setup(this);
+            }
+        }
 
         protected BaseInterestManager _defaultInterestManager;
         protected readonly List<LiteNetLibSyncField> _updatingSyncFields = new List<LiteNetLibSyncField>(1024);
@@ -70,7 +84,6 @@ namespace LiteNetLibManager
             _defaultInterestManager = GetComponent<BaseInterestManager>();
             if (_defaultInterestManager == null)
                 _defaultInterestManager = gameObject.AddComponent<DefaultInterestManager>();
-            _defaultInterestManager.Setup(this);
             InterestManager = _defaultInterestManager;
             ServerSceneName = string.Empty;
             if (doNotDestroyOnSceneChanges)
