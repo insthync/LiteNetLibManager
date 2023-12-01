@@ -57,8 +57,9 @@ namespace LiteNetLibManager
         }
         public string ServerSceneName { get; protected set; }
         public LiteNetLibAssets Assets { get; protected set; }
-        public BaseInterestManager InterestManager { get; protected set; }
+        public BaseInterestManager InterestManager { get; set; }
 
+        protected BaseInterestManager _defaultInterestManager;
         protected readonly List<LiteNetLibSyncField> _updatingSyncFields = new List<LiteNetLibSyncField>(1024);
         protected readonly List<LiteNetLibSyncList> _updatingSyncLists = new List<LiteNetLibSyncList>(1024);
         protected readonly List<LiteNetLibBehaviour> _updatingSyncBehaviours = new List<LiteNetLibBehaviour>(128);
@@ -66,9 +67,11 @@ namespace LiteNetLibManager
         protected virtual void Awake()
         {
             Assets = GetComponent<LiteNetLibAssets>();
-            InterestManager = GetComponent<BaseInterestManager>();
-            if (InterestManager == null)
-                InterestManager = gameObject.AddComponent<DefaultInterestManager>();
+            _defaultInterestManager = GetComponent<BaseInterestManager>();
+            if (_defaultInterestManager == null)
+                _defaultInterestManager = gameObject.AddComponent<DefaultInterestManager>();
+            _defaultInterestManager.Setup(this);
+            InterestManager = _defaultInterestManager;
             ServerSceneName = string.Empty;
             if (doNotDestroyOnSceneChanges)
                 DontDestroyOnLoad(gameObject);
@@ -84,6 +87,9 @@ namespace LiteNetLibManager
                 SendServerPing();
                 _serverSendPingCountDown = pingDuration;
             }
+            if (InterestManager == null)
+                InterestManager = _defaultInterestManager;
+            InterestManager.UpdateInterestManagement(updater.DeltaTimeF);
         }
 
         protected override void OnClientUpdate(LogicUpdater updater)
@@ -436,20 +442,26 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
+            for (int i = 0; i < 3; ++i)
             {
-                pingTime = Timestamp,
-            });
+                ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
+                {
+                    pingTime = Timestamp,
+                });
+            }
         }
 
         public void SendServerPing()
         {
             if (!IsServer)
                 return;
-            ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
+            for (int i = 0; i < 3; ++i)
             {
-                pingTime = Timestamp,
-            });
+                ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
+                {
+                    pingTime = Timestamp,
+                });
+            }
         }
 
         public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)

@@ -8,38 +8,38 @@ namespace LiteNetLibManager
         [Tooltip("Update every ? seconds")]
         public float updateInterval = 1f;
 
-        private float updateCountDown = 0f;
+        private float _updateCountDown;
 
-        private void Update()
+        public override void Setup(LiteNetLibGameManager manager)
         {
-            if (!IsServer)
-            {
-                // Update at server only
+            base.Setup(manager);
+            _updateCountDown = updateInterval;
+        }
+
+        public override void UpdateInterestManagement(float deltaTime)
+        {
+            _updateCountDown -= deltaTime;
+            if (_updateCountDown > 0)
                 return;
-            }
-            updateCountDown -= Time.unscaledDeltaTime;
-            if (updateCountDown <= 0f)
+            _updateCountDown = updateInterval;
+            HashSet<uint> subscribings = new HashSet<uint>();
+            foreach (LiteNetLibPlayer player in Manager.GetPlayers())
             {
-                updateCountDown = updateInterval;
-                HashSet<uint> subscribings = new HashSet<uint>();
-                foreach (LiteNetLibPlayer player in Manager.GetPlayers())
+                if (!player.IsReady)
                 {
-                    if (!player.IsReady)
+                    // Don't subscribe if player not ready
+                    continue;
+                }
+                foreach (LiteNetLibIdentity playerObject in player.GetSpawnedObjects())
+                {
+                    // Update subscribing list, it will unsubscribe objects which is not in this list
+                    subscribings.Clear();
+                    foreach (LiteNetLibIdentity spawnedObject in Manager.Assets.GetSpawnedObjects())
                     {
-                        // Don't subscribe if player not ready
-                        continue;
+                        if (ShouldSubscribe(playerObject, spawnedObject))
+                            subscribings.Add(spawnedObject.ObjectId);
                     }
-                    foreach (LiteNetLibIdentity playerObject in player.GetSpawnedObjects())
-                    {
-                        // Update subscribing list, it will unsubscribe objects which is not in this list
-                        subscribings.Clear();
-                        foreach (LiteNetLibIdentity spawnedObject in Manager.Assets.GetSpawnedObjects())
-                        {
-                            if (ShouldSubscribe(playerObject, spawnedObject))
-                                subscribings.Add(spawnedObject.ObjectId);
-                        }
-                        playerObject.UpdateSubscribings(subscribings);
-                    }
+                    playerObject.UpdateSubscribings(subscribings);
                 }
             }
         }

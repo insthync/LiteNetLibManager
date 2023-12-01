@@ -10,10 +10,12 @@ namespace LiteNetLibManager
         public LiteNetLibGameManager Manager { get; protected set; }
         public bool IsServer { get { return Manager.IsServer; } }
 
-        protected virtual void Awake()
+        public virtual void Setup(LiteNetLibGameManager manager)
         {
-            Manager = GetComponent<LiteNetLibGameManager>();
+            Manager = manager;
         }
+
+        public abstract void UpdateInterestManagement(float deltaTime);
 
         public void NotifyNewObject(LiteNetLibIdentity newObject)
         {
