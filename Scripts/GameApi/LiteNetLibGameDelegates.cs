@@ -18,4 +18,11 @@ namespace LiteNetLibManager
     /// <param name="fromThis"></param>
     /// <returns></returns>
     public delegate bool HideExceptionDelegate(LiteNetLibIdentity dontHideThis, LiteNetLibIdentity fromThis);
+    /// <summary>
+    /// Return `TRUE` to hide
+    /// </summary>
+    /// <param name="mustHideThis"></param>
+    /// <param name="fromThis"></param>
+    /// <returns></returns>
+    public delegate bool ForceHideDelegate(LiteNetLibIdentity mustHideThis, LiteNetLibIdentity fromThis);
 }

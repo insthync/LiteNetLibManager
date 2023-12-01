@@ -16,6 +16,7 @@ namespace LiteNetLibManager
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
+        public static readonly List<ForceHideDelegate> ForceHideFunctions = new List<ForceHideDelegate>();
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
         [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
         private string assetId = string.Empty;
@@ -711,6 +712,14 @@ namespace LiteNetLibManager
                 // Hide because sub-channelIDs are different
                 return true;
             }
+            foreach (ForceHideDelegate func in ForceHideFunctions)
+            {
+                if (func.Invoke(this, identity))
+                {
+                    // In force hide conditions, so hide
+                    return true;
+                }
+            }
             if (!IsHide)
             {
                 // Not hide, so not hide
@@ -718,14 +727,14 @@ namespace LiteNetLibManager
             }
             if (HideExceptions.Contains(ConnectionId))
             {
-                // In hide exceptions, so not hide
+                // In hide exception conditions, so not hide
                 return false;
             }
             foreach (HideExceptionDelegate func in HideExceptionFunctions)
             {
                 if (func.Invoke(this, identity))
                 {
-                    // In hide exceptions, so not hide
+                    // In hide exception conditions, so not hide
                     return false;
                 }
             }
