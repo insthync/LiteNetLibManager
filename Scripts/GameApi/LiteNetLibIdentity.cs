@@ -16,6 +16,7 @@ namespace LiteNetLibManager
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
+        public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
         [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
         private string assetId = string.Empty;
         [ReadOnly, SerializeField]
@@ -108,6 +109,7 @@ namespace LiteNetLibManager
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
         public int PoolingSize { get { return poolingSize; } set { poolingSize = value; } }
         public byte DataChannel { get; set; } = 0;
+        public string SubChannelId { get; set; } = string.Empty;
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
         /// </summary>
@@ -695,8 +697,40 @@ namespace LiteNetLibManager
         public bool IsHideFrom(LiteNetLibIdentity identity)
         {
             if (identity == null)
+            {
+                // WTF?
                 return true;
-            return IsHide && !HideExceptions.Contains(ConnectionId) && ConnectionId != identity.ConnectionId;
+            }
+            if (ConnectionId == identity.ConnectionId)
+            {
+                // Don't hide, player own this one
+                return false;
+            }
+            if (!string.Equals(SubChannelId, identity.SubChannelId))
+            {
+                // Hide because sub-channelIDs are different
+                return true;
+            }
+            if (!IsHide)
+            {
+                // Not hide, so not hide
+                return false;
+            }
+            if (HideExceptions.Contains(ConnectionId))
+            {
+                // In hide exceptions, so not hide
+                return false;
+            }
+            foreach (HideExceptionDelegate func in HideExceptionFunctions)
+            {
+                if (func.Invoke(this, identity))
+                {
+                    // In hide exceptions, so not hide
+                    return false;
+                }
+            }
+            // Hide
+            return true;
         }
 
         public void OnServerSubscribingAdded()
