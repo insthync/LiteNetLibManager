@@ -152,7 +152,7 @@ namespace LiteNetLibManager
 
         public bool ServerReceive(out TransportEventData eventData)
         {
-            eventData = default(TransportEventData);
+            eventData = default;
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (!IsServerStarted)
                 return false;

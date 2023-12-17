@@ -149,7 +149,7 @@ namespace LiteNetLibManager
 
         public bool ClientReceive(out TransportEventData eventData)
         {
-            eventData = default(TransportEventData);
+            eventData = default;
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (clientEventQueue.Count == 0)
                 return false;

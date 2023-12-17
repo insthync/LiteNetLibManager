@@ -71,7 +71,7 @@ namespace LiteNetLibManager
 
         public bool ClientReceive(out TransportEventData eventData)
         {
-            eventData = default(TransportEventData);
+            eventData = default;
             if (Client == null)
                 return false;
             Client.PollEvents();
@@ -105,7 +105,7 @@ namespace LiteNetLibManager
 
         public bool ServerReceive(out TransportEventData eventData)
         {
-            eventData = default(TransportEventData);
+            eventData = default;
             if (Server == null)
                 return false;
             Server.PollEvents();
@@ -117,7 +117,7 @@ namespace LiteNetLibManager
 
         public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            if (IsServerStarted && _serverPeers.ContainsKey(connectionId) && _serverPeers.ContainsKey(connectionId) && _serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
+            if (IsServerStarted && _serverPeers.ContainsKey(connectionId) && _serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
                 _serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
                 return true;
