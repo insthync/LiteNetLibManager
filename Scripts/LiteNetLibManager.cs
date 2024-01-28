@@ -31,10 +31,10 @@ namespace LiteNetLibManager
         public bool webSocketSecure = false;
         public string webSocketCertificateFilePath = string.Empty;
         public string webSocketCertificatePassword = string.Empty;
-        public byte updateFps = 20; 
+        public byte updateFps = 20;
 
         [Header("Server Only Settings")]
-        public int maxConnections = 4;        
+        public int maxConnections = 4;
 
         [Header("Transport Layer Settings")]
         [SerializeField]
@@ -72,6 +72,7 @@ namespace LiteNetLibManager
 
         private LogicUpdater _serverUpdater;
         private LogicUpdater _clientUpdater;
+        private bool _isApplicationQuitted = false;
 
         protected virtual void Start()
         {
@@ -160,6 +161,8 @@ namespace LiteNetLibManager
 
         protected virtual void OnDestroy()
         {
+            if (!_isApplicationQuitted)
+                return;
             StopHost();
             if (_clientTransport != null)
                 _clientTransport.Destroy();
@@ -169,13 +172,12 @@ namespace LiteNetLibManager
 
         protected virtual void OnApplicationQuit()
         {
-#if UNITY_EDITOR
+            _isApplicationQuitted = true;
             StopHost();
             if (_clientTransport != null)
                 _clientTransport.Destroy();
             if (_serverTransport != null)
                 _serverTransport.Destroy();
-#endif
         }
 
         /// <summary>
