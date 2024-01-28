@@ -161,7 +161,7 @@ namespace LiteNetLibManager
 
         protected virtual void OnDestroy()
         {
-            if (!_isApplicationQuitted)
+            if (_isApplicationQuitted)
                 return;
             StopHost();
             if (_clientTransport != null)
