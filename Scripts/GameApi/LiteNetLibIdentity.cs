@@ -261,11 +261,12 @@ namespace LiteNetLibManager
                 {
                     // This is a scene object with prefab link
                     AssignAssetID(prefab);
-                    if (gameObject.scene == SceneManager.GetActiveScene())
+                    Scene activeScene = SceneManager.GetActiveScene();
+                    if (gameObject.scene == activeScene)
                     {
                         // Assign object id if it is in scene
                         AssignSceneObjectId();
-                        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+                        EditorSceneManager.MarkSceneDirty(activeScene);
                     }
                     else
                     {
@@ -280,11 +281,12 @@ namespace LiteNetLibManager
                 {
                     // This is a pure scene object (Not a prefab)
                     assetId = string.Empty;
-                    if (gameObject.scene == SceneManager.GetActiveScene())
+                    Scene activeScene = SceneManager.GetActiveScene();
+                    if (gameObject.scene == activeScene)
                     {
                         // Assign object id if it is in scene
                         AssignSceneObjectId();
-                        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+                        EditorSceneManager.MarkSceneDirty(activeScene);
                     }
                     else
                     {
