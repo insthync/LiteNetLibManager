@@ -89,18 +89,18 @@ namespace LiteNetLibManager
             get { return ClassType.FullName; }
         }
 
-        private bool isFoundIdentity;
+        private bool _isFoundIdentity;
         private LiteNetLibIdentity _identity;
         public LiteNetLibIdentity Identity
         {
             get
             {
-                if (!isFoundIdentity)
+                if (!_isFoundIdentity)
                 {
                     _identity = GetComponent<LiteNetLibIdentity>();
                     if (_identity == null)
                         _identity = GetComponentInParent<LiteNetLibIdentity>();
-                    isFoundIdentity = _identity != null;
+                    _isFoundIdentity = _identity != null;
                 }
                 return _identity;
             }
