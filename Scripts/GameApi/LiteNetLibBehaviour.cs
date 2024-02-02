@@ -322,7 +322,7 @@ namespace LiteNetLibManager
                         if (tempOnChangeMethod == null)
                         {
                             if (Manager.LogError)
-                                Logging.LogError(LogTag, "Cannot find `on change` method named [" + tempAttribute.onChangeMethodName + "] from [" + TypeName + "], FYI the function must has 1 parameter with the same type with the field.");
+                                Logging.LogError(LogTag, $"Cannot find `on change` method named [{tempAttribute.onChangeMethodName}] from [{TypeName}], FYI the function must has 1 parameter with the same type with the field.");
                         }
                     }
                     // Find on update method
@@ -336,7 +336,7 @@ namespace LiteNetLibManager
                         if (tempOnUpdateMethod == null)
                         {
                             if (Manager.LogError)
-                                Logging.LogError(LogTag, "Cannot find `on update` method named [" + tempAttribute.onUpdateMethodName + "] from [" + TypeName + "], FYI the function must has 0 parameter.");
+                                Logging.LogError(LogTag, $"Cannot find `on update` method named [{tempAttribute.onUpdateMethodName}] from [{TypeName}], FYI the function must has 0 parameter.");
                         }
                     }
                     // Create new sync field container
@@ -433,7 +433,7 @@ namespace LiteNetLibManager
                         if (lookupMethod.ReturnType != typeof(void))
                         {
                             if (Manager.LogError)
-                                Logging.LogError(LogTag, "Cannot register rpc [" + lookupMethod.Name + "] return type must be void");
+                                Logging.LogError(LogTag, $"Cannot register rpc [{lookupMethod.Name}] return type must be void.");
                             continue;
                         }
 
@@ -881,13 +881,13 @@ namespace LiteNetLibManager
             if (dict.ContainsKey(id))
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, "[" + TypeName + "] cannot register rpc with existed id [" + id + "].");
+                    Logging.LogError(LogTag, $"[{TypeName}] cannot register rpc with existed id [{id}].");
                 return;
             }
             if (Identity.NetFunctions.Count >= int.MaxValue)
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, "[" + TypeName + "] cannot register rpc it's exceeds limit.");
+                    Logging.LogError(LogTag, $"[{TypeName}] cannot register rpc it's exceeds limit.");
                 return;
             }
             int elementId = Identity.NetFunctions.Count;
@@ -1494,7 +1494,7 @@ namespace LiteNetLibManager
                     else
                     {
                         if (Manager.LogError)
-                            Logging.LogError(LogTag, "[" + TypeName + "] cannot call rpc, any rpc [" + methodName + "] not found.");
+                            Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, any rpc [{methodName}] not found.");
                     }
                     break;
                 case FunctionReceivers.Server:
@@ -1505,12 +1505,12 @@ namespace LiteNetLibManager
                     else
                     {
                         if (Manager.LogError)
-                            Logging.LogError(LogTag, "[" + TypeName + "] cannot call rpc, any rpc [" + methodName + "] not found.");
+                            Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, any rpc [{methodName}] not found.");
                     }
                     break;
                 default:
                     if (Manager.LogError)
-                        Logging.LogError(LogTag, "[" + TypeName + "] cannot call rpc, rpc [" + methodName + "] receives must be `All` or `Server`.");
+                        Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, rpc [{methodName}] receives must be `All` or `Server`.");
                     break;
             }
         }
@@ -1546,7 +1546,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, "[" + TypeName + "] cannot call rpc, client or server rpc [" + methodName + "] not found.");
+                    Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, client or server rpc [{methodName}] not found.");
             }
         }
 
@@ -1574,7 +1574,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, "[" + TypeName + "] cannot call rpc, target rpc [" + methodName + "] not found.");
+                    Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, target rpc [{methodName}] not found.");
             }
         }
 

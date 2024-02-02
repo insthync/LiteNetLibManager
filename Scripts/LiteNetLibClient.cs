@@ -77,13 +77,13 @@ namespace LiteNetLibManager
                     ReadPacket(-1, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
-                    if (Manager.LogInfo) Logging.Log(LogTag, "OnClientDisconnected peer. disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
+                    if (Manager.LogInfo) Logging.Log(LogTag, $"OnClientDisconnected peer. disconnectInfo.Reason: {eventData.disconnectInfo.Reason}");
                     Manager.StopClient();
                     Manager.OnClientDisconnected(eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode, _disconnectData);
                     _disconnectData = null;
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Logging.LogError(LogTag, "OnClientNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
+                    if (Manager.LogError) Logging.LogError(LogTag, $"OnClientNetworkError endPoint: {eventData.endPoint} socketErrorCode {eventData.socketError} errorMessage {eventData.errorMessage}");
                     Manager.OnClientNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }

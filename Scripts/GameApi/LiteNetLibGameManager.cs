@@ -256,7 +256,7 @@ namespace LiteNetLibManager
                     Assets.Clear(true);
                 }
 
-                if (LogDev) Logging.Log(LogTag, "Loading Scene: " + sceneName + " is online: " + online);
+                if (LogDev) Logging.Log(LogTag, $"Loading Scene: {sceneName} is online: {online}");
                 Assets.onLoadSceneStart.Invoke(sceneName, online, 0f);
 
                 _loadSceneAsyncOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
@@ -271,7 +271,7 @@ namespace LiteNetLibManager
                 {
                     Assets.Initialize();
                     Assets.InitPoolingObjects();
-                    if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.Initialize()");
+                    if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.Initialize()");
                     if (IsClient)
                     {
                         // If it is host (both client and server) wait for client connection id before proceed server scene load
@@ -281,18 +281,18 @@ namespace LiteNetLibManager
                     {
                         ServerSceneName = sceneName;
                         Assets.SpawnSceneObjects();
-                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> Assets.SpawnSceneObjects()");
+                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.SpawnSceneObjects()");
                         OnServerOnlineSceneLoaded();
-                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnServerOnlineSceneLoaded()");
+                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnServerOnlineSceneLoaded()");
                         SendServerSceneChange(sceneName);
-                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> SendServerSceneChange()");
+                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendServerSceneChange()");
                     }
                     if (IsClient)
                     {
                         OnClientOnlineSceneLoaded();
-                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> OnClientOnlineSceneLoaded()");
+                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnClientOnlineSceneLoaded()");
                         SendClientReady();
-                        if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " -> SendClientReady()");
+                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendClientReady()");
                     }
                 }
                 else if (!doNotDestroyOnSceneChanges)
@@ -301,7 +301,7 @@ namespace LiteNetLibManager
                     Destroy(gameObject);
                 }
 
-                if (LogDev) Logging.Log(LogTag, "Loaded Scene: " + sceneName + " is online: " + online);
+                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} is online: {online}");
                 Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
             }
         }
@@ -1003,7 +1003,7 @@ namespace LiteNetLibManager
                 _rtt = _totalRtt / _rttCount;
                 // Calculate time offsets by device time offsets and RTT
                 ServerTimestampOffsets = (long)(message.serverTime - Timestamp + (Rtt * 0.5f));
-                if (LogDev) Logging.Log(LogTag, "Rtt: " + Rtt + ", ServerTimestampOffsets: " + ServerTimestampOffsets);
+                if (LogDev) Logging.Log(LogTag, $"Rtt: {Rtt}, ServerTimestampOffsets: {ServerTimestampOffsets}");
             }
         }
 

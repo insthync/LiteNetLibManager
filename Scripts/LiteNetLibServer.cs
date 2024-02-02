@@ -70,7 +70,7 @@ namespace LiteNetLibManager
             switch (eventData.type)
             {
                 case ENetworkEvent.ConnectEvent:
-                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerConnected peer.ConnectionId: " + eventData.connectionId);
+                    if (Manager.LogInfo) Logging.Log(LogTag, $"OnPeerConnected peer.ConnectionId: {eventData.connectionId}");
                     ConnectionIds.Add(eventData.connectionId);
                     Manager.OnPeerConnected(eventData.connectionId);
                     break;
@@ -78,12 +78,12 @@ namespace LiteNetLibManager
                     ReadPacket(eventData.connectionId, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
-                    if (Manager.LogInfo) Logging.Log(LogTag, "OnPeerDisconnected peer.ConnectionId: " + eventData.connectionId + " disconnectInfo.Reason: " + eventData.disconnectInfo.Reason);
+                    if (Manager.LogInfo) Logging.Log(LogTag, $"OnPeerDisconnected peer.ConnectionId: {eventData.connectionId} disconnectInfo.Reason: {eventData.disconnectInfo.Reason}");
                     ConnectionIds.Remove(eventData.connectionId);
                     Manager.OnPeerDisconnected(eventData.connectionId, eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode);
                     break;
                 case ENetworkEvent.ErrorEvent:
-                    if (Manager.LogError) Logging.LogError(LogTag, "OnPeerNetworkError endPoint: " + eventData.endPoint + " socketErrorCode " + eventData.socketError + " errorMessage " + eventData.errorMessage);
+                    if (Manager.LogError) Logging.LogError(LogTag, $"OnPeerNetworkError endPoint: {eventData.endPoint} socketErrorCode {eventData.socketError} errorMessage {eventData.errorMessage}");
                     Manager.OnPeerNetworkError(eventData.endPoint, eventData.socketError);
                     break;
             }
