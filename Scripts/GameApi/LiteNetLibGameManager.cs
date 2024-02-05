@@ -15,8 +15,9 @@ namespace LiteNetLibManager
         [Header("Game manager configs")]
         public uint packetVersion = 1;
         public float pingDuration = 1f;
-        public bool doNotEnterGameOnConnect;
-        public bool doNotDestroyOnSceneChanges;
+        public bool doNotEnterGameOnConnect = false;
+        public bool doNotReadyOnSceneLoaded = false;
+        public bool doNotDestroyOnSceneChanges = false;
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
@@ -269,9 +270,9 @@ namespace LiteNetLibManager
 
                 if (online)
                 {
+                    if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.Initialize()");
                     Assets.Initialize();
                     Assets.InitPoolingObjects();
-                    if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.Initialize()");
                     if (IsClient)
                     {
                         // If it is host (both client and server) wait for client connection id before proceed server scene load
@@ -280,19 +281,22 @@ namespace LiteNetLibManager
                     if (IsServer)
                     {
                         ServerSceneName = sceneName;
-                        Assets.SpawnSceneObjects();
                         if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.SpawnSceneObjects()");
-                        OnServerOnlineSceneLoaded();
+                        Assets.SpawnSceneObjects();
                         if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnServerOnlineSceneLoaded()");
-                        SendServerSceneChange(sceneName);
+                        OnServerOnlineSceneLoaded();
                         if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendServerSceneChange()");
+                        SendServerSceneChange(sceneName);
                     }
                     if (IsClient)
                     {
-                        OnClientOnlineSceneLoaded();
                         if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnClientOnlineSceneLoaded()");
-                        SendClientReady();
-                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendClientReady()");
+                        OnClientOnlineSceneLoaded();
+                        if (!doNotReadyOnSceneLoaded)
+                        {
+                            if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendClientReady()");
+                            SendClientReady();
+                        }
                     }
                 }
                 else if (!doNotDestroyOnSceneChanges)
