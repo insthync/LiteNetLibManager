@@ -16,7 +16,13 @@ namespace LiteNetLibManager
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
         public static uint HighestObjectId { get; private set; }
+        /// <summary>
+        /// If any of these function's result is true, it will force hide the object from another object
+        /// </summary>
         public static readonly List<ForceHideDelegate> ForceHideFunctions = new List<ForceHideDelegate>();
+        /// <summary>
+        /// If any of these function's result is true, it will not hide the object from another object
+        /// </summary>
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
         [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
         private string assetId = string.Empty;
