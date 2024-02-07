@@ -30,11 +30,6 @@ namespace LiteNetLib
         private static readonly IPAddress MulticastAddressV6 = IPAddress.Parse("ff02::1");
         public static readonly bool IPv6Support;
 
-        /// <summary>
-        /// Maximum packets count that will be processed in Manual PollEvents
-        /// </summary>
-        public int MaxPacketsReceivePerUpdate = 0;
-
         // special case in iOS (and possibly android that should be resolved in unity)
         internal bool NotConnected;
 
@@ -94,7 +89,7 @@ namespace LiteNetLib
             return false;
         }
 
-        private void ManualReceive(Socket socket, EndPoint bufferEndPoint)
+        private void ManualReceive(Socket socket, EndPoint bufferEndPoint, int maxReceive)
         {
             //Reading data
             try
@@ -104,7 +99,7 @@ namespace LiteNetLib
                 {
                     ReceiveFrom(socket, ref bufferEndPoint);
                     packetsReceived++;
-                    if (packetsReceived == MaxPacketsReceivePerUpdate)
+                    if (packetsReceived == maxReceive)
                         break;
                 }
             }
@@ -137,35 +132,36 @@ namespace LiteNetLib
 
             while (IsRunning)
             {
-                if (socketV6 == null)
-                {
-                    if (NativeReceiveFrom(socketHandle4, addrBuffer4) == false)
-                        return;
-                    continue;
-                }
-                bool messageReceived = false;
-                if (socketv4.Available != 0 || selectReadList.Contains(socketv4))
-                {
-                    if (NativeReceiveFrom(socketHandle4, addrBuffer4) == false)
-                        return;
-                    messageReceived = true;
-                }
-                if (socketV6.Available != 0 || selectReadList.Contains(socketV6))
-                {
-                    if (NativeReceiveFrom(socketHandle6, addrBuffer6) == false)
-                        return;
-                    messageReceived = true;
-                }
-
-                selectReadList.Clear();
-
-                if (messageReceived)
-                    continue;
-
-                selectReadList.Add(socketv4);
-                selectReadList.Add(socketV6);
                 try
                 {
+                    if (socketV6 == null)
+                    {
+                        if (NativeReceiveFrom(socketHandle4, addrBuffer4) == false)
+                            return;
+                        continue;
+                    }
+                    bool messageReceived = false;
+                    if (socketv4.Available != 0 || selectReadList.Contains(socketv4))
+                    {
+                        if (NativeReceiveFrom(socketHandle4, addrBuffer4) == false)
+                            return;
+                        messageReceived = true;
+                    }
+                    if (socketV6.Available != 0 || selectReadList.Contains(socketV6))
+                    {
+                        if (NativeReceiveFrom(socketHandle6, addrBuffer6) == false)
+                            return;
+                        messageReceived = true;
+                    }
+
+                    selectReadList.Clear();
+
+                    if (messageReceived)
+                        continue;
+
+                    selectReadList.Add(socketv4);
+                    selectReadList.Add(socketV6);
+
                     Socket.Select(selectReadList, null, null, ReceivePollingTime);
                 }
                 catch (SocketException ex)

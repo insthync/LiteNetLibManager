@@ -147,7 +147,7 @@ namespace LiteNetLib
 
         private readonly Dictionary<IPEndPoint, ConnectionRequest> _requestsDict = new Dictionary<IPEndPoint, ConnectionRequest>();
         private readonly ConcurrentDictionary<IPEndPoint, NtpRequest> _ntpRequests = new ConcurrentDictionary<IPEndPoint, NtpRequest>();
-        private int _connectedPeersCount;
+        private long _connectedPeersCount;
         private readonly List<NetPeer> _connectedPeerListCache = new List<NetPeer>();
         private readonly PacketLayerBase _extraPacketLayer;
         private int _lastPeerId;
@@ -346,7 +346,7 @@ namespace LiteNetLib
         /// <summary>
         /// Returns connected peers count
         /// </summary>
-        public int ConnectedPeersCount => Interlocked.CompareExchange(ref _connectedPeersCount,0,0);
+        public int ConnectedPeersCount => (int)Interlocked.Read(ref _connectedPeersCount);
 
         public int ExtraPacketSizeForLayer => _extraPacketLayer?.ExtraPacketSizeForLayer ?? 0;
 
@@ -1415,17 +1415,19 @@ namespace LiteNetLib
         }
 
         /// <summary>
-        /// Receive all pending events. Call this in game update code
+        /// Receive "maxProcessedEvents" pending events. Call this in game update code
         /// In Manual mode it will call also socket Receive (which can be slow)
+        /// 0 - receive all events
         /// </summary>
-        public void PollEvents()
+        /// <param name="maxProcessedEvents">Max events that will be processed (called INetEventListener Connect/Receive/Etc), 0 - receive all events</param>
+        public void PollEvents(int maxProcessedEvents = 0)
         {
             if (_manualMode)
             {
                 if (_udpSocketv4 != null)
-                    ManualReceive(_udpSocketv4, _bufferEndPointv4);
+                    ManualReceive(_udpSocketv4, _bufferEndPointv4, maxProcessedEvents);
                 if (_udpSocketv6 != null && _udpSocketv6 != _udpSocketv4)
-                    ManualReceive(_udpSocketv6, _bufferEndPointv6);
+                    ManualReceive(_udpSocketv6, _bufferEndPointv6, maxProcessedEvents);
                 ProcessDelayedPackets();
                 return;
             }
@@ -1439,11 +1441,15 @@ namespace LiteNetLib
                 _pendingEventTail = null;
             }
 
+            int counter = 0;
             while (pendingEvent != null)
             {
                 var next = pendingEvent.Next;
                 ProcessEvent(pendingEvent);
                 pendingEvent = next;
+                counter++;
+                if (counter == maxProcessedEvents)
+                    break;
             }
         }
 
