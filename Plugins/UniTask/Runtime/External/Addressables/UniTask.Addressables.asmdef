@@ -2,7 +2,8 @@
     "name": "UniTask.Addressables",
     "references": [
         "UniTask",
-        "Unity.ResourceManager"
+        "Unity.ResourceManager",
+        "Unity.Addressables"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -14,6 +15,11 @@
     "versionDefines": [
         {
             "name": "com.unity.addressables",
+            "expression": "",
+            "define": "UNITASK_ADDRESSABLE_SUPPORT"
+        },
+	{
+            "name": "com.unity.addressables.cn",
             "expression": "",
             "define": "UNITASK_ADDRESSABLE_SUPPORT"
         }
