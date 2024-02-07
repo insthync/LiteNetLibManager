@@ -17,7 +17,7 @@ namespace Cysharp.Text
     {
         private Utf16ValueStringBuilder sb;
         private bool isOpen;
-        private UnicodeEncoding encoding;
+        private UnicodeEncoding? encoding;
 
         /// <summary>
         /// Creates a new instance using <see cref="CultureInfo.CurrentCulture"/> as format provider.
@@ -79,7 +79,7 @@ namespace Cysharp.Text
             }
             AssertNotDisposed();
 
-            sb.Append(buffer.AsSpan(index, count));
+            sb.Append(buffer, index, count);
         }
 
         public override void Write(string value)

@@ -35,12 +35,12 @@ namespace Cysharp.Text
         }
 
         [ThreadStatic]
-        static char[] scratchBuffer;
+        static char[]? scratchBuffer;
 
         [ThreadStatic]
         internal static bool scratchBufferUsed;
 
-        char[] buffer;
+        char[]? buffer;
         int index;
         bool disposeImmediately;
 
@@ -71,7 +71,7 @@ namespace Cysharp.Text
                 ThrowNestedException();
             }
 
-            char[] buf;
+            char[]? buf;
             if (disposeImmediately)
             {
                 buf = scratchBuffer;
@@ -120,7 +120,7 @@ namespace Cysharp.Text
         public void TryGrow(int sizeHint)
         {
 
-            if (buffer.Length < index + sizeHint)
+            if (buffer!.Length < index + sizeHint)
             {
                 Grow(sizeHint);
             }
@@ -128,7 +128,7 @@ namespace Cysharp.Text
 
         public void Grow(int sizeHint)
         {
-            var nextSize = buffer.Length * 2;
+            var nextSize = buffer!.Length * 2;
             if (sizeHint != 0)
             {
                 nextSize = Math.Max(nextSize, index + sizeHint);
@@ -151,14 +151,14 @@ namespace Cysharp.Text
         {
             if (crlf)
             {
-                if (buffer.Length - index < 2) Grow(2);
+                if (buffer!.Length - index < 2) Grow(2);
                 buffer[index] = newLine1;
                 buffer[index + 1] = newLine2;
                 index += 2;
             }
             else
             {
-                if (buffer.Length - index < 1) Grow(1);
+                if (buffer!.Length - index < 1) Grow(1);
                 buffer[index] = newLine1;
                 index += 1;
             }
@@ -168,7 +168,7 @@ namespace Cysharp.Text
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(char value)
         {
-            if (buffer.Length - index < 1)
+            if (buffer!.Length - index < 1)
             {
                 Grow(1);
             }
@@ -200,16 +200,7 @@ namespace Cysharp.Text
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string value)
         {
-#if UNITY_2018_3_OR_NEWER
-            if (buffer.Length - index < value.Length)
-            {
-                Grow(value.Length);
-            }
-            value.CopyTo(0, buffer, index, value.Length);
-            index += value.Length;
-#else
             Append(value.AsSpan());
-#endif
         }
 
         /// <summary>Appends the string representation of a specified value followed by the default line terminator to the end of this instance.</summary>
@@ -220,15 +211,44 @@ namespace Cysharp.Text
             AppendLine();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Append(string value, int startIndex, int count)
+        {
+            if (value == null)
+            {
+                if (startIndex == 0 && count == 0)
+                {
+                    return;
+                }
+                else
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+            }
+
+            Append(value.AsSpan(startIndex, count));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Append(char[] value, int startIndex, int charCount)
+        {
+            if (buffer!.Length - index < charCount)
+            {
+                Grow(charCount);
+            }
+            Array.Copy(value, startIndex, buffer, index, charCount);
+            index += charCount;
+        }
+
         /// <summary>Appends a contiguous region of arbitrary memory to this instance.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(ReadOnlySpan<char> value)
         {
-            if (buffer.Length - index < value.Length)
+            if (buffer!.Length - index < value.Length)
             {
                 Grow(value.Length);
             }
-            
+
             value.CopyTo(buffer.AsSpan(index));
             index += value.Length;
         }
@@ -318,7 +338,7 @@ namespace Cysharp.Text
             int remainLnegth = this.index - index;
             buffer.AsSpan(index, remainLnegth).CopyTo(newBuffer.AsSpan(newBufferIndex));
 
-            if (buffer.Length != ThreadStaticBufferSize)
+            if (buffer!.Length != ThreadStaticBufferSize)
             {
                 if (buffer != null)
                 {
@@ -361,7 +381,7 @@ namespace Cysharp.Text
 
             for (int i = startIndex; i < endIndex; i++)
             {
-                if (buffer[i] == oldChar)
+                if (buffer![i] == oldChar)
                 {
                     buffer[i] = newChar;
                 }
@@ -462,12 +482,28 @@ namespace Cysharp.Text
                 i += pos;
             }
 
-            if (buffer.Length != ThreadStaticBufferSize)
+            if (buffer!.Length != ThreadStaticBufferSize)
             {
                 ArrayPool<char>.Shared.Return(buffer);
             }
             buffer = newBuffer;
             index = newBufferIndex;
+        }
+        
+        /// <summary>
+        /// Replaces the contents of a single position within the builder.
+        /// </summary>
+        /// <param name="newChar">The character to use at the position.</param>
+        /// <param name="replaceIndex">The index to replace.</param>
+        public void ReplaceAt(char newChar, int replaceIndex)
+        {
+            int currentLength = Length;
+            if ((uint)replaceIndex > (uint)currentLength)
+            {
+                ExceptionUtil.ThrowArgumentOutOfRangeException(nameof(replaceIndex));
+            }
+            
+            buffer![replaceIndex] = newChar;
         }
 
         /// <summary>
@@ -540,7 +576,7 @@ namespace Cysharp.Text
         /// <summary>IBufferWriter.GetMemory.</summary>
         public Memory<char> GetMemory(int sizeHint)
         {
-            if ((buffer.Length - index) < sizeHint)
+            if ((buffer!.Length - index) < sizeHint)
             {
                 Grow(sizeHint);
             }
@@ -551,7 +587,7 @@ namespace Cysharp.Text
         /// <summary>IBufferWriter.GetSpan.</summary>
         public Span<char> GetSpan(int sizeHint)
         {
-            if ((buffer.Length - index) < sizeHint)
+            if ((buffer!.Length - index) < sizeHint)
             {
                 Grow(sizeHint);
             }
@@ -577,10 +613,6 @@ namespace Cysharp.Text
         static void ThrowFormatException()
         {
             throw new FormatException("Index (zero based) must be greater than or equal to zero and less than the size of the argument list.");
-        }
-        private static void FormatError()
-        {
-            throw new FormatException("Input string was not in a correct format.");
         }
 
         void AppendFormatInternal<T>(T arg, int width, ReadOnlySpan<char> format, string argName)
@@ -648,19 +680,6 @@ namespace Cysharp.Text
             throw new NestedStringBuilderCreationException(nameof(Utf16ValueStringBuilder));
         }
 
-        void AppendFormatInternal<T>(T arg1, ReadOnlySpan<char> format, string argName)
-        {
-            if (!FormatterCache<T>.TryFormatDelegate(arg1, buffer.AsSpan(index), out var written, format))
-            {
-                Grow(written);
-                if (!FormatterCache<T>.TryFormatDelegate(arg1, buffer.AsSpan(index), out written, format))
-                {
-                    ThrowArgumentException(argName);
-                }
-            }
-            index += written;
-        }
-
         /// <summary>
         /// Register custom formatter
         /// </summary>
@@ -695,7 +714,7 @@ namespace Cysharp.Text
             public static TryFormat<T> TryFormatDelegate;
             static FormatterCache()
             {
-                var formatter = (TryFormat<T>)CreateFormatter(typeof(T));
+                var formatter = (TryFormat<T>?)CreateFormatter(typeof(T));
                 if (formatter == null)
                 {
                     if (typeof(T).IsEnum)

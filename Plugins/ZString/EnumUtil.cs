@@ -6,6 +6,7 @@ using System.Text;
 namespace Cysharp.Text
 {
     internal static class EnumUtil<T>
+        // where T : Enum
     {
         const string InvalidName = "$";
 
@@ -15,7 +16,12 @@ namespace Cysharp.Text
         static EnumUtil()
         {
             var enumNames = Enum.GetNames(typeof(T));
-            var values = Enum.GetValues(typeof(T));
+            var values =
+#if NET7_0_OR_GREATER
+                Enum.GetValuesAsUnderlyingType(typeof(T));
+#else
+                Enum.GetValues(typeof(T));
+#endif
             names = new Dictionary<T, string>(enumNames.Length);
             utf8names = new Dictionary<T, byte[]>(enumNames.Length);
             for (int i = 0; i < enumNames.Length; i++)
@@ -38,7 +44,7 @@ namespace Cysharp.Text
         {
             if (!names.TryGetValue(value, out var v) || v == InvalidName)
             {
-                v = value.ToString();
+                v = value!.ToString(); // T is Enum, not null always
             }
 
             written = v.Length;
@@ -49,7 +55,7 @@ namespace Cysharp.Text
         {
             if (!utf8names.TryGetValue(value, out var v) || v.Length == 0)
             {
-                v = Encoding.UTF8.GetBytes(value.ToString());
+                v = Encoding.UTF8.GetBytes(value!.ToString());
             }
 
             written = v.Length;
