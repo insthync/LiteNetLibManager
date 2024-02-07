@@ -962,7 +962,10 @@ namespace LiteNetLibManager
                 Assets.Initialize();
                 Assets.InitPoolingObjects();
                 OnClientOnlineSceneLoaded();
-                SendClientReady();
+                if (!doNotReadyOnSceneLoaded)
+                {
+                    SendClientReady();
+                }
             }
             else
             {
