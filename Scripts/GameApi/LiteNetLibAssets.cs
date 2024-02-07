@@ -20,6 +20,7 @@ namespace LiteNetLibManager
         public LiteNetLibLoadSceneEvent onLoadSceneFinish = new LiteNetLibLoadSceneEvent();
         public LiteNetLibIdentityEvent onObjectSpawn = new LiteNetLibIdentityEvent();
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
+        public bool disablePooling = false;
 
         internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
@@ -146,6 +147,10 @@ namespace LiteNetLibManager
 
         public void InitPoolingObjects()
         {
+            // No pooling
+            if (disablePooling)
+                return;
+
             foreach (int hashAssetId in GuidToPrefabs.Keys)
             {
                 InitPoolingObject(hashAssetId);
@@ -154,6 +159,10 @@ namespace LiteNetLibManager
 
         public void InitPoolingObject(int hashAssetId)
         {
+            // No pooling
+            if (disablePooling)
+                return;
+
             if (!GuidToPrefabs.ContainsKey(hashAssetId))
             {
                 Debug.LogWarning($"Cannot init prefab: {hashAssetId}, can't find the registered prefab.");
@@ -178,7 +187,6 @@ namespace LiteNetLibManager
                 tempInstance.gameObject.SetActive(false);
                 queue.Enqueue(tempInstance);
             }
-
             PooledObjects[hashAssetId] = queue;
         }
 
