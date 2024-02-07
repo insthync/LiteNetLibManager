@@ -11,31 +11,26 @@ namespace ZLogger
 {
     public static class ZLoggerLoggingBuilderExtensions
     {
-        public static ILoggingBuilder AddZLoggerConsole(this ILoggingBuilder builder, bool consoleOutputEncodingToUtf8 = true, bool configureEnableAnsiEscapeCode = false)
+        public static ILoggingBuilder AddZLoggerConsole(this ILoggingBuilder builder, bool consoleOutputEncodingToUtf8 = true, bool configureEnableAnsiEscapeCode = false, bool outputToErrorStream = false)
         {
             if (configureEnableAnsiEscapeCode)
             {
                 EnableAnsiEscapeCode();
             }
-
+            
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerConsoleLoggerProvider>(x => new ZLoggerConsoleLoggerProvider(consoleOutputEncodingToUtf8, null, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerConsoleLoggerProvider>(x => new ZLoggerConsoleLoggerProvider(consoleOutputEncodingToUtf8, outputToErrorStream, null, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerConsoleLoggerProvider>(builder.Services);
 
             return builder;
         }
 
-        public static ILoggingBuilder AddZLoggerConsole(this ILoggingBuilder builder, Action<ZLoggerOptions> configure, bool consoleOutputEncodingToUtf8 = true, bool configureEnableAnsiEscapeCode = false)
+        public static ILoggingBuilder AddZLoggerConsole(this ILoggingBuilder builder, Action<ZLoggerOptions> configure, bool consoleOutputEncodingToUtf8 = true, bool configureEnableAnsiEscapeCode = false, bool outputToErrorStream = false)
         {
-            if (configureEnableAnsiEscapeCode)
-            {
-                EnableAnsiEscapeCode();
-            }
-
-            return AddZLoggerConsole(builder, ZLoggerConsoleLoggerProvider.DefaultOptionName, configure, consoleOutputEncodingToUtf8);
+            return AddZLoggerConsole(builder, ZLoggerConsoleLoggerProvider.DefaultOptionName, configure, consoleOutputEncodingToUtf8: consoleOutputEncodingToUtf8, configureEnableAnsiEscapeCode: configureEnableAnsiEscapeCode, outputToErrorStream: outputToErrorStream);
         }
 
-        public static ILoggingBuilder AddZLoggerConsole(this ILoggingBuilder builder, string optionName, Action<ZLoggerOptions> configure, bool consoleOutputEncodingToUtf8 = true, bool configureEnableAnsiEscapeCode = false)
+        public static ILoggingBuilder AddZLoggerConsole(this ILoggingBuilder builder, string optionName, Action<ZLoggerOptions> configure, bool consoleOutputEncodingToUtf8 = true, bool configureEnableAnsiEscapeCode = false, bool outputToErrorStream = false)
         {
             if (configureEnableAnsiEscapeCode)
             {
@@ -48,7 +43,7 @@ namespace ZLogger
             }
 
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerConsoleLoggerProvider>(x => new ZLoggerConsoleLoggerProvider(consoleOutputEncodingToUtf8, optionName, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerConsoleLoggerProvider>(x => new ZLoggerConsoleLoggerProvider(consoleOutputEncodingToUtf8, outputToErrorStream, optionName, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerConsoleLoggerProvider>(builder.Services);
 
             builder.Services.AddOptions<ZLoggerOptions>(optionName).Configure(configure);
@@ -67,7 +62,7 @@ namespace ZLogger
         public static ILoggingBuilder AddZLoggerStream(this ILoggingBuilder builder, Stream stream)
         {
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerStreamLoggerProvider>(x => new ZLoggerStreamLoggerProvider(stream, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerStreamLoggerProvider>(x => new ZLoggerStreamLoggerProvider(stream, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerStreamLoggerProvider>(builder.Services);
 
             return builder;
@@ -87,7 +82,7 @@ namespace ZLogger
 
 
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerStreamLoggerProvider>(x => new ZLoggerStreamLoggerProvider(stream, optionName, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerStreamLoggerProvider>(x => new ZLoggerStreamLoggerProvider(stream, optionName, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerStreamLoggerProvider>(builder.Services);
 
             builder.Services.AddOptions<ZLoggerOptions>(optionName).Configure(configure);
@@ -107,7 +102,7 @@ namespace ZLogger
         public static ILoggingBuilder AddZLoggerFile(this ILoggingBuilder builder, string fileName)
         {
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerFileLoggerProvider>(x => new ZLoggerFileLoggerProvider(fileName, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerFileLoggerProvider>(x => new ZLoggerFileLoggerProvider(fileName, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerFileLoggerProvider>(builder.Services);
 
             return builder;
@@ -126,7 +121,7 @@ namespace ZLogger
             }
 
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerFileLoggerProvider>(x => new ZLoggerFileLoggerProvider(fileName, optionName, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerFileLoggerProvider>(x => new ZLoggerFileLoggerProvider(fileName, optionName, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerFileLoggerProvider>(builder.Services);
 
             builder.Services.AddOptions<ZLoggerOptions>(optionName).Configure(configure);
@@ -140,7 +135,7 @@ namespace ZLogger
         public static ILoggingBuilder AddZLoggerRollingFile(this ILoggingBuilder builder, Func<DateTimeOffset, int, string> fileNameSelector, Func<DateTimeOffset, DateTimeOffset> timestampPattern, int rollSizeKB)
         {
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerRollingFileLoggerProvider>(x => new ZLoggerRollingFileLoggerProvider(fileNameSelector, timestampPattern, rollSizeKB, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerRollingFileLoggerProvider>(x => new ZLoggerRollingFileLoggerProvider(fileNameSelector, timestampPattern, rollSizeKB, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerRollingFileLoggerProvider>(builder.Services);
 
             return builder;
@@ -165,7 +160,7 @@ namespace ZLogger
             }
 
             builder.AddConfiguration();
-            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerRollingFileLoggerProvider>(x => new ZLoggerRollingFileLoggerProvider(fileNameSelector, timestampPattern, rollSizeKB, optionName, x.GetService<IOptionsMonitor<ZLoggerOptions>>())));
+            builder.Services.Add(ServiceDescriptor.Singleton<ILoggerProvider, ZLoggerRollingFileLoggerProvider>(x => new ZLoggerRollingFileLoggerProvider(fileNameSelector, timestampPattern, rollSizeKB, optionName, x.GetRequiredService<IOptionsMonitor<ZLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<ZLoggerOptions, ZLoggerRollingFileLoggerProvider>(builder.Services);
 
             builder.Services.AddOptions<ZLoggerOptions>(optionName).Configure(configure);
