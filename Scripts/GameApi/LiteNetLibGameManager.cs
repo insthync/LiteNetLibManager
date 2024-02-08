@@ -270,34 +270,8 @@ namespace LiteNetLibManager
 
                 if (online)
                 {
-                    if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.Initialize()");
-                    Assets.Initialize();
-                    Assets.InitPoolingObjects();
-                    if (IsClient)
-                    {
-                        // If it is host (both client and server) wait for client connection id before proceed server scene load
-                        while (ClientConnectionId < 0) await UniTask.Yield();
-                    }
-                    if (IsServer)
-                    {
-                        ServerSceneName = sceneName;
-                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.SpawnSceneObjects()");
-                        Assets.SpawnSceneObjects();
-                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnServerOnlineSceneLoaded()");
-                        OnServerOnlineSceneLoaded();
-                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendServerSceneChange()");
-                        SendServerSceneChange(sceneName);
-                    }
-                    if (IsClient)
-                    {
-                        if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnClientOnlineSceneLoaded()");
-                        OnClientOnlineSceneLoaded();
-                        if (!doNotReadyOnSceneLoaded)
-                        {
-                            if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendClientReady()");
-                            SendClientReady();
-                        }
-                    }
+                    // Proceed online scene loaded
+                    await ProceedOnlineSceneLoaded(sceneName);
                 }
                 else if (!doNotDestroyOnSceneChanges)
                 {
@@ -307,6 +281,40 @@ namespace LiteNetLibManager
 
                 if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} is online: {online}");
                 Assets.onLoadSceneFinish.Invoke(sceneName, online, 1f);
+            }
+        }
+
+        protected async UniTask ProceedOnlineSceneLoaded(string sceneName)
+        {
+            await UniTask.Yield();
+            if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.Initialize()");
+            Assets.Initialize();
+            Assets.InitPoolingObjects();
+            if (IsClient)
+            {
+                // If it is host (both client and server) wait for client connection id before proceed server scene load
+                while (ClientConnectionId < 0)
+                    await UniTask.Yield();
+            }
+            if (IsServer)
+            {
+                ServerSceneName = sceneName;
+                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> Assets.SpawnSceneObjects()");
+                Assets.SpawnSceneObjects();
+                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnServerOnlineSceneLoaded()");
+                OnServerOnlineSceneLoaded();
+                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendServerSceneChange()");
+                SendServerSceneChange(sceneName);
+            }
+            if (IsClient)
+            {
+                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> OnClientOnlineSceneLoaded()");
+                OnClientOnlineSceneLoaded();
+                if (!doNotReadyOnSceneLoaded)
+                {
+                    if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {sceneName} -> SendClientReady()");
+                    SendClientReady();
+                }
             }
         }
 
@@ -390,22 +398,20 @@ namespace LiteNetLibManager
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
             ResetRtt();
-            if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(SceneManager.GetActiveScene().name))
+            _updatingSyncFields.Clear();
+            _updatingSyncLists.Clear();
+            _updatingSyncBehaviours.Clear();
+            string activeSceneName = SceneManager.GetActiveScene().name;
+            if (!Assets.onlineScene.IsSet() || Assets.onlineScene.SceneName.Equals(activeSceneName))
             {
-                ServerSceneName = SceneManager.GetActiveScene().name;
-                Assets.Initialize();
-                Assets.SpawnSceneObjects();
-                Assets.InitPoolingObjects();
-                OnServerOnlineSceneLoaded();
+                ServerSceneName = activeSceneName;
+                ProceedOnlineSceneLoaded(ServerSceneName).Forget();
             }
             else
             {
                 ServerSceneName = Assets.onlineScene.SceneName;
-                LoadSceneRoutine(Assets.onlineScene.SceneName, true).Forget();
+                LoadSceneRoutine(ServerSceneName, true).Forget();
             }
-            _updatingSyncFields.Clear();
-            _updatingSyncLists.Clear();
-            _updatingSyncBehaviours.Clear();
         }
 
         public override void OnStopServer()
