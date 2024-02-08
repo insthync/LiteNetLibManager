@@ -620,7 +620,18 @@ namespace LiteNetLibManager
                 response.connectionId = requestHandler.ConnectionId;
                 response.serverSceneName = ServerSceneName;
             }
-            result.Invoke(responseCode, response);
+            result.Invoke(responseCode, response, serializer => WriteExtraEnterGameResponse(responseCode, request, serializer));
+        }
+
+        /// <summary>
+        /// Override this to write more data when sending enter game response to client
+        /// </summary>
+        /// <param name="responseCode"></param>
+        /// <param name="request"></param>
+        /// <param name="writer"></param>
+        protected virtual void WriteExtraEnterGameResponse(AckResponseCode responseCode, EnterGameRequestMessage request, NetDataWriter writer)
+        {
+
         }
 
         protected virtual void HandleEnterGameResponse(
@@ -628,6 +639,7 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EnterGameResponseMessage response)
         {
+            ReadExtraEnterGameResponse(responseCode, response, responseHandler.Reader);
             if (responseCode == AckResponseCode.Success)
             {
                 ClientConnectionId = response.connectionId;
@@ -641,6 +653,17 @@ namespace LiteNetLibManager
             }
         }
 
+        /// <summary>
+        /// Override this to read more data when receiving enter game response from server
+        /// </summary>
+        /// <param name="responseCode"></param>
+        /// <param name="response"></param>
+        /// <param name="reader"></param>
+        protected virtual void ReadExtraEnterGameResponse(AckResponseCode responseCode, EnterGameResponseMessage response, NetDataReader reader)
+        {
+
+        }
+
         protected virtual async UniTaskVoid HandleClientReadyRequest(
             RequestHandlerData requestHandler,
             EmptyMessage request,
@@ -651,7 +674,18 @@ namespace LiteNetLibManager
             {
                 responseCode = AckResponseCode.Success;
             }
-            result.Invoke(responseCode, EmptyMessage.Value);
+            result.Invoke(responseCode, EmptyMessage.Value, serializer => WriteExtraClientReadyResponse(responseCode, request, serializer));
+        }
+
+        /// <summary>
+        /// Override this to write more data when sending client ready response to client
+        /// </summary>
+        /// <param name="responseCode"></param>
+        /// <param name="request"></param>
+        /// <param name="writer"></param>
+        protected virtual void WriteExtraClientReadyResponse(AckResponseCode responseCode, EmptyMessage request, NetDataWriter writer)
+        {
+
         }
 
         protected virtual void HandleClientReadyResponse(
@@ -659,7 +693,18 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EmptyMessage response)
         {
-            // Override this function to do something by response code
+            ReadExtraClientReadyResponse(responseCode, response, responseHandler.Reader);
+        }
+
+        /// <summary>
+        /// Override this to read more data when receiving client ready response from server
+        /// </summary>
+        /// <param name="responseCode"></param>
+        /// <param name="response"></param>
+        /// <param name="reader"></param>
+        protected virtual void ReadExtraClientReadyResponse(AckResponseCode responseCode, EmptyMessage response, NetDataReader reader)
+        {
+
         }
 
         protected virtual UniTaskVoid HandleClientNotReadyRequest(
@@ -672,8 +717,19 @@ namespace LiteNetLibManager
             {
                 responseCode = AckResponseCode.Success;
             }
-            result.Invoke(responseCode, EmptyMessage.Value);
+            result.Invoke(responseCode, EmptyMessage.Value, serializer => WriteExtraClientNotReadyResponse(responseCode, request, serializer));
             return default;
+        }
+
+        /// <summary>
+        /// Override this to write more data when sending client not ready response to client
+        /// </summary>
+        /// <param name="responseCode"></param>
+        /// <param name="request"></param>
+        /// <param name="writer"></param>
+        protected virtual void WriteExtraClientNotReadyResponse(AckResponseCode responseCode, EmptyMessage request, NetDataWriter writer)
+        {
+
         }
 
         protected void HandleClientNotReadyResponse(
@@ -681,7 +737,18 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EmptyMessage response)
         {
-            // Override this function to do something by response code
+            ReadExtraClientNotReadyResponse(responseCode, response, responseHandler.Reader);
+        }
+
+        /// <summary>
+        /// Override this to read more data when receiving client not ready response from server
+        /// </summary>
+        /// <param name="responseCode"></param>
+        /// <param name="response"></param>
+        /// <param name="reader"></param>
+        protected virtual void ReadExtraClientNotReadyResponse(AckResponseCode responseCode, EmptyMessage response, NetDataReader reader)
+        {
+
         }
 
         protected virtual void HandleClientInitialSyncField(MessageHandlerData messageHandler)
@@ -1035,11 +1102,11 @@ namespace LiteNetLibManager
         /// <param name="connectionId"></param>
         /// <param name="reader"></param>
         /// <returns>Return `true` if allow player to enter game.</returns>
-        public virtual async UniTask<bool> DeserializeEnterGameData(long connectionId, NetDataReader reader)
+        public virtual UniTask<bool> DeserializeEnterGameData(long connectionId, NetDataReader reader)
         {
-            await UniTask.Yield();
-            return true;
+            return new UniTask<bool>(true);
         }
+
         /// <summary>
         /// Overrride this function to send custom data when send client ready message, client ready message will be sent from client when client's scene loaded
         /// </summary>
@@ -1056,10 +1123,9 @@ namespace LiteNetLibManager
         /// <param name="connectionId"></param>
         /// <param name="reader"></param>
         /// <returns>Return `true` if player is ready to play.</returns>
-        public virtual async UniTask<bool> DeserializeClientReadyData(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader)
+        public virtual UniTask<bool> DeserializeClientReadyData(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader)
         {
-            await UniTask.Yield();
-            return true;
+            return new UniTask<bool>(true);
         }
 
         /// <summary>
