@@ -2,7 +2,7 @@
 
 namespace LiteNetLibManager
 {
-    public class EnterGameResponseMessage : INetSerializable
+    public struct EnterGameResponseMessage : INetSerializable
     {
         public long connectionId;
         public string serverSceneName;
