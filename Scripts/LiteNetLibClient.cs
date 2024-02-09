@@ -133,10 +133,7 @@ namespace LiteNetLibManager
             // Send request to server, so connection id will not being used
             SendMessage(0, DeliveryMethod.ReliableUnordered, s_Writer);
             // Wait for response
-            do
-            {
-                await UniTask.Yield();
-            } while (!done);
+            await UniTask.WaitUntil(() => done);
             // Return response data
             return responseData;
         }

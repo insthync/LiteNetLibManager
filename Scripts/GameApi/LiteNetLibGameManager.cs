@@ -263,8 +263,8 @@ namespace LiteNetLibManager
                 _loadSceneAsyncOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
                 while (_loadSceneAsyncOperation != null && !_loadSceneAsyncOperation.isDone)
                 {
-                    Assets.onLoadSceneProgress.Invoke(sceneName, online, _loadSceneAsyncOperation.progress);
                     await UniTask.Yield();
+                    Assets.onLoadSceneProgress.Invoke(sceneName, online, _loadSceneAsyncOperation.progress);
                 }
                 _loadSceneAsyncOperation = null;
 
@@ -293,8 +293,7 @@ namespace LiteNetLibManager
             if (IsClient)
             {
                 // If it is host (both client and server) wait for client connection id before proceed server scene load
-                while (ClientConnectionId < 0)
-                    await UniTask.Yield();
+                await UniTask.WaitUntil(() => ClientConnectionId >= 0);
             }
             if (IsServer)
             {
