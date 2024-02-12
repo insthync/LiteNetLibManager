@@ -61,7 +61,7 @@ namespace LiteNetLibManager
     {
         public static bool IsDataValid(this AssetReferenceScene scene)
         {
-            return scene != null && scene.IsValid() && scene.RuntimeKeyIsValid();
+            return scene != null && scene.RuntimeKeyIsValid();
         }
 
         public static bool IsSameScene(this AssetReferenceScene scene, ServerSceneInfo serverSceneInfo)
