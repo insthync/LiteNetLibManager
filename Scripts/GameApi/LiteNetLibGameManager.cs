@@ -418,21 +418,13 @@ namespace LiteNetLibManager
             _updatingSyncBehaviours.Clear();
 
             string activeSceneName = SceneManager.GetActiveScene().name;
-            if (Assets.addressableOnlineScene?.RuntimeKeyIsValid() ?? true && !Assets.addressableOnlineScene.SceneName.Equals(activeSceneName))
+            if (Assets.addressableOnlineScene.IsDataValid() && !Assets.addressableOnlineScene.IsSameSceneName(activeSceneName))
             {
-                LoadSceneRoutine(new ServerSceneInfo()
-                {
-                    isAddressable = true,
-                    sceneNameOrKey = Assets.addressableOnlineScene.RuntimeKey as string,
-                }, true).Forget();
+                LoadSceneRoutine(Assets.addressableOnlineScene.GetServerSceneInfo(), true).Forget();
             }
-            else if (Assets.onlineScene.IsSet() && !Assets.onlineScene.SceneName.Equals(activeSceneName))
+            else if (Assets.onlineScene.IsDataValid() && !Assets.onlineScene.IsSameSceneName(activeSceneName))
             {
-                LoadSceneRoutine(new ServerSceneInfo()
-                {
-                    isAddressable = false,
-                    sceneNameOrKey = Assets.onlineScene.SceneName,
-                }, true).Forget();
+                LoadSceneRoutine(Assets.onlineScene.GetServerSceneInfo(), true).Forget();
             }
             else
             {
@@ -451,21 +443,13 @@ namespace LiteNetLibManager
             Players.Clear();
             Assets.Clear();
             string activeSceneName = SceneManager.GetActiveScene().name;
-            if (Assets.addressableOfflineScene?.RuntimeKeyIsValid() ?? true && !Assets.addressableOfflineScene.SceneName.Equals(activeSceneName))
+            if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
             {
-                LoadSceneRoutine(new ServerSceneInfo()
-                {
-                    isAddressable = true,
-                    sceneNameOrKey = Assets.addressableOfflineScene.RuntimeKey as string,
-                }, false).Forget();
+                LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
             }
-            else if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(activeSceneName))
+            else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
             {
-                LoadSceneRoutine(new ServerSceneInfo()
-                {
-                    isAddressable = false,
-                    sceneNameOrKey = Assets.offlineScene.SceneName,
-                }, false).Forget();
+                LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
             }
         }
 
@@ -477,21 +461,13 @@ namespace LiteNetLibManager
                 Players.Clear();
                 Assets.Clear();
                 string activeSceneName = SceneManager.GetActiveScene().name;
-                if (Assets.addressableOfflineScene?.RuntimeKeyIsValid() ?? true && !Assets.addressableOfflineScene.SceneName.Equals(activeSceneName))
+                if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
                 {
-                    LoadSceneRoutine(new ServerSceneInfo()
-                    {
-                        isAddressable = true,
-                        sceneNameOrKey = Assets.addressableOfflineScene.RuntimeKey as string,
-                    }, false).Forget();
+                    LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
                 }
-                else if (Assets.offlineScene.IsSet() && !Assets.offlineScene.SceneName.Equals(activeSceneName))
+                else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
                 {
-                    LoadSceneRoutine(new ServerSceneInfo()
-                    {
-                        isAddressable = false,
-                        sceneNameOrKey = Assets.offlineScene.SceneName,
-                    }, false).Forget();
+                    LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
                 }
             }
         }

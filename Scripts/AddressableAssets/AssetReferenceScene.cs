@@ -56,4 +56,35 @@ namespace LiteNetLibManager
 
 #endif
     }
+
+    public static class AssetReferenceSceneExtensions
+    {
+        public static bool IsDataValid(this AssetReferenceScene scene)
+        {
+            return scene != null && scene.IsValid() && scene.RuntimeKeyIsValid();
+        }
+
+        public static bool IsSameScene(this AssetReferenceScene scene, ServerSceneInfo serverSceneInfo)
+        {
+            return scene.IsDataValid() && serverSceneInfo.Equals(new ServerSceneInfo()
+            {
+                isAddressable = true,
+                sceneNameOrKey = scene.RuntimeKey as string,
+            });
+        }
+
+        public static bool IsSameSceneName(this AssetReferenceScene scene, string sceneName)
+        {
+            return scene.IsDataValid() && string.Equals(scene.SceneName, sceneName);
+        }
+
+        public static ServerSceneInfo GetServerSceneInfo(this AssetReferenceScene scene)
+        {
+            return new ServerSceneInfo()
+            {
+                isAddressable = true,
+                sceneNameOrKey = scene.RuntimeKey as string,
+            };
+        }
+    }
 }

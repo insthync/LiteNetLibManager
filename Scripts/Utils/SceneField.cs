@@ -31,4 +31,35 @@ namespace LiteNetLibManager
             return !string.IsNullOrEmpty(sceneName);
         }
     }
+
+    public static class SceneFieldExtensions
+    {
+        public static bool IsDataValid(this SceneField scene)
+        {
+            return scene.IsSet();
+        }
+
+        public static bool IsSameScene(this SceneField scene, ServerSceneInfo serverSceneInfo)
+        {
+            return scene.IsDataValid() && serverSceneInfo.Equals(new ServerSceneInfo()
+            {
+                isAddressable = false,
+                sceneNameOrKey = scene,
+            });
+        }
+
+        public static bool IsSameSceneName(this SceneField scene, string sceneName)
+        {
+            return scene.IsDataValid() && string.Equals(scene.SceneName, sceneName);
+        }
+
+        public static ServerSceneInfo GetServerSceneInfo(this SceneField scene)
+        {
+            return new ServerSceneInfo()
+            {
+                isAddressable = false,
+                sceneNameOrKey = scene,
+            };
+        }
+    }
 }
