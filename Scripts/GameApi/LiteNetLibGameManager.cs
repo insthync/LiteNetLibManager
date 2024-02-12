@@ -266,7 +266,7 @@ namespace LiteNetLibManager
                 if (serverSceneInfo.isAddressable)
                 {
                     _loadAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(serverSceneInfo.sceneNameOrKey);
-                    while (!_loadAddressableSceneAsyncOperation.Value.IsDone)
+                    while (_loadAddressableSceneAsyncOperation.HasValue && !_loadAddressableSceneAsyncOperation.Value.IsDone)
                     {
                         await UniTask.Yield();
                         Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, _loadAddressableSceneAsyncOperation.Value.PercentComplete);
@@ -275,7 +275,7 @@ namespace LiteNetLibManager
                 else
                 {
                     _loadSceneAsyncOperation = SceneManager.LoadSceneAsync(serverSceneInfo.sceneNameOrKey, LoadSceneMode.Single);
-                    while (!_loadSceneAsyncOperation.isDone)
+                    while (_loadSceneAsyncOperation != null && !_loadSceneAsyncOperation.isDone)
                     {
                         await UniTask.Yield();
                         Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, _loadSceneAsyncOperation.progress);
