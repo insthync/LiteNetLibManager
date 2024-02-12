@@ -4,16 +4,16 @@ namespace LiteNetLibManager
 {
     public struct ServerSceneChangeMessage : INetSerializable
     {
-        public string serverSceneName;
+        public ServerSceneInfo serverSceneInfo;
 
         public void Deserialize(NetDataReader reader)
         {
-            serverSceneName = reader.GetString();
+            serverSceneInfo = reader.Get<ServerSceneInfo>();
         }
 
         public void Serialize(NetDataWriter writer)
         {
-            writer.Put(serverSceneName);
+            writer.Put(serverSceneInfo);
         }
     }
 }

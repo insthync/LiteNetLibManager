@@ -5,18 +5,18 @@ namespace LiteNetLibManager
     public struct EnterGameResponseMessage : INetSerializable
     {
         public long connectionId;
-        public string serverSceneName;
+        public ServerSceneInfo serverSceneInfo;
 
         public void Deserialize(NetDataReader reader)
         {
             connectionId = reader.GetPackedLong();
-            serverSceneName = reader.GetString();
+            serverSceneInfo = reader.Get<ServerSceneInfo>();
         }
 
         public void Serialize(NetDataWriter writer)
         {
             writer.PutPackedLong(connectionId);
-            writer.Put(serverSceneName);
+            writer.Put(serverSceneInfo);
         }
     }
 }

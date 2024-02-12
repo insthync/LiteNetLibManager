@@ -13,7 +13,11 @@ namespace LiteNetLibManager
         public LiteNetLibIdentity[] spawnablePrefabs = new LiteNetLibIdentity[0];
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         public SceneField offlineScene;
+        [Tooltip("If this is not empty, it will load offline scene by this instead of `offlineScene`")]
+        public AssetReferenceScene addressableOfflineScene;
         public SceneField onlineScene;
+        [Tooltip("If this is not empty, it will load online scene by this instead of `onlineScene`")]
+        public AssetReferenceScene addressableOnlineScene;
         public UnityEvent onInitialize = new UnityEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
