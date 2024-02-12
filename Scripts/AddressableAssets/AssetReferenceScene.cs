@@ -19,8 +19,7 @@ namespace LiteNetLibManager
         }
 
 #if UNITY_EDITOR
-        public AssetReferenceScene(SceneAsset scene)
-        : base(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(scene)))
+        public AssetReferenceScene(SceneAsset scene) : base(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(scene)))
         {
             sceneName = scene.name;
         }
@@ -53,7 +52,6 @@ namespace LiteNetLibManager
                 return false;
             }
         }
-
 #endif
     }
 
