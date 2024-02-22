@@ -5,10 +5,6 @@ namespace LiteNetLibManager
     public class LogicUpdater
     {
         private const int MaxTicksPerUpdate = 5;
-        /// <summary>
-        /// FPS of game logic
-        /// </summary>
-        public int FramesPerSecond { get; private set; }
 
         /// <summary>
         /// Fixed delta time
@@ -21,23 +17,46 @@ namespace LiteNetLibManager
         public float DeltaTimeF { get; private set; }
         public double VisualDeltaTime { get; private set; }
 
-
-        private readonly long _deltaTimeTicks;
+        private long _deltaTimeTicks;
+        private LogicUpdateDelegate _action;
         private long _accumulator;
         private long _lastTime;
 
         private readonly Stopwatch _stopwatch;
         private readonly double _stopwatchFrequency;
-        private readonly LogicUpdateDelegate _action;
 
-        public LogicUpdater(byte framesPerSecond, LogicUpdateDelegate action)
+        public LogicUpdater(double deltaTime, LogicUpdateDelegate action)
         {
-            FramesPerSecond = framesPerSecond;
-            DeltaTime = 1.0 / framesPerSecond;
-            DeltaTimeF = (float)DeltaTime;
             _stopwatch = new Stopwatch();
             _stopwatchFrequency = 1.0 / Stopwatch.Frequency;
+            SetDeltaTime(deltaTime);
+            SetTickAction(action);
+        }
+
+        public LogicUpdater(LogicUpdateDelegate action) : this(1.0 / 60, action)
+        {
+
+        }
+
+        public LogicUpdater(double deltaTime) : this(deltaTime, null)
+        {
+
+        }
+
+        public LogicUpdater() : this(1.0 / 60, null)
+        {
+
+        }
+
+        public void SetDeltaTime(double deltaTime)
+        {
+            DeltaTime = deltaTime;
+            DeltaTimeF = (float)DeltaTime;
             _deltaTimeTicks = (long)(DeltaTime * Stopwatch.Frequency);
+        }
+
+        public void SetTickAction(LogicUpdateDelegate action)
+        {
             _action = action;
         }
 
