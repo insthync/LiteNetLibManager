@@ -6,12 +6,10 @@ namespace LiteNetLibManager
     {
         public LiteNetLibGameManager Manager { get; protected set; }
         public long ConnectionId { get; protected set; }
+        public RttCalculator RttCalculator { get; protected set; }
+        public long Rtt { get => RttCalculator.Rtt; }
         public bool IsReady { get; set; }
-        public long Rtt { get; internal set; }
 
-        internal long LastPingTime;
-        internal long TotalRtt;
-        internal int RttCount;
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
@@ -19,6 +17,7 @@ namespace LiteNetLibManager
         {
             Manager = manager;
             ConnectionId = connectionId;
+            RttCalculator = new RttCalculator();
         }
 
         internal bool IsSubscribing(uint objectId)

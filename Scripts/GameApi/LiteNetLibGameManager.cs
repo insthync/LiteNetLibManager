@@ -30,24 +30,20 @@ namespace LiteNetLibManager
         private AsyncOperationHandle<SceneInstance>? _loadAddressableSceneAsyncOperation;
 
         public long ClientConnectionId { get; protected set; }
-        private long _rtt;
+        public RttCalculator RttCalculator { get; protected set; } = new RttCalculator();
         public long Rtt
         {
             get
             {
                 if (IsServer)
                     return 0;
-                return _rtt;
+                return RttCalculator.Rtt;
             }
         }
-        private long _lastPingTime;
-        private long _totalRtt;
-        private int _rttCount;
-        public long Timestamp { get { return System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); } }
         /// <summary>
-        /// Unix timestamp (milliseconds) offsets from server
+        /// Local (server or client) unix timestamp (milliseconds)
         /// </summary>
-        public long ServerTimestampOffsets { get; protected set; }
+        public long Timestamp { get => RttCalculator.LocalTimestamp; }
         /// <summary>
         /// Server unix timestamp (milliseconds)
         /// </summary>
@@ -56,8 +52,8 @@ namespace LiteNetLibManager
             get
             {
                 if (IsServer)
-                    return Timestamp;
-                return Timestamp + ServerTimestampOffsets;
+                    return RttCalculator.LocalTimestamp;
+                return RttCalculator.PeerTimestamp;
             }
         }
         public ServerSceneInfo ServerSceneInfo { get; protected set; }
@@ -373,13 +369,6 @@ namespace LiteNetLibManager
             ServerTransport.ServerDisconnect(connectionId);
         }
 
-        public void ResetRtt()
-        {
-            _rtt = 0;
-            _totalRtt = 0;
-            _rttCount = 0;
-        }
-
         public override void OnPeerConnected(long connectionId)
         {
             base.OnPeerConnected(connectionId);
@@ -402,7 +391,7 @@ namespace LiteNetLibManager
             base.OnClientConnected();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
-            ResetRtt();
+            RttCalculator.Reset();
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
         }
@@ -412,7 +401,7 @@ namespace LiteNetLibManager
             base.OnStartServer();
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
-            ResetRtt();
+            RttCalculator.Reset();
             _updatingSyncFields.Clear();
             _updatingSyncLists.Clear();
             _updatingSyncBehaviours.Clear();
@@ -505,7 +494,7 @@ namespace LiteNetLibManager
             {
                 ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
                 {
-                    pingTime = Timestamp,
+                    pingTime = RttCalculator.PeerTimestamp,
                 });
             }
         }
@@ -518,7 +507,7 @@ namespace LiteNetLibManager
             {
                 ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
                 {
-                    pingTime = Timestamp,
+                    pingTime = RttCalculator.PeerTimestamp,
                 });
             }
         }
@@ -914,7 +903,7 @@ namespace LiteNetLibManager
             ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, new PongMessage()
             {
                 pingTime = message.pingTime,
-                serverTime = Timestamp,
+                pongTime = RttCalculator.LocalTimestamp,
             });
         }
 
@@ -922,20 +911,7 @@ namespace LiteNetLibManager
         {
             if (!Players.TryGetValue(messageHandler.ConnectionId, out LiteNetLibPlayer player))
                 return;
-            PongMessage message = messageHandler.ReadMessage<PongMessage>();
-            if (player.LastPingTime < message.pingTime)
-            {
-                player.LastPingTime = message.pingTime;
-                long rtt = Timestamp - message.pingTime;
-                if (player.RttCount > 10)
-                {
-                    player.TotalRtt = player.Rtt;
-                    player.RttCount = 1;
-                }
-                player.TotalRtt += rtt;
-                player.RttCount++;
-                player.Rtt = player.TotalRtt / player.RttCount;
-            }
+            player.RttCalculator.OnPong(messageHandler.ReadMessage<PongMessage>());
         }
 
         protected virtual void HandleServerSpawnSceneObject(MessageHandlerData messageHandler)
@@ -1099,28 +1075,13 @@ namespace LiteNetLibManager
             ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, new PongMessage()
             {
                 pingTime = message.pingTime,
+                pongTime = RttCalculator.LocalTimestamp,
             });
         }
 
         protected void HandleServerPong(MessageHandlerData messageHandler)
         {
-            PongMessage message = messageHandler.ReadMessage<PongMessage>();
-            if (_lastPingTime < message.pingTime)
-            {
-                _lastPingTime = message.pingTime;
-                long rtt = Timestamp - message.pingTime;
-                if (_rttCount > 10)
-                {
-                    _totalRtt = _rtt;
-                    _rttCount = 1;
-                }
-                _totalRtt += rtt;
-                _rttCount++;
-                _rtt = _totalRtt / _rttCount;
-                // Calculate time offsets by device time offsets and RTT
-                ServerTimestampOffsets = (long)(message.serverTime - Timestamp + (Rtt * 0.5f));
-                if (LogDev) Logging.Log(LogTag, $"Rtt: {Rtt}, ServerTimestampOffsets: {ServerTimestampOffsets}");
-            }
+            RttCalculator.OnPong(messageHandler.ReadMessage<PongMessage>());
         }
 
         protected void HandleServerDisconnect(MessageHandlerData messageHandler)
