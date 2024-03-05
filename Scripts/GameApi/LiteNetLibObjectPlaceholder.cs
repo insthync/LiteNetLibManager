@@ -6,7 +6,7 @@ namespace LiteNetLibManager
     {
         public LiteNetLibIdentity objectPrefab;
         [Tooltip("Turn it on to set this game object as a prefab to spawn")]
-        public bool setItselfAsPrefab;
+        public bool setItselfAsPrefab = true;
         [Tooltip("Set unique asset Id if it will use this game object as a prefab")]
         public string uniqueAssetId;
         [Tooltip("Turn it on to use this name as `uniqueAssetId` if `uniqueAssetId` is empty")]
@@ -24,7 +24,17 @@ namespace LiteNetLibManager
         {
             if (!setItselfAsPrefab)
                 return;
-
+            // It must have LiteNetLibIdentity attached
+            LiteNetLibIdentity identity = GetComponent<LiteNetLibIdentity>();
+            if (identity == null)
+            {
+                Logging.LogError($"[LiteNetLibObjectPlaceholder] Cannot set {this} as a prefab, it must has `LiteNetLibIdentity` attached");
+                setItselfAsPrefab = false;
+                return;
+            }
+            // Assign proper asset ID, if this object is also a prefab then don't do anything, it will use this object as a prefab automatically
+            if (!string.IsNullOrEmpty(identity.AssetId))
+                uniqueAssetId = identity.AssetId;
             if (string.IsNullOrEmpty(uniqueAssetId))
             {
                 if (useNameAsAssetIdIfEmpty)
@@ -38,13 +48,7 @@ namespace LiteNetLibManager
                     return;
                 }
             }
-            LiteNetLibIdentity identity = GetComponent<LiteNetLibIdentity>();
-            if (identity == null)
-            {
-                Logging.LogError($"[LiteNetLibObjectPlaceholder] Cannot set {uniqueAssetId} as a prefab, it must has `LiteNetLibIdentity` attached");
-                setItselfAsPrefab = false;
-                return;
-            }
+            // Find for a game manager instance
             LiteNetLibGameManager gameManager = FindObjectOfType<LiteNetLibGameManager>();
             if (gameManager == null)
             {
@@ -65,6 +69,7 @@ namespace LiteNetLibManager
 
         public void ProceedInstantiating()
         {
+            gameObject.SetActive(false);
             if (objectPrefab == null)
             {
                 Logging.LogError("[LiteNetLibObjectPlaceholder] Cannot instantiates, `objectPrefab` is empty.");
@@ -81,7 +86,6 @@ namespace LiteNetLibManager
                 gameManager.Assets.RegisterPrefab(objectPrefab);
                 gameManager.Assets.NetworkSpawn(objectPrefab.HashAssetId, transform.position, transform.rotation);
             }
-            gameObject.SetActive(false);
             if (!setItselfAsPrefab && destroyThisOnSpawned)
                 Destroy(gameObject);
         }
