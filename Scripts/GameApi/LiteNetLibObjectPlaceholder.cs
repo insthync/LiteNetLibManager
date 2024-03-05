@@ -5,12 +5,62 @@ namespace LiteNetLibManager
     public class LiteNetLibObjectPlaceholder : MonoBehaviour
     {
         public LiteNetLibIdentity objectPrefab;
+        [Tooltip("Turn it on to set this game object as a prefab to spawn")]
+        public bool setItselfAsPrefab;
+        [Tooltip("Set unique asset Id if it will use this game object as a prefab")]
+        public string uniqueAssetId;
+        [Tooltip("Turn it on to use this name as `uniqueAssetId` if `uniqueAssetId` is empty")]
+        public bool useNameAsAssetIdIfEmpty = true;
         [Tooltip("Set this to `TRUE` to destroy this game object after the prefab is instantiated")]
         public bool destroyThisOnSpawned = true;
 
         private void Start()
         {
+            PreparePrefab();
             ProceedInstantiating();
+        }
+
+        public void PreparePrefab()
+        {
+            if (!setItselfAsPrefab)
+                return;
+
+            if (string.IsNullOrEmpty(uniqueAssetId))
+            {
+                if (useNameAsAssetIdIfEmpty)
+                {
+                    uniqueAssetId = name;
+                }
+                else
+                {
+                    Logging.LogError($"[LiteNetLibObjectPlaceholder] Cannot set {this} as a prefab, its unique asset ID is empty");
+                    setItselfAsPrefab = false;
+                    return;
+                }
+            }
+            LiteNetLibIdentity identity = GetComponent<LiteNetLibIdentity>();
+            if (identity == null)
+            {
+                Logging.LogError($"[LiteNetLibObjectPlaceholder] Cannot set {uniqueAssetId} as a prefab, it must has `LiteNetLibIdentity` attached");
+                setItselfAsPrefab = false;
+                return;
+            }
+            LiteNetLibGameManager gameManager = FindObjectOfType<LiteNetLibGameManager>();
+            if (gameManager == null)
+            {
+                Logging.LogError($"[LiteNetLibObjectPlaceholder] Cannot set {uniqueAssetId} as a prefab, there is no instance of `LiteNetLibGameManager` in the scene.");
+                setItselfAsPrefab = false;
+                return;
+            }
+            objectPrefab = identity;
+            objectPrefab.AssetId = uniqueAssetId;
+            if (gameManager.Assets.GuidToPrefabs.TryGetValue(objectPrefab.HashAssetId, out LiteNetLibIdentity registerdPrefab))
+            {
+                objectPrefab = registerdPrefab;
+                setItselfAsPrefab = false;
+                return;
+            }
+            gameManager.Assets.RegisterPrefab(objectPrefab);
         }
 
         public void ProceedInstantiating()
@@ -32,7 +82,7 @@ namespace LiteNetLibManager
                 gameManager.Assets.NetworkSpawn(objectPrefab.HashAssetId, transform.position, transform.rotation);
             }
             gameObject.SetActive(false);
-            if (destroyThisOnSpawned)
+            if (!setItselfAsPrefab && destroyThisOnSpawned)
                 Destroy(gameObject);
         }
     }
