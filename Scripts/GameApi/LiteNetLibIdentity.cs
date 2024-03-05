@@ -83,7 +83,15 @@ namespace LiteNetLibManager
         /// </summary>
         internal readonly HashSet<long> Subscribers = new HashSet<long>();
 
-        public string AssetId { get { return assetId; } }
+        public string AssetId
+        {
+            get { return assetId; }
+            internal set
+            {
+                assetId = value;
+                _hashAssetId = null;
+            }
+        }
         private int? _hashAssetId;
         public int HashAssetId
         {
