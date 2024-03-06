@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace LiteNetLibManager
 {
+    [DisallowMultipleComponent]
     public class LiteNetLibObjectPlaceholder : MonoBehaviour
     {
         public LiteNetLibIdentity objectPrefab;
@@ -81,6 +82,8 @@ namespace LiteNetLibManager
                 Logging.LogError("[LiteNetLibObjectPlaceholder] Cannot instantiates, there is no instance of `LiteNetLibGameManager` in the scene.");
                 return;
             }
+            LiteNetLibObjectPlaceholder placedHolderComp = objectPrefab.GetComponent<LiteNetLibObjectPlaceholder>();
+            placedHolderComp.enabled = false;
             if (gameManager.IsServer)
             {
                 gameManager.Assets.RegisterPrefab(objectPrefab);
