@@ -22,7 +22,7 @@ namespace LiteNetLibManager
 
         public new AsyncOperationHandle<TComponent> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
         {
-            return Addressables.ResourceManager.CreateChainOperation(base.InstantiateAsync(position, Quaternion.identity, parent), GameObjectReady);
+            return Addressables.ResourceManager.CreateChainOperation(base.InstantiateAsync(position, rotation, parent), GameObjectReady);
         }
 
         public new AsyncOperationHandle<TComponent> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
