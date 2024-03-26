@@ -301,7 +301,7 @@ namespace LiteNetLibManager
         {
             await UniTask.Yield();
             if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneNameOrKey} -> Assets.Initialize()");
-            Assets.Initialize();
+            await Assets.Initialize();
             Assets.InitPoolingObjects();
             if (IsClient)
             {
@@ -1046,7 +1046,7 @@ namespace LiteNetLibManager
             HandleServerSceneChange(message.serverSceneInfo);
         }
 
-        protected void HandleServerSceneChange(ServerSceneInfo serverSceneInfo)
+        protected async void HandleServerSceneChange(ServerSceneInfo serverSceneInfo)
         {
             // Scene loaded at server, if this is host (client and server) then skip it.
             if (IsServer)
@@ -1054,7 +1054,7 @@ namespace LiteNetLibManager
 
             if (serverSceneInfo.Equals(ServerSceneInfo))
             {
-                Assets.Initialize();
+                await Assets.Initialize();
                 Assets.InitPoolingObjects();
                 OnClientOnlineSceneLoaded();
                 if (!doNotReadyOnSceneLoaded)
@@ -1219,11 +1219,11 @@ namespace LiteNetLibManager
             return null;
         }
 
-        protected LiteNetLibIdentity SpawnPlayer(long connectionId, AssetReferenceLiteNetLibIdentity prefab)
+        protected LiteNetLibIdentity SpawnPlayer(long connectionId, AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
-            if (!prefab.IsDataValid())
+            if (Assets.TryGetAddressablePrefabHashAssetId(addressablePrefab, out int hashAssetId))
                 return null;
-            return SpawnPlayer(connectionId, prefab.GetHashedId());
+            return SpawnPlayer(connectionId, hashAssetId);
         }
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, LiteNetLibIdentity prefab)

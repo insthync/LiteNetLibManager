@@ -14,9 +14,9 @@ namespace LiteNetLibManager
     /// * At runtime it can load/instantiate the GameObject, then return the desired component.  API matches base class (LoadAssetAsync & InstantiateAsync).
     /// </summary>
     /// <typeparam name="TComponent"> The component type.</typeparam>
-    public class ComponentReference<TComponent> : AssetReference
+    public class AssetReferenceComponent<TComponent> : AssetReference
     {
-        public ComponentReference(string guid) : base(guid)
+        public AssetReferenceComponent(string guid) : base(guid)
         {
         }
 
@@ -35,7 +35,7 @@ namespace LiteNetLibManager
             return Addressables.ResourceManager.CreateChainOperation(base.LoadAssetAsync<GameObject>(), GameObjectReady);
         }
 
-        AsyncOperationHandle<TComponent> GameObjectReady(AsyncOperationHandle<GameObject> arg)
+        static AsyncOperationHandle<TComponent> GameObjectReady(AsyncOperationHandle<GameObject> arg)
         {
             var comp = arg.Result.GetComponent<TComponent>();
             return Addressables.ResourceManager.CreateCompletedOperation(comp, string.Empty);
@@ -58,7 +58,7 @@ namespace LiteNetLibManager
 #endif
         }
 
-        public void ReleaseInstance(AsyncOperationHandle<TComponent> op)
+        public static void ReleaseInstance(AsyncOperationHandle<TComponent> op)
         {
             // Release the instance
             var component = op.Result as Component;
