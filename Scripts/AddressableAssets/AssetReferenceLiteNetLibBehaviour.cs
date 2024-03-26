@@ -54,4 +54,13 @@ namespace LiteNetLibManager
         }
 #endif
     }
+
+
+    [System.Serializable]
+    public class AssetReferenceLiteNetLibBehaviour : AssetReferenceLiteNetLibBehaviour<LiteNetLibBehaviour>
+    {
+        public AssetReferenceLiteNetLibBehaviour(LiteNetLibBehaviour behaviour) : base(behaviour)
+        {
+        }
+    }
 }
