@@ -41,7 +41,7 @@ namespace LiteNetLibManager
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;
 
-        internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
+        internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<object, InstantiatedAssetReference<LiteNetLibIdentity>> RuntimeKeyToInstantiatedPrefabs = new Dictionary<object, InstantiatedAssetReference<LiteNetLibIdentity>>();
         internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
@@ -83,7 +83,8 @@ namespace LiteNetLibManager
         {
             ClearSpawnedObjects();
             ClearPooledObjects();
-            CacheSpawnPoints.Clear();
+            ClearAddressablePrefabInstances();
+            SpawnPoints.Clear();
             SceneObjects.Clear();
             ResetSpawnPositionCounter();
             if (!doNotResetObjectId)
@@ -92,8 +93,8 @@ namespace LiteNetLibManager
 
         public void RegisterSpawnPoints()
         {
-            CacheSpawnPoints.Clear();
-            CacheSpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
+            SpawnPoints.Clear();
+            SpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
         }
 
         public async UniTask RegisterPrefabs()
@@ -101,8 +102,7 @@ namespace LiteNetLibManager
 #if !LNLM_NO_PREFABS
             for (int i = 0; i < spawnablePrefabs.Length; ++i)
             {
-                LiteNetLibIdentity registeringPrefab = spawnablePrefabs[i];
-                RegisterPrefab(registeringPrefab);
+                RegisterPrefab(spawnablePrefabs[i]);
             }
             if (playerPrefab != null)
             {
@@ -273,6 +273,15 @@ namespace LiteNetLibManager
                 }
             }
             PooledObjects.Clear();
+        }
+
+        public void ClearAddressablePrefabInstances()
+        {
+            foreach (InstantiatedAssetReference<LiteNetLibIdentity> instance in RuntimeKeyToInstantiatedPrefabs.Values)
+            {
+                instance?.Release();
+            }
+            RuntimeKeyToInstantiatedPrefabs.Clear();
         }
 
         public void InitPoolingObjects()
@@ -588,15 +597,15 @@ namespace LiteNetLibManager
 
         public Vector3 GetPlayerSpawnPosition()
         {
-            if (CacheSpawnPoints.Count == 0)
+            if (SpawnPoints.Count == 0)
                 return Vector3.zero;
             if (playerSpawnRandomly)
-                return CacheSpawnPoints[Random.Range(0, CacheSpawnPoints.Count)].GetRandomPosition();
+                return SpawnPoints[Random.Range(0, SpawnPoints.Count)].GetRandomPosition();
             else
             {
-                if (s_spawnPositionCounter >= CacheSpawnPoints.Count)
+                if (s_spawnPositionCounter >= SpawnPoints.Count)
                     s_spawnPositionCounter = 0;
-                return CacheSpawnPoints[s_spawnPositionCounter++].GetRandomPosition();
+                return SpawnPoints[s_spawnPositionCounter++].GetRandomPosition();
             }
         }
 
