@@ -6,7 +6,8 @@ using UnityEditor;
 namespace LiteNetLibManager
 {
     [System.Serializable]
-    public class AssetReferenceLiteNetLibBehaviour : AssetReferenceComponent<LiteNetLibBehaviour>
+    public class AssetReferenceLiteNetLibBehaviour<T> : AssetReferenceComponent<T>
+        where T : LiteNetLibBehaviour
     {
         [SerializeField]
         private int hashAssetId;
