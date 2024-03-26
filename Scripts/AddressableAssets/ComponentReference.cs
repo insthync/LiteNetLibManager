@@ -29,6 +29,7 @@ namespace LiteNetLibManager
         {
             return Addressables.ResourceManager.CreateChainOperation(base.InstantiateAsync(parent, instantiateInWorldSpace), GameObjectReady);
         }
+
         public AsyncOperationHandle<TComponent> LoadAssetAsync()
         {
             return Addressables.ResourceManager.CreateChainOperation(base.LoadAssetAsync<GameObject>(), GameObjectReady);
@@ -37,7 +38,7 @@ namespace LiteNetLibManager
         AsyncOperationHandle<TComponent> GameObjectReady(AsyncOperationHandle<GameObject> arg)
         {
             var comp = arg.Result.GetComponent<TComponent>();
-            return Addressables.ResourceManager.CreateCompletedOperation<TComponent>(comp, string.Empty);
+            return Addressables.ResourceManager.CreateCompletedOperation(comp, string.Empty);
         }
 
         public override bool ValidateAsset(Object obj)
