@@ -9,15 +9,26 @@ namespace LiteNetLibManager
         private static int s_spawnPositionCounter = 0;
 
         public bool playerSpawnRandomly;
+#if !LNLM_NO_PREFABS
+        #region Prefab Refs
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs = new LiteNetLibIdentity[0];
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         public SceneField offlineScene;
+        public SceneField onlineScene;
+        #endregion
+#endif
+
+        #region Addressable Assets Refs
+        public AssetReferenceLiteNetLibIdentity addressablePlayerPrefab;
+        public AssetReferenceLiteNetLibIdentity[] addressableSpawnablePrefabs = new AssetReferenceLiteNetLibIdentity[0];
+        public AssetReferenceLiteNetLibIdentity AddressablePlayerPrefab { get; protected set; }
         [Tooltip("If this is not empty, it will load offline scene by this instead of `offlineScene`")]
         public AssetReferenceScene addressableOfflineScene;
-        public SceneField onlineScene;
         [Tooltip("If this is not empty, it will load online scene by this instead of `onlineScene`")]
         public AssetReferenceScene addressableOnlineScene;
+        #endregion
+
         public UnityEvent onInitialize = new UnityEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
@@ -27,10 +38,13 @@ namespace LiteNetLibManager
         public bool disablePooling = false;
 
         internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
+#if !LNLM_NO_PREFABS
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
+        internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
+#endif
+        internal readonly Dictionary<int, AssetReferenceLiteNetLibIdentity> GuidToAddressablePrefabs = new Dictionary<int, AssetReferenceLiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
 
         public LiteNetLibGameManager Manager { get; private set; }
         private string _logTag;
@@ -77,6 +91,7 @@ namespace LiteNetLibManager
 
         public void RegisterPrefabs()
         {
+#if !LNLM_NO_PREFABS
             for (int i = 0; i < spawnablePrefabs.Length; ++i)
             {
                 LiteNetLibIdentity registeringPrefab = spawnablePrefabs[i];
@@ -87,8 +102,10 @@ namespace LiteNetLibManager
                 PlayerPrefab = playerPrefab;
                 RegisterPrefab(playerPrefab);
             }
+#endif
         }
 
+#if !LNLM_NO_PREFABS
         public void RegisterPrefab(LiteNetLibIdentity prefab)
         {
             if (prefab == null)
@@ -99,7 +116,9 @@ namespace LiteNetLibManager
             if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
             GuidToPrefabs[prefab.HashAssetId] = prefab;
         }
+#endif
 
+#if !LNLM_NO_PREFABS
         public bool UnregisterPrefab(LiteNetLibIdentity prefab)
         {
             if (prefab == null)
@@ -109,6 +128,29 @@ namespace LiteNetLibManager
             }
             if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
             return GuidToPrefabs.Remove(prefab.HashAssetId);
+        }
+#endif
+
+        public void RegisterPrefab(AssetReferenceLiteNetLibIdentity prefab)
+        {
+            if (prefab == null)
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterPrefab - prefab is null.");
+                return;
+            }
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab [{prefab.RuntimeKey}] name [{prefab.SubObjectName}]");
+            GuidToAddressablePrefabs[prefab.GetHashedId()] = prefab;
+        }
+
+        public bool UnregisterPrefab(AssetReferenceLiteNetLibIdentity prefab)
+        {
+            if (prefab == null)
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterPrefab - prefab is null.");
+                return false;
+            }
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab [{prefab.RuntimeKey}] name [{prefab.SubObjectName}]");
+            return GuidToAddressablePrefabs.Remove(prefab.GetHashedId());
         }
 
         public void ClearSpawnedObjects()
@@ -132,6 +174,7 @@ namespace LiteNetLibManager
 
         public void ClearPooledObjects()
         {
+#if !LNLM_NO_PREFABS
             foreach (Queue<LiteNetLibIdentity> queue in PooledObjects.Values)
             {
                 while (queue.Count > 0)
@@ -147,6 +190,7 @@ namespace LiteNetLibManager
                 }
             }
             PooledObjects.Clear();
+#endif
         }
 
         public void InitPoolingObjects()
@@ -155,12 +199,15 @@ namespace LiteNetLibManager
             if (disablePooling)
                 return;
 
+#if !LNLM_NO_PREFABS
             foreach (int hashAssetId in GuidToPrefabs.Keys)
             {
                 InitPoolingObject(hashAssetId);
             }
+#endif
         }
 
+#if !LNLM_NO_PREFABS
         public void InitPoolingObject(int hashAssetId)
         {
             // No pooling
@@ -193,6 +240,7 @@ namespace LiteNetLibManager
             }
             PooledObjects[hashAssetId] = queue;
         }
+#endif
 
         public LiteNetLibIdentity GetObjectInstance(int hashAssetId)
         {
@@ -201,6 +249,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity GetObjectInstance(int hashAssetId, Vector3 position, Quaternion rotation)
         {
+#if !LNLM_NO_PREFABS
             if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects[hashAssetId].Count > 0)
             {
                 // Get pooled instance
@@ -218,7 +267,7 @@ namespace LiteNetLibManager
                 instance.gameObject.SetActive(false);
                 return instance;
             }
-
+#endif
             return null;
         }
 
@@ -234,6 +283,7 @@ namespace LiteNetLibManager
                 Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance is not pooled instance.");
                 return;
             }
+#if !LNLM_NO_PREFABS
             Queue<LiteNetLibIdentity> queue;
             if (!PooledObjects.TryGetValue(instance.HashAssetId, out queue))
             {
@@ -249,6 +299,7 @@ namespace LiteNetLibManager
                 instance.gameObject.SetActive(false);
                 queue.Enqueue(instance);
             }
+#endif
         }
 
         public void RegisterSceneObjects()
@@ -348,12 +399,14 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
         {
+#if !LNLM_NO_PREFABS
             if (!GuidToPrefabs.ContainsKey(hashAssetId))
             {
                 if (Manager.LogWarn)
                     Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
                 return null;
             }
+#endif
             return NetworkSpawn(GetObjectInstance(hashAssetId, position, rotation), objectId, connectionId);
         }
 

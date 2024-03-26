@@ -21,6 +21,7 @@ namespace LiteNetLibManager
         public bool doNotEnterGameOnConnect = false;
         public bool doNotReadyOnSceneLoaded = false;
         public bool doNotDestroyOnSceneChanges = false;
+        public bool loadOfflineSceneWhenClientStopped = true;
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
@@ -411,10 +412,12 @@ namespace LiteNetLibManager
             {
                 LoadSceneRoutine(Assets.addressableOnlineScene.GetServerSceneInfo(), true).Forget();
             }
+#if !LNLM_NO_PREFABS
             else if (Assets.onlineScene.IsDataValid() && !Assets.onlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.onlineScene.GetServerSceneInfo(), true).Forget();
             }
+#endif
             else
             {
                 ProceedOnlineSceneLoaded(new ServerSceneInfo()
@@ -436,10 +439,12 @@ namespace LiteNetLibManager
             {
                 LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
             }
+#if !LNLM_NO_PREFABS
             else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
             }
+#endif
         }
 
         public override void OnStopClient()
@@ -449,14 +454,19 @@ namespace LiteNetLibManager
             {
                 Players.Clear();
                 Assets.Clear();
-                string activeSceneName = SceneManager.GetActiveScene().name;
-                if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
+                if (loadOfflineSceneWhenClientStopped)
                 {
-                    LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
-                }
-                else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
-                {
-                    LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
+                    string activeSceneName = SceneManager.GetActiveScene().name;
+                    if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
+                    {
+                        LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
+                    }
+#if !LNLM_NO_PREFABS
+                    else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
+                    {
+                        LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
+                    }
+#endif
                 }
             }
         }
@@ -1200,9 +1210,20 @@ namespace LiteNetLibManager
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId)
         {
-            if (Assets.PlayerPrefab == null)
+            if (Assets.AddressablePlayerPrefab.IsDataValid())
+                return SpawnPlayer(connectionId, Assets.AddressablePlayerPrefab);
+#if !LNLM_NO_PREFABS
+            if (Assets.PlayerPrefab != null)
+                return SpawnPlayer(connectionId, Assets.PlayerPrefab);
+#endif
+            return null;
+        }
+
+        protected LiteNetLibIdentity SpawnPlayer(long connectionId, AssetReferenceLiteNetLibIdentity prefab)
+        {
+            if (!prefab.IsDataValid())
                 return null;
-            return SpawnPlayer(connectionId, Assets.PlayerPrefab);
+            return SpawnPlayer(connectionId, prefab.GetHashedId());
         }
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, LiteNetLibIdentity prefab)

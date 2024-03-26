@@ -1,3 +1,4 @@
+#if !LNLM_NO_PREFABS
 using UnityEngine;
 
 namespace LiteNetLibManager
@@ -89,3 +90,4 @@ namespace LiteNetLibManager
         }
     }
 }
+#endif
