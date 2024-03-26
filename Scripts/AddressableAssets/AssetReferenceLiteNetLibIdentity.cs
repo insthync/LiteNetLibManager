@@ -31,16 +31,6 @@ namespace LiteNetLibManager
             }
         }
 
-        public override bool ValidateAsset(string path)
-        {
-            return ValidateAsset(AssetDatabase.LoadAssetAtPath<LiteNetLibIdentity>(path));
-        }
-
-        public override bool ValidateAsset(Object obj)
-        {
-            return (obj != null) && (obj is LiteNetLibIdentity);
-        }
-
         public override bool SetEditorAsset(Object value)
         {
             if (!base.SetEditorAsset(value))
