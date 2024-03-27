@@ -50,12 +50,12 @@ namespace LiteNetLibManager
 
         public new AsyncOperationHandle<TBehaviour> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
         {
-            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, position, rotation, parent, true), GameObjectReady);
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, position, rotation, parent, false), GameObjectReady);
         }
 
         public new AsyncOperationHandle<TBehaviour> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
         {
-            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, parent, instantiateInWorldSpace, true), GameObjectReady);
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, parent, instantiateInWorldSpace, false), GameObjectReady);
         }
 
         public new AsyncOperationHandle<TBehaviour> LoadAssetAsync()
