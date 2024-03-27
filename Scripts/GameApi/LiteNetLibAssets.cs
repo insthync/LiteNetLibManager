@@ -160,14 +160,14 @@ namespace LiteNetLibManager
             return op.Task;
         }
 
-        private void OnAddressablePrefabInstantiated(AssetReference addressablePrefab, AsyncOperationHandle<LiteNetLibIdentity> handler)
+        private void OnAddressablePrefabInstantiated(AssetReferenceLiteNetLibIdentity addressablePrefab, AsyncOperationHandle<LiteNetLibIdentity> handler)
         {
             if (handler.Result == null)
             {
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - result is null.");
                 return;
             }
-            LiteNetLibIdentity prefab = handler.Result.GetComponent<LiteNetLibIdentity>();
+            LiteNetLibIdentity prefab = handler.Result;
             prefab.gameObject.AddComponent<AssetReferenceReleaser>().Setup(handler);
 
             if (prefab == null)
