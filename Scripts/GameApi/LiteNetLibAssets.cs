@@ -84,7 +84,6 @@ namespace LiteNetLibManager
         {
             ClearSpawnedObjects();
             ClearPooledObjects();
-            ClearAddressablePrefabInstances();
             SpawnPoints.Clear();
             SceneObjects.Clear();
             ResetSpawnPositionCounter();
@@ -114,7 +113,10 @@ namespace LiteNetLibManager
             List<Task<LiteNetLibIdentity>> ops = new List<Task<LiteNetLibIdentity>>();
             for (int i = 0; i < addressableSpawnablePrefabs.Length; ++i)
             {
-                ops.Add(RegisterAddressablePrefab(addressableSpawnablePrefabs[i]));
+                if (addressableSpawnablePrefabs[i].IsDataValid())
+                {
+                    ops.Add(RegisterAddressablePrefab(addressableSpawnablePrefabs[i]));
+                }
             }
             if (addressablePlayerPrefab.IsDataValid())
             {
@@ -145,23 +147,17 @@ namespace LiteNetLibManager
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
-        public Task<LiteNetLibIdentity> RegisterAddressablePrefab(AssetReference addressablePrefab)
+        public Task<LiteNetLibIdentity> RegisterAddressablePrefab(AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
             if (!addressablePrefab.IsDataValid())
             {
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - prefab is null.");
                 return null;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab [{addressablePrefab.RuntimeKey}]");
-            AsyncOperationHandle<LiteNetLibIdentity> op = Addressables.ResourceManager.CreateChainOperation(addressablePrefab.InstantiateAsync(_addressablePrefabsTransform), OnGameObjectReady);
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
+            AsyncOperationHandle<LiteNetLibIdentity> op = addressablePrefab.InstantiateAsync(_addressablePrefabsTransform);
             op.Completed += opParam => OnAddressablePrefabInstantiated(addressablePrefab, opParam);
             return op.Task;
-        }
-
-        private static AsyncOperationHandle<LiteNetLibIdentity> OnGameObjectReady(AsyncOperationHandle<GameObject> gameObject)
-        {
-            var comp = gameObject.Result.GetComponent<LiteNetLibIdentity>();
-            return Addressables.ResourceManager.CreateCompletedOperation(comp, string.Empty);
         }
 
         private void OnAddressablePrefabInstantiated(AssetReference addressablePrefab, AsyncOperationHandle<LiteNetLibIdentity> handler)
@@ -208,11 +204,14 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterAddressablePrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab [{addressablePrefab.RuntimeKey}]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
             if (RuntimeKeyToInstantiatedPrefabs.TryGetValue(addressablePrefab.RuntimeKey, out InstantiatedAssetReference<LiteNetLibIdentity> instance))
             {
                 if (GuidToPrefabs.TryGetValue(addressablePlayerPrefab.HashAssetId, out LiteNetLibIdentity prefab))
+                {
                     Destroy(prefab.gameObject);
+                    GuidToPrefabs.Remove(addressablePlayerPrefab.HashAssetId);
+                }
                 instance.Release();
                 RuntimeKeyToInstantiatedPrefabs.Remove(instance);
                 return true;
@@ -278,15 +277,6 @@ namespace LiteNetLibManager
                 }
             }
             PooledObjects.Clear();
-        }
-
-        public void ClearAddressablePrefabInstances()
-        {
-            foreach (InstantiatedAssetReference<LiteNetLibIdentity> instance in RuntimeKeyToInstantiatedPrefabs.Values)
-            {
-                instance?.Release();
-            }
-            RuntimeKeyToInstantiatedPrefabs.Clear();
         }
 
         public void InitPoolingObjects()
