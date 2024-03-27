@@ -15,6 +15,7 @@ namespace LiteNetLibManager
     /// </summary>
     /// <typeparam name="TComponent"> The component type.</typeparam>
     public class AssetReferenceComponent<TComponent> : AssetReference
+        where TComponent : Component
     {
         public AssetReferenceComponent(string guid) : base(guid)
         {
@@ -22,12 +23,12 @@ namespace LiteNetLibManager
 
         public new AsyncOperationHandle<TComponent> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
         {
-            return Addressables.ResourceManager.CreateChainOperation(base.InstantiateAsync(position, rotation, parent), GameObjectReady);
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, position, rotation, parent, true), GameObjectReady);
         }
 
         public new AsyncOperationHandle<TComponent> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
         {
-            return Addressables.ResourceManager.CreateChainOperation(base.InstantiateAsync(parent, instantiateInWorldSpace), GameObjectReady);
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, parent, instantiateInWorldSpace, true), GameObjectReady);
         }
 
         public AsyncOperationHandle<TComponent> LoadAssetAsync()
@@ -43,16 +44,26 @@ namespace LiteNetLibManager
 
         public override bool ValidateAsset(Object obj)
         {
-            var go = obj as GameObject;
-            return go != null && go.GetComponent<TComponent>() != null;
+            return ValidateAsset<TComponent>(obj);
         }
 
         public override bool ValidateAsset(string path)
         {
+            return ValidateAsset<TComponent>(path);
+        }
+
+        protected bool ValidateAsset<T>(Object obj)
+            where T : Component
+        {
+            GameObject go = obj as GameObject;
+            return go != null && go.GetComponent<T>() != null;
+        }
+
+        protected bool ValidateAsset<T>(string path)
+            where T : Component
+        {
 #if UNITY_EDITOR
-            // This load can be expensive...
-            var go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            return go != null && go.GetComponent<TComponent>() != null;
+            return ValidateAsset<T>(AssetDatabase.LoadAssetAtPath<GameObject>(path));
 #else
             return false;
 #endif
@@ -70,6 +81,5 @@ namespace LiteNetLibManager
             // Release the handle
             Addressables.Release(op);
         }
-
     }
 }

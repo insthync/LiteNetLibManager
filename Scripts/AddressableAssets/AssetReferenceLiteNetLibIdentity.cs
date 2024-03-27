@@ -9,11 +9,15 @@ namespace LiteNetLibManager
     public class AssetReferenceLiteNetLibIdentity : AssetReferenceComponent<LiteNetLibIdentity>
     {
         [SerializeField]
-        private int hashAssetId;
+        protected int hashAssetId;
 
         public int HashAssetId
         {
             get { return hashAssetId; }
+        }
+
+        public AssetReferenceLiteNetLibIdentity(string guid) : base(guid)
+        {
         }
 
 #if UNITY_EDITOR

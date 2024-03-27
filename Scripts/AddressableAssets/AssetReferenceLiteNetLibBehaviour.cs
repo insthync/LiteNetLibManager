@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -6,17 +8,9 @@ using UnityEditor;
 namespace LiteNetLibManager
 {
     [System.Serializable]
-    public class AssetReferenceLiteNetLibBehaviour<T> : AssetReferenceComponent<T>
-        where T : LiteNetLibBehaviour
+    public class AssetReferenceLiteNetLibBehaviour<TBehaviour> : AssetReferenceLiteNetLibIdentity
+        where TBehaviour : LiteNetLibBehaviour
     {
-        [SerializeField]
-        private int hashAssetId;
-
-        public int HashAssetId
-        {
-            get { return hashAssetId; }
-        }
-
 #if UNITY_EDITOR
         public AssetReferenceLiteNetLibBehaviour(LiteNetLibBehaviour behaviour) : base(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(behaviour)))
         {
@@ -53,6 +47,37 @@ namespace LiteNetLibManager
             }
         }
 #endif
+
+        public new AsyncOperationHandle<TBehaviour> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
+        {
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, position, rotation, parent, true), GameObjectReady);
+        }
+
+        public new AsyncOperationHandle<TBehaviour> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
+        {
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, parent, instantiateInWorldSpace, true), GameObjectReady);
+        }
+
+        public new AsyncOperationHandle<TBehaviour> LoadAssetAsync()
+        {
+            return Addressables.ResourceManager.CreateChainOperation(base.LoadAssetAsync<GameObject>(), GameObjectReady);
+        }
+
+        static AsyncOperationHandle<TBehaviour> GameObjectReady(AsyncOperationHandle<GameObject> arg)
+        {
+            var comp = arg.Result.GetComponent<TBehaviour>();
+            return Addressables.ResourceManager.CreateCompletedOperation(comp, string.Empty);
+        }
+
+        public override bool ValidateAsset(Object obj)
+        {
+            return ValidateAsset<TBehaviour>(obj);
+        }
+
+        public override bool ValidateAsset(string path)
+        {
+            return ValidateAsset<TBehaviour>(path);
+        }
     }
 
 
