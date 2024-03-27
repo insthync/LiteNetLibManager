@@ -11,6 +11,10 @@ namespace LiteNetLibManager
     public class AssetReferenceLiteNetLibBehaviour<TBehaviour> : AssetReferenceLiteNetLibIdentity
         where TBehaviour : LiteNetLibBehaviour
     {
+        public AssetReferenceLiteNetLibBehaviour(string guid) : base(guid)
+        {
+        }
+
 #if UNITY_EDITOR
         public AssetReferenceLiteNetLibBehaviour(LiteNetLibBehaviour behaviour) : base(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(behaviour)))
         {
@@ -25,7 +29,9 @@ namespace LiteNetLibManager
                 Debug.LogWarning($"[AssetReferenceLiteNetLibBehaviour] Cannot find behaviour, so set `hashAssetId` to `0`");
             }
         }
+#endif
 
+#if UNITY_EDITOR
         public override bool SetEditorAsset(Object value)
         {
             if (!base.SetEditorAsset(value))
@@ -84,8 +90,14 @@ namespace LiteNetLibManager
     [System.Serializable]
     public class AssetReferenceLiteNetLibBehaviour : AssetReferenceLiteNetLibBehaviour<LiteNetLibBehaviour>
     {
+        public AssetReferenceLiteNetLibBehaviour(string guid) : base(guid)
+        {
+        }
+
+#if UNITY_EDITOR
         public AssetReferenceLiteNetLibBehaviour(LiteNetLibBehaviour behaviour) : base(behaviour)
         {
         }
+#endif
     }
 }

@@ -34,7 +34,9 @@ namespace LiteNetLibManager
                 Debug.LogWarning($"[AssetReferenceLiteNetLibIdentity] Cannot find identity, so set `hashAssetId` to `0`");
             }
         }
+#endif
 
+#if UNITY_EDITOR
         public override bool SetEditorAsset(Object value)
         {
             if (!base.SetEditorAsset(value))
