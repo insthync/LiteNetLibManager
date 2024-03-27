@@ -27,8 +27,9 @@ namespace LiteNetLibManager
 
         private double _clientSendPingCountDown;
         private double _serverSendPingCountDown;
-        private AsyncOperation _loadSceneAsyncOperation;
-        private AsyncOperationHandle<SceneInstance>? _loadAddressableSceneAsyncOperation;
+        public static AsyncOperation LoadSceneAsyncOperation { get; private set; }
+        public static AsyncOperationHandle<SceneInstance>? LoadAddressableSceneAsyncOperation { get; private set; }
+        public static AsyncOperationHandle<SceneInstance>? LatestLoadedAddressableSceneAsyncOperation { get; set; }
 
         public long ClientConnectionId { get; protected set; }
         public RttCalculator RttCalculator { get; protected set; } = new RttCalculator();
@@ -240,7 +241,7 @@ namespace LiteNetLibManager
         /// <returns></returns>
         private async UniTaskVoid LoadSceneRoutine(ServerSceneInfo serverSceneInfo, bool online)
         {
-            if (_loadSceneAsyncOperation == null || !_loadAddressableSceneAsyncOperation.HasValue)
+            if (LoadSceneAsyncOperation == null && LoadAddressableSceneAsyncOperation == null)
             {
                 // If doNotDestroyOnSceneChanges not TRUE still not destroy this game object
                 // But it will be destroyed after scene loaded, if scene is offline scene
@@ -260,26 +261,32 @@ namespace LiteNetLibManager
 
                 if (LogDev) Logging.Log(LogTag, $"Loading Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneNameOrKey} is online: {online}");
                 Assets.onLoadSceneStart.Invoke(serverSceneInfo.sceneNameOrKey, online, 0f);
+                if (LatestLoadedAddressableSceneAsyncOperation != null)
+                {
+                    // Release the old handler one
+                    Addressables.Release(LatestLoadedAddressableSceneAsyncOperation.Value);
+                    LatestLoadedAddressableSceneAsyncOperation = null;
+                }
                 if (serverSceneInfo.isAddressable)
                 {
-                    _loadAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(serverSceneInfo.sceneNameOrKey);
-                    while (_loadAddressableSceneAsyncOperation.HasValue && !_loadAddressableSceneAsyncOperation.Value.IsDone)
+                    LoadAddressableSceneAsyncOperation = LatestLoadedAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(serverSceneInfo.sceneNameOrKey);
+                    while (LoadAddressableSceneAsyncOperation.HasValue && !LoadAddressableSceneAsyncOperation.Value.IsDone)
                     {
                         await UniTask.Yield();
-                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, _loadAddressableSceneAsyncOperation.Value.PercentComplete);
+                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, LoadAddressableSceneAsyncOperation.Value.PercentComplete);
                     }
                 }
                 else
                 {
-                    _loadSceneAsyncOperation = SceneManager.LoadSceneAsync(serverSceneInfo.sceneNameOrKey, LoadSceneMode.Single);
-                    while (_loadSceneAsyncOperation != null && !_loadSceneAsyncOperation.isDone)
+                    LoadSceneAsyncOperation = SceneManager.LoadSceneAsync(serverSceneInfo.sceneNameOrKey, LoadSceneMode.Single);
+                    while (LoadSceneAsyncOperation != null && !LoadSceneAsyncOperation.isDone)
                     {
                         await UniTask.Yield();
-                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, _loadSceneAsyncOperation.progress);
+                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, LoadSceneAsyncOperation.progress);
                     }
                 }
-                _loadSceneAsyncOperation = null;
-                _loadAddressableSceneAsyncOperation = null;
+                LoadSceneAsyncOperation = null;
+                LoadAddressableSceneAsyncOperation = null;
 
                 if (online)
                 {
