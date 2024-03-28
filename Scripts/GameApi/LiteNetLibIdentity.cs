@@ -874,5 +874,30 @@ namespace LiteNetLibManager
                 list.Reset();
             }
         }
+
+        private void OnDestroy()
+        {
+            foreach (LiteNetLibSyncField field in SyncFields)
+            {
+                field.UnregisterUpdating();
+            }
+            foreach (LiteNetLibSyncList list in SyncLists)
+            {
+                list.UnregisterUpdating();
+            }
+            onGetInstance.RemoveAllListeners();
+            onGetInstance = null;
+            onSubscriberAdded.RemoveAllListeners();
+            onSubscriberAdded = null;
+            onSubscriberRemoved.RemoveAllListeners();
+            onSubscriberRemoved = null;
+            SyncFields.Clear();
+            NetFunctions.Clear();
+            SyncLists.Clear();
+            SyncBehaviours.Clear();
+            Subscribings.Clear();
+            Subscribers.Clear();
+            HideExceptions.Clear();
+        }
     }
 }
