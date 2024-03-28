@@ -1228,9 +1228,7 @@ namespace LiteNetLibManager
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
-            if (Assets.TryGetAddressablePrefabHashAssetId(addressablePrefab, out int hashAssetId))
-                return null;
-            return SpawnPlayer(connectionId, hashAssetId);
+            return SpawnPlayer(connectionId, addressablePrefab.HashAssetId);
         }
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, LiteNetLibIdentity prefab)
