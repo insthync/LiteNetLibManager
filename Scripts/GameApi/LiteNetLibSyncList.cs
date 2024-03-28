@@ -92,8 +92,8 @@ namespace LiteNetLibManager
             public int count;
         }
 
-        protected readonly List<TType> _list = new List<TType>(128);
-        protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>(16);
+        protected readonly List<TType> _list = new List<TType>();
+        protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>();
 
         public TType this[int index]
         {
