@@ -74,11 +74,16 @@ namespace LiteNetLibManager
             RegisterUpdating();
         }
 
-        protected void RegisterUpdating()
+        public void RegisterUpdating()
         {
             if (!IsSetup)
                 return;
-            Manager.RegisterSyncListUpdating(this);
+            Manager?.RegisterSyncListUpdating(this);
+        }
+
+        public void UnregisterUpdating()
+        {
+            Manager?.UnregisterSyncListUpdating(this);
         }
     }
 
@@ -92,8 +97,8 @@ namespace LiteNetLibManager
             public int count;
         }
 
-        protected readonly List<TType> _list = new List<TType>(128);
-        protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>(16);
+        protected readonly List<TType> _list = new List<TType>();
+        protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>();
 
         public TType this[int index]
         {

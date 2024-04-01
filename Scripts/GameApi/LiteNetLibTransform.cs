@@ -378,6 +378,11 @@ namespace LiteNetLibManager
             Manager.RegisterSyncBehaviourUpdating(this);
         }
 
+        private void OnDestroy()
+        {
+            Manager.UnregisterSyncBehaviourUpdating(this);
+        }
+
         private void UpdateTransform(float deltaTime)
         {
             if (ShouldSnap(endInterpResult.position))

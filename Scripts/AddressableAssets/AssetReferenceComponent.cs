@@ -14,50 +14,61 @@ namespace LiteNetLibManager
     /// * At runtime it can load/instantiate the GameObject, then return the desired component.  API matches base class (LoadAssetAsync & InstantiateAsync).
     /// </summary>
     /// <typeparam name="TComponent"> The component type.</typeparam>
-    public class ComponentReference<TComponent> : AssetReference
+    public class AssetReferenceComponent<TComponent> : AssetReference
+        where TComponent : Component
     {
-        public ComponentReference(string guid) : base(guid)
+        public AssetReferenceComponent(string guid) : base(guid)
         {
         }
 
         public new AsyncOperationHandle<TComponent> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
         {
-            return Addressables.ResourceManager.CreateChainOperation(base.InstantiateAsync(position, Quaternion.identity, parent), GameObjectReady);
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, position, rotation, parent, false), GetComponentChainOperation);
         }
 
         public new AsyncOperationHandle<TComponent> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
         {
-            return Addressables.ResourceManager.CreateChainOperation(base.InstantiateAsync(parent, instantiateInWorldSpace), GameObjectReady);
-        }
-        public AsyncOperationHandle<TComponent> LoadAssetAsync()
-        {
-            return Addressables.ResourceManager.CreateChainOperation(base.LoadAssetAsync<GameObject>(), GameObjectReady);
+            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, parent, instantiateInWorldSpace, false), GetComponentChainOperation);
         }
 
-        AsyncOperationHandle<TComponent> GameObjectReady(AsyncOperationHandle<GameObject> arg)
+        public AsyncOperationHandle<TComponent> LoadAssetAsync()
         {
-            var comp = arg.Result.GetComponent<TComponent>();
-            return Addressables.ResourceManager.CreateCompletedOperation<TComponent>(comp, string.Empty);
+            return Addressables.ResourceManager.CreateChainOperation(base.LoadAssetAsync<GameObject>(), GetComponentChainOperation);
+        }
+
+        private static AsyncOperationHandle<TComponent> GetComponentChainOperation(AsyncOperationHandle<GameObject> handler)
+        {
+            return Addressables.ResourceManager.CreateCompletedOperation(handler.Result.GetComponent<TComponent>(), string.Empty);
         }
 
         public override bool ValidateAsset(Object obj)
         {
-            var go = obj as GameObject;
-            return go != null && go.GetComponent<TComponent>() != null;
+            return ValidateAsset<TComponent>(obj);
         }
 
         public override bool ValidateAsset(string path)
         {
+            return ValidateAsset<TComponent>(path);
+        }
+
+        protected bool ValidateAsset<T>(Object obj)
+            where T : Component
+        {
+            GameObject go = obj as GameObject;
+            return go != null && go.GetComponent<T>() != null;
+        }
+
+        protected bool ValidateAsset<T>(string path)
+            where T : Component
+        {
 #if UNITY_EDITOR
-            // This load can be expensive...
-            var go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            return go != null && go.GetComponent<TComponent>() != null;
+            return ValidateAsset<T>(AssetDatabase.LoadAssetAtPath<GameObject>(path));
 #else
             return false;
 #endif
         }
 
-        public void ReleaseInstance(AsyncOperationHandle<TComponent> op)
+        public static void ReleaseInstance(AsyncOperationHandle<TComponent> op)
         {
             // Release the instance
             var component = op.Result as Component;
@@ -69,6 +80,5 @@ namespace LiteNetLibManager
             // Release the handle
             Addressables.Release(op);
         }
-
     }
 }

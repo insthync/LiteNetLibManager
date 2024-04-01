@@ -21,13 +21,15 @@ namespace LiteNetLibManager
         public bool doNotEnterGameOnConnect = false;
         public bool doNotReadyOnSceneLoaded = false;
         public bool doNotDestroyOnSceneChanges = false;
+        public bool loadOfflineSceneWhenClientStopped = true;
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         private double _clientSendPingCountDown;
         private double _serverSendPingCountDown;
-        private AsyncOperation _loadSceneAsyncOperation;
-        private AsyncOperationHandle<SceneInstance>? _loadAddressableSceneAsyncOperation;
+        public static AsyncOperation LoadSceneAsyncOperation { get; private set; }
+        public static AsyncOperationHandle<SceneInstance>? LoadAddressableSceneAsyncOperation { get; private set; }
+        public static AsyncOperationHandle<SceneInstance>? LatestLoadedAddressableSceneAsyncOperation { get; set; }
 
         public long ClientConnectionId { get; protected set; }
         public RttCalculator RttCalculator { get; protected set; } = new RttCalculator();
@@ -239,7 +241,7 @@ namespace LiteNetLibManager
         /// <returns></returns>
         private async UniTaskVoid LoadSceneRoutine(ServerSceneInfo serverSceneInfo, bool online)
         {
-            if (_loadSceneAsyncOperation == null || !_loadAddressableSceneAsyncOperation.HasValue)
+            if (LoadSceneAsyncOperation == null && LoadAddressableSceneAsyncOperation == null)
             {
                 // If doNotDestroyOnSceneChanges not TRUE still not destroy this game object
                 // But it will be destroyed after scene loaded, if scene is offline scene
@@ -259,26 +261,32 @@ namespace LiteNetLibManager
 
                 if (LogDev) Logging.Log(LogTag, $"Loading Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneNameOrKey} is online: {online}");
                 Assets.onLoadSceneStart.Invoke(serverSceneInfo.sceneNameOrKey, online, 0f);
+                if (LatestLoadedAddressableSceneAsyncOperation != null)
+                {
+                    // Release the old handler one
+                    Addressables.Release(LatestLoadedAddressableSceneAsyncOperation.Value);
+                    LatestLoadedAddressableSceneAsyncOperation = null;
+                }
                 if (serverSceneInfo.isAddressable)
                 {
-                    _loadAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(serverSceneInfo.sceneNameOrKey);
-                    while (_loadAddressableSceneAsyncOperation.HasValue && !_loadAddressableSceneAsyncOperation.Value.IsDone)
+                    LoadAddressableSceneAsyncOperation = LatestLoadedAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(serverSceneInfo.sceneNameOrKey);
+                    while (LoadAddressableSceneAsyncOperation.HasValue && !LoadAddressableSceneAsyncOperation.Value.IsDone)
                     {
                         await UniTask.Yield();
-                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, _loadAddressableSceneAsyncOperation.Value.PercentComplete);
+                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, LoadAddressableSceneAsyncOperation.Value.PercentComplete);
                     }
                 }
                 else
                 {
-                    _loadSceneAsyncOperation = SceneManager.LoadSceneAsync(serverSceneInfo.sceneNameOrKey, LoadSceneMode.Single);
-                    while (_loadSceneAsyncOperation != null && !_loadSceneAsyncOperation.isDone)
+                    LoadSceneAsyncOperation = SceneManager.LoadSceneAsync(serverSceneInfo.sceneNameOrKey, LoadSceneMode.Single);
+                    while (LoadSceneAsyncOperation != null && !LoadSceneAsyncOperation.isDone)
                     {
                         await UniTask.Yield();
-                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, _loadSceneAsyncOperation.progress);
+                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneNameOrKey, online, LoadSceneAsyncOperation.progress);
                     }
                 }
-                _loadSceneAsyncOperation = null;
-                _loadAddressableSceneAsyncOperation = null;
+                LoadSceneAsyncOperation = null;
+                LoadAddressableSceneAsyncOperation = null;
 
                 if (online)
                 {
@@ -300,7 +308,7 @@ namespace LiteNetLibManager
         {
             await UniTask.Yield();
             if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneNameOrKey} -> Assets.Initialize()");
-            Assets.Initialize();
+            await Assets.Initialize();
             Assets.InitPoolingObjects();
             if (IsClient)
             {
@@ -411,10 +419,12 @@ namespace LiteNetLibManager
             {
                 LoadSceneRoutine(Assets.addressableOnlineScene.GetServerSceneInfo(), true).Forget();
             }
+#if !LNLM_NO_PREFABS
             else if (Assets.onlineScene.IsDataValid() && !Assets.onlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.onlineScene.GetServerSceneInfo(), true).Forget();
             }
+#endif
             else
             {
                 ProceedOnlineSceneLoaded(new ServerSceneInfo()
@@ -436,10 +446,12 @@ namespace LiteNetLibManager
             {
                 LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
             }
+#if !LNLM_NO_PREFABS
             else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
             }
+#endif
         }
 
         public override void OnStopClient()
@@ -449,14 +461,19 @@ namespace LiteNetLibManager
             {
                 Players.Clear();
                 Assets.Clear();
-                string activeSceneName = SceneManager.GetActiveScene().name;
-                if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
+                if (loadOfflineSceneWhenClientStopped)
                 {
-                    LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
-                }
-                else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
-                {
-                    LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
+                    string activeSceneName = SceneManager.GetActiveScene().name;
+                    if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
+                    {
+                        LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
+                    }
+#if !LNLM_NO_PREFABS
+                    else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
+                    {
+                        LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
+                    }
+#endif
                 }
             }
         }
@@ -1036,7 +1053,7 @@ namespace LiteNetLibManager
             HandleServerSceneChange(message.serverSceneInfo);
         }
 
-        protected void HandleServerSceneChange(ServerSceneInfo serverSceneInfo)
+        protected async void HandleServerSceneChange(ServerSceneInfo serverSceneInfo)
         {
             // Scene loaded at server, if this is host (client and server) then skip it.
             if (IsServer)
@@ -1044,7 +1061,7 @@ namespace LiteNetLibManager
 
             if (serverSceneInfo.Equals(ServerSceneInfo))
             {
-                Assets.Initialize();
+                await Assets.Initialize();
                 Assets.InitPoolingObjects();
                 OnClientOnlineSceneLoaded();
                 if (!doNotReadyOnSceneLoaded)
@@ -1200,9 +1217,18 @@ namespace LiteNetLibManager
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId)
         {
-            if (Assets.PlayerPrefab == null)
-                return null;
-            return SpawnPlayer(connectionId, Assets.PlayerPrefab);
+            if (Assets.AddressablePlayerPrefab.IsDataValid())
+                return SpawnPlayer(connectionId, Assets.AddressablePlayerPrefab);
+#if !LNLM_NO_PREFABS
+            if (Assets.PlayerPrefab != null)
+                return SpawnPlayer(connectionId, Assets.PlayerPrefab);
+#endif
+            return null;
+        }
+
+        protected LiteNetLibIdentity SpawnPlayer(long connectionId, AssetReferenceLiteNetLibIdentity addressablePrefab)
+        {
+            return SpawnPlayer(connectionId, addressablePrefab.HashAssetId);
         }
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, LiteNetLibIdentity prefab)

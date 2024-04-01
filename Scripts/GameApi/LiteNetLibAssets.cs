@@ -1,6 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace LiteNetLibManager
 {
@@ -9,15 +13,26 @@ namespace LiteNetLibManager
         private static int s_spawnPositionCounter = 0;
 
         public bool playerSpawnRandomly;
+#if !LNLM_NO_PREFABS
+        #region Prefab Refs
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs = new LiteNetLibIdentity[0];
         public LiteNetLibIdentity PlayerPrefab { get; protected set; }
         public SceneField offlineScene;
+        public SceneField onlineScene;
+        #endregion
+#endif
+
+        #region Addressable Assets Refs
+        public AssetReferenceLiteNetLibIdentity addressablePlayerPrefab;
+        public AssetReferenceLiteNetLibIdentity[] addressableSpawnablePrefabs = new AssetReferenceLiteNetLibIdentity[0];
+        public AssetReferenceLiteNetLibIdentity AddressablePlayerPrefab { get; protected set; }
         [Tooltip("If this is not empty, it will load offline scene by this instead of `offlineScene`")]
         public AssetReferenceScene addressableOfflineScene;
-        public SceneField onlineScene;
         [Tooltip("If this is not empty, it will load online scene by this instead of `onlineScene`")]
         public AssetReferenceScene addressableOnlineScene;
+        #endregion
+
         public UnityEvent onInitialize = new UnityEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
@@ -26,13 +41,14 @@ namespace LiteNetLibManager
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;
 
-        internal readonly List<LiteNetLibSpawnPoint> CacheSpawnPoints = new List<LiteNetLibSpawnPoint>();
+        internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
+        internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
 
         public LiteNetLibGameManager Manager { get; private set; }
+
         private string _logTag;
         public string LogTag
         {
@@ -49,11 +65,11 @@ namespace LiteNetLibManager
             Manager = GetComponent<LiteNetLibGameManager>();
         }
 
-        public void Initialize()
+        public async UniTask Initialize()
         {
             if (onInitialize != null)
                 onInitialize.Invoke();
-            RegisterPrefabs();
+            await RegisterPrefabs();
             RegisterSpawnPoints();
             RegisterSceneObjects();
         }
@@ -62,42 +78,58 @@ namespace LiteNetLibManager
         {
             ClearSpawnedObjects();
             ClearPooledObjects();
-            CacheSpawnPoints.Clear();
+            SpawnPoints.Clear();
             SceneObjects.Clear();
             ResetSpawnPositionCounter();
             if (!doNotResetObjectId)
                 LiteNetLibIdentity.ResetObjectId();
+            AddressableAssetsManager.ReleaseAll();
         }
 
         public void RegisterSpawnPoints()
         {
-            CacheSpawnPoints.Clear();
-            CacheSpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
+            SpawnPoints.Clear();
+            SpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
         }
 
-        public void RegisterPrefabs()
+        public async UniTask RegisterPrefabs()
         {
+#if !LNLM_NO_PREFABS
             for (int i = 0; i < spawnablePrefabs.Length; ++i)
             {
-                LiteNetLibIdentity registeringPrefab = spawnablePrefabs[i];
-                RegisterPrefab(registeringPrefab);
+                RegisterPrefab(spawnablePrefabs[i]);
             }
             if (playerPrefab != null)
             {
                 PlayerPrefab = playerPrefab;
                 RegisterPrefab(playerPrefab);
             }
+#endif
+            List<Task<LiteNetLibIdentity>> ops = new List<Task<LiteNetLibIdentity>>();
+            for (int i = 0; i < addressableSpawnablePrefabs.Length; ++i)
+            {
+                if (addressableSpawnablePrefabs[i].IsDataValid())
+                {
+                    ops.Add(RegisterAddressablePrefabAsync(addressableSpawnablePrefabs[i]));
+                }
+            }
+            if (addressablePlayerPrefab.IsDataValid())
+            {
+                ops.Add(RegisterAddressablePrefabAsync(addressablePlayerPrefab));
+            }
+            await Task.WhenAll(ops);
         }
 
-        public void RegisterPrefab(LiteNetLibIdentity prefab)
+        public LiteNetLibIdentity RegisterPrefab(LiteNetLibIdentity prefab)
         {
             if (prefab == null)
             {
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterPrefab - prefab is null.");
-                return;
+                return null;
             }
             if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
             GuidToPrefabs[prefab.HashAssetId] = prefab;
+            return prefab;
         }
 
         public bool UnregisterPrefab(LiteNetLibIdentity prefab)
@@ -109,6 +141,43 @@ namespace LiteNetLibManager
             }
             if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
             return GuidToPrefabs.Remove(prefab.HashAssetId);
+        }
+
+        public async Task<LiteNetLibIdentity> RegisterAddressablePrefabAsync(AssetReferenceLiteNetLibIdentity addressablePrefab)
+        {
+            if (!addressablePrefab.IsDataValid())
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - prefab is null.");
+                return null;
+            }
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
+            LiteNetLibIdentity prefab = await addressablePrefab.GetOrLoadAssetAsync<AssetReferenceLiteNetLibIdentity, LiteNetLibIdentity>();
+            GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
+            return prefab;
+        }
+
+        public LiteNetLibIdentity RegisterAddressablePrefab(AssetReferenceLiteNetLibIdentity addressablePrefab)
+        {
+            if (!addressablePrefab.IsDataValid())
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - prefab is null.");
+                return null;
+            }
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
+            LiteNetLibIdentity prefab = addressablePrefab.GetOrLoadAsset<AssetReferenceLiteNetLibIdentity, LiteNetLibIdentity>();
+            GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
+            return prefab;
+        }
+
+        public bool UnregisterAddressablePrefab(AssetReferenceLiteNetLibIdentity addressablePrefab)
+        {
+            if (!addressablePrefab.IsDataValid())
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterAddressablePrefab - prefab is null.");
+                return false;
+            }
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
+            return GuidToPrefabs.Remove(addressablePrefab.HashAssetId);
         }
 
         public void ClearSpawnedObjects()
@@ -462,15 +531,15 @@ namespace LiteNetLibManager
 
         public Vector3 GetPlayerSpawnPosition()
         {
-            if (CacheSpawnPoints.Count == 0)
+            if (SpawnPoints.Count == 0)
                 return Vector3.zero;
             if (playerSpawnRandomly)
-                return CacheSpawnPoints[Random.Range(0, CacheSpawnPoints.Count)].GetRandomPosition();
+                return SpawnPoints[Random.Range(0, SpawnPoints.Count)].GetRandomPosition();
             else
             {
-                if (s_spawnPositionCounter >= CacheSpawnPoints.Count)
+                if (s_spawnPositionCounter >= SpawnPoints.Count)
                     s_spawnPositionCounter = 0;
-                return CacheSpawnPoints[s_spawnPositionCounter++].GetRandomPosition();
+                return SpawnPoints[s_spawnPositionCounter++].GetRandomPosition();
             }
         }
 

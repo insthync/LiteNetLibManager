@@ -101,11 +101,16 @@ namespace LiteNetLibManager
             RegisterUpdating();
         }
 
-        protected void RegisterUpdating()
+        public void RegisterUpdating()
         {
             if (!IsSetup)
                 return;
-            Manager.RegisterSyncFieldUpdating(this);
+            Manager?.RegisterSyncFieldUpdating(this);
+        }
+
+        public void UnregisterUpdating()
+        {
+            Manager?.UnregisterSyncFieldUpdating(this);
         }
 
         /// <summary>
