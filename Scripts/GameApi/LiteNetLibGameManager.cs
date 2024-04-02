@@ -419,7 +419,7 @@ namespace LiteNetLibManager
             {
                 LoadSceneRoutine(Assets.addressableOnlineScene.GetServerSceneInfo(), true).Forget();
             }
-#if !LNLM_NO_PREFABS
+#if !EXCLUDE_PREFAB_REFS
             else if (Assets.onlineScene.IsDataValid() && !Assets.onlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.onlineScene.GetServerSceneInfo(), true).Forget();
@@ -446,7 +446,7 @@ namespace LiteNetLibManager
             {
                 LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
             }
-#if !LNLM_NO_PREFABS
+#if !EXCLUDE_PREFAB_REFS
             else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
@@ -468,7 +468,7 @@ namespace LiteNetLibManager
                     {
                         LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
                     }
-#if !LNLM_NO_PREFABS
+#if !EXCLUDE_PREFAB_REFS
                     else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
                     {
                         LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
@@ -1219,7 +1219,7 @@ namespace LiteNetLibManager
         {
             if (Assets.AddressablePlayerPrefab.IsDataValid())
                 return SpawnPlayer(connectionId, Assets.AddressablePlayerPrefab);
-#if !LNLM_NO_PREFABS
+#if !EXCLUDE_PREFAB_REFS
             if (Assets.PlayerPrefab != null)
                 return SpawnPlayer(connectionId, Assets.PlayerPrefab);
 #endif

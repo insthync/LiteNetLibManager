@@ -1,4 +1,4 @@
-#if !LNLM_NO_PREFABS
+#if !EXCLUDE_PREFAB_REFS
 using UnityEngine;
 
 namespace LiteNetLibManager

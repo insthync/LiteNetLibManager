@@ -13,7 +13,7 @@ namespace LiteNetLibManager
         private static int s_spawnPositionCounter = 0;
 
         public bool playerSpawnRandomly;
-#if !LNLM_NO_PREFABS
+#if !EXCLUDE_PREFAB_REFS
         #region Prefab Refs
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs = new LiteNetLibIdentity[0];
@@ -94,7 +94,7 @@ namespace LiteNetLibManager
 
         public async UniTask RegisterPrefabs()
         {
-#if !LNLM_NO_PREFABS
+#if !EXCLUDE_PREFAB_REFS
             for (int i = 0; i < spawnablePrefabs.Length; ++i)
             {
                 RegisterPrefab(spawnablePrefabs[i]);
