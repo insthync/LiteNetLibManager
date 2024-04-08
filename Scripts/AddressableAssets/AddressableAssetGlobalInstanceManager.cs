@@ -42,6 +42,20 @@ namespace LiteNetLibManager
             onStart = null;
             onEnd?.RemoveAllListeners();
             onEnd = null;
+            onFileSizeRetrieving?.RemoveAllListeners();
+            onFileSizeRetrieving = null;
+            onFileSizeRetrieved?.RemoveAllListeners();
+            onFileSizeRetrieved = null;
+            onDepsDownloading?.RemoveAllListeners();
+            onDepsDownloading = null;
+            onDepsDownloaded?.RemoveAllListeners();
+            onDepsDownloaded = null;
+            onDownloading?.RemoveAllListeners();
+            onDownloading = null;
+            onDownloaded?.RemoveAllListeners();
+            onDownloaded = null;
+            onFileDownloading?.RemoveAllListeners();
+            onFileDownloading = null;
         }
 
 
