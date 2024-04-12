@@ -49,7 +49,7 @@ namespace LiteNetLibManager
                 }
                 LoadedCount++;
             }
-            onDownloadedAll.Invoke();
+            onDownloadedAll?.Invoke();
             // Instantiates
             for (int i = 0; i < initialObjects.Length; ++i)
             {
@@ -83,6 +83,8 @@ namespace LiteNetLibManager
             onDepsFileDownloading = null;
             onDepsDownloaded?.RemoveAllListeners();
             onDepsDownloaded = null;
+            onDownloadedAll?.RemoveAllListeners();
+            onDownloadedAll = null;
         }
 
         protected virtual void OnFileSizeRetrieving()
