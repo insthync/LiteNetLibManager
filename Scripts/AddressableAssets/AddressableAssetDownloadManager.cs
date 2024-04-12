@@ -10,7 +10,7 @@ namespace LiteNetLibManager
 {
     public partial class AddressableAssetDownloadManager : MonoBehaviour
     {
-        public AssetReference[] globalInstancePrefabs = new AssetReference[0];
+        public AssetReference[] initialObjects = new AssetReference[0];
         [Header("Events")]
         public UnityEvent onStart = new UnityEvent();
         public UnityEvent onEnd = new UnityEvent();
@@ -19,6 +19,7 @@ namespace LiteNetLibManager
         public AddressableAssetTotalProgressEvent onDepsDownloading = new AddressableAssetTotalProgressEvent();
         public AddressableAssetTotalProgressEvent onDepsDownloaded = new AddressableAssetTotalProgressEvent();
         public AddressableAssetDownloadProgressEvent onDepsFileDownloading = new AddressableAssetDownloadProgressEvent();
+        public UnityEvent onDownloadedAll = new UnityEvent();
 
         public long FileSize { get; protected set; } = 0;
         public int LoadedCount { get; protected set; } = 0;
@@ -27,20 +28,20 @@ namespace LiteNetLibManager
         private async void Start()
         {
             onStart?.Invoke();
-            TotalCount = globalInstancePrefabs.Length;
-            for (int i = 0; i < globalInstancePrefabs.Length; ++i)
+            TotalCount = initialObjects.Length;
+
+            // Downloads
+            for (int i = 0; i < initialObjects.Length; ++i)
             {
                 try
                 {
-                    GameObject instance = await DownloadAndInstantiate(
-                        globalInstancePrefabs[i],
+                    await Download(
+                        initialObjects[i],
                         OnFileSizeRetrieving,
                         OnFileSizeRetrieved,
                         OnDepsDownloading,
                         OnDepsFileDownloading,
                         OnDepsDownloaded);
-                    instance.SetActive(true);
-                    DontDestroyOnLoad(instance);
                 }
                 catch (System.Exception ex)
                 {
@@ -48,6 +49,21 @@ namespace LiteNetLibManager
                 }
                 LoadedCount++;
             }
+            onDownloadedAll.Invoke();
+            // Instantiates
+            for (int i = 0; i < initialObjects.Length; ++i)
+            {
+                try
+                {
+                    AsyncOperationHandle<GameObject> getSizeOp = Addressables.InstantiateAsync(initialObjects[i].RuntimeKey);
+                    await getSizeOp.Task;
+                }
+                catch (System.Exception ex)
+                {
+                    Logging.LogException(ex);
+                }
+            }
+
             onEnd?.Invoke();
         }
 
@@ -149,14 +165,23 @@ namespace LiteNetLibManager
             long fileSize = getSizeOp.Result;
             onFileSizeRetrieved.Invoke(fileSize);
             // Download dependencies
-            AsyncOperationHandle downloadOp = Addressables.DownloadDependenciesAsync(runtimeKey);
-            onDepsDownloading?.Invoke();
-            while (!downloadOp.IsDone)
+            if (fileSize > 0)
             {
-                onDepsFileDownloading?.Invoke((long)(downloadOp.PercentComplete * fileSize), fileSize, downloadOp.PercentComplete);
-                await Task.Yield();
+                AsyncOperationHandle downloadOp = Addressables.DownloadDependenciesAsync(runtimeKey);
+                onDepsDownloading?.Invoke();
+                while (!downloadOp.IsDone)
+                {
+                    onDepsFileDownloading?.Invoke((long)(downloadOp.PercentComplete * fileSize), fileSize, downloadOp.PercentComplete);
+                    await Task.Yield();
+                }
+                onDepsDownloaded?.Invoke();
             }
-            onDepsDownloaded?.Invoke();
+            else
+            {
+                onDepsDownloading?.Invoke();
+                onDepsFileDownloading?.Invoke(0, 0, 1);
+                onDepsDownloaded?.Invoke();
+            }
         }
     }
 }
