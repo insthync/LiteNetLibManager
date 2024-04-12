@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace LiteNetLibManager
 {
@@ -37,6 +35,11 @@ namespace LiteNetLibManager
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneFinish = new LiteNetLibLoadSceneEvent();
+        public UnityEvent onSceneFileSizeRetrieving = new UnityEvent();
+        public AddressableAssetFileSizeEvent onSceneFileSizeRetrieved = new AddressableAssetFileSizeEvent();
+        public UnityEvent onSceneDepsDownloading = new UnityEvent();
+        public AddressableAssetDownloadProgressEvent onSceneDepsFileDownloading = new AddressableAssetDownloadProgressEvent();
+        public UnityEvent onSceneDepsDownloaded = new UnityEvent();
         public LiteNetLibIdentityEvent onObjectSpawn = new LiteNetLibIdentityEvent();
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;

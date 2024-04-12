@@ -97,7 +97,7 @@ namespace LiteNetLibManager
         }
 
         public static async Task<SceneInstance> DownloadAndLoadScene(
-            AssetReference asset,
+            object runtimeKey,
             LoadSceneParameters loadSceneParameters,
             System.Action onFileSizeRetrieving,
             AddressableAssetFileSizeDelegate onFileSizeRetrieved,
@@ -105,8 +105,8 @@ namespace LiteNetLibManager
             AddressableAssetDownloadProgressDelegate onDepsFileDownloading,
             System.Action onDepsDownloaded)
         {
-            await Download(asset, onFileSizeRetrieving, onFileSizeRetrieved, onDepsDownloading, onDepsFileDownloading, onDepsDownloaded);
-            AsyncOperationHandle<SceneInstance> getSizeOp = Addressables.LoadSceneAsync(asset.RuntimeKey, loadSceneParameters);
+            await Download(runtimeKey, onFileSizeRetrieving, onFileSizeRetrieved, onDepsDownloading, onDepsFileDownloading, onDepsDownloaded);
+            AsyncOperationHandle<SceneInstance> getSizeOp = Addressables.LoadSceneAsync(runtimeKey, loadSceneParameters);
             while (!getSizeOp.IsDone)
             {
                 await Task.Yield();
@@ -115,15 +115,15 @@ namespace LiteNetLibManager
         }
 
         public static async Task<GameObject> DownloadAndInstantiate(
-            AssetReference asset,
+            object runtimeKey,
             System.Action onFileSizeRetrieving,
             AddressableAssetFileSizeDelegate onFileSizeRetrieved,
             System.Action onDepsDownloading,
             AddressableAssetDownloadProgressDelegate onDepsFileDownloading,
             System.Action onDepsDownloaded)
         {
-            await Download(asset, onFileSizeRetrieving, onFileSizeRetrieved, onDepsDownloading, onDepsFileDownloading, onDepsDownloaded);
-            AsyncOperationHandle<GameObject> getSizeOp = Addressables.InstantiateAsync(asset.RuntimeKey);
+            await Download(runtimeKey, onFileSizeRetrieving, onFileSizeRetrieved, onDepsDownloading, onDepsFileDownloading, onDepsDownloaded);
+            AsyncOperationHandle<GameObject> getSizeOp = Addressables.InstantiateAsync(runtimeKey);
             while (!getSizeOp.IsDone)
             {
                 await Task.Yield();
@@ -132,7 +132,7 @@ namespace LiteNetLibManager
         }
 
         public static async Task Download(
-            AssetReference asset,
+            object runtimeKey,
             System.Action onFileSizeRetrieving,
             AddressableAssetFileSizeDelegate onFileSizeRetrieved,
             System.Action onDepsDownloading,
@@ -140,7 +140,7 @@ namespace LiteNetLibManager
             System.Action onDepsDownloaded)
         {
             // Get download size
-            AsyncOperationHandle<long> getSizeOp = Addressables.GetDownloadSizeAsync(asset.RuntimeKey);
+            AsyncOperationHandle<long> getSizeOp = Addressables.GetDownloadSizeAsync(runtimeKey);
             onFileSizeRetrieving?.Invoke();
             while (!getSizeOp.IsDone)
             {
@@ -149,7 +149,7 @@ namespace LiteNetLibManager
             long fileSize = getSizeOp.Result;
             onFileSizeRetrieved.Invoke(fileSize);
             // Download dependencies
-            AsyncOperationHandle downloadOp = Addressables.DownloadDependenciesAsync(asset.RuntimeKey);
+            AsyncOperationHandle downloadOp = Addressables.DownloadDependenciesAsync(runtimeKey);
             onDepsDownloading?.Invoke();
             while (!downloadOp.IsDone)
             {

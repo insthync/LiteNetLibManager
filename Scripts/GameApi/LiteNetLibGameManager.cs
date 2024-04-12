@@ -269,7 +269,19 @@ namespace LiteNetLibManager
                 }
                 if (serverSceneInfo.isAddressable)
                 {
-                    LoadAddressableSceneAsyncOperation = LatestLoadedAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(serverSceneInfo.sceneNameOrKey);
+                    // Download the scene
+                    await AddressableAssetDownloadManager.Download(
+                        serverSceneInfo.sceneNameOrKey,
+                        Assets.onSceneFileSizeRetrieving.Invoke,
+                        Assets.onSceneFileSizeRetrieved.Invoke,
+                        Assets.onSceneDepsDownloading.Invoke,
+                        Assets.onSceneDepsFileDownloading.Invoke,
+                        Assets.onSceneDepsDownloaded.Invoke);
+                    // Load the scene
+                    LoadAddressableSceneAsyncOperation = LatestLoadedAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(
+                        serverSceneInfo.sceneNameOrKey,
+                        new LoadSceneParameters(LoadSceneMode.Single));
+                    // Wait until scene loaded
                     while (LoadAddressableSceneAsyncOperation.HasValue && !LoadAddressableSceneAsyncOperation.Value.IsDone)
                     {
                         await UniTask.Yield();
@@ -278,7 +290,11 @@ namespace LiteNetLibManager
                 }
                 else
                 {
-                    LoadSceneAsyncOperation = SceneManager.LoadSceneAsync(serverSceneInfo.sceneNameOrKey, LoadSceneMode.Single);
+                    // Load the scene
+                    LoadSceneAsyncOperation = SceneManager.LoadSceneAsync(
+                        serverSceneInfo.sceneNameOrKey,
+                        new LoadSceneParameters(LoadSceneMode.Single));
+                    // Wait until scene loaded
                     while (LoadSceneAsyncOperation != null && !LoadSceneAsyncOperation.isDone)
                     {
                         await UniTask.Yield();
