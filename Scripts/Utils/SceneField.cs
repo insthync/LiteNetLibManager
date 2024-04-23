@@ -7,22 +7,18 @@ namespace LiteNetLibManager
     {
         [SerializeField]
         private Object sceneAsset;
+        [SerializeField]
+        private string sceneName;
 
         public Object SceneAsset
         {
             get { return sceneAsset; }
         }
 
-        public string overrideSceneName;
         public string SceneName
         {
-            get
-            {
-                if (!string.IsNullOrEmpty(overrideSceneName))
-                    return overrideSceneName;
-                return sceneAsset.name;
-            }
-            set { overrideSceneName = value; }
+            get { return sceneName; }
+            set { sceneName = value; }
         }
 
         public static implicit operator string(SceneField unityScene)
@@ -32,7 +28,7 @@ namespace LiteNetLibManager
 
         public bool IsSet()
         {
-            return sceneAsset != null && !string.IsNullOrEmpty(sceneAsset.name);
+            return !string.IsNullOrEmpty(sceneName);
         }
     }
 
