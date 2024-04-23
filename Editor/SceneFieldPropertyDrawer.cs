@@ -7,29 +7,33 @@ namespace LiteNetLibManager
     [CustomPropertyDrawer(typeof(SceneField))]
     public class SceneFieldPropertyDrawer : PropertyDrawer
     {
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        public override void OnGUI(Rect _position, SerializedProperty _property, GUIContent _label)
         {
-            EditorGUI.BeginProperty(position, GUIContent.none, property);
-            SerializedProperty sceneAsset = property.FindPropertyRelative("sceneAsset");
-            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+            EditorGUI.BeginProperty(_position, GUIContent.none, _property);
+            SerializedProperty sceneAsset = _property.FindPropertyRelative("sceneAsset");
+            SerializedProperty sceneName = _property.FindPropertyRelative("sceneName");
+            _position = EditorGUI.PrefixLabel(_position, GUIUtility.GetControlID(FocusType.Passive), _label);
             if (sceneAsset != null)
             {
                 EditorGUI.BeginChangeCheck();
 
-                Object value = EditorGUI.ObjectField(position, sceneAsset.objectReferenceValue, typeof(SceneAsset), false);
+                Object value = EditorGUI.ObjectField(_position, sceneAsset.objectReferenceValue, typeof(SceneAsset), false);
                 if (EditorGUI.EndChangeCheck())
                 {
                     sceneAsset.objectReferenceValue = value;
                     if (sceneAsset.objectReferenceValue != null)
                     {
-                        var sceneName = (sceneAsset.objectReferenceValue as SceneAsset).name;
-                        var sceneObj = GetSceneObject(sceneName);
+                        var _sceneName = (sceneAsset.objectReferenceValue as SceneAsset).name;
+                        sceneName.stringValue = _sceneName;
+                        var sceneObj = GetSceneObject(_sceneName);
                         if (sceneObj == null)
                         {
                             // Just warning, do not change value to null
-                            Debug.LogWarning("The scene [" + sceneName + "] cannot be used. To use this scene add it to the build settings for the project");
+                            Debug.LogWarning("The scene [" + _sceneName + "] cannot be used. To use this scene add it to the build settings for the project");
                         }
                     }
+                    else
+                        sceneName.stringValue = null;
                 }
             }
             EditorGUI.EndProperty();

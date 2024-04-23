@@ -13,7 +13,6 @@ namespace LiteNetLibManager
             get { return sceneAsset; }
         }
 
-        [HideInInspector]
         public string overrideSceneName;
         public string SceneName
         {
