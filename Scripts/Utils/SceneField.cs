@@ -44,7 +44,7 @@ namespace LiteNetLibManager
             return scene.IsDataValid() && serverSceneInfo.Equals(new ServerSceneInfo()
             {
                 isAddressable = false,
-                sceneNameOrKey = scene,
+                sceneName = scene,
             });
         }
 
@@ -58,7 +58,7 @@ namespace LiteNetLibManager
             return new ServerSceneInfo()
             {
                 isAddressable = false,
-                sceneNameOrKey = scene,
+                sceneName = scene,
             };
         }
     }

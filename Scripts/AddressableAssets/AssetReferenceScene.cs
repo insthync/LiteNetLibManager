@@ -57,15 +57,6 @@ namespace LiteNetLibManager
 
     public static class AssetReferenceSceneExtensions
     {
-        public static bool IsSameScene(this AssetReferenceScene scene, ServerSceneInfo serverSceneInfo)
-        {
-            return scene.IsDataValid() && serverSceneInfo.Equals(new ServerSceneInfo()
-            {
-                isAddressable = true,
-                sceneNameOrKey = scene.RuntimeKey as string,
-            });
-        }
-
         public static bool IsSameSceneName(this AssetReferenceScene scene, string sceneName)
         {
             return scene.IsDataValid() && string.Equals(scene.SceneName, sceneName);
@@ -76,7 +67,8 @@ namespace LiteNetLibManager
             return new ServerSceneInfo()
             {
                 isAddressable = true,
-                sceneNameOrKey = scene.RuntimeKey as string,
+                addressableKey = scene.RuntimeKey as string,
+                sceneName = scene.SceneName,
             };
         }
     }

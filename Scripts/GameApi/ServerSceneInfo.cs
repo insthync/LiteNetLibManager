@@ -6,23 +6,21 @@ namespace LiteNetLibManager
     public struct ServerSceneInfo : INetSerializable
     {
         public bool isAddressable;
-        public string sceneNameOrKey;
+        public string addressableKey;
+        public string sceneName;
 
         public void Deserialize(NetDataReader reader)
         {
             isAddressable = reader.GetBool();
-            sceneNameOrKey = reader.GetString();
+            addressableKey = reader.GetString();
+            sceneName = reader.GetString();
         }
 
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(isAddressable);
-            writer.Put(sceneNameOrKey);
-        }
-
-        public bool Equals(ServerSceneInfo another)
-        {
-            return isAddressable == another.isAddressable && string.Equals(sceneNameOrKey, another.sceneNameOrKey);
+            writer.Put(addressableKey);
+            writer.Put(sceneName);
         }
     }
 }
