@@ -1069,7 +1069,7 @@ namespace LiteNetLibManager
             HandleServerSceneChange(message.serverSceneInfo);
         }
 
-        protected async void HandleServerSceneChange(ServerSceneInfo serverSceneInfo)
+        protected virtual async void HandleServerSceneChange(ServerSceneInfo serverSceneInfo)
         {
             // Scene loaded at server, if this is host (client and server) then skip it.
             if (IsServer)
