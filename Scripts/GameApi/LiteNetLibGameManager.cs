@@ -1076,7 +1076,7 @@ namespace LiteNetLibManager
                 return;
 
             string activeSceneName = SceneManager.GetActiveScene().name;
-            if (activeSceneName.Equals(serverSceneInfo.sceneName))
+            if (string.IsNullOrWhiteSpace(serverSceneInfo.sceneName) || activeSceneName.Equals(serverSceneInfo.sceneName))
             {
                 await Assets.Initialize();
                 Assets.InitPoolingObjects();
