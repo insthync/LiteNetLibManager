@@ -5,15 +5,20 @@ namespace LiteNetLibManager
     [System.Serializable]
     public struct SceneField
     {
+#if UNITY_EDITOR
         [SerializeField]
         private Object sceneAsset;
+#endif
+
         [SerializeField]
         private string sceneName;
 
+#if UNITY_EDITOR
         public Object SceneAsset
         {
             get { return sceneAsset; }
         }
+#endif
 
         public string SceneName
         {
