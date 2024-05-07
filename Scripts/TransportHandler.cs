@@ -250,7 +250,7 @@ namespace LiteNetLibManager
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(handlerDelegate);
+            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(LogTag, handlerDelegate);
         }
 
         public void UnregisterRequestHandler(ushort requestType)

@@ -5,9 +5,9 @@ namespace LiteNetLibManager
 {
     public delegate void SerializerDelegate(NetDataWriter writer);
     public delegate void MessageHandlerDelegate(MessageHandlerData messageHandler);
-    public delegate void RequestProceedResultDelegate<TResponse>(AckResponseCode responseCode, TResponse response, SerializerDelegate extraResponseSerializer = null)
+    public delegate void RequestProceedResultDelegate<TResponse>(AckResponseCode responseCode, TResponse response)
         where TResponse : INetSerializable;
-    public delegate void RequestProceededDelegate(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate extraResponseSerializer);
+    public delegate void RequestProceededDelegate(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response);
     public delegate UniTaskVoid RequestDelegate<TRequest, TResponse>(RequestHandlerData requestHandler, TRequest request, RequestProceedResultDelegate<TResponse> responseProceedResult)
         where TRequest : INetSerializable
         where TResponse : INetSerializable;
@@ -17,16 +17,16 @@ namespace LiteNetLibManager
 
     public static class DelegateExtensions
     {
-        public static void InvokeSuccess<TResponse>(this RequestProceedResultDelegate<TResponse> target, TResponse response, SerializerDelegate responseExtraSerializer = null)
+        public static void InvokeSuccess<TResponse>(this RequestProceedResultDelegate<TResponse> target, TResponse response)
             where TResponse : INetSerializable
         {
-            target.Invoke(AckResponseCode.Success, response, responseExtraSerializer);
+            target.Invoke(AckResponseCode.Success, response);
         }
 
-        public static void InvokeError<TResponse>(this RequestProceedResultDelegate<TResponse> target, TResponse response, SerializerDelegate responseExtraSerializer = null)
+        public static void InvokeError<TResponse>(this RequestProceedResultDelegate<TResponse> target, TResponse response)
             where TResponse : INetSerializable
         {
-            target.Invoke(AckResponseCode.Error, response, responseExtraSerializer);
+            target.Invoke(AckResponseCode.Error, response);
         }
     }
 }
