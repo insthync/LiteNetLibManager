@@ -191,7 +191,7 @@ namespace LiteNetLibManager
             if (!requestHandlers.ContainsKey(requestType))
             {
                 // No request-response handler
-                RequestProceeded(connectionId, requestId, AckResponseCode.Unimplemented, EmptyMessage.Value, null);
+                RequestProceeded(connectionId, requestId, AckResponseCode.Unimplemented, EmptyMessage.Value);
                 Logging.LogError(LogTag, $"Cannot proceed request {requestType} not registered.");
                 return;
             }
@@ -207,7 +207,7 @@ namespace LiteNetLibManager
         /// <param name="responseCode"></param>
         /// <param name="response"></param>
         /// <param name="extraResponseSerializer"></param>
-        private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate extraResponseSerializer)
+        private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response)
         {
             // Write response
             Writer.Reset();
@@ -215,8 +215,6 @@ namespace LiteNetLibManager
             Writer.PutPackedUInt(requestId);
             Writer.PutValue(responseCode);
             Writer.Put(response);
-            if (extraResponseSerializer != null)
-                extraResponseSerializer.Invoke(Writer);
             // Send response
             SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, Writer);
         }
@@ -250,7 +248,7 @@ namespace LiteNetLibManager
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(LogTag, handlerDelegate);
+            requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(this, handlerDelegate);
         }
 
         public void UnregisterRequestHandler(ushort requestType)
