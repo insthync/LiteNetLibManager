@@ -23,7 +23,8 @@ namespace LiteNetLibManager
         public void InvokeResponse(ResponseHandlerData responseHandlerData, AckResponseCode responseCode, ResponseDelegate<INetSerializable> anotherResponseHandler)
         {
             TResponse response = new TResponse();
-            if (responseCode != AckResponseCode.Timeout &&
+            if (responseCode != AckResponseCode.Exception &&
+                responseCode != AckResponseCode.Timeout &&
                 responseCode != AckResponseCode.Unimplemented)
             {
                 if (responseHandlerData.Reader != null)
