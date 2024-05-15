@@ -37,5 +37,22 @@ namespace LiteNetLibManager
             RttCount = 0;
             TimestampOffsets = 0;
         }
+
+        public PingMessage GetPingMessage()
+        {
+            return new PingMessage()
+            {
+                pingTime = LocalTimestamp,
+            };
+        }
+
+        public PongMessage GetPongMessage(PingMessage pingMessage)
+        {
+            return new PongMessage()
+            {
+                pingTime = pingMessage.pingTime,
+                pongTime = LocalTimestamp,
+            };
+        }
     }
 }

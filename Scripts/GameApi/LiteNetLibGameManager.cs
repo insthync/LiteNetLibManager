@@ -525,10 +525,7 @@ namespace LiteNetLibManager
                 return;
             for (int i = 0; i < 3; ++i)
             {
-                ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
-                {
-                    pingTime = RttCalculator.PeerTimestamp,
-                });
+                ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
             }
         }
 
@@ -538,10 +535,7 @@ namespace LiteNetLibManager
                 return;
             for (int i = 0; i < 3; ++i)
             {
-                ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, new PingMessage()
-                {
-                    pingTime = RttCalculator.PeerTimestamp,
-                });
+                ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
             }
         }
 
@@ -933,11 +927,7 @@ namespace LiteNetLibManager
         protected void HandleClientPing(MessageHandlerData messageHandler)
         {
             PingMessage message = messageHandler.ReadMessage<PingMessage>();
-            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, new PongMessage()
-            {
-                pingTime = message.pingTime,
-                pongTime = RttCalculator.LocalTimestamp,
-            });
+            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, RttCalculator.GetPongMessage(message));
         }
 
         protected void HandleClientPong(MessageHandlerData messageHandler)
@@ -1106,11 +1096,7 @@ namespace LiteNetLibManager
         {
             PingMessage message = messageHandler.ReadMessage<PingMessage>();
             // Send pong back to server (then server will calculates Rtt for this client later)
-            ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, new PongMessage()
-            {
-                pingTime = message.pingTime,
-                pongTime = RttCalculator.LocalTimestamp,
-            });
+            ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, RttCalculator.GetPongMessage(message));
         }
 
         protected void HandleServerPong(MessageHandlerData messageHandler)
