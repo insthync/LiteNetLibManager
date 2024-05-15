@@ -191,12 +191,21 @@ namespace LiteNetLibManager
             if (!_requestHandlers.ContainsKey(requestType))
             {
                 // No request-response handler
-                RequestProceeded(connectionId, requestId, AckResponseCode.Unimplemented, EmptyMessage.Value);
+                RequestProceeded(connectionId, requestId, AckResponseCode.Unimplemented, EmptyMessage.Value, null);
                 Logging.LogError(LogTag, $"Cannot proceed request {requestType} not registered.");
                 return;
             }
             // Invoke request and create response
-            _requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, requestId, this, connectionId, reader), RequestProceeded);
+            try
+            {
+                _requestHandlers[requestType].InvokeRequest(new RequestHandlerData(requestType, requestId, this, connectionId, reader), RequestProceeded);
+            }
+            catch (System.Exception ex)
+            {
+                RequestProceeded(connectionId, requestId, AckResponseCode.Exception, EmptyMessage.Value, null);
+                Logging.LogError(LogTag, $"Error occuring while proceed request {requestType}, ID {requestId}");
+                Logging.LogException(LogTag, ex);
+            }
         }
 
         /// <summary>
@@ -207,7 +216,7 @@ namespace LiteNetLibManager
         /// <param name="responseCode"></param>
         /// <param name="response"></param>
         /// <param name="extraResponseSerializer"></param>
-        private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response)
+        private void RequestProceeded(long connectionId, uint requestId, AckResponseCode responseCode, INetSerializable response, SerializerDelegate extraResponseSerializer)
         {
             // Write response
             s_Writer.Reset();
@@ -215,6 +224,8 @@ namespace LiteNetLibManager
             s_Writer.PutPackedUInt(requestId);
             s_Writer.PutValue(responseCode);
             s_Writer.Put(response);
+            if (extraResponseSerializer != null)
+                extraResponseSerializer.Invoke(s_Writer);
             // Send response
             SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, s_Writer);
         }
@@ -248,7 +259,7 @@ namespace LiteNetLibManager
             where TRequest : INetSerializable, new()
             where TResponse : INetSerializable, new()
         {
-            _requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(this, handlerDelegate);
+            _requestHandlers[requestType] = new LiteNetLibRequestHandler<TRequest, TResponse>(handlerDelegate);
         }
 
         public void UnregisterRequestHandler(ushort requestType)
