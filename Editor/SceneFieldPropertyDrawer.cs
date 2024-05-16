@@ -7,33 +7,35 @@ namespace LiteNetLibManager
     [CustomPropertyDrawer(typeof(SceneField))]
     public class SceneFieldPropertyDrawer : PropertyDrawer
     {
-        public override void OnGUI(Rect _position, SerializedProperty _property, GUIContent _label)
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            EditorGUI.BeginProperty(_position, GUIContent.none, _property);
-            SerializedProperty sceneAsset = _property.FindPropertyRelative("sceneAsset");
-            SerializedProperty sceneName = _property.FindPropertyRelative("sceneName");
-            _position = EditorGUI.PrefixLabel(_position, GUIUtility.GetControlID(FocusType.Passive), _label);
-            if (sceneAsset != null)
+            EditorGUI.BeginProperty(position, GUIContent.none, property);
+            SerializedProperty sceneAssetProp = property.FindPropertyRelative("sceneAsset");
+            SerializedProperty sceneNameProp = property.FindPropertyRelative("sceneName");
+            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+            if (sceneAssetProp != null)
             {
                 EditorGUI.BeginChangeCheck();
 
-                Object value = EditorGUI.ObjectField(_position, sceneAsset.objectReferenceValue, typeof(SceneAsset), false);
+                Object value = EditorGUI.ObjectField(position, sceneAssetProp.objectReferenceValue, typeof(SceneAsset), false);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    sceneAsset.objectReferenceValue = value;
-                    if (sceneAsset.objectReferenceValue != null)
+                    sceneAssetProp.objectReferenceValue = value;
+                    if (sceneAssetProp.objectReferenceValue != null)
                     {
-                        var _sceneName = (sceneAsset.objectReferenceValue as SceneAsset).name;
-                        sceneName.stringValue = _sceneName;
-                        var sceneObj = GetSceneObject(_sceneName);
+                        string sceneName = (sceneAssetProp.objectReferenceValue as SceneAsset).name;
+                        sceneNameProp.stringValue = sceneName;
+                        SceneAsset sceneObj = GetSceneObject(sceneName);
                         if (sceneObj == null)
                         {
                             // Just warning, do not change value to null
-                            Debug.LogWarning("The scene [" + _sceneName + "] cannot be used. To use this scene add it to the build settings for the project");
+                            Debug.LogWarning("The scene [" + sceneName + "] cannot be used. To use this scene add it to the build settings for the project");
                         }
                     }
                     else
-                        sceneName.stringValue = null;
+                    {
+                        sceneNameProp.stringValue = null;
+                    }
                 }
             }
             EditorGUI.EndProperty();
@@ -46,7 +48,7 @@ namespace LiteNetLibManager
                 return null;
             }
 
-            foreach (var editorScene in EditorBuildSettings.scenes)
+            foreach (EditorBuildSettingsScene editorScene in EditorBuildSettings.scenes)
             {
                 var sceneNameWithoutExtension = Path.GetFileNameWithoutExtension(editorScene.path);
                 if (sceneNameWithoutExtension == sceneObjectName)
