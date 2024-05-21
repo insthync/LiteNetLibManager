@@ -284,7 +284,7 @@ namespace LiteNetLibManager
                     // Wait until scene loaded
                     while (LoadAddressableSceneAsyncOperation.HasValue && !LoadAddressableSceneAsyncOperation.Value.IsDone)
                     {
-                        await UniTask.DelayFrame(1);
+                        await UniTask.NextFrame();
                         Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, online, LoadAddressableSceneAsyncOperation.Value.PercentComplete);
                     }
                 }
@@ -297,7 +297,7 @@ namespace LiteNetLibManager
                     // Wait until scene loaded
                     while (LoadSceneAsyncOperation != null && !LoadSceneAsyncOperation.isDone)
                     {
-                        await UniTask.DelayFrame(1);
+                        await UniTask.NextFrame();
                         Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, online, LoadSceneAsyncOperation.progress);
                     }
                 }
