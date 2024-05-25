@@ -271,7 +271,8 @@ namespace LiteNetLibManager
             if (_serverUpdater != null)
                 _serverUpdater.Stop();
             IsServer = false;
-            Server.StopServer();
+            if (Server != null)
+                Server.StopServer();
             OnStopServer();
 
             if (IsOfflineConnection && IsClient)
@@ -290,7 +291,8 @@ namespace LiteNetLibManager
             if (_clientUpdater != null)
                 _clientUpdater.Stop();
             IsClient = false;
-            Client.StopClient();
+            if (Client != null)
+                Client.StopClient();
             OnStopClient();
 
             if (IsOfflineConnection && IsServer)
