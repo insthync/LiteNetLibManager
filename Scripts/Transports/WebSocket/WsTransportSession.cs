@@ -2,6 +2,7 @@
 using NetCoreServer;
 using System;
 using System.Net.Sockets;
+using HttpRequest = NetCoreServer.HttpRequest;
 
 namespace LiteNetLibManager
 {

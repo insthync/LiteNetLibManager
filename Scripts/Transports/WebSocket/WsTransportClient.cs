@@ -4,6 +4,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using HttpRequest = NetCoreServer.HttpRequest;
+using HttpResponse = NetCoreServer.HttpResponse;
 
 namespace LiteNetLibManager
 {
