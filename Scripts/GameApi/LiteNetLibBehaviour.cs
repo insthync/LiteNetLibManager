@@ -12,6 +12,8 @@ namespace LiteNetLibManager
 {
     public partial class LiteNetLibBehaviour : MonoBehaviour, INetSerializable
     {
+        public const string TAG_NULL = "<NULL_B>";
+
         private struct CacheFields
         {
             public List<FieldInfo> syncFields;
@@ -167,7 +169,11 @@ namespace LiteNetLibManager
             get
             {
                 if (string.IsNullOrEmpty(_logTag))
-                    _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                {
+                    string managerTag = Manager != null ? Manager.LogTag : LiteNetLibManager.TAG_NULL;
+                    string behaviourTag = this != null ? $"{name}<B_{GetType().Name}>" : TAG_NULL;
+                    _logTag = $"{managerTag}.{behaviourTag}";
+                }
                 return _logTag;
             }
         }

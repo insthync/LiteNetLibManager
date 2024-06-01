@@ -7,7 +7,13 @@ namespace LiteNetLibManager
     public class LiteNetLibClient : TransportHandler
     {
         public LiteNetLibManager Manager { get; protected set; }
-        public override string LogTag { get { return (Manager == null ? "(No Manager)" : Manager.LogTag) + "->LiteNetLibClient"; } }
+        public override string LogTag
+        {
+            get
+            {
+                return (Manager == null ? "<NULL_M>" : Manager.LogTag) + ".C";
+            }
+        }
         private bool _isNetworkActive;
         public override bool IsNetworkActive { get { return _isNetworkActive; } }
         private byte[] _disconnectData;

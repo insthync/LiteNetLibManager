@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
@@ -58,7 +56,10 @@ namespace LiteNetLibManager
 
         public virtual string LogTag
         {
-            get { return (!IsSetup ? "(No Behaviour)" : Behaviour.LogTag) + "->" + ToString(); }
+            get
+            {
+                return (!IsSetup ? LiteNetLibBehaviour.TAG_NULL : Behaviour.LogTag) + ".E";
+            }
         }
 
         public bool IsServer

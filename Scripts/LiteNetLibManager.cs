@@ -10,6 +10,7 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibManager : MonoBehaviour
     {
+        public const string TAG_NULL = "<NULL_M>";
         public LiteNetLibClient Client { get; protected set; }
         public LiteNetLibServer Server { get; protected set; }
         public bool IsServer { get; private set; }
@@ -65,7 +66,9 @@ namespace LiteNetLibManager
             get
             {
                 if (string.IsNullOrEmpty(_logTag))
-                    _logTag = $"{name}({GetType().Name})";
+                {
+                    _logTag = this != null ? $"{name}<M_{GetType().Name}>" : TAG_NULL;
+                }
                 return _logTag;
             }
         }

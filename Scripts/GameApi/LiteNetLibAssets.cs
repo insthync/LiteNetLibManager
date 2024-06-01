@@ -8,6 +8,7 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibAssets : MonoBehaviour
     {
+        public const string TAG_NULL = "<NULL_A>";
         private static int s_spawnPositionCounter = 0;
 
         public bool playerSpawnRandomly;
@@ -58,7 +59,11 @@ namespace LiteNetLibManager
             get
             {
                 if (string.IsNullOrEmpty(_logTag))
-                    _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
+                {
+                    string managerTag = Manager != null ? Manager.LogTag : LiteNetLibManager.TAG_NULL;
+                    string behaviourTag = this != null ? $"{name}<A_{GetType().Name}>" : TAG_NULL;
+                    _logTag = $"{managerTag}.{behaviourTag}";
+                }
                 return _logTag;
             }
         }
