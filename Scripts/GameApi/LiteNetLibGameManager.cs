@@ -30,6 +30,8 @@ namespace LiteNetLibManager
         public static AsyncOperation LoadSceneAsyncOperation { get; private set; }
         public static AsyncOperationHandle<SceneInstance>? LoadAddressableSceneAsyncOperation { get; private set; }
         public static AsyncOperationHandle<SceneInstance>? LatestLoadedAddressableSceneAsyncOperation { get; set; }
+        public int LoadedAdditiveScenesCount { get; internal set; } = 0;
+        public int TotalAdditiveScensCount { get; protected set; } = 0;
 
         public long ClientConnectionId { get; protected set; }
         public RttCalculator RttCalculator { get; protected set; } = new RttCalculator();
@@ -259,6 +261,10 @@ namespace LiteNetLibManager
                     Assets.Clear(true);
                 }
 
+                // Reset additive scenes count
+                LoadedAdditiveScenesCount = 0;
+                TotalAdditiveScensCount = 0;
+
                 if (LogDev) Logging.Log(LogTag, $"Loading Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
                 Assets.onLoadSceneStart.Invoke(serverSceneInfo.sceneName, false, isOnline, 0f);
                 if (LatestLoadedAddressableSceneAsyncOperation != null)
@@ -310,15 +316,26 @@ namespace LiteNetLibManager
                     {
                         continue;
                     }
+                    // Load additive scenes
+                    List<LiteNetLibAdditiveSceneLoader> listOfLoaders = new List<LiteNetLibAdditiveSceneLoader>();
                     GameObject[] rootGameObjects = scene.GetRootGameObjects();
                     for (int j = 0; j < rootGameObjects.Length; ++j)
                     {
-                        LiteNetLibAdditiveSceneLoader[] additiveSceneLoaders = rootGameObjects[j].GetComponentsInChildren<LiteNetLibAdditiveSceneLoader>();
-                        for (int k = 0; k < additiveSceneLoaders.Length; ++k)
-                        {
-                            await additiveSceneLoaders[i].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline);
-                        }
+                        listOfLoaders.AddRange(rootGameObjects[j].GetComponentsInChildren<LiteNetLibAdditiveSceneLoader>());
                     }
+                    for (int j = 0; j < listOfLoaders.Count; ++j)
+                    {
+                        if (listOfLoaders[j].scenes != null)
+                            TotalAdditiveScensCount += listOfLoaders[j].scenes.Length;
+                        if (listOfLoaders[j].addressableScenes != null)
+                            TotalAdditiveScensCount += listOfLoaders[j].addressableScenes.Length;
+                    }
+                    Assets.onLoadAdditiveSceneStart.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
+                    for (int j = 0; j < listOfLoaders.Count; ++j)
+                    {
+                        await listOfLoaders[i].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline);
+                    }
+                    Assets.onLoadAdditiveSceneFinish.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                 }
 
                 // Clear loading states

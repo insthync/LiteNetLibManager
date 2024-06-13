@@ -41,6 +41,9 @@ namespace LiteNetLibManager
         public UnityEvent onSceneDepsDownloading = new UnityEvent();
         public AddressableAssetDownloadProgressEvent onSceneDepsFileDownloading = new AddressableAssetDownloadProgressEvent();
         public UnityEvent onSceneDepsDownloaded = new UnityEvent();
+        public LiteNetLibLoadAdditiveSceneEvent onLoadAdditiveSceneStart = new LiteNetLibLoadAdditiveSceneEvent();
+        public LiteNetLibLoadAdditiveSceneEvent onLoadAdditiveSceneProgress = new LiteNetLibLoadAdditiveSceneEvent();
+        public LiteNetLibLoadAdditiveSceneEvent onLoadAdditiveSceneFinish = new LiteNetLibLoadAdditiveSceneEvent();
         public LiteNetLibIdentityEvent onObjectSpawn = new LiteNetLibIdentityEvent();
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;

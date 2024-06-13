@@ -28,6 +28,8 @@ namespace LiteNetLibManager
                     manager.Assets.onLoadSceneProgress.Invoke(loadingName, true, isOnline, op.progress);
                 }
                 manager.Assets.onLoadSceneFinish.Invoke(loadingName, true, isOnline, 1f);
+                manager.LoadedAdditiveScenesCount++;
+                manager.Assets.onLoadAdditiveSceneProgress.Invoke(manager.LoadedAdditiveScenesCount, manager.TotalAdditiveScensCount);
             }
             // Load from addressable
             for (int i = 0; i < addressableScenes.Length; ++i)
@@ -52,6 +54,8 @@ namespace LiteNetLibManager
                     manager.Assets.onLoadSceneProgress.Invoke(loadingName, true, isOnline, op.PercentComplete);
                 }
                 manager.Assets.onLoadSceneFinish.Invoke(loadingName, true, isOnline, 1f);
+                manager.LoadedAdditiveScenesCount++;
+                manager.Assets.onLoadAdditiveSceneProgress.Invoke(manager.LoadedAdditiveScenesCount, manager.TotalAdditiveScensCount);
             }
         }
     }
