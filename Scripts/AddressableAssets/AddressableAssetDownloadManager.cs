@@ -10,7 +10,7 @@ namespace LiteNetLibManager
 {
     public partial class AddressableAssetDownloadManager : MonoBehaviour
     {
-        public AssetReference[] initialObjects = new AssetReference[0];
+        public AssetReferenceDownloadManagerSettings settingsAssetReference;
         [Header("Events")]
         public UnityEvent onStart = new UnityEvent();
         public UnityEvent onEnd = new UnityEvent();
@@ -28,15 +28,36 @@ namespace LiteNetLibManager
         private async void Start()
         {
             onStart?.Invoke();
-            TotalCount = initialObjects.Length;
+            AsyncOperationHandle<AddressableAssetDownloadManagerSettings> settingsAsyncOp = settingsAssetReference.LoadAssetAsync();
+            await settingsAsyncOp.Task;
+            AddressableAssetDownloadManagerSettings settings = settingsAsyncOp.Result;
+            TotalCount = settings.PrepareObjects.Count + settings.InitialObjects.Count;
 
             // Downloads
-            for (int i = 0; i < initialObjects.Length; ++i)
+            for (int i = 0; i < settings.PrepareObjects.Count; ++i)
             {
                 try
                 {
                     await Download(
-                        initialObjects[i],
+                        settings.PrepareObjects[i],
+                        OnFileSizeRetrieving,
+                        OnFileSizeRetrieved,
+                        OnDepsDownloading,
+                        OnDepsFileDownloading,
+                        OnDepsDownloaded);
+                }
+                catch (System.Exception ex)
+                {
+                    Logging.LogException(ex);
+                }
+                LoadedCount++;
+            }
+            for (int i = 0; i < settings.InitialObjects.Count; ++i)
+            {
+                try
+                {
+                    await Download(
+                        settings.InitialObjects[i],
                         OnFileSizeRetrieving,
                         OnFileSizeRetrieved,
                         OnDepsDownloading,
@@ -51,12 +72,13 @@ namespace LiteNetLibManager
             }
             onDownloadedAll?.Invoke();
             // Instantiates
-            for (int i = 0; i < initialObjects.Length; ++i)
+            for (int i = 0; i < settings.InitialObjects.Count; ++i)
             {
                 try
                 {
-                    AsyncOperationHandle<GameObject> getSizeOp = Addressables.InstantiateAsync(initialObjects[i].RuntimeKey);
+                    AsyncOperationHandle<GameObject> getSizeOp = Addressables.InstantiateAsync(settings.InitialObjects[i].RuntimeKey);
                     await getSizeOp.Task;
+                    Logging.Log($"Initialized {getSizeOp.Result.name}");
                 }
                 catch (System.Exception ex)
                 {
@@ -177,6 +199,7 @@ namespace LiteNetLibManager
                     await Task.Yield();
                 }
                 onDepsDownloaded?.Invoke();
+                Addressables.ReleaseInstance(downloadOp);
             }
             else
             {
