@@ -815,6 +815,8 @@ namespace LiteNetLibManager
 
         private async UniTaskVoid InternalNetworkDestroy(float delay)
         {
+            if (delay < 0)
+                return;
             await UniTask.Delay((int)(1000 * delay));
             DestroyFromAssets();
         }
