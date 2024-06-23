@@ -15,6 +15,12 @@ namespace LiteNetLibManager
     [RequireComponent(typeof(LiteNetLibAssets))]
     public class LiteNetLibGameManager : LiteNetLibManager
     {
+        public struct ServerSceneLoadingInfo
+        {
+            public ServerSceneInfo sceneInfo;
+            public bool isOnline;
+        }
+
         [Header("Game manager configs")]
         public uint packetVersion = 1;
         public float pingDuration = 1f;
@@ -27,9 +33,7 @@ namespace LiteNetLibManager
 
         private double _clientSendPingCountDown;
         private double _serverSendPingCountDown;
-        public static AsyncOperation LoadSceneAsyncOperation { get; private set; }
-        public static AsyncOperationHandle<SceneInstance>? LoadAddressableSceneAsyncOperation { get; private set; }
-        public static AsyncOperationHandle<SceneInstance>? LatestLoadedAddressableSceneAsyncOperation { get; set; }
+        public static List<ServerSceneLoadingInfo> LoadingServerScenes { get; private set; } = new List<ServerSceneLoadingInfo>();
         public int LoadedAdditiveScenesCount { get; internal set; } = 0;
         public int TotalAdditiveScensCount { get; protected set; } = 0;
 
@@ -243,71 +247,100 @@ namespace LiteNetLibManager
         /// <returns></returns>
         private async UniTaskVoid LoadSceneRoutine(ServerSceneInfo serverSceneInfo, bool isOnline)
         {
-            if (LoadSceneAsyncOperation == null && LoadAddressableSceneAsyncOperation == null)
+            if (LoadingServerScenes.Count > 0)
             {
-                // If doNotDestroyOnSceneChanges not TRUE still not destroy this game object
-                // But it will be destroyed after scene loaded, if scene is offline scene
-                if (!doNotDestroyOnSceneChanges)
-                    DontDestroyOnLoad(gameObject);
+                ServerSceneLoadingInfo prevLoadingInfo = LoadingServerScenes[0];
 
-                if (isOnline)
+                if (prevLoadingInfo.sceneInfo.isAddressable && serverSceneInfo.isAddressable &&
+                    string.Equals(prevLoadingInfo.sceneInfo.addressableKey, serverSceneInfo.addressableKey) &&
+                    prevLoadingInfo.isOnline == isOnline)
                 {
-                    foreach (LiteNetLibPlayer player in Players.Values)
-                    {
-                        player.IsReady = false;
-                        player.Subscribings.Clear();
-                        player.SpawnedObjects.Clear();
-                    }
-                    Assets.Clear(true);
+                    // Loading the same scene, don't do anything
+                    return;
                 }
 
-                // Reset additive scenes count
-                LoadedAdditiveScenesCount = 0;
-                TotalAdditiveScensCount = 0;
+                if (!prevLoadingInfo.sceneInfo.isAddressable && !serverSceneInfo.isAddressable &&
+                    string.Equals(prevLoadingInfo.sceneInfo.sceneName, serverSceneInfo.sceneName) &&
+                    prevLoadingInfo.isOnline == isOnline)
+                {
+                    // Loading the same scene, don't do anything
+                    return;
+                }
+            }
 
-                if (LogDev) Logging.Log(LogTag, $"Loading Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
-                Assets.onLoadSceneStart.Invoke(serverSceneInfo.sceneName, false, isOnline, 0f);
-                if (LatestLoadedAddressableSceneAsyncOperation != null)
-                {
-                    // Release the old handler one
-                    Addressables.Release(LatestLoadedAddressableSceneAsyncOperation.Value);
-                    LatestLoadedAddressableSceneAsyncOperation = null;
-                }
-                if (serverSceneInfo.isAddressable)
-                {
-                    // Download the scene
-                    await AddressableAssetDownloadManager.Download(
-                        serverSceneInfo.addressableKey,
-                        Assets.onSceneFileSizeRetrieving.Invoke,
-                        Assets.onSceneFileSizeRetrieved.Invoke,
-                        Assets.onSceneDepsDownloading.Invoke,
-                        Assets.onSceneDepsFileDownloading.Invoke,
-                        Assets.onSceneDepsDownloaded.Invoke);
-                    // Load the scene
-                    LoadAddressableSceneAsyncOperation = LatestLoadedAddressableSceneAsyncOperation = Addressables.LoadSceneAsync(
-                        serverSceneInfo.addressableKey,
-                        new LoadSceneParameters(LoadSceneMode.Single));
-                    // Wait until scene loaded
-                    while (LoadAddressableSceneAsyncOperation.HasValue && !LoadAddressableSceneAsyncOperation.Value.IsDone)
-                    {
-                        await UniTask.NextFrame();
-                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, LoadAddressableSceneAsyncOperation.Value.PercentComplete);
-                    }
-                }
-                else
-                {
-                    // Load the scene
-                    LoadSceneAsyncOperation = SceneManager.LoadSceneAsync(
-                        serverSceneInfo.sceneName,
-                        new LoadSceneParameters(LoadSceneMode.Single));
-                    // Wait until scene loaded
-                    while (LoadSceneAsyncOperation != null && !LoadSceneAsyncOperation.isDone)
-                    {
-                        await UniTask.NextFrame();
-                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, LoadSceneAsyncOperation.progress);
-                    }
-                }
+            LoadingServerScenes.Add(new ServerSceneLoadingInfo()
+            {
+                sceneInfo = serverSceneInfo,
+                isOnline = isOnline,
+            });
 
+            // Must have only 2 scenes, remove middle ones
+            while (LoadingServerScenes.Count > 2)
+            {
+                LoadingServerScenes.RemoveAt(1);
+            }
+
+            // If doNotDestroyOnSceneChanges not TRUE still not destroy this game object
+            // But it will be destroyed after scene loaded, if scene is offline scene
+            if (!doNotDestroyOnSceneChanges)
+                DontDestroyOnLoad(gameObject);
+
+            if (isOnline)
+            {
+                foreach (LiteNetLibPlayer player in Players.Values)
+                {
+                    player.IsReady = false;
+                    player.Subscribings.Clear();
+                    player.SpawnedObjects.Clear();
+                }
+                Assets.Clear(true);
+            }
+
+            // Reset additive scenes count
+            LoadedAdditiveScenesCount = 0;
+            TotalAdditiveScensCount = 0;
+
+            if (LogDev) Logging.Log(LogTag, $"Loading Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
+            Assets.onLoadSceneStart.Invoke(serverSceneInfo.sceneName, false, isOnline, 0f);
+            if (serverSceneInfo.isAddressable)
+            {
+                // Download the scene
+                await AddressableAssetDownloadManager.Download(
+                    serverSceneInfo.addressableKey,
+                    Assets.onSceneFileSizeRetrieving.Invoke,
+                    Assets.onSceneFileSizeRetrieved.Invoke,
+                    Assets.onSceneDepsDownloading.Invoke,
+                    Assets.onSceneDepsFileDownloading.Invoke,
+                    Assets.onSceneDepsDownloaded.Invoke);
+                // Load the scene
+                AsyncOperationHandle<SceneInstance> asyncOp = Addressables.LoadSceneAsync(
+                    serverSceneInfo.addressableKey,
+                    new LoadSceneParameters(LoadSceneMode.Single));
+                // Wait until scene loaded
+                while (!asyncOp.IsDone)
+                {
+                    await UniTask.NextFrame();
+                    Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.PercentComplete);
+                }
+            }
+            else
+            {
+                // Load the scene
+                AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
+                    serverSceneInfo.sceneName,
+                    new LoadSceneParameters(LoadSceneMode.Single));
+                // Wait until scene loaded
+                while (asyncOp != null && !asyncOp.isDone)
+                {
+                    await UniTask.NextFrame();
+                    Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.progress);
+                }
+            }
+
+            // If scene changed while loading, have to load the new one
+            LoadingServerScenes.RemoveAt(0);
+            if (LoadingServerScenes.Count <= 0)
+            {
                 // Spawn additive scenes
                 for (int i = 0; i < SceneManager.sceneCount; ++i)
                 {
@@ -337,25 +370,26 @@ namespace LiteNetLibManager
                     }
                     Assets.onLoadAdditiveSceneFinish.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                 }
-
-                // Clear loading states
-                LoadSceneAsyncOperation = null;
-                LoadAddressableSceneAsyncOperation = null;
-
-                if (isOnline)
-                {
-                    // Proceed online scene loaded
-                    await ProceedOnlineSceneLoaded(serverSceneInfo);
-                }
-                else if (!doNotDestroyOnSceneChanges)
-                {
-                    // Destroy manager's game object if loaded scene is not online scene
-                    Destroy(gameObject);
-                }
-
-                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
-                Assets.onLoadSceneFinish.Invoke(serverSceneInfo.sceneName, false, isOnline, 1f);
             }
+            else
+            {
+                ServerSceneLoadingInfo nextLoadingInfo = LoadingServerScenes[LoadingServerScenes.Count - 1];
+                LoadSceneRoutine(nextLoadingInfo.sceneInfo, nextLoadingInfo.isOnline).Forget();
+            }
+
+            if (isOnline)
+            {
+                // Proceed online scene loaded
+                await ProceedOnlineSceneLoaded(serverSceneInfo);
+            }
+            else if (!doNotDestroyOnSceneChanges)
+            {
+                // Destroy manager's game object if loaded scene is not online scene
+                Destroy(gameObject);
+            }
+
+            if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
+            Assets.onLoadSceneFinish.Invoke(serverSceneInfo.sceneName, false, isOnline, 1f);
         }
 
         protected async UniTask ProceedOnlineSceneLoaded(ServerSceneInfo serverSceneInfo)
