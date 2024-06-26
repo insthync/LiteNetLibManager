@@ -36,6 +36,12 @@ namespace LiteNetLibManager
             // Downloads
             for (int i = 0; i < settings.PrepareObjects.Count; ++i)
             {
+                if (settings.PrepareObjects[i] == null ||
+                    !settings.PrepareObjects[i].IsDataValid())
+                {
+                    // Invalid data
+                    continue;
+                }
                 try
                 {
                     await Download(
@@ -54,6 +60,12 @@ namespace LiteNetLibManager
             }
             for (int i = 0; i < settings.InitialObjects.Count; ++i)
             {
+                if (settings.InitialObjects[i] == null ||
+                    !settings.InitialObjects[i].IsDataValid())
+                {
+                    // Invalid data
+                    continue;
+                }
                 try
                 {
                     await Download(
