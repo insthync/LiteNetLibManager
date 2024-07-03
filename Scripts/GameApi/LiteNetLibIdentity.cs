@@ -9,6 +9,7 @@ using LiteNetLib.Utils;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 using Cysharp.Threading.Tasks;
+using System.Linq;
 
 namespace LiteNetLibManager
 {
@@ -26,7 +27,7 @@ namespace LiteNetLibManager
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
         [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
         private string assetId = string.Empty;
-        [ReadOnly, SerializeField]
+        [SerializeField]
         private uint objectId = 0;
         [Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting"), SerializeField]
         private float visibleRange = 0f;
@@ -261,13 +262,11 @@ namespace LiteNetLibManager
         internal void SetupIDs()
         {
             string oldAssetId = assetId;
-            uint oldObjectId = objectId;
             GameObject prefab;
             if (ThisIsAPrefab())
             {
                 // This is a prefab, can create prefab while playing so it will still assign asset ID and reset object ID
                 AssignAssetID(gameObject);
-                objectId = 0;
             }
             else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out prefab))
             {
@@ -275,18 +274,8 @@ namespace LiteNetLibManager
                 {
                     // This is a scene object with prefab link
                     AssignAssetID(prefab);
-                    Scene activeScene = SceneManager.GetActiveScene();
-                    if (gameObject.scene == activeScene)
-                    {
-                        // Assign object id if it is in scene
-                        AssignSceneObjectId();
-                        EditorSceneManager.MarkSceneDirty(activeScene);
-                    }
-                    else
-                    {
-                        // Difference working scene?, clear object Id
-                        objectId = 0;
-                    }
+                    if (objectId == 0)
+                        Debug.LogWarning($"[LiteNetLibIdentity] No object ID set for {name}", gameObject);
                 }
             }
             else
@@ -295,22 +284,10 @@ namespace LiteNetLibManager
                 {
                     // This is a pure scene object (Not a prefab)
                     assetId = string.Empty;
-                    Scene activeScene = SceneManager.GetActiveScene();
-                    if (gameObject.scene == activeScene)
-                    {
-                        // Assign object id if it is in scene
-                        AssignSceneObjectId();
-                        EditorSceneManager.MarkSceneDirty(activeScene);
-                    }
-                    else
-                    {
-                        // Difference working scene?, clear object Id
-                        objectId = 0;
-                    }
                 }
             }
             // Do not mark dirty while playing
-            if (!Application.isPlaying && (oldAssetId != assetId || oldObjectId != objectId))
+            if (!Application.isPlaying && oldAssetId != assetId)
                 EditorUtility.SetDirty(this);
         }
 #endif
@@ -607,7 +584,8 @@ namespace LiteNetLibManager
         internal static void ReorderSceneObjectId()
         {
             ResetObjectId();
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>().
+                OrderBy(o => unchecked(((o.transform.position.x + o.transform.position.y + o.transform.position.z) / 3f) + o.transform.name.GetHashCode())).ToArray();
             foreach (LiteNetLibIdentity netObject in netObjects)
             {
                 netObject.objectId = ++HighestObjectId;
