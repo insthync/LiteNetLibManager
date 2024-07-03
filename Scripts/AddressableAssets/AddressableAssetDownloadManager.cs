@@ -1,9 +1,11 @@
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
@@ -195,27 +197,42 @@ namespace LiteNetLibManager
             System.Action onDepsDownloaded)
         {
             // Get download size
-            AsyncOperationHandle<long> getSizeOp = Addressables.GetDownloadSizeAsync(runtimeKey);
-            await UniTask.Yield();
-            onFileSizeRetrieving?.Invoke();
-            while (!getSizeOp.IsDone)
+            AsyncOperationHandle<long> getSizeOp;
+            try
             {
-                await UniTask.Yield();
+                getSizeOp = Addressables.GetDownloadSizeAsync(runtimeKey);
+                onFileSizeRetrieving?.Invoke();
+                while (!getSizeOp.IsDone)
+                {
+                    await UniTask.Yield();
+                }
             }
-            long fileSize = getSizeOp.Result;
+            catch
+            {
+                return;
+            }
             await UniTask.Yield();
+            long fileSize = getSizeOp.Result;
             onFileSizeRetrieved.Invoke(fileSize);
             // Download dependencies
             if (fileSize > 0)
             {
-                AsyncOperationHandle downloadOp = Addressables.DownloadDependenciesAsync(runtimeKey);
-                await UniTask.Yield();
-                onDepsDownloading?.Invoke();
-                while (!downloadOp.IsDone)
+                AsyncOperationHandle downloadOp;
+                try
                 {
+                    downloadOp = Addressables.DownloadDependenciesAsync(runtimeKey);
                     await UniTask.Yield();
-                    float percentageComplete = downloadOp.GetDownloadStatus().Percent;
-                    onDepsFileDownloading?.Invoke((long)(percentageComplete * fileSize), fileSize, percentageComplete);
+                    onDepsDownloading?.Invoke();
+                    while (!downloadOp.IsDone)
+                    {
+                        await UniTask.Yield();
+                        float percentageComplete = downloadOp.GetDownloadStatus().Percent;
+                        onDepsFileDownloading?.Invoke((long)(percentageComplete * fileSize), fileSize, percentageComplete);
+                    }
+                }
+                catch
+                {
+                    return;
                 }
                 await UniTask.Yield();
                 onDepsDownloaded?.Invoke();
