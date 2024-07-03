@@ -65,13 +65,11 @@ namespace LiteNetLibManager
                 var op = SceneManager.LoadSceneAsync(
                     scenes[i].SceneName,
                     new LoadSceneParameters(LoadSceneMode.Additive));
-                op.allowSceneActivation = false;
-                while (op.progress < 0.9f)
+                while (!op.isDone)
                 {
                     await UniTask.Yield();
                     manager.Assets.onLoadSceneProgress.Invoke(loadingName, true, isOnline, op.progress);
                 }
-                op.allowSceneActivation = true;
                 await UniTask.Yield();
                 manager.Assets.onLoadSceneFinish.Invoke(loadingName, true, isOnline, 1f);
                 manager.LoadedAdditiveScenesCount++;
@@ -82,7 +80,6 @@ namespace LiteNetLibManager
             {
                 string loadingName = $"{sceneName}_{loadCount++}";
                 // Download the scene
-                await UniTask.Yield();
                 await AddressableAssetDownloadManager.Download(
                     addressableScenes[i].RuntimeKey,
                     manager.Assets.onSceneFileSizeRetrieving.Invoke,
