@@ -11,8 +11,7 @@ namespace LiteNetLibManager
         private static Dictionary<object, GameObject> s_loadedAssets = new Dictionary<object, GameObject>();
         private static Dictionary<object, AsyncOperationHandle> s_assetRefs = new Dictionary<object, AsyncOperationHandle>();
 
-        public static async Task<TType> GetOrLoadAssetAsync<TAssetRef, TType>(this TAssetRef assetRef, System.Action<AsyncOperationHandle> handlerCallback = null)
-            where TAssetRef : AssetReference
+        public static async Task<TType> GetOrLoadAssetAsync<TType>(this AssetReference assetRef, System.Action<AsyncOperationHandle> handlerCallback = null)
             where TType : Component
         {
             if (s_loadedAssets.TryGetValue(assetRef.RuntimeKey, out GameObject result))
@@ -25,8 +24,7 @@ namespace LiteNetLibManager
             return handlerResult.GetComponent<TType>();
         }
 
-        public static TType GetOrLoadAsset<TAssetRef, TType>(this TAssetRef assetRef, System.Action<AsyncOperationHandle> handlerCallback = null)
-            where TAssetRef : AssetReference
+        public static TType GetOrLoadAsset<TType>(this AssetReference assetRef, System.Action<AsyncOperationHandle> handlerCallback = null)
             where TType : Component
         {
             if (s_loadedAssets.TryGetValue(assetRef.RuntimeKey, out GameObject result))
@@ -37,6 +35,30 @@ namespace LiteNetLibManager
             s_loadedAssets[assetRef.RuntimeKey] = handlerResult;
             s_assetRefs[assetRef.RuntimeKey] = handler;
             return handlerResult.GetComponent<TType>();
+        }
+
+        public static async Task<GameObject> GetOrLoadAssetAsync(this AssetReference assetRef, System.Action<AsyncOperationHandle> handlerCallback = null)
+        {
+            if (s_loadedAssets.TryGetValue(assetRef.RuntimeKey, out GameObject result))
+                return result;
+            AsyncOperationHandle<GameObject> handler = Addressables.LoadAssetAsync<GameObject>(assetRef.RuntimeKey);
+            handlerCallback?.Invoke(handler);
+            GameObject handlerResult = await handler.Task;
+            s_loadedAssets[assetRef.RuntimeKey] = handlerResult;
+            s_assetRefs[assetRef.RuntimeKey] = handler;
+            return handlerResult;
+        }
+
+        public static GameObject GetOrLoadAsset(this AssetReference assetRef, System.Action<AsyncOperationHandle> handlerCallback = null)
+        {
+            if (s_loadedAssets.TryGetValue(assetRef.RuntimeKey, out GameObject result))
+                return result;
+            AsyncOperationHandle<GameObject> handler = Addressables.LoadAssetAsync<GameObject>(assetRef.RuntimeKey);
+            handlerCallback?.Invoke(handler);
+            GameObject handlerResult = handler.WaitForCompletion();
+            s_loadedAssets[assetRef.RuntimeKey] = handlerResult;
+            s_assetRefs[assetRef.RuntimeKey] = handler;
+            return handlerResult;
         }
 
         public static void Release<TAssetRef>(this TAssetRef assetRef)

@@ -319,8 +319,9 @@ namespace LiteNetLibManager
                 // Wait until scene loaded
                 while (!asyncOp.IsDone)
                 {
-                    await UniTask.NextFrame();
-                    Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.PercentComplete);
+                    await UniTask.Yield();
+                    float percentageComplete = asyncOp.GetDownloadStatus().Percent;
+                    Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, percentageComplete);
                 }
             }
             else
@@ -329,12 +330,14 @@ namespace LiteNetLibManager
                 AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
                     serverSceneInfo.sceneName,
                     new LoadSceneParameters(LoadSceneMode.Single));
+                asyncOp.allowSceneActivation = false;
                 // Wait until scene loaded
-                while (asyncOp != null && !asyncOp.isDone)
+                while (asyncOp.progress < 0.9f)
                 {
-                    await UniTask.NextFrame();
+                    await UniTask.Yield();
                     Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.progress);
                 }
+                asyncOp.allowSceneActivation = true;
             }
 
             // If scene changed while loading, have to load the new one

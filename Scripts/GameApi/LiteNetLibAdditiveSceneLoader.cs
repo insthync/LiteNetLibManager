@@ -60,15 +60,19 @@ namespace LiteNetLibManager
             {
                 string loadingName = $"{sceneName}_{loadCount++}";
                 // Load the scene
+                await UniTask.Yield();
                 manager.Assets.onLoadSceneStart.Invoke(loadingName, true, isOnline, 0f);
                 var op = SceneManager.LoadSceneAsync(
                     scenes[i].SceneName,
                     new LoadSceneParameters(LoadSceneMode.Additive));
-                while (!op.isDone)
+                op.allowSceneActivation = false;
+                while (op.progress < 0.9f)
                 {
-                    await UniTask.NextFrame();
+                    await UniTask.Yield();
                     manager.Assets.onLoadSceneProgress.Invoke(loadingName, true, isOnline, op.progress);
                 }
+                op.allowSceneActivation = true;
+                await UniTask.Yield();
                 manager.Assets.onLoadSceneFinish.Invoke(loadingName, true, isOnline, 1f);
                 manager.LoadedAdditiveScenesCount++;
                 manager.Assets.onLoadAdditiveSceneProgress.Invoke(manager.LoadedAdditiveScenesCount, manager.TotalAdditiveScensCount);
@@ -78,6 +82,7 @@ namespace LiteNetLibManager
             {
                 string loadingName = $"{sceneName}_{loadCount++}";
                 // Download the scene
+                await UniTask.Yield();
                 await AddressableAssetDownloadManager.Download(
                     addressableScenes[i].RuntimeKey,
                     manager.Assets.onSceneFileSizeRetrieving.Invoke,
@@ -92,9 +97,11 @@ namespace LiteNetLibManager
                     new LoadSceneParameters(LoadSceneMode.Additive));
                 while (!op.IsDone)
                 {
-                    await UniTask.NextFrame();
-                    manager.Assets.onLoadSceneProgress.Invoke(loadingName, true, isOnline, op.PercentComplete);
+                    await UniTask.Yield();
+                    float percentageComplete = op.GetDownloadStatus().Percent;
+                    manager.Assets.onLoadSceneProgress.Invoke(loadingName, true, isOnline, percentageComplete);
                 }
+                await UniTask.Yield();
                 manager.Assets.onLoadSceneFinish.Invoke(loadingName, true, isOnline, 1f);
                 manager.LoadedAdditiveScenesCount++;
                 manager.Assets.onLoadAdditiveSceneProgress.Invoke(manager.LoadedAdditiveScenesCount, manager.TotalAdditiveScensCount);

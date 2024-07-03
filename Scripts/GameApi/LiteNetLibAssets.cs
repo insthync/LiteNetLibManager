@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 namespace LiteNetLibManager
 {
@@ -162,7 +163,7 @@ namespace LiteNetLibManager
                 return null;
             }
             if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
-            LiteNetLibIdentity prefab = await addressablePrefab.GetOrLoadAssetAsync<AssetReferenceLiteNetLibIdentity, LiteNetLibIdentity>();
+            LiteNetLibIdentity prefab = await addressablePrefab.GetOrLoadAssetAsync<LiteNetLibIdentity>();
             GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
             return prefab;
         }
@@ -175,7 +176,7 @@ namespace LiteNetLibManager
                 return null;
             }
             if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
-            LiteNetLibIdentity prefab = addressablePrefab.GetOrLoadAsset<AssetReferenceLiteNetLibIdentity, LiteNetLibIdentity>();
+            LiteNetLibIdentity prefab = addressablePrefab.GetOrLoadAsset<LiteNetLibIdentity>();
             GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
             return prefab;
         }
@@ -334,15 +335,25 @@ namespace LiteNetLibManager
         public void RegisterSceneObjects()
         {
             SceneObjects.Clear();
-            LiteNetLibIdentity[] sceneObjects = FindObjectsOfType<LiteNetLibIdentity>();
-            for (int i = 0; i < sceneObjects.Length; ++i)
+            for (int i = 0; i < SceneManager.sceneCount; ++i)
             {
-                LiteNetLibIdentity sceneObject = sceneObjects[i];
-                if (sceneObject.ObjectId > 0)
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (!scene.isLoaded)
+                    continue;
+                GameObject[] rootObjects = scene.GetRootGameObjects();
+                for (int j = 0; j < rootObjects.Length; ++j)
                 {
-                    sceneObject.gameObject.SetActive(false);
-                    SceneObjects[sceneObject.ObjectId] = sceneObject;
-                    LiteNetLibIdentity.UpdateHighestObjectId(sceneObject.ObjectId);
+                    LiteNetLibIdentity[] sceneObjects = rootObjects[j].GetComponentsInChildren<LiteNetLibIdentity>(true);
+                    for (int k = 0; k < sceneObjects.Length; ++k)
+                    {
+                        LiteNetLibIdentity sceneObject = sceneObjects[k];
+                        if (sceneObject.ObjectId > 0)
+                        {
+                            sceneObject.gameObject.SetActive(false);
+                            SceneObjects[sceneObject.ObjectId] = sceneObject;
+                            LiteNetLibIdentity.UpdateHighestObjectId(sceneObject.ObjectId);
+                        }
+                    }
                 }
             }
         }

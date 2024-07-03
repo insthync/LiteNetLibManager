@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -27,6 +28,7 @@ namespace LiteNetLibManager
 
         private async void Start()
         {
+            await UniTask.Yield();
             onStart?.Invoke();
             AsyncOperationHandle<AddressableAssetDownloadManagerSettings> settingsAsyncOp = settingsAssetReference.LoadAssetAsync();
             await settingsAsyncOp.Task;
@@ -82,15 +84,16 @@ namespace LiteNetLibManager
                 }
                 LoadedCount++;
             }
+            await UniTask.Yield();
             onDownloadedAll?.Invoke();
             // Instantiates
             for (int i = 0; i < settings.InitialObjects.Count; ++i)
             {
                 try
                 {
-                    AsyncOperationHandle<GameObject> getSizeOp = Addressables.InstantiateAsync(settings.InitialObjects[i].RuntimeKey);
-                    await getSizeOp.Task;
-                    Logging.Log($"Initialized {getSizeOp.Result.name}");
+                    AsyncOperationHandle<GameObject> instantiateOp = Addressables.InstantiateAsync(settings.InitialObjects[i].RuntimeKey);
+                    await instantiateOp.Task;
+                    Logging.Log($"Initialized {instantiateOp.Result.name}");
                 }
                 catch (System.Exception ex)
                 {
@@ -158,12 +161,12 @@ namespace LiteNetLibManager
             System.Action onDepsDownloaded)
         {
             await Download(runtimeKey, onFileSizeRetrieving, onFileSizeRetrieved, onDepsDownloading, onDepsFileDownloading, onDepsDownloaded);
-            AsyncOperationHandle<SceneInstance> getSizeOp = Addressables.LoadSceneAsync(runtimeKey, loadSceneParameters);
-            while (!getSizeOp.IsDone)
+            AsyncOperationHandle<SceneInstance> loadSceneOp = Addressables.LoadSceneAsync(runtimeKey, loadSceneParameters);
+            while (!loadSceneOp.IsDone)
             {
-                await Task.Yield();
+                await UniTask.Yield();
             }
-            return getSizeOp.Result;
+            return loadSceneOp.Result;
         }
 
         public static async Task<GameObject> DownloadAndInstantiate(
@@ -175,12 +178,12 @@ namespace LiteNetLibManager
             System.Action onDepsDownloaded)
         {
             await Download(runtimeKey, onFileSizeRetrieving, onFileSizeRetrieved, onDepsDownloading, onDepsFileDownloading, onDepsDownloaded);
-            AsyncOperationHandle<GameObject> getSizeOp = Addressables.InstantiateAsync(runtimeKey);
-            while (!getSizeOp.IsDone)
+            AsyncOperationHandle<GameObject> instantiateOp = Addressables.InstantiateAsync(runtimeKey);
+            while (!instantiateOp.IsDone)
             {
-                await Task.Yield();
+                await UniTask.Yield();
             }
-            return getSizeOp.Result;
+            return instantiateOp.Result;
         }
 
         public static async Task Download(
@@ -193,23 +196,28 @@ namespace LiteNetLibManager
         {
             // Get download size
             AsyncOperationHandle<long> getSizeOp = Addressables.GetDownloadSizeAsync(runtimeKey);
+            await UniTask.Yield();
             onFileSizeRetrieving?.Invoke();
             while (!getSizeOp.IsDone)
             {
-                await Task.Yield();
+                await UniTask.Yield();
             }
             long fileSize = getSizeOp.Result;
+            await UniTask.Yield();
             onFileSizeRetrieved.Invoke(fileSize);
             // Download dependencies
             if (fileSize > 0)
             {
                 AsyncOperationHandle downloadOp = Addressables.DownloadDependenciesAsync(runtimeKey);
+                await UniTask.Yield();
                 onDepsDownloading?.Invoke();
                 while (!downloadOp.IsDone)
                 {
-                    onDepsFileDownloading?.Invoke((long)(downloadOp.PercentComplete * fileSize), fileSize, downloadOp.PercentComplete);
-                    await Task.Yield();
+                    await UniTask.Yield();
+                    float percentageComplete = downloadOp.GetDownloadStatus().Percent;
+                    onDepsFileDownloading?.Invoke((long)(percentageComplete * fileSize), fileSize, percentageComplete);
                 }
+                await UniTask.Yield();
                 onDepsDownloaded?.Invoke();
                 Addressables.ReleaseInstance(downloadOp);
             }
