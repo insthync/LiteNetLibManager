@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using Insthync.AddressableAssetTools;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Collections.Generic;
