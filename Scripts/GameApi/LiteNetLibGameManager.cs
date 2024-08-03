@@ -332,7 +332,7 @@ namespace LiteNetLibManager
                     serverSceneInfo.sceneName,
                     new LoadSceneParameters(LoadSceneMode.Single));
                 // Wait until scene loaded
-                while (!asyncOp.isDone)
+                while (asyncOp != null && !asyncOp.isDone)
                 {
                     await UniTask.Yield();
                     Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.progress);
