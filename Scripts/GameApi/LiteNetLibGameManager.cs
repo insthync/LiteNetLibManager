@@ -339,6 +339,10 @@ namespace LiteNetLibManager
                 }
             }
 
+            // Clear unused assets after new scene loaded
+            AddressableAssetsManager.ReleaseAll();
+            await Resources.UnloadUnusedAssets();
+
             // If scene changed while loading, have to load the new one
             LoadingServerScenes.RemoveAt(0);
             if (LoadingServerScenes.Count <= 0)
