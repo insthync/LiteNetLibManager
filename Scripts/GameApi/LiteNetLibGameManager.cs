@@ -360,7 +360,9 @@ namespace LiteNetLibManager
                     GameObject[] rootGameObjects = scene.GetRootGameObjects();
                     for (int j = 0; j < rootGameObjects.Length; ++j)
                     {
-                        listOfLoaders.AddRange(rootGameObjects[j].GetComponentsInChildren<LiteNetLibAdditiveSceneLoader>());
+                        if (!rootGameObjects[j].activeSelf)
+                            continue;
+                        listOfLoaders.AddRange(rootGameObjects[j].GetComponentsInChildren<LiteNetLibAdditiveSceneLoader>(false));
                     }
                     for (int j = 0; j < listOfLoaders.Count; ++j)
                     {
