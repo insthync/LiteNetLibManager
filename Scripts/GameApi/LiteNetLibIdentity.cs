@@ -205,7 +205,17 @@ namespace LiteNetLibManager
                 // Reset asset ID to regenerate it
                 assetId = string.Empty;
             }
-            SetupIDs();
+            if (string.IsNullOrWhiteSpace(assetId))
+            {
+                if (ThisIsAPrefab())
+                {
+                    Debug.LogWarning($"[LiteNetLibIdentity] prefab named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID If Empty\" context menu to assign ID or set yours.", gameObject);
+                }
+                else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out GameObject prefab))
+                {
+                    Debug.LogWarning($"[LiteNetLibIdentity] prefab named {prefab.name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID If Empty\" context menu to assign ID or set yours.", gameObject);
+                }
+            }
         }
 
         [ContextMenu("Reorder Scene Object Id")]
@@ -218,9 +228,30 @@ namespace LiteNetLibManager
         {
             if (clearAssetId)
                 assetId = string.Empty;
-            if (!string.IsNullOrEmpty(assetId))
+            if (!string.IsNullOrWhiteSpace(assetId))
                 return;
             assetId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
+        }
+
+        [ContextMenu("Assign Asset ID If Empty")]
+        internal void AssignAssetIDIfEmpty()
+        {
+            if (!string.IsNullOrWhiteSpace(assetId))
+                return;
+            GameObject prefab = gameObject;
+            if (ThisIsAPrefab())
+            {
+            }
+            else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out prefab))
+            {
+            }
+            else
+            {
+                Debug.LogWarning($"[LiteNetLibIdentity] Unable to assign asset ID, the selected object {name} is not a prefab.", gameObject);
+                return;
+            }
+            assetId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
+            EditorUtility.SetDirty(this);
         }
 
         private bool ThisIsAPrefab()
@@ -253,12 +284,13 @@ namespace LiteNetLibManager
 #endif
             if (prefab == null)
             {
-                Logging.LogError(LogTag, $"Failed to find prefab parent for scene object: {gameObject.name}.");
+                Logging.LogError(LogTag, $"Failed to find prefab parent for scene object: {gameObject.name}.", gameObject);
                 return false;
             }
             return true;
         }
 
+        [ContextMenu("Setup IDs")]
         internal void SetupIDs()
         {
             string oldAssetId = assetId;
@@ -272,19 +304,23 @@ namespace LiteNetLibManager
             {
                 if (!Application.isPlaying)
                 {
-                    // This is a scene object with prefab link
-                    AssignAssetID(prefab);
-                    if (objectId == 0)
-                        Debug.LogWarning($"[LiteNetLibIdentity] No object ID set for {name}", gameObject);
+                    Debug.LogWarning($"[LiteNetLibIdentity] Cannot setup IDs while playing", gameObject);
+                    return;
                 }
+                // This is a scene object with prefab link
+                AssignAssetID(prefab);
+                if (objectId == 0)
+                    Debug.LogWarning($"[LiteNetLibIdentity] No object ID set for {name}", gameObject);
             }
             else
             {
                 if (!Application.isPlaying)
                 {
-                    // This is a pure scene object (Not a prefab)
-                    assetId = string.Empty;
+                    Debug.LogWarning($"[LiteNetLibIdentity] Cannot setup IDs while playing", gameObject);
+                    return;
                 }
+                // This is a pure scene object (Not a prefab)
+                assetId = string.Empty;
             }
             // Do not mark dirty while playing
             if (!Application.isPlaying && oldAssetId != assetId)
