@@ -25,6 +25,8 @@ namespace LiteNetLibManager
         /// If any of these function's result is true, it will not hide the object from another object
         /// </summary>
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
+        [Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID)"), SerializeField]
+        private bool autoAssignAssetIdIfEmpty = true;
         [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
         private string assetId = string.Empty;
         [SerializeField]
@@ -148,7 +150,7 @@ namespace LiteNetLibManager
         {
             get
             {
-                if (string.IsNullOrEmpty(_logTag))
+                if (string.IsNullOrWhiteSpace(_logTag))
                     _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
                 return _logTag;
             }
@@ -212,6 +214,11 @@ namespace LiteNetLibManager
             }
             if (string.IsNullOrWhiteSpace(assetId))
             {
+                if (autoAssignAssetIdIfEmpty)
+                {
+                    SetupIDs();
+                    return;
+                }
                 if (ThisIsAPrefab())
                 {
                     Debug.LogWarning($"[LiteNetLibIdentity] prefab named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID If Empty\" context menu to assign ID or set yours.", gameObject);
@@ -229,34 +236,11 @@ namespace LiteNetLibManager
             ReorderSceneObjectId();
         }
 
-        internal void AssignAssetID(GameObject prefab, bool clearAssetId = false)
-        {
-            if (clearAssetId)
-                assetId = string.Empty;
-            if (!string.IsNullOrWhiteSpace(assetId))
-                return;
-            assetId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
-        }
-
-        [ContextMenu("Assign Asset ID If Empty")]
-        internal void AssignAssetIDIfEmpty()
+        internal void AssignAssetID(GameObject prefab)
         {
             if (!string.IsNullOrWhiteSpace(assetId))
                 return;
-            GameObject prefab = gameObject;
-            if (ThisIsAPrefab())
-            {
-            }
-            else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out prefab))
-            {
-            }
-            else
-            {
-                Debug.LogWarning($"[LiteNetLibIdentity] Unable to assign asset ID, the selected object {name} is not a prefab.", gameObject);
-                return;
-            }
             assetId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
-            EditorUtility.SetDirty(this);
         }
 
         private bool ThisIsAPrefab()
