@@ -291,7 +291,7 @@ namespace LiteNetLibManager
             }
             else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out prefab))
             {
-                if (!Application.isPlaying)
+                if (Application.isPlaying)
                 {
                     Debug.LogWarning($"[LiteNetLibIdentity] Cannot setup IDs while playing", gameObject);
                     return;
@@ -303,7 +303,7 @@ namespace LiteNetLibManager
             }
             else
             {
-                if (!Application.isPlaying)
+                if (Application.isPlaying)
                 {
                     Debug.LogWarning($"[LiteNetLibIdentity] Cannot setup IDs while playing", gameObject);
                     return;
@@ -312,7 +312,7 @@ namespace LiteNetLibManager
                 assetId = string.Empty;
             }
             // Do not mark dirty while playing
-            if (!Application.isPlaying && oldAssetId != assetId)
+            if (!Application.isPlaying && !string.Equals(oldAssetId, assetId))
                 EditorUtility.SetDirty(this);
         }
 #endif
