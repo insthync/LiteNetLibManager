@@ -98,6 +98,11 @@ namespace LiteNetLibManager
         {
             get
             {
+                if (!Application.isPlaying)
+                {
+                    // Not playing yet, maybe in editor, so force reset hash asset ID
+                    _hashAssetId = null;
+                }
                 if (!_hashAssetId.HasValue)
                 {
                     unchecked
