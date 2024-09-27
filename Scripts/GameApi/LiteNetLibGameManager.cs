@@ -576,7 +576,7 @@ namespace LiteNetLibManager
         }
 
         #region Send messages functions
-        public void SendClientEnterGame()
+        public virtual void SendClientEnterGame()
         {
             if (!IsClientConnected)
                 return;
@@ -586,14 +586,14 @@ namespace LiteNetLibManager
             }, extraRequestSerializer: SerializeEnterGameData);
         }
 
-        public void SendClientReady()
+        public virtual void SendClientReady()
         {
             if (!IsClientConnected)
                 return;
             ClientSendRequest(GameReqTypes.ClientReady, EmptyMessage.Value, extraRequestSerializer: SerializeClientReadyData);
         }
 
-        public void SendClientNotReady()
+        public virtual void SendClientNotReady()
         {
             if (!IsClientConnected)
                 return;
