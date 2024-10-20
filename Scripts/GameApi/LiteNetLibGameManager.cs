@@ -312,7 +312,8 @@ namespace LiteNetLibManager
                     Assets.onSceneFileSizeRetrieved.Invoke,
                     Assets.onSceneDepsDownloading.Invoke,
                     Assets.onSceneDepsFileDownloading.Invoke,
-                    Assets.onSceneDepsDownloaded.Invoke);
+                    Assets.onSceneDepsDownloaded.Invoke,
+                    null);
                 // Load the scene
                 AsyncOperationHandle<SceneInstance> asyncOp = Addressables.LoadSceneAsync(
                     serverSceneInfo.addressableKey,

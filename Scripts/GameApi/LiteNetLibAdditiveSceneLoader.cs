@@ -87,7 +87,8 @@ namespace LiteNetLibManager
                     manager.Assets.onSceneFileSizeRetrieved.Invoke,
                     manager.Assets.onSceneDepsDownloading.Invoke,
                     manager.Assets.onSceneDepsFileDownloading.Invoke,
-                    manager.Assets.onSceneDepsDownloaded.Invoke);
+                    manager.Assets.onSceneDepsDownloaded.Invoke,
+                    null);
                 // Load the scene
                 manager.Assets.onLoadSceneStart.Invoke(loadingName, true, isOnline, 0f);
                 var op = Addressables.LoadSceneAsync(
