@@ -14,12 +14,6 @@ var LibraryWebSockets_LnlM = {
 
 		socket.socket.binaryType = 'arraybuffer';
 
-		socket.socket.onopen = function(e) {
-			socket.events.push({
-				type: 1,
-			});
-		};
-
 		socket.socket.onmessage = function(e) {
 			// TODO: handle other data types?
 			if (e.data instanceof Blob)
@@ -42,12 +36,9 @@ var LibraryWebSockets_LnlM = {
 			}
 		};
 
-		socket.socket.onerror = function(e) {
-			// Ref: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code
+		socket.socket.onopen = function(e) {
 			socket.events.push({
-				type: 3,
-				code: e.code,
-				reason: e.reason,
+				type: 1,
 			});
 		};
 
@@ -57,6 +48,15 @@ var LibraryWebSockets_LnlM = {
 				type: 2,
 				code: e.code,
 				reason: e.reason,
+				wasClean: e.wasClean,
+			});
+		};
+
+		socket.socket.onerror = function(e) {
+			// Ref: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code
+			socket.events.push({
+				type: 3,
+				message: e.message,
 			});
 		};
 
@@ -84,15 +84,6 @@ var LibraryWebSockets_LnlM = {
 		return socket.events[0].type;
 	},
 
-	// Get latest error code
-	GetSocketErrorCode_LnlM: function(socketInstance)
-	{
-		var socket = webSocketInstances_LnlM[socketInstance];
-		if (!socket || socket.events.length == 0 || (socket.events[0].type != 3 && socket.events[0].type != 2))
-			return 0;
-		return socket.events[0].code;
-	},
-
 	// Get latest data length
 	GetSocketDataLength_LnlM: function(socketInstance)
 	{
@@ -109,6 +100,50 @@ var LibraryWebSockets_LnlM = {
 		if (!socket || socket.events.length == 0 || socket.events[0].type != 0 || socket.events[0].data.length == 0 || socket.events[0].data.length > length)
 			return;
 		HEAPU8.set(socket.events[0].data, ptr);
+	},
+
+	// Get latest error message
+	GetSocketErrorMessage_LnlM: function(socketInstance)
+	{
+		var socket = webSocketInstances_LnlM[socketInstance];
+		if (!socket || socket.events.length == 0 || socket.events[0].type != 3)
+			return undefined;
+		var message = socket.events[0].message;
+		var length = lengthBytesUTF8(message) + 1;
+		var buffer = _malloc(length);
+		stringToUTF8(message, buffer, length);
+		return buffer;
+	},
+
+	// Get latest disconnect code
+	GetSocketDisconnectCode_LnlM: function(socketInstance)
+	{
+		var socket = webSocketInstances_LnlM[socketInstance];
+		if (!socket || socket.events.length == 0 || socket.events[0].type != 2)
+			return 0;
+		return socket.events[0].code;
+	},
+
+	// Get latest disconnect reason
+	GetSocketDisconnectReason_LnlM: function(socketInstance)
+	{
+		var socket = webSocketInstances_LnlM[socketInstance];
+		if (!socket || socket.events.length == 0 || socket.events[0].type != 2)
+			return undefined;
+		var reason = socket.events[0].reason;
+		var length = lengthBytesUTF8(reason) + 1;
+		var buffer = _malloc(length);
+		stringToUTF8(reason, buffer, length);
+		return buffer;
+	},
+
+	// Get latest disconnect wasClean
+	GetSocketDisconnectWasClean_LnlM: function(socketInstance)
+	{
+		var socket = webSocketInstances_LnlM[socketInstance];
+		if (!socket || socket.events.length == 0 || socket.events[0].type != 2)
+			return 0;
+		return socket.events[0].wasClean;
 	},
 
 	// Dequeue network event
