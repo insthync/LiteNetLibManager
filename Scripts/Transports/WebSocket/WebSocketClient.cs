@@ -142,7 +142,7 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL && !UNITY_EDITOR
             SocketClose_LnlM(_wsNativeInstance);
 #else
-            _socket.CloseAsync();
+            _socket?.CloseAsync();
 #endif
         }
 
@@ -214,7 +214,7 @@ namespace LiteNetLibManager
             if (!IsOpen)
                 return false;
 #if !UNITY_WEBGL || UNITY_EDITOR
-            _socket.Send(buffer);
+            _socket?.Send(buffer);
 #else
             SocketSend_LnlM(_wsNativeInstance, buffer.Data, buffer.Data.Length);
 #endif
@@ -228,7 +228,7 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL && !UNITY_EDITOR
                 return GetSocketState_LnlM(_wsNativeInstance) == 1;
 #else
-                return _socket.ReadyState == WebSocketSharp.WebSocketState.Open;
+                return _socket != null && _socket.ReadyState == WebSocketSharp.WebSocketState.Open;
 #endif
             }
         }
