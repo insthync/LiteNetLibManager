@@ -1,12 +1,11 @@
 # LiteNetLibManager
 LiteNetLib Network Manager for Unity, this is required LiteNetLib (https://github.com/RevenantX/LiteNetLib)
 
-The document: https://insthync.github.io/LiteNetLibManager
-
+[Document](https://insthync.github.io/LiteNetLibManager)
 
 ## Dependencies
-- LiteNetLib
-- UniTask
-- ZLogger
-- ZString
-- NetCoreServer
+- [LiteNetLib](https://github.com/RevenantX/LiteNetLib)
+- [UniTask](https://github.com/Cysharp/UniTask)
+- [ZLogger](https://github.com/Cysharp/ZLogger)
+- [ZString](https://github.com/Cysharp/ZString)
+- [websocket-sharp](https://github.com/sta/websocket-sharp)
