@@ -44,7 +44,7 @@ namespace LiteNetLibManager
             });
         }
 
-        protected override void OnError(ErrorEventArgs e)
+        protected override void OnError(WebSocketSharp.ErrorEventArgs e)
         {
             base.OnError(e);
             eventQueue.Enqueue(new TransportEventData()
