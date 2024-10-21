@@ -17,8 +17,7 @@ namespace LiteNetLibManager
         private string _certificateFilePath;
         private string _certificatePassword;
         private string _certificateBase64String;
-        private NativeWebSocket.WebSocket _client;
-        private readonly Queue<TransportEventData> _clientEventQueue;
+        private WebSocketClient _client;
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer _server;
         private long _nextConnectionId = 1;
@@ -46,7 +45,7 @@ namespace LiteNetLibManager
         public int ServerMaxConnections { get; private set; }
         public bool IsClientStarted
         {
-            get { return _client != null && _client.State == NativeWebSocket.WebSocketState.Open; }
+            get { return _client != null && _client.IsOpen; }
         }
         public bool IsServerStarted
         {
@@ -68,7 +67,6 @@ namespace LiteNetLibManager
             _certificateFilePath = certificateFilePath;
             _certificatePassword = certificatePassword;
             _certificateBase64String = certificateBase64String;
-            _clientEventQueue = new Queue<TransportEventData>();
 #if !UNITY_WEBGL || UNITY_EDITOR
             _serverPeers = new Dictionary<long, WebSocketServerBehavior>();
             _serverEventQueue = new Queue<TransportEventData>();
@@ -82,80 +80,28 @@ namespace LiteNetLibManager
             string protocol = _secure ? "wss" : "ws";
             string url = $"{protocol}://{address}:{port}{_path}";
             Logging.Log(nameof(WebSocketTransport), $"Connecting to {url}");
-            _client = new NativeWebSocket.WebSocket(url);
-            _client.OnOpen += OnClientOpen;
-            _client.OnMessage += OnClientMessage;
-            _client.OnError += OnClientError;
-            _client.OnClose += OnClientClose;
-            _ = _client.Connect();
+            _client = new WebSocketClient(url);
+            _client.Connect();
             return true;
         }
 
         public void StopClient()
         {
             if (_client != null)
-                _ = _client.Close();
+                _client.Close();
             _client = null;
-        }
-
-        private void OnClientOpen()
-        {
-            _clientEventQueue.Enqueue(new TransportEventData()
-            {
-                type = ENetworkEvent.ConnectEvent,
-            });
-        }
-
-        private void OnClientMessage(byte[] data)
-        {
-            _clientEventQueue.Enqueue(new TransportEventData()
-            {
-                type = ENetworkEvent.DataEvent,
-                reader = new NetDataReader(data),
-            });
-        }
-
-        private void OnClientError(string errorMsg)
-        {
-            _clientEventQueue.Enqueue(new TransportEventData()
-            {
-                type = ENetworkEvent.ErrorEvent,
-                errorMessage = errorMsg,
-            });
-        }
-
-        private void OnClientClose(NativeWebSocket.WebSocketCloseCode closeCode)
-        {
-            _clientEventQueue.Enqueue(new TransportEventData()
-            {
-                type = ENetworkEvent.DisconnectEvent,
-                disconnectInfo = GetDisconnectInfo(closeCode),
-            });
-        }
-
-        private DisconnectInfo GetDisconnectInfo(NativeWebSocket.WebSocketCloseCode closeCode)
-        {
-            DisconnectInfo info = new DisconnectInfo();
-            return info;
         }
 
         public bool ClientReceive(out TransportEventData eventData)
         {
-            eventData = default;
-            if (_client == null)
-                return false;
-            _client.DispatchMessageQueue();
-            if (_clientEventQueue.Count == 0)
-                return false;
-            eventData = _clientEventQueue.Dequeue();
-            return true;
+            return _client.ClientReceive(out eventData);
         }
 
         public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
             if (IsClientStarted)
             {
-                _client.Send(writer.Data);
+                _client.ClientSend(writer.Data);
                 return true;
             }
             return false;
