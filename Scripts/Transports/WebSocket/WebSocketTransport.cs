@@ -20,6 +20,7 @@ namespace LiteNetLibManager
         private WebSocketClient _client;
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer _server;
+        private long _connectionIdOffsets = 1000000;
         private long _nextConnectionId = 1;
         private readonly Dictionary<long, WebSocketServerBehavior> _serverPeers;
         private readonly Queue<TransportEventData> _serverEventQueue;
@@ -94,7 +95,10 @@ namespace LiteNetLibManager
 
         public bool ClientReceive(out TransportEventData eventData)
         {
-            return _client.ClientReceive(out eventData);
+            eventData = default;
+            if (_client != null)
+                return _client.ClientReceive(out eventData);
+            return false;
         }
 
         public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
@@ -197,7 +201,7 @@ namespace LiteNetLibManager
 
         public long GetNewConnectionID()
         {
-            return Interlocked.Increment(ref _nextConnectionId);
+            return _connectionIdOffsets + Interlocked.Increment(ref _nextConnectionId);
         }
 
         public long GetClientRtt()
