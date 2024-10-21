@@ -1,32 +1,33 @@
 ﻿using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using System.Collections.Concurrent;
-using System.Net;
-using System.Net.Security;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading;
 #if !UNITY_WEBGL || UNITY_EDITOR
-using NetCoreServer;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 #endif
 
 namespace LiteNetLibManager
 {
-    public sealed class MixTransport : ITransport, ITransportConnectionGenerator
+    public sealed class MixTransport : ITransport
     {
-        private long _nextConnectionId = 1;
-        private bool _webSocketSecure;
-        private string _webSocketCertificateFilePath;
-        private string _webSocketCertificatePassword;
+        private long nextConnectionId = 1;
+        private long tempConnectionId;
+        private bool webSocketSecure;
+        private string webSocketCertificateFilePath;
+        private string webSocketCertificatePassword;
 
         // WebSocket data
 #if UNITY_WEBGL
-        private WsClientWrapper _wsClient;
+        private byte[] tempBuffers;
+        private bool wsDirtyIsConnected;
+        private WebSocket wsClient;
 #endif
 #if !UNITY_WEBGL || UNITY_EDITOR
-        private WsTransportServer _wsServer;
-        private WssTransportServer _wssServer;
+        private WebSocketServer wsServer;
+        private readonly Dictionary<long, WebSocketServerBehavior> wsServerPeers;
 #endif
 
         // LiteNetLib data
@@ -41,15 +42,12 @@ namespace LiteNetLibManager
                 if (Server != null)
                     result += Server.ConnectedPeersCount;
 #if !UNITY_WEBGL
-                if (!_webSocketSecure)
+                if (wsServer != null)
                 {
-                    if (_wsServer != null)
-                        result += _wsServer.PeersCount;
-                }
-                else
-                {
-                    if (_wssServer != null)
-                        result += _wssServer.PeersCount;
+                    foreach (WebSocketServiceHost host in wsServer.WebSocketServices.Hosts)
+                    {
+                        result += host.Sessions.Count;
+                    }
                 }
 #endif
                 return result;
@@ -61,7 +59,7 @@ namespace LiteNetLibManager
             get
             {
 #if UNITY_WEBGL
-                return _wsClient.IsClientStarted;
+                return wsClient != null && wsClient.IsConnected;
 #else
                 return Client != null && Client.FirstPeer != null && Client.FirstPeer.ConnectionState == ConnectionState.Connected;
 #endif
@@ -75,57 +73,52 @@ namespace LiteNetLibManager
                 // Don't integrate server networking to WebGL clients
                 return false;
 #else
-                if (Server == null)
-                    return false;
-                if (!_webSocketSecure)
-                    return _wsServer != null && _wsServer.IsStarted;
-                else
-                    return _wssServer != null && _wssServer.IsStarted;
+                return wsServer != null && Server != null;
 #endif
             }
         }
 
-        public bool HasImplementedPing
-        {
-            get
-            {
-#if UNITY_WEBGL
-                return false;
-#else
-                return true;
-#endif
-            }
-        }
+        public bool HasImplementedPing => false;
 
-        private readonly Dictionary<long, NetPeer> _serverPeers = new Dictionary<long, NetPeer>();
-        private readonly ConcurrentQueue<TransportEventData> _clientEventQueue = new ConcurrentQueue<TransportEventData>();
-        private readonly ConcurrentQueue<TransportEventData> _serverEventQueue = new ConcurrentQueue<TransportEventData>();
-        private readonly byte _clientDataChannelsCount;
-        private readonly byte _serverDataChannelsCount;
-        private readonly int _webSocketPortOffset;
+        private readonly Dictionary<long, NetPeer> serverPeers;
+        private readonly Queue<TransportEventData> clientEventQueue;
+        private readonly Queue<TransportEventData> serverEventQueue;
+        private readonly byte clientDataChannelsCount;
+        private readonly byte serverDataChannelsCount;
+
+        private readonly int webSocketPortOffset;
 
         public MixTransport(string connectKey, int webSocketPortOffset, bool webSocketSecure, string webSocketCertificateFilePath, string webSocketCertificatePassword, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
             ConnectKey = connectKey;
-            _clientDataChannelsCount = clientDataChannelsCount;
-            _serverDataChannelsCount = serverDataChannelsCount;
-            _webSocketPortOffset = webSocketPortOffset;
-            _webSocketSecure = webSocketSecure;
-            _webSocketCertificateFilePath = webSocketCertificateFilePath;
-            _webSocketCertificatePassword = webSocketCertificatePassword;
-#if UNITY_WEBGL
-            _wsClient = new WsClientWrapper(_clientEventQueue, webSocketSecure, SslProtocols.Tls12);
+#if !UNITY_WEBGL
+            wsServerPeers = new Dictionary<long, WebSocketServerBehavior>();
+            serverPeers = new Dictionary<long, NetPeer>();
+            clientEventQueue = new Queue<TransportEventData>();
+            serverEventQueue = new Queue<TransportEventData>();
+            this.clientDataChannelsCount = clientDataChannelsCount;
+            this.serverDataChannelsCount = serverDataChannelsCount;
 #endif
+            this.webSocketPortOffset = webSocketPortOffset;
+            this.webSocketSecure = webSocketSecure;
+            this.webSocketCertificateFilePath = webSocketCertificateFilePath;
+            this.webSocketCertificatePassword = webSocketCertificatePassword;
         }
 
         public bool StartClient(string address, int port)
         {
-            while (_clientEventQueue.TryDequeue(out _)) { }
 #if UNITY_WEBGL
-            return _wsClient.StartClient(address, port);
+            wsDirtyIsConnected = false;
+            int wsPort = port + webSocketPortOffset;
+            string url = (webSocketSecure ? "wss://" : "ws://") + address + ":" + port;
+            Logging.Log(nameof(MixTransport), $"Connecting to {url}");
+            wsClient = new WebSocket(new System.Uri(url));
+            wsClient.Connect();
+            return true;
 #else
-            Client = new NetManager(new MixTransportEventListener(this, _clientEventQueue));
-            Client.ChannelsCount = _clientDataChannelsCount;
+            clientEventQueue.Clear();
+            Client = new NetManager(new LiteNetLibTransportClientEventListener(clientEventQueue));
+            Client.ChannelsCount = clientDataChannelsCount;
             return Client.Start() && Client.Connect(address, port, ConnectKey) != null;
 #endif
         }
@@ -133,7 +126,9 @@ namespace LiteNetLibManager
         public void StopClient()
         {
 #if UNITY_WEBGL
-            _wsClient.StopClient();
+            if (wsClient != null)
+                wsClient.Close();
+            wsClient = null;
 #else
             if (Client != null)
                 Client.Stop();
@@ -145,29 +140,61 @@ namespace LiteNetLibManager
         {
             eventData = default(TransportEventData);
 #if UNITY_WEBGL
-            return _wsClient.ClientReceive(out eventData);
+            if (wsClient == null)
+                return false;
+            if (wsDirtyIsConnected != wsClient.IsConnected)
+            {
+                wsDirtyIsConnected = wsClient.IsConnected;
+                if (wsClient.IsConnected)
+                {
+                    // Connect state changed to connected, so it's connect event
+                    eventData.type = ENetworkEvent.ConnectEvent;
+                }
+                else
+                {
+                    // Connect state changed to not connected, so it's disconnect event
+                    eventData.type = ENetworkEvent.DisconnectEvent;
+                }
+                return true;
+            }
+            else
+            {
+                tempBuffers = wsClient.Recv();
+                if (tempBuffers != null)
+                {
+                    eventData.type = ENetworkEvent.DataEvent;
+                    eventData.reader = new NetDataReader(tempBuffers);
+                    return true;
+                }
+            }
+            return false;
 #else
             if (Client == null)
                 return false;
             Client.PollEvents();
-            if (_clientEventQueue.Count == 0)
+            if (clientEventQueue.Count == 0)
                 return false;
-            return _clientEventQueue.TryDequeue(out eventData);
+            eventData = clientEventQueue.Dequeue();
+            return true;
 #endif
         }
 
         public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if UNITY_WEBGL
-            return _wsClient.ClientSend(dataChannel, deliveryMethod, writer);
+            if (IsClientStarted)
+            {
+                wsClient.Send(writer.Data);
+                return true;
+            }
 #else
             if (IsClientStarted)
             {
                 Client.FirstPeer.Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
-            return false;
 #endif
+            return false;
         }
 
         public bool StartServer(int port, int maxConnections)
@@ -178,40 +205,28 @@ namespace LiteNetLibManager
 #else
             if (IsServerStarted)
                 return false;
-
             ServerMaxConnections = maxConnections;
-            while (_serverEventQueue.TryDequeue(out _)) { }
+            serverEventQueue.Clear();
 
             // Start WebSocket Server
-            if (!_webSocketSecure)
+            wsServerPeers.Clear();
+            int wsPort = port + webSocketPortOffset;
+            wsServer = new WebSocketServer(wsPort, webSocketSecure);
+            if (webSocketSecure)
+                wsServer.SslConfiguration.ServerCertificate = new X509Certificate2(webSocketCertificateFilePath, webSocketCertificatePassword);
+            wsServer.AddWebSocketService<WebSocketServerBehavior>("/", (behavior) =>
             {
-                _wsServer = new WsTransportServer(this, IPAddress.Any, port + _webSocketPortOffset, maxConnections);
-                _wsServer.OptionDualMode = true;
-                _wsServer.OptionNoDelay = true;
-                if (!_wsServer.Start())
-                    return false;
-            }
-            else
-            {
-                SslContext context = new SslContext(SslProtocols.Tls12, new X509Certificate2(_webSocketCertificateFilePath, _webSocketCertificatePassword), CertValidationCallback);
-                _wssServer = new WssTransportServer(this, context, IPAddress.Any, port + _webSocketPortOffset, maxConnections);
-                _wssServer.OptionDualMode = true;
-                _wssServer.OptionNoDelay = true;
-                if (!_wssServer.Start())
-                    return false;
-            }
+                tempConnectionId = GetNewConnectionID();
+                behavior.Initialize(tempConnectionId, serverEventQueue, wsServerPeers);
+            });
+            wsServer.Start();
 
             // Start LiteNetLib Server
-            _serverPeers.Clear();
-            Server = new NetManager(new MixTransportEventListener(this, _serverEventQueue, _serverPeers));
-            Server.ChannelsCount = _serverDataChannelsCount;
+            serverPeers.Clear();
+            Server = new NetManager(new LiteNetLibTransportServerEventListener(this, ConnectKey, serverEventQueue, serverPeers));
+            Server.ChannelsCount = serverDataChannelsCount;
             return Server.Start(port);
 #endif
-        }
-
-        private bool CertValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            return sslPolicyErrors == SslPolicyErrors.None;
         }
 
         public bool ServerReceive(out TransportEventData eventData)
@@ -221,25 +236,13 @@ namespace LiteNetLibManager
             // Don't integrate server networking to WebGL clients
             return false;
 #else
-            if (!IsServerStarted)
+            if (wsServer == null || Server == null)
                 return false;
-
-            if (!_webSocketSecure)
-            {
-                if (_wsServer.EventQueue.Count > 0)
-                    return _wsServer.EventQueue.TryDequeue(out eventData);
-            }
-            else
-            {
-                if (_wssServer.EventQueue.Count > 0)
-                    return _wssServer.EventQueue.TryDequeue(out eventData);
-            }
-
             Server.PollEvents();
-            if (_serverEventQueue.Count > 0)
-                return _serverEventQueue.TryDequeue(out eventData);
-
-            return false;
+            if (serverEventQueue.Count == 0)
+                return false;
+            eventData = serverEventQueue.Dequeue();
+            return true;
 #endif
         }
 
@@ -247,21 +250,15 @@ namespace LiteNetLibManager
         {
 #if !UNITY_WEBGL
             // WebSocket Server Send
-            if (!_webSocketSecure)
+            if (IsServerStarted && wsServerPeers.ContainsKey(connectionId) && wsServerPeers[connectionId].ConnectionState == WebSocketState.Open)
             {
-                if (_wsServer != null && _wsServer.SendAsync(connectionId, writer.Data))
-                    return true;
+                wsServerPeers[connectionId].Context.WebSocket.Send(writer.Data);
+                return true;
             }
-            else
-            {
-                if (_wssServer != null && _wssServer.SendAsync(connectionId, writer.Data))
-                    return true;
-            }
-
             // LiteNetLib Server Send
-            if (IsServerStarted && _serverPeers.ContainsKey(connectionId) && _serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
+            if (IsServerStarted && serverPeers.ContainsKey(connectionId) && serverPeers[connectionId].ConnectionState == ConnectionState.Connected)
             {
-                _serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
+                serverPeers[connectionId].Send(writer, dataChannel, deliveryMethod);
                 return true;
             }
 #endif
@@ -272,22 +269,17 @@ namespace LiteNetLibManager
         {
 #if !UNITY_WEBGL
             // WebSocket Server Disconnect
-            if (!_webSocketSecure)
+            if (IsServerStarted && wsServerPeers.ContainsKey(connectionId))
             {
-                if (_wsServer != null && _wsServer.Disconnect(connectionId))
-                    return true;
+                wsServerPeers[connectionId].Context.WebSocket.Close();
+                wsServerPeers.Remove(connectionId);
+                return true;
             }
-            else
-            {
-                if (_wssServer != null && _wssServer.Disconnect(connectionId))
-                    return true;
-            }
-
             // LiteNetLib Server Disconnect
-            if (IsServerStarted && _serverPeers.ContainsKey(connectionId))
+            if (IsServerStarted && serverPeers.ContainsKey(connectionId))
             {
-                Server.DisconnectPeer(_serverPeers[connectionId]);
-                _serverPeers.Remove(connectionId);
+                Server.DisconnectPeer(serverPeers[connectionId]);
+                serverPeers.Remove(connectionId);
                 return true;
             }
 #endif
@@ -297,16 +289,13 @@ namespace LiteNetLibManager
         public void StopServer()
         {
 #if !UNITY_WEBGL
-            if (_wsServer != null)
-                _wsServer.Dispose();
-            if (_wssServer != null)
-                _wssServer.Dispose();
-            _wsServer = null;
-            _wssServer = null;
+            if (wsServer != null)
+                wsServer.Stop();
+            wsServer = null;
             if (Server != null)
                 Server.Stop();
             Server = null;
-            _nextConnectionId = 1;
+            nextConnectionId = 1;
 #endif
         }
 
@@ -318,25 +307,17 @@ namespace LiteNetLibManager
 
         public long GetNewConnectionID()
         {
-            return Interlocked.Increment(ref _nextConnectionId);
+            return nextConnectionId++;
         }
 
         public long GetClientRtt()
         {
-#if UNITY_WEBGL
             return 0;
-#else
-            return Client.FirstPeer.RoundTripTime;
-#endif
         }
 
         public long GetServerRtt(long connectionId)
         {
-#if UNITY_WEBGL
             return 0;
-#else
-            return _serverPeers[connectionId].RoundTripTime;
-#endif
         }
     }
 }
