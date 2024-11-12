@@ -63,12 +63,6 @@ namespace LiteNetLibManager
         private readonly Dictionary<string, int> _allRpcIds = new Dictionary<string, int>();
         private readonly Dictionary<string, int> _serverRpcIds = new Dictionary<string, int>();
 
-        // Optimize garbage collector
-        private Type _tempLookupType;
-        private HashSet<string> _tempLookupNames = new HashSet<string>();
-        private FieldInfo[] _tempLookupFields;
-        private MethodInfo[] _tempLookupMethods;
-
         private Type _classType;
         /// <summary>
         /// This will be used when setup sync fields and sync lists
@@ -240,17 +234,18 @@ namespace LiteNetLibManager
                     syncLists = new List<FieldInfo>(),
                     syncFieldsWithAttribute = new List<FieldInfo>()
                 };
-                _tempLookupNames.Clear();
-                _tempLookupType = ClassType;
+                HashSet<string> tempLookupNames = new HashSet<string>();
+                FieldInfo[] tempLookupFields;
+                Type tempLookupType = ClassType;
                 SyncFieldAttribute tempAttribute = null;
                 // Find for sync field and sync list from the class
-                while (_tempLookupType != null && _tempLookupType != typeof(LiteNetLibBehaviour))
+                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    _tempLookupFields = _tempLookupType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                    foreach (FieldInfo lookupField in _tempLookupFields)
+                    tempLookupFields = tempLookupType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    foreach (FieldInfo lookupField in tempLookupFields)
                     {
                         // Avoid duplicate fields
-                        if (_tempLookupNames.Contains(lookupField.Name))
+                        if (tempLookupNames.Contains(lookupField.Name))
                             continue;
 
                         if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
@@ -269,10 +264,13 @@ namespace LiteNetLibManager
                                 tempCacheFields.syncFieldsWithAttribute.Add(lookupField);
                         }
 
-                        _tempLookupNames.Add(lookupField.Name);
+                        tempLookupNames.Add(lookupField.Name);
                     }
-                    _tempLookupType = _tempLookupType.BaseType;
+                    tempLookupType = tempLookupType.BaseType;
                 }
+                tempLookupNames.Clear();
+                tempLookupFields = null;
+                tempLookupType = null;
                 // Sort name to make sure the fields will be sync correctly by its index
                 tempCacheFields.syncFields.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
                 tempCacheFields.syncLists.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
@@ -371,11 +369,12 @@ namespace LiteNetLibManager
             if (!dictionary.TryGetValue(key, out tempMethod))
             {
                 // Not found hook function in cache dictionary, try find the function
-                _tempLookupType = ClassType;
-                while (_tempLookupType != null && _tempLookupType != typeof(LiteNetLibBehaviour))
+                MethodInfo[] tempLookupMethods;
+                Type tempLookupType = ClassType;
+                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    _tempLookupMethods = _tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    foreach (MethodInfo lookupMethod in _tempLookupMethods)
+                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    foreach (MethodInfo lookupMethod in tempLookupMethods)
                     {
                         // Return type must be `void`
                         if (lookupMethod.ReturnType != typeof(void))
@@ -398,8 +397,10 @@ namespace LiteNetLibManager
                     if (tempMethod != null)
                         break;
 
-                    _tempLookupType = _tempLookupType.BaseType;
+                    tempLookupType = tempLookupType.BaseType;
                 }
+                tempLookupMethods = null;
+                tempLookupType = null;
                 // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
                 dictionary.Add(key, tempMethod);
             }
@@ -417,17 +418,18 @@ namespace LiteNetLibManager
                     functions = new List<MethodInfo>(),
                     functionsCanCallByEveryone = new List<MethodInfo>()
                 };
-                _tempLookupNames.Clear();
-                _tempLookupType = ClassType;
+                HashSet<string> tempLookupNames = new HashSet<string>();
+                MethodInfo[] tempLookupMethods;
+                Type tempLookupType = ClassType;
                 RpcType tempAttribute;
                 // Find for function with [Rpc] attribute to register as RPC
-                while (_tempLookupType != null && _tempLookupType != typeof(LiteNetLibBehaviour))
+                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    _tempLookupMethods = _tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    foreach (MethodInfo lookupMethod in _tempLookupMethods)
+                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    foreach (MethodInfo lookupMethod in tempLookupMethods)
                     {
                         // Avoid duplicate functions
-                        if (_tempLookupNames.Contains(lookupMethod.Name))
+                        if (tempLookupNames.Contains(lookupMethod.Name))
                             continue;
 
                         // Must have [Rpc] attribute
@@ -447,10 +449,13 @@ namespace LiteNetLibManager
                             tempCacheFunctions.functions.Add(lookupMethod);
                         else
                             tempCacheFunctions.functionsCanCallByEveryone.Add(lookupMethod);
-                        _tempLookupNames.Add(lookupMethod.Name);
+                        tempLookupNames.Add(lookupMethod.Name);
                     }
-                    _tempLookupType = _tempLookupType.BaseType;
+                    tempLookupType = tempLookupType.BaseType;
                 }
+                tempLookupNames.Clear();
+                tempLookupMethods = null;
+                tempLookupType = null;
                 cacheDict.Add(TypeName, tempCacheFunctions);
             }
             SetupRpcs(ids, tempCacheFunctions.functions, false);
@@ -1493,7 +1498,7 @@ namespace LiteNetLibManager
             switch (receivers)
             {
                 case FunctionReceivers.All:
-                    if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+                    if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
                     {
                         Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
@@ -1504,7 +1509,7 @@ namespace LiteNetLibManager
                     }
                     break;
                 case FunctionReceivers.Server:
-                    if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+                    if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
                     {
                         Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
@@ -1541,11 +1546,11 @@ namespace LiteNetLibManager
         public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, params object[] parameters)
         {
             int elementId;
-            if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+            if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
             {
                 Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.All, parameters);
             }
-            else if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+            else if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
             {
                 Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.Server, parameters);
             }
@@ -1573,7 +1578,7 @@ namespace LiteNetLibManager
         public void RPC(string methodName, long connectionId, params object[] parameters)
         {
             int elementId;
-            if (_targetRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId))
+            if (_targetRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
             {
                 Identity.NetFunctions[elementId].Call(0, DeliveryMethod.ReliableOrdered, connectionId, parameters);
             }
