@@ -490,7 +490,11 @@ namespace LiteNetLibManager
                     CacheRigidbody3D.MovePosition(position);
                 else
                 {
+#if UNITY_6000_0_OR_NEWER
+                    CacheRigidbody3D.linearVelocity = Vector3.zero;
+#else
                     CacheRigidbody3D.velocity = Vector3.zero;
+#endif
                     CacheRigidbody3D.MovePosition(position);
                 }
                 syncingTransform.rotation = rotation;
@@ -501,7 +505,11 @@ namespace LiteNetLibManager
                     CacheRigidbody2D.MovePosition(position);
                 else
                 {
+#if UNITY_6000_0_OR_NEWER
+                    CacheRigidbody2D.linearVelocity = Vector2.zero;
+#else
                     CacheRigidbody2D.velocity = Vector2.zero;
+#endif
                     CacheRigidbody2D.MovePosition(position);
                 }
                 syncingTransform.rotation = rotation;
