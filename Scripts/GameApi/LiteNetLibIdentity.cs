@@ -1,15 +1,12 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.SceneManagement;
 #endif
 using LiteNetLib.Utils;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 using Cysharp.Threading.Tasks;
-using System.Linq;
 
 namespace LiteNetLibManager
 {
@@ -199,7 +196,12 @@ namespace LiteNetLibManager
 
         public bool IsSceneObject
         {
-            get; private set;
+            get; internal set;
+        }
+
+        public bool IsPlaceHolder
+        {
+            get; internal set;
         }
 
         #region IDs generate in Editor
@@ -228,12 +230,6 @@ namespace LiteNetLibManager
                     Debug.LogWarning($"[LiteNetLibIdentity] prefab named {prefab.name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID If Empty\" context menu to assign ID or set yours.", gameObject);
                 }
             }
-        }
-
-        [ContextMenu("Reorder Scene Object Id")]
-        public void ContextMenuReorderSceneObjectId()
-        {
-            ReorderSceneObjectId();
         }
 
         internal void AssignAssetID(GameObject prefab)
@@ -467,31 +463,13 @@ namespace LiteNetLibManager
             }
         }
 
-        public bool IsSceneObjectExists(uint objectId)
-        {
-            if (Manager != null)
-            {
-                // If this is spawned while gameplay, find it by manager assets
-                return Manager.Assets.ContainsSceneObject(objectId);
-            }
-            // If this is now spawned while gameplay, find objects in scene
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
-            foreach (LiteNetLibIdentity netObject in netObjects)
-            {
-                if (netObject.objectId == objectId && netObject != this)
-                    return true;
-            }
-            return false;
-        }
-
         /// <summary>
         /// Initial Identity, will be called when spawned. If object id == 0, it will generate new object id
         /// </summary>
         /// <param name="manager"></param>
-        /// <param name="isSceneObject"></param>
         /// <param name="objectId"></param>
         /// <param name="connectionId"></param>
-        internal void Initial(LiteNetLibGameManager manager, bool isSceneObject, uint objectId = 0, long connectionId = -1)
+        internal void Initial(LiteNetLibGameManager manager, uint objectId = 0, long connectionId = -1)
         {
             Manager = manager;
             ObjectId = objectId;
@@ -499,9 +477,7 @@ namespace LiteNetLibManager
             UpdateHighestObjectId(objectId);
             IsDestroyed = false;
             IsSpawned = true;
-            IsSceneObject = isSceneObject;
-            if (!IsSceneObject)
-                AssignSceneObjectId();
+            AssignObjectId();
 
             if (!IsSetupBehaviours)
             {
@@ -577,10 +553,21 @@ namespace LiteNetLibManager
                 Behaviours[loopCounter].OnStartOwnerClient();
             }
         }
-
-        internal void AssignSceneObjectId()
+        public bool IsObjectExists(uint objectId)
         {
-            if (objectId == 0 || IsSceneObjectExists(objectId))
+            // If this is now spawned while gameplay, find objects in scene
+            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            foreach (LiteNetLibIdentity netObject in netObjects)
+            {
+                if (netObject.objectId == objectId && netObject != this)
+                    return true;
+            }
+            return false;
+        }
+
+        internal void AssignObjectId()
+        {
+            if (objectId == 0 || IsObjectExists(objectId))
                 objectId = GetNewObjectId();
         }
 
@@ -604,27 +591,6 @@ namespace LiteNetLibManager
             }
             ++HighestObjectId;
             return HighestObjectId;
-        }
-
-        internal static void ReorderSceneObjectId()
-        {
-            ResetObjectId();
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>().
-                OrderBy(o => unchecked(((o.transform.position.x + o.transform.position.y + o.transform.position.z) / 3f) + o.transform.name.GetHashCode())).ToArray();
-            foreach (LiteNetLibIdentity netObject in netObjects)
-            {
-                netObject.objectId = ++HighestObjectId;
-#if UNITY_EDITOR
-                // Do not mark dirty while playing
-                if (!Application.isPlaying)
-                    EditorUtility.SetDirty(netObject);
-#endif
-            }
-#if UNITY_EDITOR
-            // Do not mark dirty while playing
-            if (!Application.isPlaying)
-                EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-#endif
         }
 
         internal static void UpdateHighestObjectId(uint objectId)

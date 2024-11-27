@@ -5,7 +5,6 @@
         public const ushort Request = 0;
         public const ushort Response = 1;
         public const ushort CallFunction = 3;
-        public const ushort ServerSpawnSceneObject = 4;
         public const ushort ServerSpawnObject = 5;
         public const ushort ServerDestroyObject = 6;
         public const ushort UpdateSyncField = 7;
