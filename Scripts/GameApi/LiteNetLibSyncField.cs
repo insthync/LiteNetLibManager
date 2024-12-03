@@ -467,12 +467,12 @@ namespace LiteNetLibManager
 
         internal override void DeserializeValue(NetDataReader reader)
         {
-            Value = reader.GetArray<TType>();
+            Value = reader.GetArrayExtension<TType>();
         }
 
         internal override void SerializeValue(NetDataWriter writer)
         {
-            writer.PutArray(Value);
+            writer.PutArrayExtension(Value);
         }
 
         public int Length { get { return Value.Length; } }
