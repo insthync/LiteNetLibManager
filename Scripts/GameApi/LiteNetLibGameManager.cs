@@ -416,8 +416,8 @@ namespace LiteNetLibManager
             if (IsServer)
             {
                 ServerSceneInfo = serverSceneInfo;
-                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} -> Assets.PrepareServerSceneObjects()");
-                Assets.PrepareServerSceneObjects();
+                if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} -> Assets.SpawnSceneObjects()");
+                Assets.SpawnSceneObjects();
                 if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} -> OnServerOnlineSceneLoaded()");
                 OnServerOnlineSceneLoaded();
                 if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} -> SendServerSceneChange()");
@@ -425,11 +425,6 @@ namespace LiteNetLibManager
             }
             if (IsClient)
             {
-                if (!IsServer)
-                {
-                    if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} -> Assets.PrepareClientSceneObjects()");
-                    Assets.PrepareClientSceneObjects();
-                }
                 if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} -> OnClientOnlineSceneLoaded()");
                 OnClientOnlineSceneLoaded();
                 if (!doNotReadyOnSceneLoaded)
@@ -455,6 +450,7 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
             RegisterServerMessage(GameMsgTypes.Pong, HandleClientPong);
             // Client messages
+            RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
             RegisterClientMessage(GameMsgTypes.CallFunction, HandleServerCallFunction);
@@ -625,6 +621,23 @@ namespace LiteNetLibManager
             }
         }
 
+        public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
+        {
+            if (!IsServer)
+                return false;
+            LiteNetLibPlayer player;
+            if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
+                return false;
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, new ServerSpawnSceneObjectMessage()
+            {
+                objectId = identity.ObjectId,
+                connectionId = identity.ConnectionId,
+                position = identity.transform.position,
+                rotation = identity.transform.rotation,
+            }, identity.WriteInitSyncFields);
+            return true;
+        }
+
         public bool SendServerSpawnObject(long connectionId, LiteNetLibIdentity identity)
         {
             if (!IsServer)
@@ -648,7 +661,11 @@ namespace LiteNetLibManager
             if (identity == null)
                 return;
 
-            bool spawnObjectSent = SendServerSpawnObject(connectionId, identity);
+            bool spawnObjectSent;
+            if (Assets.ContainsSceneObject(identity.ObjectId))
+                spawnObjectSent = SendServerSpawnSceneObject(connectionId, identity);
+            else
+                spawnObjectSent = SendServerSpawnObject(connectionId, identity);
             if (spawnObjectSent)
             {
                 identity.SendInitSyncFields(connectionId);
@@ -1000,6 +1017,26 @@ namespace LiteNetLibManager
             if (!Players.TryGetValue(messageHandler.ConnectionId, out LiteNetLibPlayer player))
                 return;
             player.RttCalculator.OnPong(messageHandler.ReadMessage<PongMessage>());
+        }
+
+        protected virtual void HandleServerSpawnSceneObject(MessageHandlerData messageHandler)
+        {
+            ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
+            if (!IsServer)
+                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation, message.connectionId);
+            LiteNetLibIdentity identity;
+            if (Assets.TryGetSpawnedObject(message.objectId, out identity))
+            {
+                // If it is not server, read its initial data
+                if (!IsServer)
+                {
+                    identity.ResetSyncData();
+                    identity.ReadInitSyncFields(messageHandler.Reader);
+                }
+                // If it is host, it may hidden so show it
+                if (IsServer)
+                    identity.OnServerSubscribingAdded();
+            }
         }
 
         protected virtual void HandleServerSpawnObject(MessageHandlerData messageHandler)
