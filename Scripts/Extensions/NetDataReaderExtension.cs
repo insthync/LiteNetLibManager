@@ -129,7 +129,7 @@ namespace LiteNetLib.Utils
             return new Vector4(reader.GetFloat(), reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
         }
 
-        public static TValue[] GetArray<TValue>(this NetDataReader reader)
+        public static TValue[] GetArrayExtension<TValue>(this NetDataReader reader)
         {
             int count = reader.GetInt();
             TValue[] result = new TValue[count];

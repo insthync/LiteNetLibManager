@@ -203,7 +203,7 @@ namespace LiteNetLib.Utils
             writer.Put(value.w);
         }
 
-        public static void PutArray<TValue>(this NetDataWriter writer, TValue[] array)
+        public static void PutArrayExtension<TValue>(this NetDataWriter writer, TValue[] array)
         {
             if (array == null)
             {
