@@ -9,7 +9,7 @@ using LiteNetLib.Utils;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
 using Cysharp.Threading.Tasks;
-using System.Linq;
+using UnityEngine.Serialization;
 
 namespace LiteNetLibManager
 {
@@ -25,19 +25,23 @@ namespace LiteNetLibManager
         /// If any of these function's result is true, it will not hide the object from another object
         /// </summary>
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
-        [Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID)"), SerializeField]
+        [SerializeField, Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID)")]
         private bool autoAssignAssetIdIfEmpty = true;
-        [Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path"), SerializeField]
+        [SerializeField, Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path")]
         private string assetId = string.Empty;
-        [SerializeField]
-        private uint objectId = 0;
-        [Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting"), SerializeField]
+        [SerializeField, Tooltip("Turn this on to assign scene object ID automatically, if it is empty (should turn this off if you want to set custom ID)")]
+        private bool autoAssignSceneObjectId = true;
+        [SerializeField, FormerlySerializedAs("objectId"), Tooltip("Scene object ID will be hashed to uses as reference for networked object spawning message")]
+        private string sceneObjectId = string.Empty;
+        [SerializeField, ReadOnly]
+        private uint networkedObjectId = 0;
+        [SerializeField, Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting")]
         private float visibleRange = 0f;
-        [Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects"), SerializeField]
+        [SerializeField, Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects")]
         private bool alwaysVisible = false;
-        [Tooltip("If this is `TRUE` it will not destroy this network object when player disconnect the game"), SerializeField]
+        [SerializeField, Tooltip("If this is `TRUE` it will not destroy this network object when player disconnect the game")]
         private bool doNotDestroyWhenDisconnect = false;
-        [Tooltip("If this is > 0, it will get instance from pooling system"), SerializeField]
+        [SerializeField, Tooltip("If this is > 0, it will get instance from pooling system")]
         private int poolingSize = 0;
 
         [Header("Events")]
@@ -102,31 +106,44 @@ namespace LiteNetLibManager
             {
                 if (!Application.isPlaying)
                 {
-                    // Not playing yet, maybe in editor, so force reset hash asset ID
+                    // Not playing yet, maybe in editor, so force reset hashed ID
                     _hashAssetId = null;
                 }
                 if (!_hashAssetId.HasValue)
                 {
-                    unchecked
-                    {
-                        int hash1 = 5381;
-                        int hash2 = hash1;
-
-                        for (int i = 0; i < AssetId.Length && AssetId[i] != '\0'; i += 2)
-                        {
-                            hash1 = ((hash1 << 5) + hash1) ^ AssetId[i];
-                            if (i == AssetId.Length - 1 || AssetId[i + 1] == '\0')
-                                break;
-                            hash2 = ((hash2 << 5) + hash2) ^ AssetId[i + 1];
-                        }
-
-                        _hashAssetId = hash1 + (hash2 * 1566083941);
-                    }
+                    _hashAssetId = GetHashedId(AssetId);
                 }
                 return _hashAssetId.Value;
             }
         }
-        public uint ObjectId { get { return objectId; } internal set { objectId = value; } }
+        public string SceneObjectId
+        {
+            get { return sceneObjectId; }
+            internal set
+            {
+                sceneObjectId = value;
+                _hashSceneObjectId = null;
+            }
+        }
+        private int? _hashSceneObjectId;
+        public int HashSceneObjectId
+        {
+            get
+            {
+                if (!Application.isPlaying)
+                {
+                    // Not playing yet, maybe in editor, so force reset hashed ID
+                    _hashSceneObjectId = null;
+                }
+                if (!_hashSceneObjectId.HasValue)
+                {
+                    _hashSceneObjectId = GetHashedId(SceneObjectId);
+                }
+                return _hashSceneObjectId.Value;
+            }
+        }
+
+        public uint ObjectId { get { return networkedObjectId; } internal set { networkedObjectId = value; } }
         public float VisibleRange { get { return visibleRange; } set { visibleRange = value; } }
         public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
@@ -202,6 +219,25 @@ namespace LiteNetLibManager
             get; private set;
         }
 
+        static int GetHashedId(string id)
+        {
+            unchecked
+            {
+                int hash1 = 5381;
+                int hash2 = hash1;
+
+                for (int i = 0; i < id.Length && id[i] != '\0'; i += 2)
+                {
+                    hash1 = ((hash1 << 5) + hash1) ^ id[i];
+                    if (i == id.Length - 1 || id[i + 1] == '\0')
+                        break;
+                    hash2 = ((hash2 << 5) + hash2) ^ id[i + 1];
+                }
+
+                return hash1 + (hash2 * 1566083941);
+            }
+        }
+
         #region IDs generate in Editor
 #if UNITY_EDITOR
         private void OnValidate()
@@ -230,10 +266,10 @@ namespace LiteNetLibManager
             }
         }
 
-        [ContextMenu("Reorder Scene Object Id")]
-        public void ContextMenuReorderSceneObjectId()
+        [ContextMenu("Generate All Scene Object IDs (If empty)")]
+        public void ContextMenuGenerateSceneObjectIds()
         {
-            ReorderSceneObjectId();
+            GenerateSceneObjectIds();
         }
 
         internal void AssignAssetID(GameObject prefab)
@@ -298,7 +334,7 @@ namespace LiteNetLibManager
                 }
                 // This is a scene object with prefab link
                 AssignAssetID(prefab);
-                if (objectId == 0)
+                if (string.IsNullOrWhiteSpace(sceneObjectId))
                     Debug.LogWarning($"[LiteNetLibIdentity] No object ID set for {name}", gameObject);
             }
             else
@@ -467,18 +503,18 @@ namespace LiteNetLibManager
             }
         }
 
-        public bool IsSceneObjectExists(uint objectId)
+        public bool IsSceneObjectExists(int sceneObjectId)
         {
             if (Manager != null)
             {
-                // If this is spawned while gameplay, find it by manager assets
-                return Manager.Assets.ContainsSceneObject(objectId);
+                // If this is spawned while running in play mode, find it by manager assets
+                return Manager.Assets.ContainsSceneObject(sceneObjectId);
             }
-            // If this is now spawned while gameplay, find objects in scene
+            // If this is not spawned while running in play mode, find objects in scene
             LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
             foreach (LiteNetLibIdentity netObject in netObjects)
             {
-                if (netObject.objectId == objectId && netObject != this)
+                if (netObject.HashSceneObjectId == sceneObjectId && netObject != this)
                     return true;
             }
             return false;
@@ -500,8 +536,7 @@ namespace LiteNetLibManager
             IsDestroyed = false;
             IsSpawned = true;
             IsSceneObject = isSceneObject;
-            if (!IsSceneObject)
-                AssignSceneObjectId();
+            AssignObjectId();
 
             if (!IsSetupBehaviours)
             {
@@ -578,10 +613,10 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void AssignSceneObjectId()
+        internal void AssignObjectId()
         {
-            if (objectId == 0 || IsSceneObjectExists(objectId))
-                objectId = GetNewObjectId();
+            if (ObjectId == 0)
+                ObjectId = GetNewObjectId();
         }
 
         internal static void ResetObjectId()
@@ -597,8 +632,8 @@ namespace LiteNetLibManager
                 LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
                 foreach (LiteNetLibIdentity netObject in netObjects)
                 {
-                    if (netObject.objectId > result)
-                        result = netObject.objectId;
+                    if (netObject.ObjectId > result)
+                        result = netObject.ObjectId;
                 }
                 HighestObjectId = result;
             }
@@ -606,21 +641,36 @@ namespace LiteNetLibManager
             return HighestObjectId;
         }
 
-        internal static void ReorderSceneObjectId()
+        internal static string GenerateSceneObjectId()
         {
-            ResetObjectId();
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>().
-                OrderBy(o => unchecked(((o.transform.position.x + o.transform.position.y + o.transform.position.z) / 3f) + o.transform.name.GetHashCode())).ToArray();
-            foreach (LiteNetLibIdentity netObject in netObjects)
+            return System.Guid.NewGuid().ToString();
+        }
+
+        internal static void GenerateSceneObjectIds()
+        {
+#if UNITY_EDITOR
+            for (int i = 0; i < SceneManager.loadedSceneCount; ++i)
             {
-                netObject.objectId = ++HighestObjectId;
-#if UNITY_EDITOR
-                // Do not mark dirty while playing
-                if (!Application.isPlaying)
-                    EditorUtility.SetDirty(netObject);
-#endif
+                Scene loadedScene = SceneManager.GetSceneAt(i);
+                GameObject[] rootObjects = loadedScene.GetRootGameObjects();
+                HashSet<string> foundObjectIds = new HashSet<string>();
+                for (int j = 0; j < rootObjects.Length; ++j)
+                {
+                    LiteNetLibIdentity[] identities = rootObjects[j].GetComponentsInChildren<LiteNetLibIdentity>(true);
+                    for (int k = 0; k < identities.Length; ++k)
+                    {
+                        string sceneObjectId = identities[k].sceneObjectId;
+                        if (string.IsNullOrWhiteSpace(sceneObjectId) || foundObjectIds.Contains(sceneObjectId))
+                            sceneObjectId = GenerateSceneObjectId();
+                        identities[k].sceneObjectId = sceneObjectId;
+                        EditorUtility.SetDirty(identities[k].gameObject);
+                        foundObjectIds.Add(sceneObjectId);
+                    }
+                }
+                rootObjects = null;
+                foundObjectIds.Clear();
+                foundObjectIds = null;
             }
-#if UNITY_EDITOR
             // Do not mark dirty while playing
             if (!Application.isPlaying)
                 EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
@@ -845,8 +895,8 @@ namespace LiteNetLibManager
                 {
                     if (Manager.TryGetPlayer(subscriber, out player))
                     {
-                        player.Subscribings.Remove(objectId);
-                        Manager.SendServerDestroyObject(subscriber, objectId, reasons);
+                        player.Subscribings.Remove(ObjectId);
+                        Manager.SendServerDestroyObject(subscriber, ObjectId, reasons);
                     }
                 }
                 // Delete object from owner player's spawned objects collection

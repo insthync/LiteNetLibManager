@@ -53,7 +53,7 @@ namespace LiteNetLibManager
         internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
-        internal readonly Dictionary<uint, LiteNetLibIdentity> SceneObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly Dictionary<int, LiteNetLibIdentity> SceneObjects = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
 
         public LiteNetLibGameManager Manager { get; private set; }
@@ -203,7 +203,7 @@ namespace LiteNetLibManager
                 if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
                 {
                     // Destroy only non scene object
-                    if (!SceneObjects.ContainsKey(objectId) && spawnedObject != null)
+                    if (!SceneObjects.ContainsKey(spawnedObject.HashSceneObjectId) && spawnedObject != null)
                         Destroy(spawnedObject.gameObject);
                     // Remove from asset spawned objects dictionary
                     SpawnedObjects.Remove(objectId);
@@ -336,11 +336,9 @@ namespace LiteNetLibManager
         public void RegisterSceneObjects()
         {
             SceneObjects.Clear();
-            for (int i = 0; i < SceneManager.sceneCount; ++i)
+            for (int i = 0; i < SceneManager.loadedSceneCount; ++i)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
-                if (!scene.isLoaded)
-                    continue;
                 GameObject[] rootObjects = scene.GetRootGameObjects();
                 for (int j = 0; j < rootObjects.Length; ++j)
                 {
@@ -348,12 +346,8 @@ namespace LiteNetLibManager
                     for (int k = 0; k < sceneObjects.Length; ++k)
                     {
                         LiteNetLibIdentity sceneObject = sceneObjects[k];
-                        if (sceneObject.ObjectId > 0)
-                        {
-                            sceneObject.gameObject.SetActive(false);
-                            SceneObjects[sceneObject.ObjectId] = sceneObject;
-                            LiteNetLibIdentity.UpdateHighestObjectId(sceneObject.ObjectId);
-                        }
+                        sceneObject.gameObject.SetActive(false);
+                        SceneObjects[sceneObject.HashSceneObjectId] = sceneObject;
                     }
                 }
             }
@@ -369,11 +363,11 @@ namespace LiteNetLibManager
             for (int i = 0; i < sceneObjects.Count; ++i)
             {
                 LiteNetLibIdentity sceneObject = sceneObjects[i];
-                NetworkSpawnScene(sceneObject.ObjectId, sceneObject.transform.position, sceneObject.transform.rotation);
+                NetworkSpawnScene(0, sceneObject.HashSceneObjectId, sceneObject.transform.position, sceneObject.transform.rotation);
             }
         }
 
-        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, Vector3 position, Quaternion rotation, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, int sceneObjectId, Vector3 position, Quaternion rotation, long connectionId = -1)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -382,9 +376,9 @@ namespace LiteNetLibManager
             }
 
             LiteNetLibIdentity identity;
-            if (!SceneObjects.TryGetValue(objectId, out identity))
+            if (!SceneObjects.TryGetValue(sceneObjectId, out identity))
             {
-                Logging.LogWarning(LogTag, $"NetworkSpawnScene - Object Id: {objectId} is not registered.");
+                Logging.LogWarning(LogTag, $"NetworkSpawnScene - Scene object ID: {sceneObjectId} is not registered.");
                 return null;
             }
 
@@ -480,8 +474,8 @@ namespace LiteNetLibManager
                 spawnedObject.OnNetworkDestroy(reasons);
                 if (onObjectDestroy != null)
                     onObjectDestroy.Invoke(spawnedObject);
-                // If the object is scene object, don't destroy just hide it, else destroy
-                if (SceneObjects.ContainsKey(objectId))
+                // If the object is scene object, don't destroy just hide it, otherwise destroy
+                if (spawnedObject.IsSceneObject)
                 {
                     spawnedObject.gameObject.SetActive(false);
                 }
@@ -566,21 +560,21 @@ namespace LiteNetLibManager
             }
         }
 
-        public bool ContainsSceneObject(uint objectId)
+        public bool ContainsSceneObject(int sceneObjectId)
         {
-            return SceneObjects.ContainsKey(objectId);
+            return SceneObjects.ContainsKey(sceneObjectId);
         }
 
-        public bool TryGetSceneObject(uint objectId, out LiteNetLibIdentity identity)
+        public bool TryGetSceneObject(int sceneObjectId, out LiteNetLibIdentity identity)
         {
-            return SceneObjects.TryGetValue(objectId, out identity);
+            return SceneObjects.TryGetValue(sceneObjectId, out identity);
         }
 
-        public bool TryGetSceneObject<T>(uint objectId, out T result) where T : LiteNetLibBehaviour
+        public bool TryGetSceneObject<T>(int sceneObjectId, out T result) where T : LiteNetLibBehaviour
         {
             result = null;
             LiteNetLibIdentity identity;
-            if (SceneObjects.TryGetValue(objectId, out identity))
+            if (SceneObjects.TryGetValue(sceneObjectId, out identity))
             {
                 result = identity.GetComponent<T>();
                 return result != null;

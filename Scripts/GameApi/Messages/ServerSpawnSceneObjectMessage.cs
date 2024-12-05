@@ -6,6 +6,7 @@ namespace LiteNetLibManager
     public struct ServerSpawnSceneObjectMessage : INetSerializable
     {
         public uint objectId;
+        public int sceneObjectId;
         public long connectionId;
         public Vector3 position;
         public Quaternion rotation;
@@ -13,6 +14,7 @@ namespace LiteNetLibManager
         public void Deserialize(NetDataReader reader)
         {
             objectId = reader.GetPackedUInt();
+            sceneObjectId = reader.GetPackedInt();
             connectionId = reader.GetPackedLong();
             position = new Vector3(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
             rotation = Quaternion.Euler(reader.GetFloat(), reader.GetFloat(), reader.GetFloat());
@@ -21,6 +23,7 @@ namespace LiteNetLibManager
         public void Serialize(NetDataWriter writer)
         {
             writer.PutPackedUInt(objectId);
+            writer.PutPackedInt(sceneObjectId);
             writer.PutPackedLong(connectionId);
             writer.Put(position.x);
             writer.Put(position.y);

@@ -349,13 +349,9 @@ namespace LiteNetLibManager
             if (LoadingServerScenes.Count <= 0)
             {
                 // Spawn additive scenes
-                for (int i = 0; i < SceneManager.sceneCount; ++i)
+                for (int i = 0; i < SceneManager.loadedSceneCount; ++i)
                 {
                     Scene scene = SceneManager.GetSceneAt(i);
-                    if (!scene.isLoaded)
-                    {
-                        continue;
-                    }
                     // Load additive scenes
                     List<LiteNetLibAdditiveSceneLoader> listOfLoaders = new List<LiteNetLibAdditiveSceneLoader>();
                     GameObject[] rootGameObjects = scene.GetRootGameObjects();
@@ -625,12 +621,12 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return false;
-            LiteNetLibPlayer player;
-            if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
+            if (!Players.TryGetValue(connectionId, out LiteNetLibPlayer player) || !player.IsReady)
                 return false;
             ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, new ServerSpawnSceneObjectMessage()
             {
                 objectId = identity.ObjectId,
+                sceneObjectId = identity.HashSceneObjectId,
                 connectionId = identity.ConnectionId,
                 position = identity.transform.position,
                 rotation = identity.transform.rotation,
@@ -642,8 +638,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return false;
-            LiteNetLibPlayer player;
-            if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
+            if (!Players.TryGetValue(connectionId, out LiteNetLibPlayer player) || !player.IsReady)
                 return false;
             ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, new ServerSpawnObjectMessage()
             {
@@ -660,9 +655,8 @@ namespace LiteNetLibManager
         {
             if (identity == null)
                 return;
-
             bool spawnObjectSent;
-            if (Assets.ContainsSceneObject(identity.ObjectId))
+            if (Assets.ContainsSceneObject(identity.HashSceneObjectId))
                 spawnObjectSent = SendServerSpawnSceneObject(connectionId, identity);
             else
                 spawnObjectSent = SendServerSpawnObject(connectionId, identity);
@@ -1023,7 +1017,7 @@ namespace LiteNetLibManager
         {
             ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
             if (!IsServer)
-                Assets.NetworkSpawnScene(message.objectId, message.position, message.rotation, message.connectionId);
+                Assets.NetworkSpawnScene(message.objectId, message.sceneObjectId, message.position, message.rotation, message.connectionId);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(message.objectId, out identity))
             {
