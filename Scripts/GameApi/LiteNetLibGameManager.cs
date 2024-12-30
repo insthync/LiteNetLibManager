@@ -50,10 +50,6 @@ namespace LiteNetLibManager
             }
         }
         /// <summary>
-        /// Local (server or client) unix timestamp (milliseconds)
-        /// </summary>
-        public long Timestamp { get => RttCalculator.LocalTimestamp; }
-        /// <summary>
         /// Server unix timestamp (milliseconds)
         /// </summary>
         public long ServerTimestamp
