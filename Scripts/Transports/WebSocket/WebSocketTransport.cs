@@ -20,11 +20,11 @@ namespace LiteNetLibManager
         private WebSocketClient _client;
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer _server;
-        private long _connectionIdOffsets = 1000000;
-        private long _nextConnectionId = 1;
         private readonly Dictionary<long, WebSocketServerBehavior> _serverPeers;
         private readonly Queue<TransportEventData> _serverEventQueue;
 #endif
+        private long _connectionIdOffsets = 1000000;
+        private long _nextConnectionId = 1;
 
         public int ServerPeersCount
         {

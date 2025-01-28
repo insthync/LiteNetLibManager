@@ -74,9 +74,8 @@ namespace LiteNetLibManager
         private int _wsNativeInstance = 0;
 #else
         private WebSocketSharp.WebSocket _socket;
-        private readonly Queue<TransportEventData> _clientEventQueue;
-        private string _error = null;
 #endif
+        private readonly Queue<TransportEventData> _clientEventQueue;
 
         private readonly string _url;
 
@@ -102,6 +101,7 @@ namespace LiteNetLibManager
 #endif
         }
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private void _socket_OnMessage(object sender, WebSocketSharp.MessageEventArgs e)
         {
             _clientEventQueue.Enqueue(new TransportEventData()
@@ -110,7 +110,9 @@ namespace LiteNetLibManager
                 reader = new LiteNetLib.Utils.NetDataReader(e.RawData),
             });
         }
+#endif
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private void _socket_OnOpen(object sender, EventArgs e)
         {
             _clientEventQueue.Enqueue(new TransportEventData()
@@ -118,7 +120,9 @@ namespace LiteNetLibManager
                 type = ENetworkEvent.ConnectEvent,
             });
         }
+#endif
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private void _socket_OnClose(object sender, WebSocketSharp.CloseEventArgs e)
         {
             _clientEventQueue.Enqueue(new TransportEventData()
@@ -127,7 +131,9 @@ namespace LiteNetLibManager
                 disconnectInfo = GetDisconnectInfo(e.Code, e.Reason, e.WasClean),
             });
         }
+#endif
 
+#if !UNITY_WEBGL || UNITY_EDITOR
         private void _socket_OnError(object sender, WebSocketSharp.ErrorEventArgs e)
         {
             _clientEventQueue.Enqueue(new TransportEventData()
@@ -136,6 +142,7 @@ namespace LiteNetLibManager
                 errorMessage = e.Message,
             });
         }
+#endif
 
         public void Close()
         {
@@ -149,11 +156,7 @@ namespace LiteNetLibManager
         public bool ClientReceive(out TransportEventData eventData)
         {
             eventData = default;
-#if !UNITY_WEBGL || UNITY_EDITOR
-            if (_clientEventQueue.Count == 0)
-                return false;
-            return _clientEventQueue.TryDequeue(out eventData);
-#else
+#if UNITY_WEBGL && !UNITY_EDITOR
             int eventType = GetSocketEventType_LnlM(_wsNativeInstance);
             if (eventType < 0)
                 return false;
@@ -161,7 +164,7 @@ namespace LiteNetLibManager
             {
                 case ENetworkEvent.DataEvent:
                     eventData.type = ENetworkEvent.DataEvent;
-                    eventData.reader = new NetDataReader(GetSocketData());
+                    eventData.reader = new LiteNetLib.Utils.NetDataReader(GetSocketData());
                     break;
                 case ENetworkEvent.ConnectEvent:
                     eventData.type = ENetworkEvent.ConnectEvent;
@@ -180,6 +183,10 @@ namespace LiteNetLibManager
             }
             SocketEventDequeue_LnlM(_wsNativeInstance);
             return true;
+#else
+            if (_clientEventQueue.Count == 0)
+                return false;
+            return _clientEventQueue.TryDequeue(out eventData);
 #endif
         }
 
@@ -213,10 +220,10 @@ namespace LiteNetLibManager
         {
             if (!IsOpen)
                 return false;
-#if !UNITY_WEBGL || UNITY_EDITOR
-            _socket?.Send(buffer);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            SocketSend_LnlM(_wsNativeInstance, buffer, buffer.Length);
 #else
-            SocketSend_LnlM(_wsNativeInstance, buffer.Data, buffer.Data.Length);
+            _socket?.Send(buffer);
 #endif
             return true;
         }
