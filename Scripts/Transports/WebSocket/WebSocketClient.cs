@@ -15,27 +15,6 @@ namespace LiteNetLibManager
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
-        private static extern int SocketCreate(string url);
-
-        [DllImport("__Internal")]
-        private static extern int SocketState(int wsNativeInstance);
-
-        [DllImport("__Internal")]
-        private static extern void SocketSend(int wsNativeInstance, byte[] ptr, int length);
-
-        [DllImport("__Internal")]
-        private static extern void SocketRecv(int wsNativeInstance, byte[] ptr, int length);
-
-        [DllImport("__Internal")]
-        private static extern int SocketRecvLength(int wsNativeInstance);
-
-        [DllImport("__Internal")]
-        private static extern void SocketClose(int wsNativeInstance);
-
-        [DllImport("__Internal")]
-        private static extern int SocketError(int wsNativeInstance, byte[] ptr, int length);
-
-        [DllImport("__Internal")]
         private static extern int SocketCreate_LnlM(string url);
 
         [DllImport("__Internal")]
