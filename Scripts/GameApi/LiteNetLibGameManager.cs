@@ -492,6 +492,7 @@ namespace LiteNetLibManager
             RttCalculator.Reset();
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
+            SendClientPing();
         }
 
         public override void OnStartServer()
@@ -597,7 +598,7 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            for (int i = 0; i < 3; ++i)
+            for (int i = 0; i < 10; ++i)
             {
                 ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
             }
@@ -607,7 +608,7 @@ namespace LiteNetLibManager
         {
             if (!IsServer)
                 return;
-            for (int i = 0; i < 3; ++i)
+            for (int i = 0; i < 10; ++i)
             {
                 ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
             }
