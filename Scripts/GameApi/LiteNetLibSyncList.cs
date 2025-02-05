@@ -178,12 +178,11 @@ namespace LiteNetLibManager
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
-            TType oldItem;
-            oldItem = _list[index];
+            TType oldItem = _list[index];
             if (index == 0)
             {
                 _list.RemoveAt(index);
-                PrepareOperation(LiteNetLibSyncListOp.RemoveFirst, 0, oldItem, default);
+                PrepareOperation(LiteNetLibSyncListOp.RemoveFirst, index, oldItem, default);
             }
             else if (index == _list.Count - 1)
             {
