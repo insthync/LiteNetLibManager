@@ -7,7 +7,7 @@ namespace LiteNetLibManager
         void InvokeRequest(RequestHandlerData requestHandlerData, RequestProceededDelegate responseProceedHandler);
     }
 
-    public struct LiteNetLibRequestHandler<TRequest, TResponse> : ILiteNetLibRequestHandler
+    public class LiteNetLibRequestHandler<TRequest, TResponse> : ILiteNetLibRequestHandler
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new()
     {

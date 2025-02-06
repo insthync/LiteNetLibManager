@@ -2,7 +2,7 @@
 
 namespace LiteNetLibManager
 {
-    public struct AsyncResponseData<TResponse>
+    public class AsyncResponseData<TResponse>
         where TResponse : INetSerializable
     {
         public ResponseHandlerData RequestHandler { get; private set; }

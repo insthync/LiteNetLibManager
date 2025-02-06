@@ -2,7 +2,7 @@
 
 namespace LiteNetLibManager
 {
-    public struct LiteNetLibRequestCallback
+    public class LiteNetLibRequestCallback
     {
         public uint RequestId { get; private set; }
         public TransportHandler TransportHandler { get; private set; }

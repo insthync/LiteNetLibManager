@@ -9,15 +9,15 @@ namespace LiteNetLibManager
         bool IsRequestTypeValid(Type type);
     }
 
-    public struct LiteNetLibResponseHandler<TRequest, TResponse> : ILiteNetLibResponseHandler
+    public class LiteNetLibResponseHandler<TRequest, TResponse> : ILiteNetLibResponseHandler
         where TRequest : INetSerializable, new()
         where TResponse : INetSerializable, new()
     {
-        private ResponseDelegate<TResponse> responseHandler;
+        private ResponseDelegate<TResponse> _responseHandler;
 
         public LiteNetLibResponseHandler(ResponseDelegate<TResponse> responseHandler)
         {
-            this.responseHandler = responseHandler;
+            _responseHandler = responseHandler;
         }
 
         public void InvokeResponse(ResponseHandlerData responseHandlerData, AckResponseCode responseCode, ResponseDelegate<INetSerializable> anotherResponseHandler)
@@ -30,8 +30,8 @@ namespace LiteNetLibManager
                 if (responseHandlerData.Reader != null)
                     response.Deserialize(responseHandlerData.Reader);
             }
-            if (responseHandler != null)
-                responseHandler.Invoke(responseHandlerData, responseCode, response);
+            if (_responseHandler != null)
+                _responseHandler.Invoke(responseHandlerData, responseCode, response);
             if (anotherResponseHandler != null)
                 anotherResponseHandler.Invoke(responseHandlerData, responseCode, response);
         }
