@@ -376,8 +376,8 @@ namespace LiteNetLibManager
                     break;
                 case LiteNetLibSyncListOp.Set:
                 case LiteNetLibSyncListOp.Dirty:
-                    oldItem = _list[index];
                     index = reader.GetInt();
+                    oldItem = _list[index];
                     newItem = DeserializeValueForSetOrDirty(index, reader);
                     _list[index] = newItem;
                     break;
