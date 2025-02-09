@@ -61,7 +61,7 @@ namespace LiteNetLibManager
                 return RttCalculator.PeerTimestamp;
             }
         }
-        public ServerSceneInfo ServerSceneInfo { get; protected set; }
+        public ServerSceneInfo? ServerSceneInfo { get; protected set; } = null;
         public LiteNetLibAssets Assets { get; protected set; }
 
         protected BaseInterestManager _interestManager;
@@ -91,7 +91,7 @@ namespace LiteNetLibManager
             if (_defaultInterestManager == null)
                 _defaultInterestManager = gameObject.AddComponent<DefaultInterestManager>();
             InterestManager = _defaultInterestManager;
-            ServerSceneInfo = default;
+            ServerSceneInfo = null;
             if (doNotDestroyOnSceneChanges)
                 DontDestroyOnLoad(gameObject);
         }
@@ -244,6 +244,9 @@ namespace LiteNetLibManager
         /// <returns></returns>
         private async UniTaskVoid LoadSceneRoutine(ServerSceneInfo serverSceneInfo, bool isOnline)
         {
+            if (IsServer)
+                ServerSceneInfo = null;
+
             if (LoadingServerScenes.Count > 0)
             {
                 ServerSceneLoadingInfo prevLoadingInfo = LoadingServerScenes[0];
@@ -529,7 +532,7 @@ namespace LiteNetLibManager
         public override void OnStopServer()
         {
             base.OnStopServer();
-            ServerSceneInfo = default;
+            ServerSceneInfo = null;
             Players.Clear();
             Assets.Clear();
             string activeSceneName = SceneManager.GetActiveScene().name;
@@ -749,7 +752,7 @@ namespace LiteNetLibManager
             {
                 responseCode = AckResponseCode.Success;
                 response.connectionId = requestHandler.ConnectionId;
-                response.serverSceneInfo = ServerSceneInfo;
+                response.serverSceneInfo = ServerSceneInfo.Value;
             }
             result.Invoke(responseCode, response, serializer => WriteExtraEnterGameResponse(responseCode, request, serializer));
         }
