@@ -55,19 +55,18 @@ namespace LiteNetLibManager
         public DeliveryMethod deliveryMethod = DeliveryMethod.Sequenced;
 
         [Header("Client Sync Settings (`syncMode` is `ClientMulticast` only)")]
-        [Tooltip("Sending data channel from clients to server (`syncMode` is `ClientMulticast` only)")]
+        [Tooltip("Sending data channel from client to server (`syncMode` is `ClientMulticast` only)")]
         public byte clientDataChannel = 0;
-        [Tooltip("Sending method type from clients to server (`syncMode` is `ClientMulticast` only), default is `Sequenced`")]
+        [Tooltip("Sending method type from client to server (`syncMode` is `ClientMulticast` only), default is `Sequenced`")]
         public DeliveryMethod clientDeliveryMethod = DeliveryMethod.Sequenced;
 
         private float _nextSyncTime;
-        private bool _onChangeCalled;
         protected object _defaultValue;
 
         public abstract Type GetFieldType();
-        public abstract object GetValue();
-        public abstract void SetValue(object value);
-        internal abstract void OnChange(bool initial);
+        protected abstract object GetValue();
+        protected abstract void SetValue(object value);
+        internal abstract void OnChange(bool initial, object oldValue, object newValue);
         internal abstract bool HasUpdate();
         internal abstract void Updated();
 
@@ -91,11 +90,11 @@ namespace LiteNetLibManager
                 case SyncMode.ServerToClients:
                 case SyncMode.ServerToOwnerClient:
                     if (IsServer)
-                        OnChange(true);
+                        OnChange(true, _defaultValue, _defaultValue);
                     break;
                 case SyncMode.ClientMulticast:
                     if (IsOwnerClient)
-                        OnChange(true);
+                        OnChange(true, _defaultValue, _defaultValue);
                     break;
             }
             RegisterUpdating();
@@ -131,25 +130,6 @@ namespace LiteNetLibManager
             if (!HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) && !HasUpdate())
                 return true;
 
-            // Call `OnChange` if it's not called yet.
-            if ((HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync) || HasUpdate()) && !_onChangeCalled)
-            {
-                // Invoke on change function with initial state = false
-                switch (syncMode)
-                {
-                    case SyncMode.ServerToClients:
-                    case SyncMode.ServerToOwnerClient:
-                        if (IsServer)
-                            OnChange(false);
-                        break;
-                    case SyncMode.ClientMulticast:
-                        if (IsOwnerClient)
-                            OnChange(false);
-                        break;
-                }
-                _onChangeCalled = true;
-            }
-
             // Is it time to sync?
             if (currentTime < _nextSyncTime)
                 return false;
@@ -163,24 +143,22 @@ namespace LiteNetLibManager
             // Update already sent
             Updated();
 
-            // Reset on change called state to call `OnChange` later when has update
-            _onChangeCalled = false;
-
             // Keep update next frame if it is `always sync`
             return !HasSyncBehaviourFlag(SyncBehaviour.AlwaysSync);
         }
 
         public void UpdateImmediately()
         {
-            float currentTime = Time.fixedTime;
+            float currentTime = Time.unscaledTime;
             _nextSyncTime = currentTime;
             NetworkUpdate(currentTime);
         }
 
         internal void Deserialize(NetDataReader reader, bool isInitial)
         {
+            object oldValue = GetValue();
             DeserializeValue(reader);
-            OnChange(isInitial);
+            OnChange(isInitial, oldValue, GetValue());
         }
 
         internal void Serialize(NetDataWriter writer)
@@ -278,55 +256,55 @@ namespace LiteNetLibManager
         /// <summary>
         /// The field which going to sync its value
         /// </summary>
-        private FieldInfo field;
+        private FieldInfo _field;
 
         /// <summary>
         /// The class which contain the field
         /// </summary>
-        private object instance;
+        private object _instance;
 
         /// <summary>
         /// Use this variable to tell that it has to update after value changed
         /// </summary>
-        private bool hasUpdate;
+        private bool _hasUpdate;
 
         /// <summary>
         /// This method will be invoked after value changed
         /// </summary>
-        private MethodInfo onChangeMethod;
+        private MethodInfo _onChangeMethod;
 
         /// <summary>
         /// This method will be invoked after data sent
         /// </summary>
-        private MethodInfo onUpdateMethod;
+        private MethodInfo _onUpdateMethod;
 
         /// <summary>
         /// Use this value to check field's value changes
         /// </summary>
-        private object value;
+        private object _value;
 
         public LiteNetLibSyncFieldContainer(FieldInfo field, object instance, MethodInfo onChangeMethod, MethodInfo onUpdateMethod)
         {
-            this.field = field;
-            this.instance = instance;
-            this.onChangeMethod = onChangeMethod;
-            this.onUpdateMethod = onUpdateMethod;
-            value = field.GetValue(instance);
+            _field = field;
+            _instance = instance;
+            _onChangeMethod = onChangeMethod;
+            _onUpdateMethod = onUpdateMethod;
+            _value = field.GetValue(instance);
         }
 
         public override sealed Type GetFieldType()
         {
-            return field.FieldType;
+            return _field.FieldType;
         }
 
-        public override sealed object GetValue()
+        protected override sealed object GetValue()
         {
-            return field.GetValue(instance);
+            return _field.GetValue(_instance);
         }
 
-        public override sealed void SetValue(object value)
+        protected override sealed void SetValue(object value)
         {
-            field.SetValue(instance, value);
+            _field.SetValue(_instance, value);
         }
 
         internal override sealed bool NetworkUpdate(float currentTime)
@@ -338,37 +316,41 @@ namespace LiteNetLibManager
 
         internal override sealed bool HasUpdate()
         {
-            if (hasUpdate)
+            if (_hasUpdate)
                 return true;
 
-            if (value == null || !value.Equals(field.GetValue(instance)))
+            object fieldValue = _field.GetValue(_instance);
+            if (_value == null || !_value.Equals(fieldValue))
             {
+                object oldValue = _value;
                 // Set value because it's going to sync later
-                value = field.GetValue(instance);
+                _value = fieldValue;
+                // On changed
+                OnChange(false, oldValue, _value);
                 // Set `hasUpdate` to `TRUE` this value will turn to `FALSE` when `Updated()` called
-                hasUpdate = true;
+                _hasUpdate = true;
             }
 
-            return hasUpdate;
+            return _hasUpdate;
         }
 
         internal override void Updated()
         {
-            if (onUpdateMethod != null)
-                onUpdateMethod.Invoke(instance, new object[0]);
-            hasUpdate = false;
+            if (_onUpdateMethod != null)
+                _onUpdateMethod.Invoke(_instance, new object[0]);
+            _hasUpdate = false;
         }
 
-        internal override sealed void OnChange(bool initial)
+        internal override sealed void OnChange(bool initial, object oldValue, object newValue)
         {
-            if (onChangeMethod != null)
-                onChangeMethod.Invoke(instance, new object[] { GetValue() });
+            if (_onChangeMethod != null)
+                _onChangeMethod.Invoke(_instance, new object[] { initial, oldValue, newValue });
         }
     }
 
     public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
-        public delegate void OnChangeDelegate(bool initial, TType value);
+        public delegate void OnChangeDelegate(bool initial, TType oldValue, TType newValue);
         public delegate void OnUpdatedDelegate();
         /// <summary>
         /// Action with initial state and value, this will be invoked after data changed
@@ -386,27 +368,45 @@ namespace LiteNetLibManager
         protected bool _hasUpdate;
 
         [SerializeField]
-        protected TType value;
+        protected TType _value;
         public TType Value
         {
-            get { return value; }
+            get { return _value; }
             set
             {
-                if (IsValueChanged(value))
+                if (!CanSetValue())
+                    return;
+                if (!IsValueChanged(value))
+                    return;
+                TType oldValue = _value;
+                _value = value;
+                OnChange(false, oldValue, value);
+                if (CanSync())
                 {
-                    this.value = value;
-                    if (CanSync())
-                    {
-                        _hasUpdate = true;
-                        RegisterUpdating();
-                    }
+                    _hasUpdate = true;
+                    RegisterUpdating();
                 }
             }
         }
 
+        protected bool CanSetValue()
+        {
+            switch (syncMode)
+            {
+                case SyncMode.ServerToClients:
+                    return IsServer;
+                case SyncMode.ServerToOwnerClient:
+                    return IsServer;
+                case SyncMode.ClientMulticast:
+                    return IsOwnerClient;
+            }
+            return false;
+
+        }
+
         protected virtual bool IsValueChanged(TType newValue)
         {
-            return value == null || !value.Equals(newValue);
+            return _value == null || !_value.Equals(newValue);
         }
 
         internal override bool HasUpdate()
@@ -426,20 +426,20 @@ namespace LiteNetLibManager
             return typeof(TType);
         }
 
-        public override sealed object GetValue()
+        protected override sealed object GetValue()
         {
-            return Value;
+            return _value;
         }
 
-        public override sealed void SetValue(object value)
+        protected override sealed void SetValue(object value)
         {
-            Value = (TType)value;
+            _value = (TType)value;
         }
 
-        internal override sealed void OnChange(bool initial)
+        internal override sealed void OnChange(bool initial, object oldValue, object newValue)
         {
             if (onChange != null)
-                onChange.Invoke(initial, Value);
+                onChange.Invoke(initial, (TType)oldValue, (TType)newValue);
         }
 
         public static implicit operator TType(LiteNetLibSyncField<TType> field)
@@ -607,7 +607,7 @@ namespace LiteNetLibManager
 
         protected override bool IsValueChanged(Quaternion newValue)
         {
-            return Quaternion.Angle(value, newValue) >= valueChangeAngle;
+            return Quaternion.Angle(_value, newValue) >= valueChangeAngle;
         }
     }
 
@@ -619,7 +619,7 @@ namespace LiteNetLibManager
 
         protected override bool IsValueChanged(Vector2 newValue)
         {
-            return Vector2.Distance(value, newValue) >= valueChangeDistance;
+            return Vector2.Distance(_value, newValue) >= valueChangeDistance;
         }
     }
 
@@ -631,7 +631,7 @@ namespace LiteNetLibManager
 
         protected override bool IsValueChanged(Vector2Int newValue)
         {
-            return Vector2Int.Distance(value, newValue) >= valueChangeDistance;
+            return Vector2Int.Distance(_value, newValue) >= valueChangeDistance;
         }
     }
 
@@ -643,7 +643,7 @@ namespace LiteNetLibManager
 
         protected override bool IsValueChanged(Vector3 newValue)
         {
-            return Vector3.Distance(value, newValue) >= valueChangeDistance;
+            return Vector3.Distance(_value, newValue) >= valueChangeDistance;
         }
     }
 
@@ -655,7 +655,7 @@ namespace LiteNetLibManager
 
         protected override bool IsValueChanged(Vector3Int newValue)
         {
-            return Vector3Int.Distance(value, newValue) >= valueChangeDistance;
+            return Vector3Int.Distance(_value, newValue) >= valueChangeDistance;
         }
     }
 
@@ -667,7 +667,7 @@ namespace LiteNetLibManager
 
         protected override bool IsValueChanged(Vector4 newValue)
         {
-            return Vector4.Distance(value, newValue) >= valueChangeDistance;
+            return Vector4.Distance(_value, newValue) >= valueChangeDistance;
         }
     }
 

@@ -321,12 +321,15 @@ namespace LiteNetLibManager
                     {
                         tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, s_CacheOnChangeFunctions, (tempMethodParams) =>
                         {
-                            return tempMethodParams != null && tempMethodParams.Length == 1 && tempMethodParams[0].ParameterType == fieldInfo.FieldType;
+                            return tempMethodParams != null && tempMethodParams.Length == 3
+                                && tempMethodParams[0].ParameterType == typeof(bool)
+                                && tempMethodParams[1].ParameterType == fieldInfo.FieldType
+                                && tempMethodParams[2].ParameterType == fieldInfo.FieldType;
                         });
                         if (tempOnChangeMethod == null)
                         {
                             if (Manager.LogError)
-                                Logging.LogError(LogTag, $"Cannot find `on change` method named [{tempAttribute.onChangeMethodName}] from [{TypeName}], FYI the function must has 1 parameter with the same type with the field.");
+                                Logging.LogError(LogTag, $"Cannot find `on change` method named [{tempAttribute.onChangeMethodName}] from [{TypeName}], FYI the function must has 3 parameters with (bool isInitial, type oldValue, type newValue).");
                         }
                     }
                     // Find on update method
