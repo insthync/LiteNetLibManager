@@ -752,7 +752,8 @@ namespace LiteNetLibManager
             {
                 responseCode = AckResponseCode.Success;
                 response.connectionId = requestHandler.ConnectionId;
-                response.serverSceneInfo = ServerSceneInfo.Value;
+                if (ServerSceneInfo.HasValue)
+                    response.serverSceneInfo = ServerSceneInfo.Value;
             }
             result.Invoke(responseCode, response, serializer => WriteExtraEnterGameResponse(responseCode, request, serializer));
         }
