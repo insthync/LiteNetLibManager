@@ -155,14 +155,14 @@ namespace LiteNetLibManager
             return _list.IndexOf(item);
         }
 
-        public bool Remove(TType value)
+        public bool Remove(TType item)
         {
             if (IsSetup && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return false;
             }
-            int index = IndexOf(value);
+            int index = IndexOf(item);
             if (index >= 0)
             {
                 RemoveAt(index);
