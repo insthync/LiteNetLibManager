@@ -60,7 +60,7 @@ namespace LiteNetLibManager
         [Tooltip("Sending method type from client to server (`syncMode` is `ClientMulticast` only), default is `Sequenced`")]
         public DeliveryMethod clientDeliveryMethod = DeliveryMethod.Sequenced;
 
-        private float _nextSyncTime;
+        protected float _nextSyncTime;
         protected object _defaultValue;
 
         public abstract Type GetFieldType();
@@ -69,6 +69,20 @@ namespace LiteNetLibManager
         internal abstract void OnChange(bool initial, object oldValue, object newValue);
         internal abstract bool HasUpdate();
         internal abstract void Updated();
+
+        protected override bool CanSync()
+        {
+            switch (syncMode)
+            {
+                case SyncMode.ServerToClients:
+                    return IsServer;
+                case SyncMode.ServerToOwnerClient:
+                    return IsServer;
+                case SyncMode.ClientMulticast:
+                    return IsOwnerClient || IsServer;
+            }
+            return false;
+        }
 
         public bool HasSyncBehaviourFlag(SyncBehaviour flag)
         {
@@ -93,7 +107,7 @@ namespace LiteNetLibManager
                         OnChange(true, _defaultValue, _defaultValue);
                     break;
                 case SyncMode.ClientMulticast:
-                    if (IsOwnerClient)
+                    if (IsOwnerClient || IsServer)
                         OnChange(true, _defaultValue, _defaultValue);
                     break;
             }
@@ -178,7 +192,7 @@ namespace LiteNetLibManager
 
         internal void SendUpdate(bool isInitial, long connectionId)
         {
-            if (!CanSync() || !IsServer)
+            if (!CanSync())
                 return;
             LiteNetLibGameManager manager = Manager;
             LiteNetLibServer server = manager.Server;
@@ -191,10 +205,7 @@ namespace LiteNetLibManager
         internal void SendUpdate(bool isInitial)
         {
             if (!CanSync())
-            {
-                Logging.LogError(LogTag, "Error while set value, behaviour is empty");
                 return;
-            }
             LiteNetLibGameManager manager = Manager;
             LiteNetLibServer server = manager.Server;
             LiteNetLibClient client = manager.Client;
@@ -309,6 +320,21 @@ namespace LiteNetLibManager
 
         internal override sealed bool NetworkUpdate(float currentTime)
         {
+            if (CanSync() && currentTime > _nextSyncTime)
+            {
+                // Check for updating
+                object fieldValue = _field.GetValue(_instance);
+                if (_value == null || !_value.Equals(fieldValue))
+                {
+                    object oldValue = _value;
+                    // Set value because it's going to sync later
+                    _value = fieldValue;
+                    // On changed
+                    OnChange(false, oldValue, _value);
+                    // Set `hasUpdate` to `TRUE` this value will turn to `FALSE` when `Updated()` called
+                    _hasUpdate = true;
+                }
+            }
             base.NetworkUpdate(currentTime);
             // Always returns FALSE to keep updating
             return false;
@@ -316,21 +342,6 @@ namespace LiteNetLibManager
 
         internal override sealed bool HasUpdate()
         {
-            if (_hasUpdate)
-                return true;
-
-            object fieldValue = _field.GetValue(_instance);
-            if (_value == null || !_value.Equals(fieldValue))
-            {
-                object oldValue = _value;
-                // Set value because it's going to sync later
-                _value = fieldValue;
-                // On changed
-                OnChange(false, oldValue, _value);
-                // Set `hasUpdate` to `TRUE` this value will turn to `FALSE` when `Updated()` called
-                _hasUpdate = true;
-            }
-
             return _hasUpdate;
         }
 
@@ -374,34 +385,36 @@ namespace LiteNetLibManager
             get { return _value; }
             set
             {
-                if (!CanSetValue())
+                if (IsSetup && !CanSync())
+                {
+                    switch (syncMode)
+                    {
+                        case SyncMode.ServerToClients:
+                            Logging.LogError(LogTag, "Cannot access sync field from client.");
+                            break;
+                        case SyncMode.ServerToOwnerClient:
+                            Logging.LogError(LogTag, "Cannot access sync field from client.");
+                            break;
+                        case SyncMode.ClientMulticast:
+                            Logging.LogError(LogTag, "Cannot access sync field, client is not its owner.");
+                            break;
+                    }
                     return;
+                }
                 if (!IsValueChanged(value))
+                {
+                    // No changes
                     return;
+                }
                 TType oldValue = _value;
                 _value = value;
-                OnChange(false, oldValue, value);
-                if (CanSync())
+                if (IsSetup)
                 {
+                    OnChange(false, oldValue, value);
                     _hasUpdate = true;
                     RegisterUpdating();
                 }
             }
-        }
-
-        protected bool CanSetValue()
-        {
-            switch (syncMode)
-            {
-                case SyncMode.ServerToClients:
-                    return IsServer;
-                case SyncMode.ServerToOwnerClient:
-                    return IsServer;
-                case SyncMode.ClientMulticast:
-                    return IsOwnerClient;
-            }
-            return false;
-
         }
 
         protected virtual bool IsValueChanged(TType newValue)
@@ -456,6 +469,22 @@ namespace LiteNetLibManager
             get { return Value[i]; }
             set
             {
+                if (IsSetup && !CanSync())
+                {
+                    switch (syncMode)
+                    {
+                        case SyncMode.ServerToClients:
+                            Logging.LogError(LogTag, "Cannot access sync field from client.");
+                            break;
+                        case SyncMode.ServerToOwnerClient:
+                            Logging.LogError(LogTag, "Cannot access sync field from client.");
+                            break;
+                        case SyncMode.ClientMulticast:
+                            Logging.LogError(LogTag, "Cannot access sync field, client is not its owner.");
+                            break;
+                    }
+                    return;
+                }
                 Value[i] = value;
                 if (CanSync())
                 {
