@@ -753,5 +753,32 @@ namespace LiteNetLibManager
             return Value.x != newValue.x || Value.y != newValue.y || Value.z != newValue.z;
         }
     }
+
+    [Serializable]
+    public class SyncFieldHalfPrecision : LiteNetLibSyncField<HalfPrecision>
+    {
+        protected override bool IsValueChanged(HalfPrecision newValue)
+        {
+            return Value.halfValue != newValue.halfValue;
+        }
+    }
+
+    [Serializable]
+    public class SyncFieldHalfVector2 : LiteNetLibSyncField<HalfVector2>
+    {
+        protected override bool IsValueChanged(HalfVector2 newValue)
+        {
+            return Value.x != newValue.x || Value.y != newValue.y;
+        }
+    }
+
+    [Serializable]
+    public class SyncFieldHalfVector3 : LiteNetLibSyncField<HalfVector3>
+    {
+        protected override bool IsValueChanged(HalfVector3 newValue)
+        {
+            return Value.x != newValue.x || Value.y != newValue.y || Value.z != newValue.z;
+        }
+    }
     #endregion
 }
