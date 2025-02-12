@@ -28,10 +28,10 @@ namespace LiteNetLibManager
     public abstract class LiteNetLibElement
     {
         [ReadOnly, SerializeField]
-        protected LiteNetLibBehaviour behaviour;
+        protected LiteNetLibBehaviour _behaviour;
         public LiteNetLibBehaviour Behaviour
         {
-            get { return behaviour; }
+            get { return _behaviour; }
         }
 
         public LiteNetLibIdentity Identity
@@ -80,10 +80,10 @@ namespace LiteNetLibManager
         public bool IsSetup { get; private set; }
 
         [ReadOnly, SerializeField]
-        protected int elementId;
+        protected int _elementId;
         public int ElementId
         {
-            get { return elementId; }
+            get { return _elementId; }
         }
 
         public LiteNetLibElementInfo GetInfo()
@@ -93,8 +93,8 @@ namespace LiteNetLibManager
 
         internal virtual void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
-            this.behaviour = behaviour;
-            this.elementId = elementId;
+            _behaviour = behaviour;
+            _elementId = elementId;
             IsSetup = true;
         }
 

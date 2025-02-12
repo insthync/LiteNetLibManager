@@ -40,7 +40,7 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate callback) : this()
         {
-            this._callback = callback;
+            _callback = callback;
         }
 
         protected override bool CanSync()
@@ -207,25 +207,25 @@ namespace LiteNetLibManager
         /// <summary>
         /// The class which contain the function
         /// </summary>
-        private object instance;
-        
-        private MethodInfo callback;
+        private object _instance;
+
+        private MethodInfo _callback;
 
         public LiteNetLibFunctionDynamic(Type[] parameterTypes, object instance, MethodInfo callback) : base(parameterTypes)
         {
-            this.instance = instance;
-            this.callback = callback;
+            _instance = instance;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback.Invoke(instance, Parameters);
+            _callback.Invoke(_instance, Parameters);
         }
     }
 
     public class LiteNetLibFunction<T1> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1> callback;
+        private NetFunctionDelegate<T1> _callback;
 
         protected LiteNetLibFunction() : base(1)
         {
@@ -234,18 +234,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0]);
+            _callback((T1)Parameters[0]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2> callback;
+        private NetFunctionDelegate<T1, T2> _callback;
 
         protected LiteNetLibFunction() : base(2)
         {
@@ -255,18 +255,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1]);
+            _callback((T1)Parameters[0], (T2)Parameters[1]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3> callback;
+        private NetFunctionDelegate<T1, T2, T3> _callback;
 
         protected LiteNetLibFunction() : base(3)
         {
@@ -277,18 +277,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4> callback;
+        private NetFunctionDelegate<T1, T2, T3, T4> _callback;
 
         protected LiteNetLibFunction() : base(4)
         {
@@ -300,18 +300,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5> callback;
+        private NetFunctionDelegate<T1, T2, T3, T4, T5> _callback;
 
         protected LiteNetLibFunction() : base(5)
         {
@@ -324,18 +324,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback;
+        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6> _callback;
 
         protected LiteNetLibFunction() : base(6)
         {
@@ -349,18 +349,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback;
+        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> _callback;
 
         protected LiteNetLibFunction() : base(7)
         {
@@ -375,18 +375,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback;
+        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> _callback;
 
         protected LiteNetLibFunction() : base(8)
         {
@@ -402,18 +402,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback;
+        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> _callback;
 
         protected LiteNetLibFunction() : base(9)
         {
@@ -430,18 +430,18 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7], (T9)Parameters[8]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7], (T9)Parameters[8]);
         }
     }
 
     public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : LiteNetLibFunction
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback;
+        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> _callback;
 
         protected LiteNetLibFunction() : base(10)
         {
@@ -459,12 +459,12 @@ namespace LiteNetLibManager
 
         public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback) : this()
         {
-            this.callback = callback;
+            _callback = callback;
         }
 
         internal override sealed void HookCallback()
         {
-            callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7], (T9)Parameters[8], (T10)Parameters[9]);
+            _callback((T1)Parameters[0], (T2)Parameters[1], (T3)Parameters[2], (T4)Parameters[3], (T5)Parameters[4], (T6)Parameters[5], (T7)Parameters[6], (T8)Parameters[7], (T9)Parameters[8], (T10)Parameters[9]);
         }
     }
     #endregion
