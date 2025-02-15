@@ -241,10 +241,10 @@ namespace LiteNetLibManager
         protected void PrepareOperation(LiteNetLibSyncListOp operation, int index, TType oldItem, TType newItem)
         {
             OnOperation(operation, index, oldItem, newItem);
-            PrepareOperation(_operationEntries, operation, index, oldItem, newItem);
+            PrepareOperation(_operationEntries, operation, index, newItem);
         }
 
-        protected void PrepareOperation(List<OperationEntry> operationEntries, LiteNetLibSyncListOp operation, int index, TType oldItem, TType newItem)
+        protected void PrepareOperation(List<OperationEntry> operationEntries, LiteNetLibSyncListOp operation, int index, TType item)
         {
             switch (operation)
             {
@@ -300,14 +300,14 @@ namespace LiteNetLibManager
         {
             if (!CanSync())
                 return;
-            List<OperationEntry> addInitialOperationEntries = new List<OperationEntry>();
+            List<OperationEntry> operationEntries = new List<OperationEntry>();
             for (int i = 0; i < Count; ++i)
             {
-                PrepareOperation(addInitialOperationEntries, LiteNetLibSyncListOp.AddInitial, i, default, this[i]);
+                PrepareOperation(operationEntries, LiteNetLibSyncListOp.AddInitial, i, this[i]);
             }
             LiteNetLibServer server = Manager.Server;
             TransportHandler.WritePacket(s_Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(s_Writer, addInitialOperationEntries);
+            SerializeForSendOperations(s_Writer, operationEntries);
             server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, s_Writer);
         }
 
