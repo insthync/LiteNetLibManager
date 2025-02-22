@@ -14,7 +14,6 @@
         public const ushort ServerSyncBehaviour = 11;
         public const ushort ServerError = 12;
         public const ushort ServerSceneChange = 13;
-        public const ushort ClientSendTransform = 14;
         public const ushort ServerSetObjectOwner = 15;
         public const ushort Ping = 16;
         public const ushort Pong = 17;

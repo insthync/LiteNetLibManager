@@ -86,6 +86,13 @@ namespace LiteNetLibManager
             get { return _elementId; }
         }
 
+        [ReadOnly, SerializeField]
+        protected byte _groupId;
+        public byte GroupId
+        {
+            get { return _groupId; }
+        }
+
         public LiteNetLibElementInfo GetInfo()
         {
             return new LiteNetLibElementInfo(Behaviour.ObjectId, ElementId);
@@ -102,5 +109,7 @@ namespace LiteNetLibManager
         {
             return IsSetup;
         }
+
+        internal abstract bool WriteSyncData(NetDataWriter writer, float time);
     }
 }

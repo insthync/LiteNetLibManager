@@ -434,15 +434,6 @@ namespace LiteNetLibManager
         }
         #endregion
 
-        internal LiteNetLibBehaviour ProcessSyncBehaviour(byte behaviourIndex, NetDataReader reader)
-        {
-            if (behaviourIndex >= Behaviours.Length)
-                return null;
-            LiteNetLibBehaviour behaviour = Behaviours[behaviourIndex];
-            behaviour.Deserialize(reader);
-            return behaviour;
-        }
-
         internal bool TryGetBehaviour<T>(byte behaviourIndex, out T behaviour)
             where T : LiteNetLibBehaviour
         {

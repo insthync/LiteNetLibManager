@@ -118,12 +118,12 @@ namespace LiteNetLibManager
         {
             if (!IsSetup)
                 return;
-            Manager?.RegisterSyncFieldUpdating(this);
+            Manager?.RegisterServerSyncElement(this);
         }
 
         public void UnregisterUpdating()
         {
-            Manager?.UnregisterSyncFieldUpdating(this);
+            Manager?.UnregisterServerSyncElement(this);
         }
 
         /// <summary>

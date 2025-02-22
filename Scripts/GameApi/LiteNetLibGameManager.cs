@@ -80,9 +80,8 @@ namespace LiteNetLibManager
         }
 
         protected BaseInterestManager _defaultInterestManager;
-        protected readonly List<LiteNetLibSyncField> _updatingSyncFields = new List<LiteNetLibSyncField>(1024);
-        protected readonly List<LiteNetLibSyncList> _updatingSyncLists = new List<LiteNetLibSyncList>(1024);
-        protected readonly List<LiteNetLibBehaviour> _updatingSyncBehaviours = new List<LiteNetLibBehaviour>(128);
+        protected readonly Dictionary<byte, List<LiteNetLibElement>> _updatingClientSyncElements = new Dictionary<byte, List<LiteNetLibElement>>();
+        protected readonly Dictionary<byte, List<LiteNetLibElement>> _updatingServerSyncElements = new Dictionary<byte, List<LiteNetLibElement>>();
 
         protected virtual void Awake()
         {
@@ -98,7 +97,7 @@ namespace LiteNetLibManager
 
         protected override void OnServerUpdate(LogicUpdater updater)
         {
-            UpdateRegisteredSyncElements();
+            ProceedSyncElements(_updatingServerSyncElements, true);
             // Send ping from server
             _serverSendPingCountDown -= updater.DeltaTime;
             if (_serverSendPingCountDown <= 0f)
@@ -114,7 +113,7 @@ namespace LiteNetLibManager
         protected override void OnClientUpdate(LogicUpdater updater)
         {
             if (!IsServer)
-                UpdateRegisteredSyncElements();
+                ProceedSyncElements(_updatingClientSyncElements, false);
             // Send ping from client
             _clientSendPingCountDown -= updater.DeltaTime;
             if (_clientSendPingCountDown <= 0f)
@@ -124,75 +123,76 @@ namespace LiteNetLibManager
             }
         }
 
-        private void UpdateRegisteredSyncElements()
+        private void ProceedSyncElements(Dictionary<byte, List<LiteNetLibElement>> collection, bool isServer)
         {
-            float currentTime = Time.fixedTime;
-            int i;
-            Profiler.BeginSample("SyncFields Update");
-            for (i = _updatingSyncFields.Count - 1; i >= 0; --i)
+            float time = Time.fixedTime;
+            NetDataWriter writer = new NetDataWriter();
+            foreach (var kv in collection)
             {
-                if (_updatingSyncFields[i] == null || _updatingSyncFields[i].NetworkUpdate(currentTime))
-                    _updatingSyncFields.RemoveAt(i);
+                byte groupId = kv.Key;
+                foreach (long connectionId in GetConnectionIds())
+                {
+                    writer.Reset();
+                    int syncedElementCount = 0;
+                    for (int i = 0; i < kv.Value.Count; ++i)
+                    {
+                        LiteNetLibElement element = kv.Value[i];
+                        if (element.WriteSyncData(writer, time))
+                        {
+                            syncedElementCount++;
+                        }
+                    }
+                    writer.SetPosition(0);
+                    // MSG Type ID
+                    writer.PutPackedUShort(0);
+                    writer.PutPackedInt(syncedElementCount);
+                    if (isServer)
+                        ServerSendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
+                }
             }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("SyncLists Update");
-            for (i = _updatingSyncLists.Count - 1; i >= 0; --i)
-            {
-                if (_updatingSyncLists[i] == null || _updatingSyncLists[i].SendOperations())
-                    _updatingSyncLists.RemoveAt(i);
-            }
-            Profiler.EndSample();
-
-            Profiler.BeginSample("SyncBehaviours Update");
-            for (i = _updatingSyncBehaviours.Count - 1; i >= 0; --i)
-            {
-                if (_updatingSyncBehaviours[i] == null || _updatingSyncBehaviours[i].NetworkUpdate(currentTime))
-                    _updatingSyncBehaviours.RemoveAt(i);
-            }
-            Profiler.EndSample();
         }
 
-        internal void RegisterSyncFieldUpdating(LiteNetLibSyncField element)
+        internal void RegisterServerSyncElement(LiteNetLibElement element)
         {
-            if (element == null || _updatingSyncFields.Contains(element))
-                return;
-            _updatingSyncFields.Add(element);
+            RegisterSyncElement(_updatingServerSyncElements, element);
         }
 
-        internal void UnregisterSyncFieldUpdating(LiteNetLibSyncField element)
+        internal void UnregisterServerSyncElement(LiteNetLibElement element)
+        {
+            UnregisterSyncElement(_updatingServerSyncElements, element);
+        }
+
+        internal void RegisterClientSyncElement(LiteNetLibElement element)
+        {
+            RegisterSyncElement(_updatingClientSyncElements, element);
+        }
+
+        internal void UnregisterClientSyncElement(LiteNetLibElement element)
+        {
+            UnregisterSyncElement(_updatingClientSyncElements, element);
+        }
+
+        private void RegisterSyncElement(Dictionary<byte, List<LiteNetLibElement>> collection, LiteNetLibElement element)
         {
             if (element == null)
                 return;
-            _updatingSyncFields.Remove(element);
-        }
-
-        internal void RegisterSyncListUpdating(LiteNetLibSyncList element)
-        {
-            if (element == null || _updatingSyncLists.Contains(element))
+            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibElement> elements))
+            {
+                elements = new List<LiteNetLibElement>();
+                collection[element.GroupId] = elements;
+            }
+            if (elements.Contains(element))
                 return;
-            _updatingSyncLists.Add(element);
+            elements.Add(element);
         }
 
-        internal void UnregisterSyncListUpdating(LiteNetLibSyncList element)
-        {
-            if (element == null)
-                return;
-            _updatingSyncLists.Remove(element);
-        }
-
-        internal void RegisterSyncBehaviourUpdating(LiteNetLibBehaviour element)
-        {
-            if (element == null || _updatingSyncBehaviours.Contains(element))
-                return;
-            _updatingSyncBehaviours.Add(element);
-        }
-
-        internal void UnregisterSyncBehaviourUpdating(LiteNetLibBehaviour element)
+        private void UnregisterSyncElement(Dictionary<byte, List<LiteNetLibElement>> collection, LiteNetLibElement element)
         {
             if (element == null)
                 return;
-            _updatingSyncBehaviours.Remove(element);
+            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibElement> elements))
+                return;
+            elements.Remove(element);
         }
 
         public virtual uint PacketVersion()
@@ -441,7 +441,6 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
             RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
             RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
-            RegisterServerMessage(GameMsgTypes.ClientSendTransform, HandleClientSendTransform);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
             RegisterServerMessage(GameMsgTypes.Pong, HandleClientPong);
             // Client messages
@@ -452,7 +451,6 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.UpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.InitialSyncField, HandleServerInitialSyncField);
             RegisterClientMessage(GameMsgTypes.OperateSyncList, HandleServerUpdateSyncList);
-            RegisterClientMessage(GameMsgTypes.ServerSyncBehaviour, HandleServerSyncBehaviour);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
@@ -504,9 +502,8 @@ namespace LiteNetLibManager
             // Reset client connection id, will be received from server later
             ClientConnectionId = -1;
             RttCalculator.Reset();
-            _updatingSyncFields.Clear();
-            _updatingSyncLists.Clear();
-            _updatingSyncBehaviours.Clear();
+            _updatingServerSyncElements.Clear();
+            _updatingClientSyncElements.Clear();
 
             string activeSceneName = SceneManager.GetActiveScene().name;
             if (Assets.addressableOnlineScene.IsDataValid() && !Assets.addressableOnlineScene.IsSameSceneName(activeSceneName))
@@ -988,19 +985,6 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual void HandleClientSendTransform(MessageHandlerData messageHandler)
-        {
-            uint objectId = messageHandler.Reader.GetPackedUInt();
-            byte behaviourIndex = messageHandler.Reader.GetByte();
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(objectId, out identity))
-            {
-                LiteNetLibTransform netTransform;
-                if (identity.TryGetBehaviour(behaviourIndex, out netTransform))
-                    netTransform.HandleClientSendTransform(messageHandler.Reader);
-            }
-        }
-
         protected void HandleClientPing(MessageHandlerData messageHandler)
         {
             PingMessage message = messageHandler.ReadMessage<PingMessage>();
@@ -1108,18 +1092,6 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncList(info, messageHandler.Reader);
-        }
-
-        protected virtual void HandleServerSyncBehaviour(MessageHandlerData messageHandler)
-        {
-            // Behaviour sync from server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
-            uint objectId = messageHandler.Reader.GetPackedUInt();
-            byte behaviourIndex = messageHandler.Reader.GetByte();
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(objectId, out identity))
-                identity.ProcessSyncBehaviour(behaviourIndex, messageHandler.Reader);
         }
 
         protected virtual void HandleServerError(MessageHandlerData messageHandler)

@@ -26,12 +26,12 @@ namespace LiteNetLibManager
         {
             if (!IsSetup)
                 return;
-            Manager?.RegisterSyncListUpdating(this);
+            Manager?.RegisterServerSyncElement(this);
         }
 
         public void UnregisterUpdating()
         {
-            Manager?.UnregisterSyncListUpdating(this);
+            Manager?.UnregisterServerSyncElement(this);
         }
     }
 

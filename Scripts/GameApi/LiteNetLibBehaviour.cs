@@ -10,9 +10,10 @@ using System.Text;
 
 namespace LiteNetLibManager
 {
-    public partial class LiteNetLibBehaviour : MonoBehaviour, INetSerializable
+    public partial class LiteNetLibBehaviour : MonoBehaviour
     {
         public const string TAG_NULL = "<NULL_B>";
+        public const int SYNC_LIST_ID_OFFSET = 10000;
 
         private struct CacheFields
         {
@@ -33,22 +34,6 @@ namespace LiteNetLibManager
         {
             get { return behaviourIndex; }
         }
-
-        [Header("Behaviour Sync Options")]
-        public byte dataChannel;
-        public DeliveryMethod sendOptions;
-        [Tooltip("Interval to send network data")]
-        [Range(0.01f, 2f)]
-        public float sendInterval = 0.1f;
-        /// <summary>
-        /// How many times per second it will sync behaviour
-        /// </summary>
-        public float SendRate
-        {
-            get { return 1f / sendInterval; }
-        }
-
-        private float _nextSyncTime;
 
         private static readonly Dictionary<string, CacheFields> s_CacheSyncElements = new Dictionary<string, CacheFields>();
         private static readonly Dictionary<string, CacheFunctions> s_CacheElasticRpcs = new Dictionary<string, CacheFunctions>();
@@ -172,44 +157,6 @@ namespace LiteNetLibManager
             }
         }
 
-        /// <summary>
-        /// Return `TRUE` to determine that the update is done and unregister updating
-        /// </summary>
-        /// <param name="currentTime"></param>
-        /// <returns></returns>
-        internal bool NetworkUpdate(float currentTime)
-        {
-            // Sync behaviour
-            if (!IsServer || !CanSyncBehaviour())
-                return true;
-
-            // Is it time to sync?
-            if (currentTime < _nextSyncTime)
-                return false;
-
-            // Set next sync time
-            _nextSyncTime = currentTime + sendInterval;
-
-            // Should not sync yet, will sync next time
-            if (ShouldSyncBehaviour())
-                return false;
-
-            Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
-            {
-                LiteNetLibGameManager manager = Manager;
-                LiteNetLibServer server = manager.Server;
-                TransportHandler.WritePacket(server.s_Writer, GameMsgTypes.ServerSyncBehaviour);
-                Serialize(server.s_Writer);
-                foreach (long connectionId in manager.GetConnectionIds())
-                {
-                    if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        server.SendMessage(connectionId, dataChannel, sendOptions, server.s_Writer);
-                }
-            }
-            Profiler.EndSample();
-            return true;
-        }
-
         public void Setup(byte behaviourIndex)
         {
             this.behaviourIndex = behaviourIndex;
@@ -276,12 +223,12 @@ namespace LiteNetLibManager
                 tempCacheFields.syncLists.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
                 s_CacheSyncElements.Add(TypeName, tempCacheFields);
             }
-            SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields);
-            SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists);
+            SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields, 0);
+            SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists, SYNC_LIST_ID_OFFSET);
             SetupSyncFieldsWithAttribute(tempCacheFields.syncFieldsWithAttribute);
         }
 
-        private void SetupSyncElements<T>(List<FieldInfo> fields, List<T> elementList) where T : LiteNetLibElement
+        private void SetupSyncElements<T>(List<FieldInfo> fields, List<T> elementList, int idOffset) where T : LiteNetLibElement
         {
             if (fields == null || fields.Count == 0)
                 return;
@@ -290,7 +237,7 @@ namespace LiteNetLibManager
             {
                 try
                 {
-                    RegisterSyncElement((T)field.GetValue(this), elementList);
+                    RegisterSyncElement((T)field.GetValue(this), elementList, idOffset);
                 }
                 catch (Exception ex)
                 {
@@ -355,7 +302,7 @@ namespace LiteNetLibManager
                     tempSyncField.sendInterval = tempAttribute.sendInterval;
                     tempSyncField.syncBehaviour = tempAttribute.syncBehaviour;
                     tempSyncField.syncMode = tempAttribute.syncMode;
-                    RegisterSyncElement(tempSyncField, Identity.SyncFields);
+                    RegisterSyncElement(tempSyncField, Identity.SyncFields, 0);
                 }
                 catch (Exception ex)
                 {
@@ -485,21 +432,21 @@ namespace LiteNetLibManager
         }
 
         #region Sync Elements Registration
-        private void RegisterSyncElement<T>(T element, List<T> elementList) where T : LiteNetLibElement
+        private void RegisterSyncElement<T>(T element, List<T> elementList, int idOffset) where T : LiteNetLibElement
         {
-            int elementId = elementList.Count;
+            int elementId = elementList.Count + idOffset;
             element.Setup(this, elementId);
             elementList.Add(element);
         }
 
         public void RegisterSyncField<T>(T syncField) where T : LiteNetLibSyncField
         {
-            RegisterSyncElement(syncField, Identity.SyncFields);
+            RegisterSyncElement(syncField, Identity.SyncFields, 0);
         }
 
         public void RegisterSyncList<T>(T syncList) where T : LiteNetLibSyncList
         {
-            RegisterSyncElement(syncList, Identity.SyncLists);
+            RegisterSyncElement(syncList, Identity.SyncLists, SYNC_LIST_ID_OFFSET);
         }
         #endregion
 
@@ -1600,21 +1547,6 @@ namespace LiteNetLibManager
         private string MakeNetFunctionId(string methodName)
         {
             return new StringBuilder(TypeName).Append('+').Append(methodName).ToString();
-        }
-
-        public void Serialize(NetDataWriter writer)
-        {
-            if (!IsServer)
-                return;
-
-            writer.PutPackedUInt(Identity.ObjectId);
-            writer.Put(BehaviourIndex);
-            OnSerialize(writer);
-        }
-
-        public void Deserialize(NetDataReader reader)
-        {
-            OnDeserialize(reader);
         }
 
         public void SetOwnerClient(long connectionId)
