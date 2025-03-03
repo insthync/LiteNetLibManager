@@ -136,7 +136,7 @@ namespace LiteNetLibManager
                     // Message Type ID
                     writer.PutPackedUShort(GameMsgTypes.SyncElements);
                     // TODO: Implement tick
-                    writer.PutPackedUInt(tick);
+                    //writer.PutPackedUInt(tick);
                     // Reserve position for element count
                     int syncElementsCountPos = writer.Length;
                     writer.Put(0);
@@ -145,23 +145,22 @@ namespace LiteNetLibManager
                     for (int i = 0; i < kv.Value.Count; ++i)
                     {
                         LiteNetLibSyncElement element = kv.Value[i];
-                        if (element.WillSyncData(tick))
-                        {
-                            // Write element info
-                            writer.PutPackedUInt(element.ObjectId);
-                            writer.PutPackedInt(element.ElementId);
-                            // Reserve position for data length
-                            int syncDataLengthPos = writer.Length;
-                            writer.Put(0);
-                            // Write sync data
-                            element.WriteSyncData(tick, writer);
-                            int dataLength = writer.Length - syncDataLengthPos;
-                            // Put data length
-                            writer.SetPosition(syncDataLengthPos);
-                            writer.Put(dataLength);
-                            // Increase sync element count
-                            syncElementsCount++;
-                        }
+                        if (!element.WillSyncData(connectionId, tick))
+                            continue;
+                        // Write element info
+                        writer.PutPackedUInt(element.ObjectId);
+                        writer.PutPackedInt(element.ElementId);
+                        // Reserve position for data length
+                        int syncDataLengthPos = writer.Length;
+                        writer.Put(0);
+                        // Write sync data
+                        element.WriteSyncData(writer, tick);
+                        int dataLength = writer.Length - syncDataLengthPos;
+                        // Put data length
+                        writer.SetPosition(syncDataLengthPos);
+                        writer.Put(dataLength);
+                        // Increase sync element count
+                        syncElementsCount++;
                     }
 
                     // Put element count
@@ -1122,7 +1121,7 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             NetDataReader reader = messageHandler.Reader;
-            uint tick = reader.GetPackedUInt();
+            uint tick = 0; // reader.GetPackedUInt();
             int syncElementsCount = reader.GetInt();
             for (int i = 0; i < syncElementsCount; ++i)
             {
@@ -1135,7 +1134,7 @@ namespace LiteNetLibManager
                     identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
                 {
                     // Can read data properly
-                    element.ReadSyncData(tick, reader);
+                    element.ReadSyncData(reader, tick);
                 }
                 else
                 {

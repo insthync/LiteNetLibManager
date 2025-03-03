@@ -339,6 +339,7 @@ namespace LiteNetLibManager
             }
         }
 
+        // TODO: Remove this
         /// <summary>
         /// Return `TRUE` to determine that the update is done and unregister updating
         /// </summary>
@@ -373,6 +374,29 @@ namespace LiteNetLibManager
             return true;
         }
 
+        // TODO: Keep this
+        internal override void WriteSyncData(NetDataWriter writer, uint tick)
+        {
+            if (_operationEntries.Count <= 0)
+                return;
+            writer.PutPackedInt(_operationEntries.Count);
+            for (int i = 0; i < _operationEntries.Count; ++i)
+            {
+                SerializeOperation(writer, _operationEntries[i]);
+            }
+        }
+
+        // TODO: Keep this
+        internal override void ReadSyncData(NetDataReader reader, uint tick)
+        {
+            int operationCount = reader.GetPackedInt();
+            for (int i = 0; i < operationCount; ++i)
+            {
+                DeserializeOperation(reader);
+            }
+        }
+
+        // TODO: Remove this
         internal override sealed void ProcessOperations(NetDataReader reader)
         {
             int operationCount = reader.GetPackedInt();

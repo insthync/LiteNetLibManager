@@ -168,6 +168,7 @@ namespace LiteNetLibManager
             NetworkUpdate(currentTime);
         }
 
+        // TODO: Remove this
         internal void Deserialize(NetDataReader reader, bool isInitial)
         {
             object oldValue = GetValue();
@@ -175,9 +176,24 @@ namespace LiteNetLibManager
             OnChange(isInitial, oldValue, GetValue());
         }
 
+        // TODO: Remove this
         internal void Serialize(NetDataWriter writer)
         {
             SerializeValue(writer);
+        }
+
+        // TODO: Keep this
+        internal override void WriteSyncData(NetDataWriter writer, uint tick)
+        {
+            SerializeValue(writer);
+        }
+
+        // TODO: Keep this
+        internal override void ReadSyncData(NetDataReader reader, uint tick)
+        {
+            object oldValue = GetValue();
+            DeserializeValue(reader);
+            OnChange(false, oldValue, GetValue());
         }
 
         internal virtual void DeserializeValue(NetDataReader reader)
@@ -262,6 +278,7 @@ namespace LiteNetLibManager
         }
     }
 
+    // TODO: Remove this
     public class LiteNetLibSyncFieldContainer : LiteNetLibSyncField
     {
         /// <summary>
