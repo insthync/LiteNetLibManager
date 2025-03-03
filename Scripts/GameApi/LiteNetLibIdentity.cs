@@ -16,6 +16,8 @@ namespace LiteNetLibManager
     [DisallowMultipleComponent]
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
+        public const int SYNC_FIELD_ID_OFFSET = 0;
+        public const int SYNC_LIST_ID_OFFSET = 10000;
         public static uint HighestObjectId { get; private set; }
         /// <summary>
         /// If any of these function's result is true, it will force hide the object from another object
@@ -354,6 +356,32 @@ namespace LiteNetLibManager
 #endif
         #endregion
 
+        #region SyncElement Functions
+        internal bool TryGetSyncElement(int elementId, out LiteNetLibSyncElement syncElement)
+        {
+            if (elementId >= SYNC_LIST_ID_OFFSET)
+            {
+                int index = elementId - SYNC_LIST_ID_OFFSET;
+                if (index >= 0 && index < SyncLists.Count)
+                {
+                    syncElement = SyncLists[index];
+                    return true;
+                }
+            }
+            else if (elementId >= SYNC_FIELD_ID_OFFSET)
+            {
+                int index = elementId - SYNC_FIELD_ID_OFFSET;
+                if (index >= 0 && index < SyncFields.Count)
+                {
+                    syncElement = SyncFields[index];
+                    return true;
+                }
+            }
+            syncElement = null;
+            return false;
+        }
+        #endregion
+
         #region SyncField Functions
         internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader, bool isInitial)
         {
@@ -372,10 +400,38 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.elementId >= 0 && info.elementId < SyncFields.Count)
-                return SyncFields[info.elementId];
+            int index = info.elementId - SYNC_FIELD_ID_OFFSET;
+            if (index >= 0 && index < SyncFields.Count)
+                return SyncFields[index];
             if (Manager.LogError)
                 Logging.LogError(LogTag, $"Cannot find sync field: {info.elementId}.");
+            return null;
+        }
+        #endregion
+
+        #region SyncList Functions
+        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
+        {
+            return ProcessSyncList(GetSyncList(info), reader);
+        }
+
+        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibSyncList syncList, NetDataReader reader)
+        {
+            if (syncList == null)
+                return null;
+            syncList.ProcessOperations(reader);
+            return syncList;
+        }
+
+        internal LiteNetLibSyncList GetSyncList(LiteNetLibElementInfo info)
+        {
+            if (info.objectId != ObjectId)
+                return null;
+            int index = info.elementId - SYNC_LIST_ID_OFFSET;
+            if (index >= 0 && index < SyncLists.Count)
+                return SyncLists[index];
+            if (Manager.LogError)
+                Logging.LogError(LogTag, $"Cannot find sync list: {info.elementId}.");
             return null;
         }
         #endregion
@@ -404,32 +460,6 @@ namespace LiteNetLibManager
                 return NetFunctions[info.elementId];
             if (Manager.LogError)
                 Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
-            return null;
-        }
-        #endregion
-
-        #region SyncList Functions
-        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
-        {
-            return ProcessSyncList(GetSyncList(info), reader);
-        }
-
-        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibSyncList syncList, NetDataReader reader)
-        {
-            if (syncList == null)
-                return null;
-            syncList.ProcessOperations(reader);
-            return syncList;
-        }
-
-        internal LiteNetLibSyncList GetSyncList(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            if (info.elementId >= 0 && info.elementId < SyncLists.Count)
-                return SyncLists[info.elementId];
-            if (Manager.LogError)
-                Logging.LogError(LogTag, $"Cannot find sync list: {info.elementId}.");
             return null;
         }
         #endregion

@@ -11,6 +11,7 @@
         public const ushort UpdateSyncField = 7;
         public const ushort InitialSyncField = 8;
         public const ushort OperateSyncList = 9;
+        public const ushort SyncElements = 10;
         public const ushort ServerSyncBehaviour = 11;
         public const ushort ServerError = 12;
         public const ushort ServerSceneChange = 13;

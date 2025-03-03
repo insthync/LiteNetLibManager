@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace LiteNetLibManager
 {
-    public abstract class LiteNetLibSyncField : LiteNetLibElement
+    public abstract class LiteNetLibSyncField : LiteNetLibSyncElement
     {
         protected readonly static NetDataWriter s_ServerWriter = new NetDataWriter();
         protected readonly static NetDataWriter s_ClientWriter = new NetDataWriter();

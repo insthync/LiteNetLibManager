@@ -7,7 +7,7 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public abstract partial class LiteNetLibSyncList : LiteNetLibElement
+    public abstract class LiteNetLibSyncList : LiteNetLibSyncElement
     {
         protected readonly static NetDataWriter s_Writer = new NetDataWriter();
         public abstract Type FieldType { get; }

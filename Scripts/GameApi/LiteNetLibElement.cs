@@ -109,7 +109,5 @@ namespace LiteNetLibManager
         {
             return IsSetup;
         }
-
-        internal abstract bool WriteSyncData(NetDataWriter writer, float time);
     }
 }

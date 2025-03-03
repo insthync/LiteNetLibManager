@@ -80,8 +80,8 @@ namespace LiteNetLibManager
         }
 
         protected BaseInterestManager _defaultInterestManager;
-        protected readonly Dictionary<byte, List<LiteNetLibElement>> _updatingClientSyncElements = new Dictionary<byte, List<LiteNetLibElement>>();
-        protected readonly Dictionary<byte, List<LiteNetLibElement>> _updatingServerSyncElements = new Dictionary<byte, List<LiteNetLibElement>>();
+        protected readonly Dictionary<byte, List<LiteNetLibSyncElement>> _updatingClientSyncElements = new Dictionary<byte, List<LiteNetLibSyncElement>>();
+        protected readonly Dictionary<byte, List<LiteNetLibSyncElement>> _updatingServerSyncElements = new Dictionary<byte, List<LiteNetLibSyncElement>>();
 
         protected virtual void Awake()
         {
@@ -123,9 +123,9 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ProceedSyncElements(Dictionary<byte, List<LiteNetLibElement>> collection, bool isServer)
+        private void ProceedSyncElements(Dictionary<byte, List<LiteNetLibSyncElement>> collection, bool isServer)
         {
-            float time = Time.fixedTime;
+            uint tick = 0;
             NetDataWriter writer = new NetDataWriter();
             foreach (var kv in collection)
             {
@@ -133,52 +133,74 @@ namespace LiteNetLibManager
                 foreach (long connectionId in GetConnectionIds())
                 {
                     writer.Reset();
-                    int syncedElementCount = 0;
+                    // Message Type ID
+                    writer.PutPackedUShort(GameMsgTypes.SyncElements);
+                    // TODO: Implement tick
+                    writer.PutPackedUInt(tick);
+                    // Reserve position for element count
+                    int syncElementsCountPos = writer.Length;
+                    writer.Put(0);
+
+                    int syncElementsCount = 0;
                     for (int i = 0; i < kv.Value.Count; ++i)
                     {
-                        LiteNetLibElement element = kv.Value[i];
-                        if (element.WriteSyncData(writer, time))
+                        LiteNetLibSyncElement element = kv.Value[i];
+                        if (element.WillSyncData(tick))
                         {
-                            syncedElementCount++;
+                            // Write element info
+                            writer.PutPackedUInt(element.ObjectId);
+                            writer.PutPackedInt(element.ElementId);
+                            // Reserve position for data length
+                            int syncDataLengthPos = writer.Length;
+                            writer.Put(0);
+                            // Write sync data
+                            element.WriteSyncData(tick, writer);
+                            int dataLength = writer.Length - syncDataLengthPos;
+                            // Put data length
+                            writer.SetPosition(syncDataLengthPos);
+                            writer.Put(dataLength);
+                            // Increase sync element count
+                            syncElementsCount++;
                         }
                     }
-                    writer.SetPosition(0);
-                    // MSG Type ID
-                    writer.PutPackedUShort(0);
-                    writer.PutPackedInt(syncedElementCount);
+
+                    // Put element count
+                    writer.SetPosition(syncElementsCountPos);
+                    writer.Put(syncElementsCount);
+                    // Send sync elements
                     if (isServer)
                         ServerSendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
                 }
             }
         }
 
-        internal void RegisterServerSyncElement(LiteNetLibElement element)
+        internal void RegisterServerSyncElement(LiteNetLibSyncElement element)
         {
             RegisterSyncElement(_updatingServerSyncElements, element);
         }
 
-        internal void UnregisterServerSyncElement(LiteNetLibElement element)
+        internal void UnregisterServerSyncElement(LiteNetLibSyncElement element)
         {
             UnregisterSyncElement(_updatingServerSyncElements, element);
         }
 
-        internal void RegisterClientSyncElement(LiteNetLibElement element)
+        internal void RegisterClientSyncElement(LiteNetLibSyncElement element)
         {
             RegisterSyncElement(_updatingClientSyncElements, element);
         }
 
-        internal void UnregisterClientSyncElement(LiteNetLibElement element)
+        internal void UnregisterClientSyncElement(LiteNetLibSyncElement element)
         {
             UnregisterSyncElement(_updatingClientSyncElements, element);
         }
 
-        private void RegisterSyncElement(Dictionary<byte, List<LiteNetLibElement>> collection, LiteNetLibElement element)
+        private void RegisterSyncElement(Dictionary<byte, List<LiteNetLibSyncElement>> collection, LiteNetLibSyncElement element)
         {
             if (element == null)
                 return;
-            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibElement> elements))
+            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibSyncElement> elements))
             {
-                elements = new List<LiteNetLibElement>();
+                elements = new List<LiteNetLibSyncElement>();
                 collection[element.GroupId] = elements;
             }
             if (elements.Contains(element))
@@ -186,11 +208,11 @@ namespace LiteNetLibManager
             elements.Add(element);
         }
 
-        private void UnregisterSyncElement(Dictionary<byte, List<LiteNetLibElement>> collection, LiteNetLibElement element)
+        private void UnregisterSyncElement(Dictionary<byte, List<LiteNetLibSyncElement>> collection, LiteNetLibSyncElement element)
         {
             if (element == null)
                 return;
-            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibElement> elements))
+            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibSyncElement> elements))
                 return;
             elements.Remove(element);
         }
@@ -451,6 +473,7 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.UpdateSyncField, HandleServerUpdateSyncField);
             RegisterClientMessage(GameMsgTypes.InitialSyncField, HandleServerInitialSyncField);
             RegisterClientMessage(GameMsgTypes.OperateSyncList, HandleServerUpdateSyncList);
+            RegisterClientMessage(GameMsgTypes.SyncElements, HandleServerSyncElements);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
@@ -1092,6 +1115,34 @@ namespace LiteNetLibManager
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
                 identity.ProcessSyncList(info, messageHandler.Reader);
+        }
+
+        protected virtual void HandleServerSyncElements(MessageHandlerData messageHandler)
+        {
+            if (IsServer)
+                return;
+            NetDataReader reader = messageHandler.Reader;
+            uint tick = reader.GetPackedUInt();
+            int syncElementsCount = reader.GetInt();
+            for (int i = 0; i < syncElementsCount; ++i)
+            {
+                // Get element info
+                uint objectId = reader.GetPackedUInt();
+                int elementId = reader.GetPackedInt();
+                // Get data length, it will being used for bytes skipping if it is unable to proceed data properly
+                int dataLength = reader.GetInt();
+                if (Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity) &&
+                    identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
+                {
+                    // Can read data properly
+                    element.ReadSyncData(tick, reader);
+                }
+                else
+                {
+                    // Missing data, unable to proceed properly, so skip bytes
+                    reader.SkipBytes(dataLength);
+                }
+            }
         }
 
         protected virtual void HandleServerError(MessageHandlerData messageHandler)

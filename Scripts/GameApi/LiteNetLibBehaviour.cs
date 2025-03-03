@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using UnityEngine.Profiling;
 using System.Text;
 
 namespace LiteNetLibManager
@@ -13,7 +12,6 @@ namespace LiteNetLibManager
     public partial class LiteNetLibBehaviour : MonoBehaviour
     {
         public const string TAG_NULL = "<NULL_B>";
-        public const int SYNC_LIST_ID_OFFSET = 10000;
 
         private struct CacheFields
         {
@@ -223,8 +221,8 @@ namespace LiteNetLibManager
                 tempCacheFields.syncLists.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
                 s_CacheSyncElements.Add(TypeName, tempCacheFields);
             }
-            SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields, 0);
-            SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists, SYNC_LIST_ID_OFFSET);
+            SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields, LiteNetLibIdentity.SYNC_FIELD_ID_OFFSET);
+            SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists, LiteNetLibIdentity.SYNC_LIST_ID_OFFSET);
             SetupSyncFieldsWithAttribute(tempCacheFields.syncFieldsWithAttribute);
         }
 
@@ -441,12 +439,12 @@ namespace LiteNetLibManager
 
         public void RegisterSyncField<T>(T syncField) where T : LiteNetLibSyncField
         {
-            RegisterSyncElement(syncField, Identity.SyncFields, 0);
+            RegisterSyncElement(syncField, Identity.SyncFields, LiteNetLibIdentity.SYNC_FIELD_ID_OFFSET);
         }
 
         public void RegisterSyncList<T>(T syncList) where T : LiteNetLibSyncList
         {
-            RegisterSyncElement(syncList, Identity.SyncLists, SYNC_LIST_ID_OFFSET);
+            RegisterSyncElement(syncList, Identity.SyncLists, LiteNetLibIdentity.SYNC_LIST_ID_OFFSET);
         }
         #endregion
 
