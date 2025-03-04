@@ -138,10 +138,10 @@ namespace LiteNetLibManager
                     // TODO: Implement tick
                     //writer.PutPackedUInt(tick);
                     // Reserve position for element count
-                    int syncElementsCountPos = writer.Length;
+                    int positionToWriteSyncElementsCount = writer.Length;
                     writer.Put(0);
 
-                    int tempBackPosition;
+                    int tempPositionBeforeWrite;
                     int syncElementsCount = 0;
                     for (int i = 0; i < kv.Value.Count; ++i)
                     {
@@ -152,25 +152,25 @@ namespace LiteNetLibManager
                         writer.PutPackedUInt(element.ObjectId);
                         writer.PutPackedInt(element.ElementId);
                         // Reserve position for data length
-                        int syncDataLengthPos = writer.Length;
+                        int positionToWriteDataLength = writer.Length;
                         writer.Put(0);
                         // Write sync data
                         element.WriteSyncData(writer, tick);
-                        int dataLength = writer.Length - syncDataLengthPos - 1;
+                        int dataLength = writer.Length - positionToWriteDataLength - 1;
                         // Put data length
-                        tempBackPosition = writer.Length;
-                        writer.SetPosition(syncDataLengthPos);
+                        tempPositionBeforeWrite = writer.Length;
+                        writer.SetPosition(positionToWriteDataLength);
                         writer.Put(dataLength);
-                        writer.SetPosition(tempBackPosition);
+                        writer.SetPosition(tempPositionBeforeWrite);
                         // Increase sync element count
                         syncElementsCount++;
                     }
 
                     // Put element count
-                    tempBackPosition = writer.Length;
-                    writer.SetPosition(syncElementsCountPos);
+                    tempPositionBeforeWrite = writer.Length;
+                    writer.SetPosition(positionToWriteSyncElementsCount);
                     writer.Put(syncElementsCount);
-                    writer.SetPosition(tempBackPosition);
+                    writer.SetPosition(tempPositionBeforeWrite);
                     // Send sync elements
                     if (isServer)
                         ServerSendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
@@ -1135,15 +1135,30 @@ namespace LiteNetLibManager
                 int elementId = reader.GetPackedInt();
                 // Get data length, it will being used for bytes skipping if it is unable to proceed data properly
                 int dataLength = reader.GetInt();
+                int positionBeforeRead = reader.Position;
+
+                bool readFail = false;
                 if (Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity) &&
                     identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
                 {
                     // Can read data properly
-                    element.ReadSyncData(reader, tick);
+                    try
+                    {
+                        element.ReadSyncData(reader, tick);
+                    } catch
+                    {
+                        readFail = true;
+                    }
                 }
                 else
                 {
+                    readFail = true;
+                }
+
+                if (readFail)
+                {
                     // Missing data, unable to proceed properly, so skip bytes
+                    reader.SetPosition(positionBeforeRead);
                     reader.SkipBytes(dataLength);
                 }
             }
