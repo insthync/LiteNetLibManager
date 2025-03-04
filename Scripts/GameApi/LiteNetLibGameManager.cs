@@ -141,6 +141,7 @@ namespace LiteNetLibManager
                     int syncElementsCountPos = writer.Length;
                     writer.Put(0);
 
+                    int tempBackPosition;
                     int syncElementsCount = 0;
                     for (int i = 0; i < kv.Value.Count; ++i)
                     {
@@ -155,17 +156,21 @@ namespace LiteNetLibManager
                         writer.Put(0);
                         // Write sync data
                         element.WriteSyncData(writer, tick);
-                        int dataLength = writer.Length - syncDataLengthPos;
+                        int dataLength = writer.Length - syncDataLengthPos - 1;
                         // Put data length
+                        tempBackPosition = writer.Length;
                         writer.SetPosition(syncDataLengthPos);
                         writer.Put(dataLength);
+                        writer.SetPosition(tempBackPosition);
                         // Increase sync element count
                         syncElementsCount++;
                     }
 
                     // Put element count
+                    tempBackPosition = writer.Length;
                     writer.SetPosition(syncElementsCountPos);
                     writer.Put(syncElementsCount);
+                    writer.SetPosition(tempBackPosition);
                     // Send sync elements
                     if (isServer)
                         ServerSendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
