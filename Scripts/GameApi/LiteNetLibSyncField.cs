@@ -70,6 +70,11 @@ namespace LiteNetLibManager
         internal abstract bool HasUpdate();
         internal abstract void Updated();
 
+        protected virtual bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue == null || !oldValue.Equals(newValue);
+        }
+
         protected override bool CanSync()
         {
             switch (syncMode)
@@ -172,7 +177,9 @@ namespace LiteNetLibManager
         {
             object oldValue = GetValue();
             DeserializeValue(reader);
-            OnChange(isInitial, oldValue, GetValue());
+            object newValue = GetValue();
+            if (IsValueChanged(oldValue, newValue))
+                OnChange(isInitial, oldValue, newValue);
         }
 
         internal void Serialize(NetDataWriter writer)
@@ -401,7 +408,7 @@ namespace LiteNetLibManager
                     }
                     return;
                 }
-                if (!IsValueChanged(value))
+                if (!IsValueChanged(_value, value))
                 {
                     // No changes
                     return;
@@ -417,9 +424,14 @@ namespace LiteNetLibManager
             }
         }
 
-        protected virtual bool IsValueChanged(TType newValue)
+        protected override bool IsValueChanged(object oldValue, object newValue)
         {
-            return _value == null || !_value.Equals(newValue);
+            return IsValueChanged((TType)oldValue, (TType)newValue);
+        }
+
+        protected virtual bool IsValueChanged(TType oldValue, TType newValue)
+        {
+            return oldValue == null || !oldValue.Equals(newValue);
         }
 
         internal override bool HasUpdate()
@@ -634,9 +646,9 @@ namespace LiteNetLibManager
         [Tooltip("If angle between new value and old value >= this value, it will be determined that the value is changing")]
         public float valueChangeAngle = 1f;
 
-        protected override bool IsValueChanged(Quaternion newValue)
+        protected override bool IsValueChanged(Quaternion oldValue, Quaternion newValue)
         {
-            return Quaternion.Angle(_value, newValue) >= valueChangeAngle;
+            return Quaternion.Angle(oldValue, newValue) >= valueChangeAngle;
         }
     }
 
@@ -646,9 +658,9 @@ namespace LiteNetLibManager
         [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
         public float valueChangeDistance = 0.01f;
 
-        protected override bool IsValueChanged(Vector2 newValue)
+        protected override bool IsValueChanged(Vector2 oldValue, Vector2 newValue)
         {
-            return Vector2.Distance(_value, newValue) >= valueChangeDistance;
+            return Vector2.Distance(oldValue, newValue) >= valueChangeDistance;
         }
     }
 
@@ -658,9 +670,9 @@ namespace LiteNetLibManager
         [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
         public float valueChangeDistance = 0.01f;
 
-        protected override bool IsValueChanged(Vector2Int newValue)
+        protected override bool IsValueChanged(Vector2Int oldValue, Vector2Int newValue)
         {
-            return Vector2Int.Distance(_value, newValue) >= valueChangeDistance;
+            return Vector2Int.Distance(oldValue, newValue) >= valueChangeDistance;
         }
     }
 
@@ -670,9 +682,9 @@ namespace LiteNetLibManager
         [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
         public float valueChangeDistance = 0.01f;
 
-        protected override bool IsValueChanged(Vector3 newValue)
+        protected override bool IsValueChanged(Vector3 oldValue, Vector3 newValue)
         {
-            return Vector3.Distance(_value, newValue) >= valueChangeDistance;
+            return Vector3.Distance(oldValue, newValue) >= valueChangeDistance;
         }
     }
 
@@ -682,9 +694,9 @@ namespace LiteNetLibManager
         [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
         public float valueChangeDistance = 0.01f;
 
-        protected override bool IsValueChanged(Vector3Int newValue)
+        protected override bool IsValueChanged(Vector3Int oldValue, Vector3Int newValue)
         {
-            return Vector3Int.Distance(_value, newValue) >= valueChangeDistance;
+            return Vector3Int.Distance(oldValue, newValue) >= valueChangeDistance;
         }
     }
 
@@ -694,9 +706,9 @@ namespace LiteNetLibManager
         [Tooltip("If distance between new value and old value >= this value, it will be determined that the value is changing")]
         public float valueChangeDistance = 0.01f;
 
-        protected override bool IsValueChanged(Vector4 newValue)
+        protected override bool IsValueChanged(Vector4 oldValue, Vector4 newValue)
         {
-            return Vector4.Distance(_value, newValue) >= valueChangeDistance;
+            return Vector4.Distance(oldValue, newValue) >= valueChangeDistance;
         }
     }
 
@@ -739,7 +751,7 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldDirectionVector2 : LiteNetLibSyncField<DirectionVector2>
     {
-        protected override bool IsValueChanged(DirectionVector2 newValue)
+        protected override bool IsValueChanged(DirectionVector2 oldValue, DirectionVector2 newValue)
         {
             return Value.x != newValue.x || Value.y != newValue.y;
         }
@@ -748,7 +760,7 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldDirectionVector3 : LiteNetLibSyncField<DirectionVector3>
     {
-        protected override bool IsValueChanged(DirectionVector3 newValue)
+        protected override bool IsValueChanged(DirectionVector3 oldValue, DirectionVector3 newValue)
         {
             return Value.x != newValue.x || Value.y != newValue.y || Value.z != newValue.z;
         }
@@ -757,7 +769,7 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldHalfPrecision : LiteNetLibSyncField<HalfPrecision>
     {
-        protected override bool IsValueChanged(HalfPrecision newValue)
+        protected override bool IsValueChanged(HalfPrecision oldValue, HalfPrecision newValue)
         {
             return Value.halfValue != newValue.halfValue;
         }
@@ -766,7 +778,7 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldHalfVector2 : LiteNetLibSyncField<HalfVector2>
     {
-        protected override bool IsValueChanged(HalfVector2 newValue)
+        protected override bool IsValueChanged(HalfVector2 oldValue, HalfVector2 newValue)
         {
             return Value.x != newValue.x || Value.y != newValue.y;
         }
@@ -775,7 +787,7 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldHalfVector3 : LiteNetLibSyncField<HalfVector3>
     {
-        protected override bool IsValueChanged(HalfVector3 newValue)
+        protected override bool IsValueChanged(HalfVector3 oldValue, HalfVector3 newValue)
         {
             return Value.x != newValue.x || Value.y != newValue.y || Value.z != newValue.z;
         }
