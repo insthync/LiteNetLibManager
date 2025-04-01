@@ -25,12 +25,12 @@ namespace LiteNetLibManager
         /// If any of these function's result is true, it will not hide the object from another object
         /// </summary>
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
-        [SerializeField, Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID)")]
+        [SerializeField, Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID, so when you delete/clear it won't assign)")]
         private bool autoAssignAssetIdIfEmpty = true;
         [SerializeField, Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path")]
         private string assetId = string.Empty;
-        [SerializeField, Tooltip("Turn this on to assign scene object ID automatically, if it is empty (should turn this off if you want to set custom ID)")]
-        private bool autoAssignSceneObjectId = true;
+        [SerializeField, Tooltip("Turn this on to assign scene object ID automatically, if it is empty (should turn this off if you want to set custom ID, so when you delete/clear it won't assign)")]
+        private bool autoAssignSceneObjectIdIfEmpty = true;
         [SerializeField, FormerlySerializedAs("objectId"), Tooltip("Scene object ID will be hashed to uses as reference for networked object spawning message")]
         private string sceneObjectId = string.Empty;
         [SerializeField, ReadOnly]
@@ -248,28 +248,36 @@ namespace LiteNetLibManager
                 // Reset asset ID to regenerate it
                 assetId = string.Empty;
             }
-            if (string.IsNullOrWhiteSpace(assetId))
+            if (string.IsNullOrWhiteSpace(assetId) || assetId.Equals("0"))
             {
                 if (autoAssignAssetIdIfEmpty)
                 {
-                    SetupIDs();
+                    AssignAssetID();
                     return;
                 }
                 if (ThisIsAPrefab())
                 {
-                    Debug.LogWarning($"[LiteNetLibIdentity] prefab named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID If Empty\" context menu to assign ID or set yours.", gameObject);
+                    Debug.LogWarning($"[LiteNetLibIdentity] prefab named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID\" context menu to assign ID or set yours.", gameObject);
                 }
                 else if (ThisIsASceneObjectWithThatReferencesPrefabAsset(out GameObject prefab))
                 {
-                    Debug.LogWarning($"[LiteNetLibIdentity] prefab named {prefab.name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID If Empty\" context menu to assign ID or set yours.", gameObject);
+                    Debug.LogWarning($"[LiteNetLibIdentity] prefab named {prefab.name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID\" context menu to assign ID or set yours.", gameObject);
                 }
             }
-        }
+            if (string.IsNullOrWhiteSpace(sceneObjectId) || sceneObjectId.Equals("0"))
+            {
+                if (!gameObject.scene.IsValid())
+                {
+                    return;
+                }
+                if (autoAssignSceneObjectIdIfEmpty)
+                {
+                    AssignSceneObjectID();
+                    return;
+                }
+                Debug.LogWarning($"[LiteNetLibIdentity] scene object named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Scene Object ID\" context menu to assign ID or set yours.", gameObject);
 
-        [ContextMenu("Generate All Scene Object IDs (If empty)")]
-        public void ContextMenuGenerateSceneObjectIds()
-        {
-            GenerateSceneObjectIds();
+            }
         }
 
         internal void AssignAssetID(GameObject prefab)
@@ -315,8 +323,8 @@ namespace LiteNetLibManager
             return true;
         }
 
-        [ContextMenu("Setup IDs")]
-        internal void SetupIDs()
+        [ContextMenu("Assign Asset ID")]
+        internal void AssignAssetID()
         {
             string oldAssetId = assetId;
             GameObject prefab;
@@ -350,6 +358,76 @@ namespace LiteNetLibManager
             // Do not mark dirty while playing
             if (!Application.isPlaying && !string.Equals(oldAssetId, assetId))
                 EditorUtility.SetDirty(this);
+        }
+
+        [ContextMenu("Assign Scene Object ID")]
+        internal void AssignSceneObjectID()
+        {
+            Scene objectScene = gameObject.scene;
+            if (!objectScene.IsValid())
+            {
+                Debug.LogWarning($"[LiteNetLibIdentity] Only object in valid scene can be assigned", gameObject);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(sceneObjectId) || sceneObjectId.Equals("0") || FoundAObjectWithSceneObjectID(objectScene, sceneObjectId, this))
+            {
+                int countSuffix = 0;
+                // Keep find a proper ID
+                do
+                {
+                    sceneObjectId = GenerateSceneObjectId(this, ++countSuffix);
+                } while (string.IsNullOrWhiteSpace(sceneObjectId) || sceneObjectId.Equals("0") || FoundAObjectWithSceneObjectID(objectScene, sceneObjectId, this));
+                Debug.Log($"[LiteNetLibIdentity] Scene object ID assigned: {sceneObjectId}", gameObject);
+            }
+            EditorUtility.SetDirty(gameObject);
+        }
+
+        [ContextMenu("Assign All Scene Object IDs (If Empty Or Duplicated)")]
+        public void AssignSceneObjectIDs()
+        {
+            s_AssignSceneObjectIDs();
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+        }
+
+        internal static void s_AssignSceneObjectIDs()
+        {
+            for (int i = 0; i < SceneManager.loadedSceneCount; ++i)
+            {
+                Scene loadedScene = SceneManager.GetSceneAt(i);
+                GameObject[] rootObjects = loadedScene.GetRootGameObjects();
+                for (int j = 0; j < rootObjects.Length; ++j)
+                {
+                    LiteNetLibIdentity[] identities = rootObjects[j].GetComponentsInChildren<LiteNetLibIdentity>(true);
+                    for (int k = 0; k < identities.Length; ++k)
+                    {
+                        identities[k].AssignSceneObjectID();
+                    }
+                }
+                rootObjects = null;
+            }
+        }
+
+        internal static string GenerateSceneObjectId(LiteNetLibIdentity identity, int countSuffix)
+        {
+            return $"{identity.name}_{countSuffix}";
+        }
+
+        internal static bool FoundAObjectWithSceneObjectID(Scene loadedScene, string id, LiteNetLibIdentity ignoreIdentity)
+        {
+            GameObject[] rootObjects = loadedScene.GetRootGameObjects();
+            for (int i = 0; i < rootObjects.Length; ++i)
+            {
+                LiteNetLibIdentity[] identities = rootObjects[i].GetComponentsInChildren<LiteNetLibIdentity>(true);
+                for (int j = 0; j < identities.Length; ++j)
+                {
+                    LiteNetLibIdentity identity = identities[j];
+                    if (identity == ignoreIdentity)
+                        continue;
+                    if (string.Equals(id, identity.sceneObjectId))
+                        return true;
+                }
+            }
+            return false;
         }
 #endif
         #endregion
@@ -639,42 +717,6 @@ namespace LiteNetLibManager
             }
             ++HighestObjectId;
             return HighestObjectId;
-        }
-
-        internal static string GenerateSceneObjectId()
-        {
-            return System.Guid.NewGuid().ToString();
-        }
-
-        internal static void GenerateSceneObjectIds()
-        {
-#if UNITY_EDITOR
-            for (int i = 0; i < SceneManager.loadedSceneCount; ++i)
-            {
-                Scene loadedScene = SceneManager.GetSceneAt(i);
-                GameObject[] rootObjects = loadedScene.GetRootGameObjects();
-                HashSet<string> foundObjectIds = new HashSet<string>();
-                for (int j = 0; j < rootObjects.Length; ++j)
-                {
-                    LiteNetLibIdentity[] identities = rootObjects[j].GetComponentsInChildren<LiteNetLibIdentity>(true);
-                    for (int k = 0; k < identities.Length; ++k)
-                    {
-                        string sceneObjectId = identities[k].sceneObjectId;
-                        if (string.IsNullOrWhiteSpace(sceneObjectId) || foundObjectIds.Contains(sceneObjectId))
-                            sceneObjectId = GenerateSceneObjectId();
-                        identities[k].sceneObjectId = sceneObjectId;
-                        EditorUtility.SetDirty(identities[k].gameObject);
-                        foundObjectIds.Add(sceneObjectId);
-                    }
-                }
-                rootObjects = null;
-                foundObjectIds.Clear();
-                foundObjectIds = null;
-            }
-            // Do not mark dirty while playing
-            if (!Application.isPlaying)
-                EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-#endif
         }
 
         internal static void UpdateHighestObjectId(uint objectId)
