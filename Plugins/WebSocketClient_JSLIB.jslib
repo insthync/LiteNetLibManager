@@ -109,7 +109,7 @@ var LibraryWebSockets_LnlM = {
 		if (!socket || socket.events.length == 0 || socket.events[0].type != 3)
 			return undefined;
 		var message = socket.events[0].message;
-		var length = lengthBytesUTF8(message) + 1;
+		var length = message ? lengthBytesUTF8(message) : 0;
 		var buffer = _malloc(length);
 		stringToUTF8(message, buffer, length);
 		return buffer;
@@ -131,7 +131,7 @@ var LibraryWebSockets_LnlM = {
 		if (!socket || socket.events.length == 0 || socket.events[0].type != 2)
 			return undefined;
 		var reason = socket.events[0].reason;
-		var length = lengthBytesUTF8(reason) + 1;
+		var length = reason ? lengthBytesUTF8(reason) : 0;
 		var buffer = _malloc(length);
 		stringToUTF8(reason, buffer, length);
 		return buffer;
