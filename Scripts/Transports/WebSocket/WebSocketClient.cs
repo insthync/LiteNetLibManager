@@ -1,45 +1,19 @@
 using Cysharp.Threading.Tasks;
 using LiteNetLib;
+using LiteNetLib.Utils;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
 using System.Net.WebSockets;
+using System.Runtime.InteropServices;
+using System.Threading;
 using UnityEngine;
 
 namespace LiteNetLibManager
 {
     public class WebSocketClient
     {
-        /// <summary>
-        /// https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code
-        /// </summary>
-        public enum WebSocketCloseCode : ushort
-        {
-            NormalClosure = 1000,
-            EndpointUnavailable = 1001,
-            ProtocolError = 1002,
-            InvalidMessageType = 1003,
-            Empty = 1005,
-            AbnormalClosure = 1006,
-            InvalidPayloadData = 1007,
-            PolicyViolation = 1008,
-            MessageTooBig = 1009,
-            MandatoryExtension = 1010,
-            InternalServerError = 1011,
-            ServiceRestart = 1012,
-            TryAgainLater = 1013,
-            BadGateway = 1014,
-            TlsHandshakeFailure = 1015
-        }
-
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern int SocketCreate_LnlM(string url);
@@ -93,10 +67,11 @@ namespace LiteNetLibManager
             _clientEventQueue = new ConcurrentQueue<TransportEventData>();
         }
 
-        public void Connect()
+        public bool Connect()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             _wsNativeInstance = SocketCreate_LnlM(_url);
+            return IsOpen;
 #else
             _tokenSource = new CancellationTokenSource();
             _cancellationToken = _tokenSource.Token;
@@ -112,8 +87,11 @@ namespace LiteNetLibManager
                 _socket_OnClose(WebSocketCloseCode.AbnormalClosure, ex.Message, false);
                 _tokenSource?.Cancel();
                 _socket?.Dispose();
+                _socket = null;
+                return false;
             }
             Receive();
+            return true;
 #endif
         }
 
@@ -128,8 +106,6 @@ namespace LiteNetLibManager
         public async UniTask ReceiveTask()
         {
             WebSocketCloseCode closeCode = WebSocketCloseCode.AbnormalClosure;
-            await UniTask.SwitchToThreadPool();
-
             ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[8192]);
             try
             {
@@ -163,13 +139,13 @@ namespace LiteNetLibManager
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _socket_OnError(ex.Message);
                 _tokenSource?.Cancel();
             }
             finally
             {
-                await UniTask.SwitchToMainThread();
                 _socket_OnClose(closeCode, string.Empty, false);
             }
         }
@@ -181,7 +157,7 @@ namespace LiteNetLibManager
             _clientEventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DataEvent,
-                reader = new LiteNetLib.Utils.NetDataReader(rawData),
+                reader = new NetDataReader(rawData),
             });
         }
 #endif
@@ -202,7 +178,7 @@ namespace LiteNetLibManager
             _clientEventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
-                disconnectInfo = GetDisconnectInfo((int)code, reason, wasClean),
+                disconnectInfo = WebSocketUtils.GetDisconnectInfo((int)code, reason, wasClean),
             });
         }
 #endif
@@ -239,7 +215,7 @@ namespace LiteNetLibManager
             {
                 case ENetworkEvent.DataEvent:
                     eventData.type = ENetworkEvent.DataEvent;
-                    eventData.reader = new LiteNetLib.Utils.NetDataReader(GetSocketData());
+                    eventData.reader = new NetDataReader(GetSocketData());
                     break;
                 case ENetworkEvent.ConnectEvent:
                     eventData.type = ENetworkEvent.ConnectEvent;
@@ -276,28 +252,6 @@ namespace LiteNetLibManager
             return buffer;
         }
 #endif
-
-        /// <summary>
-        /// https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/
-        /// </summary>
-        /// <param name="code"></param>
-        /// <param name="reason"></param>
-        /// <param name="wasClean"></param>
-        /// <returns></returns>
-        public DisconnectInfo GetDisconnectInfo(int code, string reason, bool wasClean)
-        {
-            // TODO: Implement this
-            WebSocketCloseCode castedCode = (WebSocketCloseCode)code;
-            DisconnectReason disconnectReason = DisconnectReason.ConnectionFailed;
-            SocketError socketErrorCode = SocketError.ConnectionReset;
-            if (castedCode == WebSocketCloseCode.NormalClosure)
-                socketErrorCode = SocketError.Success;
-            return new DisconnectInfo()
-            {
-                Reason = disconnectReason,
-                SocketErrorCode = socketErrorCode,
-            };
-        }
 
         public bool ClientSend(byte[] buffer)
         {
