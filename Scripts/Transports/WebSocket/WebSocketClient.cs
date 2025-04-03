@@ -1,10 +1,8 @@
 using Cysharp.Threading.Tasks;
-using LiteNetLib;
 using LiteNetLib.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -83,6 +81,7 @@ namespace LiteNetLibManager
             }
             catch (Exception ex)
             {
+                Debug.LogError($"[WebSockerClient] Unable to connect to {_url}, {ex.Message}\n{ex.StackTrace}");
                 _socket_OnError(ex.Message);
                 _socket_OnClose(WebSocketCloseCode.AbnormalClosure, ex.Message, false);
                 _tokenSource?.Cancel();
@@ -141,6 +140,7 @@ namespace LiteNetLibManager
             }
             catch (Exception ex)
             {
+                Debug.LogError($"[WebSockerClient] Error occuring while proceed receiving, {ex.Message}\n{ex.StackTrace}");
                 _socket_OnError(ex.Message);
                 _tokenSource?.Cancel();
             }
