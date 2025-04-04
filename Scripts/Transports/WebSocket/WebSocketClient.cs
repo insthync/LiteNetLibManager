@@ -199,8 +199,16 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL && !UNITY_EDITOR
             SocketClose_LnlM(_wsNativeInstance);
 #else
-            if (_socket != null)
-                _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, _cancellationToken).GetAwaiter().GetResult();
+            _tokenSource?.Cancel();
+            try
+            {
+                if (_socket != null && _socket.State == WebSocketState.Open)
+                    _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[WebSocketClient] Error occuring while closing, {ex.Message}\n{ex.StackTrace}");
+            }
 #endif
         }
 

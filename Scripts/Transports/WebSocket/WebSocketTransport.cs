@@ -82,8 +82,7 @@ namespace LiteNetLibManager
             string url = $"{protocol}://{address}:{port}{_path}";
             Logging.Log(nameof(WebSocketTransport), $"Connecting to {url}");
             _client = new WebSocketClient(url);
-            _client.Connect();
-            return true;
+            return _client.Connect();
         }
 
         public void StopClient()
