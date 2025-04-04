@@ -1,18 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Threading;
+using UnityEngine;
+
 #if !UNITY_WEBGL || UNITY_EDITOR
 using System.Security.Cryptography.X509Certificates;
-using WebSocketSharp;
-using WebSocketSharp.Server;
 #endif
 
 namespace LiteNetLibManager
 {
     public class WebSocketTransport : ITransport
     {
-        private string _path = "/netcode";
+        private string _path = "netcode";
         private bool _secure;
         private string _certificateFilePath;
         private string _certificatePassword;
@@ -20,27 +20,18 @@ namespace LiteNetLibManager
         private WebSocketClient _client;
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer _server;
-        private readonly Dictionary<long, WebSocketServerBehavior> _serverPeers;
-        private readonly Queue<TransportEventData> _serverEventQueue;
+        private readonly ConcurrentQueue<TransportEventData> _serverEventQueue;
 #endif
-        private long _connectionIdOffsets = 1000000;
-        private long _nextConnectionId = 1;
 
         public int ServerPeersCount
         {
             get
             {
-                int result = 0;
 #if !UNITY_WEBGL || UNITY_EDITOR
-                if (_server != null)
-                {
-                    foreach (WebSocketServiceHost host in _server.WebSocketServices.Hosts)
-                    {
-                        result += host.Sessions.Count;
-                    }
-                }
+                return _server.PeersCount;
+#else
+                return 0;
 #endif
-                return result;
             }
         }
         public int ServerMaxConnections { get; private set; }
@@ -53,7 +44,7 @@ namespace LiteNetLibManager
             get
             {
 #if !UNITY_WEBGL || UNITY_EDITOR
-                return _server != null && _server.IsListening;
+                return _server != null && _server.IsRunning;
 #else
                 return false;
 #endif
@@ -69,8 +60,7 @@ namespace LiteNetLibManager
             _certificatePassword = certificatePassword;
             _certificateBase64String = certificateBase64String;
 #if !UNITY_WEBGL || UNITY_EDITOR
-            _serverPeers = new Dictionary<long, WebSocketServerBehavior>();
-            _serverEventQueue = new Queue<TransportEventData>();
+            _serverEventQueue = new ConcurrentQueue<TransportEventData>();
 #endif
         }
 
@@ -79,8 +69,8 @@ namespace LiteNetLibManager
             if (IsClientStarted)
                 return false;
             string protocol = _secure ? "wss" : "ws";
-            string url = $"{protocol}://{address}:{port}{_path}";
-            Logging.Log(nameof(WebSocketTransport), $"Connecting to {url}");
+            string url = $"{protocol}://{address}:{port}/{_path}/";
+            Debug.Log($"[WebSocketTransport] Connecting to {url}");
             _client = new WebSocketClient(url);
             return _client.Connect();
         }
@@ -104,7 +94,7 @@ namespace LiteNetLibManager
         {
             if (IsClientStarted)
             {
-                _client.ClientSend(writer.Data);
+                _client.ClientSend(writer.CopyData());
                 return true;
             }
             return false;
@@ -116,8 +106,11 @@ namespace LiteNetLibManager
             if (IsServerStarted)
                 return false;
             ServerMaxConnections = maxConnections;
-            _serverPeers.Clear();
-            _server = new WebSocketServer(port, _secure);
+            string prefix1 = _secure ? $"https://localhost:{port}/{_path}/" : $"http://localhost:{port}/{_path}/";
+            string prefix2 = _secure ? $"https://127.0.0.1:{port}/{_path}/" : $"http://127.0.0.1:{port}/{_path}/";
+            string prefix3 = _secure ? $"https://0.0.0.0:{port}/{_path}/" : $"http://0.0.0.0:{port}/{_path}/";
+            _server = new WebSocketServer(new string[] { prefix1, prefix2, prefix3 }, _serverEventQueue);
+            /*
             if (_secure)
             {
                 if (!string.IsNullOrEmpty(_certificateFilePath) && !string.IsNullOrEmpty(_certificatePassword))
@@ -129,14 +122,8 @@ namespace LiteNetLibManager
                     byte[] bytes = System.Convert.FromBase64String(_certificateBase64String);
                     _server.SslConfiguration.ServerCertificate = new X509Certificate2(bytes);
                 }
-            }
-            _server.AddWebSocketService<WebSocketServerBehavior>(_path, (behavior) =>
-            {
-                long newConnectionId = GetNewConnectionID();
-                behavior.Initialize(newConnectionId, _serverEventQueue, _serverPeers);
-            });
-            _server.Start();
-            return true;
+            }*/
+            return _server.StartServer();
 #else
             return false;
 #endif
@@ -150,7 +137,7 @@ namespace LiteNetLibManager
                 return false;
             if (_serverEventQueue.Count == 0)
                 return false;
-            eventData = _serverEventQueue.Dequeue();
+            _serverEventQueue.TryDequeue(out eventData);
             return true;
 #else
             return false;
@@ -160,11 +147,8 @@ namespace LiteNetLibManager
         public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            if (IsServerStarted && _serverPeers.ContainsKey(connectionId) && _serverPeers[connectionId].ConnectionState == WebSocketState.Open)
-            {
-                _serverPeers[connectionId].Context.WebSocket.Send(writer.Data);
-                return true;
-            }
+            if (IsServerStarted)
+                return _server.Send(connectionId, writer.CopyData());
 #endif
             return false;
         }
@@ -172,12 +156,8 @@ namespace LiteNetLibManager
         public bool ServerDisconnect(long connectionId)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
-            if (IsServerStarted && _serverPeers.ContainsKey(connectionId))
-            {
-                _serverPeers[connectionId].Context.WebSocket.Close();
-                _serverPeers.Remove(connectionId);
-                return true;
-            }
+            if (IsServerStarted)
+                return _server.Disconnect(connectionId);
 #endif
             return false;
         }
@@ -187,7 +167,6 @@ namespace LiteNetLibManager
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (_server != null)
                 _server.Stop();
-            _nextConnectionId = 1;
             _server = null;
 #endif
         }
@@ -196,11 +175,6 @@ namespace LiteNetLibManager
         {
             StopClient();
             StopServer();
-        }
-
-        public long GetNewConnectionID()
-        {
-            return _connectionIdOffsets + Interlocked.Increment(ref _nextConnectionId);
         }
 
         public long GetClientRtt()
