@@ -105,6 +105,7 @@ namespace LiteNetLibManager
         public async UniTask ReceiveTask()
         {
             WebSocketCloseCode closeCode = WebSocketCloseCode.AbnormalClosure;
+            await UniTask.SwitchToThreadPool();
             ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[8192]);
             try
             {
@@ -146,6 +147,7 @@ namespace LiteNetLibManager
             }
             finally
             {
+                await UniTask.SwitchToMainThread();
                 _socket_OnClose(closeCode, string.Empty, false);
             }
         }
