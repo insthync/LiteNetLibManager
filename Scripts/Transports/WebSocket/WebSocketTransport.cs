@@ -106,21 +106,21 @@ namespace LiteNetLibManager
             if (IsServerStarted)
                 return false;
             ServerMaxConnections = maxConnections;
-            string prefix = _secure ? $"https://0.0.0.0:{port}/{_path}/" : $"http://0.0.0.0:{port}/{_path}/";
-            _server = new WebSocketServer(prefix, _serverEventQueue);
-            /*
+            string location = _secure ? $"https://0.0.0.0:{port}/{_path}/" : $"http://0.0.0.0:{port}/{_path}/";
+            X509Certificate2 cert = null;
             if (_secure)
             {
                 if (!string.IsNullOrEmpty(_certificateFilePath) && !string.IsNullOrEmpty(_certificatePassword))
                 {
-                    _server.SslConfiguration.ServerCertificate = new X509Certificate2(_certificateFilePath, _certificatePassword);
+                    cert = new X509Certificate2(_certificateFilePath, _certificatePassword);
                 }
                 if (!string.IsNullOrEmpty(_certificateBase64String))
                 {
                     byte[] bytes = System.Convert.FromBase64String(_certificateBase64String);
-                    _server.SslConfiguration.ServerCertificate = new X509Certificate2(bytes);
+                    cert = new X509Certificate2(bytes);
                 }
-            }*/
+            }
+            _server = new WebSocketServer(location, cert, _serverEventQueue);
             return _server.StartServer();
 #else
             return false;

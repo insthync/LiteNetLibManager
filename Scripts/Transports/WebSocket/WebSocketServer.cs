@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.WebSockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace LiteNetLibManager
     {
         private Fleck.WebSocketServer _listener = null;
         private readonly string _location;
+        private readonly X509Certificate2 _cert;
         private readonly ConcurrentQueue<TransportEventData> _eventQueue;
         private readonly ConcurrentDictionary<long, Fleck.IWebSocketConnection> _peers = new ConcurrentDictionary<long, Fleck.IWebSocketConnection>();
         private long _connectionIdOffsets = 1000000;
@@ -24,9 +26,10 @@ namespace LiteNetLibManager
         public bool IsRunning => _listener != null;
         public int PeersCount => _peers.Count;
 
-        public WebSocketServer(string location, ConcurrentQueue<TransportEventData> eventQueue)
+        public WebSocketServer(string location, X509Certificate2 cert, ConcurrentQueue<TransportEventData> eventQueue)
         {
             _location = location;
+            _cert = cert;
             _eventQueue = eventQueue;
         }
 
@@ -35,6 +38,7 @@ namespace LiteNetLibManager
             try
             {
                 _listener = new Fleck.WebSocketServer(_location);
+                _listener.Certificate = _cert;
                 _listener.Start(OnClientConnected);
                 _nextConnectionId = 1;
                 Debug.Log($"[WebSocketServer] Started on {_location}");
