@@ -14,19 +14,19 @@ namespace LiteNetLibManager
 {
     public class WebSocketServer
     {
-        private string[] _prefixes;
-        private HttpListener _listener = null;
+        private Fleck.WebSocketServer _listener = null;
+        private readonly string _location;
         private readonly ConcurrentQueue<TransportEventData> _eventQueue;
-        private readonly ConcurrentDictionary<long, WebSocket> _peers = new ConcurrentDictionary<long, WebSocket>();
+        private readonly ConcurrentDictionary<long, Fleck.IWebSocketConnection> _peers = new ConcurrentDictionary<long, Fleck.IWebSocketConnection>();
         private long _connectionIdOffsets = 1000000;
         private long _nextConnectionId = 1;
 
-        public bool IsRunning { get; private set; } = false;
+        public bool IsRunning => _listener != null;
         public int PeersCount => _peers.Count;
 
-        public WebSocketServer(string[] prefixes, ConcurrentQueue<TransportEventData> eventQueue)
+        public WebSocketServer(string location, ConcurrentQueue<TransportEventData> eventQueue)
         {
-            _prefixes = prefixes;
+            _location = location;
             _eventQueue = eventQueue;
         }
 
@@ -34,131 +34,35 @@ namespace LiteNetLibManager
         {
             try
             {
-                _listener = new HttpListener();
-                string prefixesStr = string.Empty;
-                for (int i = 0; i < _prefixes.Length; ++i)
-                {
-                    string prefix = _prefixes[i];
-                    if (!string.IsNullOrEmpty(prefixesStr))
-                        prefixesStr += ", ";
-                    prefixesStr += prefix;
-                    Debug.Log($"[WebSocketServer] Adding prefix: {prefix}");
-                    _listener.Prefixes.Add(prefix);
-                }
-                _listener.Start();
-                Debug.Log($"[WebSocketServer] Started on {prefixesStr}");
+                _listener = new Fleck.WebSocketServer(_location);
+                _listener.Start(OnClientConnected);
+                _nextConnectionId = 1;
+                Debug.Log($"[WebSocketServer] Started on {_location}");
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[WebSocketServer] Unable to start server: {ex.Message}\n{ex.StackTrace}");
                 return false;
             }
-            Listen();
             return true;
         }
 
         public void Stop()
         {
-            IsRunning = false;
+            _listener?.Dispose();
+            _listener = null;
         }
 
-        public async void Listen()
+        private void OnClientConnected(Fleck.IWebSocketConnection conn)
         {
-            await ListenTask();
-        }
-
-        public async UniTask ListenTask()
-        {
-            IsRunning = true;
-
-            while (IsRunning)
-            {
-                try
-                {
-                    Debug.LogError("Listening");
-                    HttpListenerContext context = await _listener.GetContextAsync();
-
-                    if (!IsRunning)
-                        break; // Stop accepting if shutting down
-
-                    _ = Task.Run(() => HandleConnection(context)); // Handle client in a separate task
-                }
-                catch (HttpListenerException)
-                {
-                    if (!IsRunning)
-                        break; // Ignore errors if shutting down
-                }
-            }
-
-            _listener?.Stop();
-            _listener?.Close();
-            _nextConnectionId = 1;
-        }
-
-        private async UniTask HandleConnection(HttpListenerContext context)
-        {
-            if (!context.Request.IsWebSocketRequest)
-            {
-                Debug.LogError("Not ws");
-                context.Response.StatusCode = 400;
-                context.Response.Close();
-                return;
-            }
-            HttpListenerWebSocketContext wsContext = await context.AcceptWebSocketAsync(null);
-            await ReceiveTask(context, wsContext);
-        }
-
-        private async UniTask ReceiveTask(HttpListenerContext context, HttpListenerWebSocketContext wsContext)
-        {
-            WebSocket socket = wsContext.WebSocket;
             long connectionId = GetNewConnectionID();
-            _socket_OnOpen(context, wsContext, connectionId);
-            WebSocketCloseCode closeCode = WebSocketCloseCode.AbnormalClosure;
-            ArraySegment<byte> buffer = new ArraySegment<byte>(new byte[8192]);
-            try
-            {
-                while (socket.State == WebSocketState.Open)
-                {
-                    WebSocketReceiveResult result = null;
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        do
-                        {
-                            result = await socket.ReceiveAsync(buffer, CancellationToken.None);
-                            ms.Write(buffer.Array, buffer.Offset, result.Count);
-                        }
-                        while (!result.EndOfMessage);
-
-                        ms.Seek(0, SeekOrigin.Begin);
-
-                        if (result.MessageType == WebSocketMessageType.Text)
-                        {
-                            _socket_OnMessage(context, wsContext, connectionId, ms.ToArray());
-                        }
-                        else if (result.MessageType == WebSocketMessageType.Binary)
-                        {
-                            _socket_OnMessage(context, wsContext, connectionId, ms.ToArray());
-                        }
-                        else if (result.MessageType == WebSocketMessageType.Close)
-                        {
-                            closeCode = (WebSocketCloseCode)result.CloseStatus;
-                            break;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _socket_OnError(context, wsContext, ex.Message);
-                // Cancellation
-            }
-            finally
-            {
-                _socket_OnClose(context, wsContext, connectionId, closeCode, string.Empty, false);
-            }
+            conn.OnOpen = () => _socket_OnOpen(conn, connectionId);
+            conn.OnBinary = (data) => _socket_OnMessage(conn, connectionId, data.ToArray());
+            conn.OnClose = () => _socket_OnClose(conn, connectionId, WebSocketCloseCode.NormalClosure, string.Empty, true);
+            conn.OnError = (ex) => _socket_OnError(conn, ex.Message);
         }
 
-        private void _socket_OnMessage(HttpListenerContext context, HttpListenerWebSocketContext wsContext, long connectionId, byte[] rawData)
+        private void _socket_OnMessage(Fleck.IWebSocketConnection conn, long connectionId, byte[] rawData)
         {
             _eventQueue.Enqueue(new TransportEventData()
             {
@@ -168,10 +72,9 @@ namespace LiteNetLibManager
             });
         }
 
-        private void _socket_OnOpen(HttpListenerContext context, HttpListenerWebSocketContext wsContext, long connectionId)
+        private void _socket_OnOpen(Fleck.IWebSocketConnection conn, long connectionId)
         {
-            if (_peers != null)
-                _peers[connectionId] = wsContext.WebSocket;
+            _peers[connectionId] = conn;
             _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
@@ -179,10 +82,9 @@ namespace LiteNetLibManager
             });
         }
 
-        private void _socket_OnClose(HttpListenerContext context, HttpListenerWebSocketContext wsContext, long connectionId, WebSocketCloseCode code, string reason, bool wasClean)
+        private void _socket_OnClose(Fleck.IWebSocketConnection conn, long connectionId, WebSocketCloseCode code, string reason, bool wasClean)
         {
-            if (_peers != null)
-                _peers.TryRemove(connectionId, out _);
+            _peers.TryRemove(connectionId, out _);
             _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
@@ -191,12 +93,12 @@ namespace LiteNetLibManager
             });
         }
 
-        private void _socket_OnError(HttpListenerContext context, HttpListenerWebSocketContext wsContext, string message)
+        private void _socket_OnError(Fleck.IWebSocketConnection conn, string message)
         {
             _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ErrorEvent,
-                endPoint = context.Request.RemoteEndPoint,
+                endPoint = new IPEndPoint(conn.ConnectionInfo.ClientIpAddress, conn.ConnectionInfo.ClientPort),
                 errorMessage = message,
             });
         }
@@ -206,19 +108,21 @@ namespace LiteNetLibManager
             return _connectionIdOffsets + Interlocked.Increment(ref _nextConnectionId);
         }
 
-        public bool Send(long connectionId, byte[] buffer)
+        public bool Send(long connectionId, NetDataWriter writer)
         {
-            if (!_peers.TryGetValue(connectionId, out WebSocket ws) || ws.State != WebSocketState.Open)
+            if (!_peers.TryGetValue(connectionId, out var ws) || !ws.IsAvailable)
                 return false;
-            ws.SendAsync(buffer, WebSocketMessageType.Binary, true, CancellationToken.None);
+            var msgBuffer = new Fleck.MemoryBuffer(writer.Length);
+            Buffer.BlockCopy(writer.Data, 0, msgBuffer.Data, 0, writer.Length);
+            ws.Send(msgBuffer);
             return true;
         }
 
         public bool Disconnect(long connectionId)
         {
-            if (!_peers.TryRemove(connectionId, out WebSocket ws))
+            if (!_peers.TryRemove(connectionId, out var ws))
                 return false;
-            ws.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).GetAwaiter().GetResult();
+            ws.Close();
             return true;
         }
     }

@@ -8,4 +8,4 @@ LiteNetLib Network Manager for Unity, this is required LiteNetLib (https://githu
 - [UniTask](https://github.com/Cysharp/UniTask)
 - [ZLogger](https://github.com/Cysharp/ZLogger)
 - [ZString](https://github.com/Cysharp/ZString)
-- [websocket-sharp](https://github.com/sta/websocket-sharp)
+- [Fleck](https://github.com/Facepunch/Fleck) / ([base](https://github.com/statianzo/Fleck))

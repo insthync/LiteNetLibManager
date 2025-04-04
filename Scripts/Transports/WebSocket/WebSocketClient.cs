@@ -263,8 +263,9 @@ namespace LiteNetLibManager
         }
 #endif
 
-        public bool ClientSend(byte[] buffer)
+        public bool ClientSend(NetDataWriter writer)
         {
+            var buffer = writer.CopyData();
             if (!IsOpen)
                 return false;
 #if UNITY_WEBGL && !UNITY_EDITOR

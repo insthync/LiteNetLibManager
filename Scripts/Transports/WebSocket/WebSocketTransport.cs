@@ -94,7 +94,7 @@ namespace LiteNetLibManager
         {
             if (IsClientStarted)
             {
-                _client.ClientSend(writer.CopyData());
+                _client.ClientSend(writer);
                 return true;
             }
             return false;
@@ -106,10 +106,8 @@ namespace LiteNetLibManager
             if (IsServerStarted)
                 return false;
             ServerMaxConnections = maxConnections;
-            string prefix1 = _secure ? $"https://localhost:{port}/{_path}/" : $"http://localhost:{port}/{_path}/";
-            string prefix2 = _secure ? $"https://127.0.0.1:{port}/{_path}/" : $"http://127.0.0.1:{port}/{_path}/";
-            string prefix3 = _secure ? $"https://0.0.0.0:{port}/{_path}/" : $"http://0.0.0.0:{port}/{_path}/";
-            _server = new WebSocketServer(new string[] { prefix1, prefix2, prefix3 }, _serverEventQueue);
+            string prefix = _secure ? $"https://0.0.0.0:{port}/{_path}/" : $"http://0.0.0.0:{port}/{_path}/";
+            _server = new WebSocketServer(prefix, _serverEventQueue);
             /*
             if (_secure)
             {
@@ -148,7 +146,7 @@ namespace LiteNetLibManager
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (IsServerStarted)
-                return _server.Send(connectionId, writer.CopyData());
+                return _server.Send(connectionId, writer);
 #endif
             return false;
         }
