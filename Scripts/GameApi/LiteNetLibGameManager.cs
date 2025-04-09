@@ -10,12 +10,17 @@ using UnityEngine.Profiling;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
+using Unity.Profiling;
 
 namespace LiteNetLibManager
 {
     [RequireComponent(typeof(LiteNetLibAssets))]
     public class LiteNetLibGameManager : LiteNetLibManager
     {
+        protected static ProfilerMarker s_updateSyncFieldsProfilerMarker = new ProfilerMarker("SyncFields Update");
+        protected static ProfilerMarker s_updateSyncListsProfilerMarker = new ProfilerMarker("SyncLists Update");
+        protected static ProfilerMarker s_updateSyncBehavioursProfilerMarker = new ProfilerMarker("SyncBehaviours Update");
+
         public struct ServerSceneLoadingInfo
         {
             public ServerSceneInfo sceneInfo;
@@ -128,29 +133,32 @@ namespace LiteNetLibManager
         {
             float currentTime = Time.fixedTime;
             int i;
-            Profiler.BeginSample("SyncFields Update");
-            for (i = _updatingSyncFields.Count - 1; i >= 0; --i)
+            using (s_updateSyncFieldsProfilerMarker.Auto())
             {
-                if (_updatingSyncFields[i] == null || _updatingSyncFields[i].NetworkUpdate(currentTime))
-                    _updatingSyncFields.RemoveAt(i);
+                for (i = _updatingSyncFields.Count - 1; i >= 0; --i)
+                {
+                    if (_updatingSyncFields[i] == null || _updatingSyncFields[i].NetworkUpdate(currentTime))
+                        _updatingSyncFields.RemoveAt(i);
+                }
             }
-            Profiler.EndSample();
 
-            Profiler.BeginSample("SyncLists Update");
-            for (i = _updatingSyncLists.Count - 1; i >= 0; --i)
+            using (s_updateSyncListsProfilerMarker.Auto())
             {
-                if (_updatingSyncLists[i] == null || _updatingSyncLists[i].SendOperations())
-                    _updatingSyncLists.RemoveAt(i);
+                for (i = _updatingSyncLists.Count - 1; i >= 0; --i)
+                {
+                    if (_updatingSyncLists[i] == null || _updatingSyncLists[i].SendOperations())
+                        _updatingSyncLists.RemoveAt(i);
+                }
             }
-            Profiler.EndSample();
 
-            Profiler.BeginSample("SyncBehaviours Update");
-            for (i = _updatingSyncBehaviours.Count - 1; i >= 0; --i)
+            using (s_updateSyncBehavioursProfilerMarker.Auto())
             {
-                if (_updatingSyncBehaviours[i] == null || _updatingSyncBehaviours[i].NetworkUpdate(currentTime))
-                    _updatingSyncBehaviours.RemoveAt(i);
+                for (i = _updatingSyncBehaviours.Count - 1; i >= 0; --i)
+                {
+                    if (_updatingSyncBehaviours[i] == null || _updatingSyncBehaviours[i].NetworkUpdate(currentTime))
+                        _updatingSyncBehaviours.RemoveAt(i);
+                }
             }
-            Profiler.EndSample();
         }
 
         internal void RegisterSyncFieldUpdating(LiteNetLibSyncField element)

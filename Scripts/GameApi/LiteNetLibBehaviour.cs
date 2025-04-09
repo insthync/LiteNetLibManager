@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using UnityEngine.Profiling;
 using System.Text;
 
 namespace LiteNetLibManager
@@ -194,19 +193,15 @@ namespace LiteNetLibManager
             if (ShouldSyncBehaviour())
                 return false;
 
-            Profiler.BeginSample("LiteNetLibBehaviour - Update Sync Behaviour");
+            LiteNetLibGameManager manager = Manager;
+            LiteNetLibServer server = manager.Server;
+            TransportHandler.WritePacket(server.s_Writer, GameMsgTypes.ServerSyncBehaviour);
+            Serialize(server.s_Writer);
+            foreach (long connectionId in manager.GetConnectionIds())
             {
-                LiteNetLibGameManager manager = Manager;
-                LiteNetLibServer server = manager.Server;
-                TransportHandler.WritePacket(server.s_Writer, GameMsgTypes.ServerSyncBehaviour);
-                Serialize(server.s_Writer);
-                foreach (long connectionId in manager.GetConnectionIds())
-                {
-                    if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        server.SendMessage(connectionId, dataChannel, sendOptions, server.s_Writer);
-                }
+                if (Identity.HasSubscriberOrIsOwning(connectionId))
+                    server.SendMessage(connectionId, dataChannel, sendOptions, server.s_Writer);
             }
-            Profiler.EndSample();
             return true;
         }
 
