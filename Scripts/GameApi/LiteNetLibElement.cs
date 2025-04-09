@@ -3,10 +3,10 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public struct LiteNetLibElementInfo
+    public readonly struct LiteNetLibElementInfo
     {
-        public uint objectId;
-        public int elementId;
+        public readonly uint objectId;
+        public readonly int elementId;
         public LiteNetLibElementInfo(uint objectId, int elementId)
         {
             this.objectId = objectId;
