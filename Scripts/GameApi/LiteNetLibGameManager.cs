@@ -4,22 +4,21 @@ using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using Unity.Profiling;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.Profiling;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
-using Unity.Profiling;
+using UnityEngine.SceneManagement;
 
 namespace LiteNetLibManager
 {
     [RequireComponent(typeof(LiteNetLibAssets))]
     public class LiteNetLibGameManager : LiteNetLibManager
     {
-        protected static ProfilerMarker s_updateSyncFieldsProfilerMarker = new ProfilerMarker("SyncFields Update");
-        protected static ProfilerMarker s_updateSyncListsProfilerMarker = new ProfilerMarker("SyncLists Update");
-        protected static ProfilerMarker s_updateSyncBehavioursProfilerMarker = new ProfilerMarker("SyncBehaviours Update");
+        protected static readonly ProfilerMarker s_UpdateSyncFieldsProfilerMarker = new ProfilerMarker("SyncFields Update");
+        protected static readonly ProfilerMarker s_UpdateSyncListsProfilerMarker = new ProfilerMarker("SyncLists Update");
+        protected static readonly ProfilerMarker s_UpdateSyncBehavioursProfilerMarker = new ProfilerMarker("SyncBehaviours Update");
 
         public struct ServerSceneLoadingInfo
         {
@@ -133,7 +132,7 @@ namespace LiteNetLibManager
         {
             float currentTime = Time.fixedTime;
             int i;
-            using (s_updateSyncFieldsProfilerMarker.Auto())
+            using (s_UpdateSyncFieldsProfilerMarker.Auto())
             {
                 for (i = _updatingSyncFields.Count - 1; i >= 0; --i)
                 {
@@ -142,7 +141,7 @@ namespace LiteNetLibManager
                 }
             }
 
-            using (s_updateSyncListsProfilerMarker.Auto())
+            using (s_UpdateSyncListsProfilerMarker.Auto())
             {
                 for (i = _updatingSyncLists.Count - 1; i >= 0; --i)
                 {
@@ -151,7 +150,7 @@ namespace LiteNetLibManager
                 }
             }
 
-            using (s_updateSyncBehavioursProfilerMarker.Auto())
+            using (s_UpdateSyncBehavioursProfilerMarker.Auto())
             {
                 for (i = _updatingSyncBehaviours.Count - 1; i >= 0; --i)
                 {
