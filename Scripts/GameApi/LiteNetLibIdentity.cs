@@ -589,7 +589,7 @@ namespace LiteNetLibManager
                 return Manager.Assets.ContainsSceneObject(sceneObjectId);
             }
             // If this is not spawned while running in play mode, find objects in scene
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            LiteNetLibIdentity[] netObjects = FindObjectsByType<LiteNetLibIdentity>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (LiteNetLibIdentity netObject in netObjects)
             {
                 if (netObject.HashSceneObjectId == sceneObjectId && netObject != this)
@@ -707,7 +707,7 @@ namespace LiteNetLibManager
             if (HighestObjectId == 0)
             {
                 uint result = HighestObjectId;
-                LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+                LiteNetLibIdentity[] netObjects = FindObjectsByType<LiteNetLibIdentity>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 foreach (LiteNetLibIdentity netObject in netObjects)
                 {
                     if (netObject.ObjectId > result)
