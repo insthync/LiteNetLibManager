@@ -1,4 +1,5 @@
-﻿using LiteNetLib;
+﻿using Cysharp.Text;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using System;
 using System.Collections.Generic;
@@ -1594,7 +1595,13 @@ namespace LiteNetLibManager
 
         private string MakeNetFunctionId(string methodName)
         {
-            return new StringBuilder(TypeName).Append('+').Append(methodName).ToString();
+            using (Utf16ValueStringBuilder str = ZString.CreateStringBuilder(true))
+            {
+                str.Append(TypeName);
+                str.Append('.');
+                str.Append(methodName);
+                return str.ToString();
+            }
         }
 
         public void Serialize(NetDataWriter writer)
