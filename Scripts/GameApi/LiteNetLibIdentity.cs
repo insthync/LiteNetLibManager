@@ -37,6 +37,10 @@ namespace LiteNetLibManager
         private string sceneObjectId = string.Empty;
         [SerializeField, ReadOnly]
         private uint networkedObjectId = 0;
+        [SerializeField, Tooltip("Sync field/list channel ID")]
+        private byte syncChannelId = 0;
+        [SerializeField, Tooltip("Default RPCs channel ID")]
+        private byte defaultRpcChannelId = 0;
         [SerializeField, Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting")]
         private float visibleRange = 0f;
         [SerializeField, Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects")]
@@ -146,6 +150,8 @@ namespace LiteNetLibManager
         }
 
         public uint ObjectId { get { return networkedObjectId; } internal set { networkedObjectId = value; } }
+        public byte SyncChannelId { get { return syncChannelId; } }
+        public byte DefaultRpcChannelId { get { return defaultRpcChannelId; } }
         public float VisibleRange { get { return visibleRange; } set { visibleRange = value; } }
         public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
@@ -532,7 +538,7 @@ namespace LiteNetLibManager
                 return Manager.Assets.ContainsSceneObject(sceneObjectId);
             }
             // If this is not spawned while running in play mode, find objects in scene
-            LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+            LiteNetLibIdentity[] netObjects = FindObjectsByType<LiteNetLibIdentity>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (LiteNetLibIdentity netObject in netObjects)
             {
                 if (netObject.HashSceneObjectId == sceneObjectId && netObject != this)
@@ -650,7 +656,7 @@ namespace LiteNetLibManager
             if (HighestObjectId == 0)
             {
                 uint result = HighestObjectId;
-                LiteNetLibIdentity[] netObjects = FindObjectsOfType<LiteNetLibIdentity>();
+                LiteNetLibIdentity[] netObjects = FindObjectsByType<LiteNetLibIdentity>(FindObjectsInactive.Include, FindObjectsSortMode.None);
                 foreach (LiteNetLibIdentity netObject in netObjects)
                 {
                     if (netObject.ObjectId > result)
