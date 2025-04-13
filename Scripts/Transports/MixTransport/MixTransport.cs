@@ -11,11 +11,11 @@ namespace LiteNetLibManager
         private int _webSocketPortOffset;
 
         public MixTransport(bool useWebSocketForClient, string connectKey, byte clientDataChannelsCount, byte serverDataChannelsCount,
-            int webSocketPortOffset, bool secure, string certificateFilePath, string certificatePassword, string certificateBase64String)
+            int webSocketPortOffset, bool secure, string certificateFilePath, string certificateBase64String, string certificatePassword)
         {
             _useWebSocketForClient = useWebSocketForClient;
             _lnlTransport = new LiteNetLibTransport(connectKey, clientDataChannelsCount, serverDataChannelsCount);
-            _wsTransport = new WebSocketTransport(secure, certificateFilePath, certificatePassword, certificateBase64String);
+            _wsTransport = new WebSocketTransport(secure, certificateFilePath, certificateBase64String, certificatePassword);
             _webSocketPortOffset = webSocketPortOffset;
         }
 

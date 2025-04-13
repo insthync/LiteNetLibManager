@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using System.Threading;
 using UnityEngine;
 
 #if !UNITY_WEBGL || UNITY_EDITOR
@@ -15,8 +14,8 @@ namespace LiteNetLibManager
         private string _path = "netcode";
         private bool _secure;
         private string _certificateFilePath;
-        private string _certificatePassword;
         private string _certificateBase64String;
+        private string _certificatePassword;
         private WebSocketClient _client;
 #if !UNITY_WEBGL || UNITY_EDITOR
         private WebSocketServer _server;
@@ -53,12 +52,12 @@ namespace LiteNetLibManager
 
         public bool HasImplementedPing => false;
 
-        public WebSocketTransport(bool secure, string certificateFilePath, string certificatePassword, string certificateBase64String)
+        public WebSocketTransport(bool secure, string certificateFilePath, string certificateBase64String, string certificatePassword)
         {
             _secure = secure;
             _certificateFilePath = certificateFilePath;
-            _certificatePassword = certificatePassword;
             _certificateBase64String = certificateBase64String;
+            _certificatePassword = certificatePassword;
 #if !UNITY_WEBGL || UNITY_EDITOR
             _serverEventQueue = new ConcurrentQueue<TransportEventData>();
 #endif
@@ -110,14 +109,20 @@ namespace LiteNetLibManager
             X509Certificate2 cert = null;
             if (_secure)
             {
-                if (!string.IsNullOrEmpty(_certificateFilePath) && !string.IsNullOrEmpty(_certificatePassword))
+                if (!string.IsNullOrEmpty(_certificateFilePath))
                 {
-                    cert = new X509Certificate2(_certificateFilePath, _certificatePassword);
+                    if (!string.IsNullOrEmpty(_certificatePassword))
+                        cert = new X509Certificate2(_certificateFilePath, _certificatePassword);
+                    else
+                        cert = new X509Certificate2(_certificateFilePath);
                 }
                 if (!string.IsNullOrEmpty(_certificateBase64String))
                 {
                     byte[] bytes = System.Convert.FromBase64String(_certificateBase64String);
-                    cert = new X509Certificate2(bytes);
+                    if (!string.IsNullOrEmpty(_certificatePassword))
+                        cert = new X509Certificate2(bytes, _certificatePassword);
+                    else
+                        cert = new X509Certificate2(bytes);
                 }
             }
             _server = new WebSocketServer(location, cert, _serverEventQueue);

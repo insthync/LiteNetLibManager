@@ -15,9 +15,9 @@ namespace LiteNetLibManager
         [SerializeField]
         private string webSocketCertificateFilePath = string.Empty;
         [SerializeField]
-        private string webSocketCertificatePassword = string.Empty;
-        [SerializeField]
         private string webSocketCertificateBase64String = string.Empty;
+        [SerializeField]
+        private string webSocketCertificatePassword = string.Empty;
         [Range(1, 64)]
         [SerializeField]
         private byte clientDataChannelsCount = 16;
@@ -27,13 +27,13 @@ namespace LiteNetLibManager
         public bool ShouldUseWebSocket { get { return shouldUseWebSocket; } set { shouldUseWebSocket = value; } }
         public bool Secure { get { return webSocketSecure; } set { webSocketSecure = value; } }
         public string CertificateFilePath { get { return webSocketCertificateFilePath; } set { webSocketCertificateFilePath = value; } }
-        public string CertificatePassword { get { return webSocketCertificatePassword; } set { webSocketCertificatePassword = value; } }
         public string CertificateBase64String { get { return webSocketCertificateBase64String; } set { webSocketCertificateBase64String = value; } }
+        public string CertificatePassword { get { return webSocketCertificatePassword; } set { webSocketCertificatePassword = value; } }
 
         public override ITransport Build()
         {
             return new MixTransport(shouldUseWebSocket, connectKey, clientDataChannelsCount, serverDataChannelsCount,
-                webSocketPortOffset, webSocketSecure, webSocketCertificateFilePath, webSocketCertificatePassword, webSocketCertificateBase64String);
+                webSocketPortOffset, webSocketSecure, webSocketCertificateFilePath, webSocketCertificateBase64String, webSocketCertificatePassword);
         }
     }
 }
