@@ -18,10 +18,30 @@ namespace LiteNetLibManager
         private readonly ConcurrentDictionary<long, Fleck.IWebSocketConnection> _peers = new ConcurrentDictionary<long, Fleck.IWebSocketConnection>();
         private long _connectionIdOffsets = 1000000;
         private long _nextConnectionId = 1;
-
-        public bool IsRunning => _listener != null;
-        public int PeersCount => _peers.Count;
 #endif
+
+        public bool IsRunning
+        {
+            get
+            {
+#if UNITY_EDITOR || UNITY_STANDALONE
+                return _listener != null;
+#else
+                return false;
+#endif
+            }
+        }
+        public int PeersCount
+        {
+            get
+            {
+#if UNITY_EDITOR || UNITY_STANDALONE
+                return _peers.Count;
+#else
+                return false;
+#endif
+            }
+        }
 
         public WebSocketServer(string location, X509Certificate2 cert, ConcurrentQueue<TransportEventData> eventQueue)
         {
