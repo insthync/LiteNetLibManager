@@ -38,7 +38,7 @@ namespace LiteNetLibManager
 #if UNITY_EDITOR || UNITY_STANDALONE
                 return _peers.Count;
 #else
-                return false;
+                return 0;
 #endif
             }
         }
