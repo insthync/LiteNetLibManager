@@ -1,20 +1,16 @@
-#if !UNITY_WEBGL || UNITY_EDITOR
-using Cysharp.Threading.Tasks;
 using LiteNetLib.Utils;
 using System;
 using System.Collections.Concurrent;
-using System.IO;
 using System.Net;
-using System.Net.WebSockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace LiteNetLibManager
 {
     public class WebSocketServer
     {
+#if UNITY_EDITOR || UNITY_STANDALONE
         private Fleck.WebSocketServer _listener = null;
         private readonly string _location;
         private readonly X509Certificate2 _cert;
@@ -25,16 +21,20 @@ namespace LiteNetLibManager
 
         public bool IsRunning => _listener != null;
         public int PeersCount => _peers.Count;
+#endif
 
         public WebSocketServer(string location, X509Certificate2 cert, ConcurrentQueue<TransportEventData> eventQueue)
         {
+#if UNITY_EDITOR || UNITY_STANDALONE
             _location = location;
             _cert = cert;
             _eventQueue = eventQueue;
+#endif
         }
 
         public bool StartServer()
         {
+#if UNITY_EDITOR || UNITY_STANDALONE
             try
             {
                 _listener = new Fleck.WebSocketServer(_location);
@@ -49,14 +49,20 @@ namespace LiteNetLibManager
                 return false;
             }
             return true;
+#else
+            return false;
+#endif
         }
 
         public void Stop()
         {
+#if UNITY_EDITOR || UNITY_STANDALONE
             _listener?.Dispose();
             _listener = null;
+#endif
         }
 
+#if UNITY_EDITOR || UNITY_STANDALONE
         private void OnClientConnected(Fleck.IWebSocketConnection conn)
         {
             long connectionId = GetNewConnectionID();
@@ -111,24 +117,32 @@ namespace LiteNetLibManager
         {
             return _connectionIdOffsets + Interlocked.Increment(ref _nextConnectionId);
         }
+#endif
 
         public bool Send(long connectionId, NetDataWriter writer)
         {
+#if UNITY_EDITOR || UNITY_STANDALONE
             if (!_peers.TryGetValue(connectionId, out var ws) || !ws.IsAvailable)
                 return false;
             var msgBuffer = new Fleck.MemoryBuffer(writer.Length);
             Buffer.BlockCopy(writer.Data, 0, msgBuffer.Data, 0, writer.Length);
             ws.Send(msgBuffer);
             return true;
+#else
+            return false;
+#endif
         }
 
         public bool Disconnect(long connectionId)
         {
+#if UNITY_EDITOR || UNITY_STANDALONE
             if (!_peers.TryRemove(connectionId, out var ws))
                 return false;
             ws.Close();
             return true;
+#else
+            return false;
+#endif
         }
     }
 }
-#endif
