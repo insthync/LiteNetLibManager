@@ -232,7 +232,7 @@ namespace LiteNetLibManager
                     break;
                 case ENetworkEvent.DisconnectEvent:
                     eventData.type = ENetworkEvent.DisconnectEvent;
-                    eventData.disconnectInfo = GetDisconnectInfo(
+                    eventData.disconnectInfo = WebSocketUtils.GetDisconnectInfo(
                         GetSocketDisconnectCode_LnlM(_wsNativeInstance),
                         GetSocketDisconnectReason_LnlM(_wsNativeInstance),
                         GetSocketDisconnectWasClean_LnlM(_wsNativeInstance));
