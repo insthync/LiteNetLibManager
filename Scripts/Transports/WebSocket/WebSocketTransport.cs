@@ -105,7 +105,7 @@ namespace LiteNetLibManager
             if (IsServerStarted)
                 return false;
             ServerMaxConnections = maxConnections;
-            string location = _secure ? $"https://0.0.0.0:{port}/{_path}/" : $"http://0.0.0.0:{port}/{_path}/";
+            string location = _secure ? $"wss://0.0.0.0:{port}/{_path}/" : $"ws://0.0.0.0:{port}/{_path}/";
             X509Certificate2 cert = null;
             if (_secure)
             {

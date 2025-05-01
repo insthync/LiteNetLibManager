@@ -54,6 +54,8 @@ namespace LiteNetLibManager
         private ClientWebSocket _socket = null;
         private CancellationTokenSource _tokenSource;
         private CancellationToken _cancellationToken;
+        private CancellationTokenSource _connectTokenSource;
+        private CancellationToken _connectCancellationToken;
 #endif
         private readonly ConcurrentQueue<TransportEventData> _clientEventQueue;
 
@@ -71,12 +73,34 @@ namespace LiteNetLibManager
             _wsNativeInstance = SocketCreate_LnlM(_url);
             return IsOpen;
 #else
+            ProceedConnect();
+            return true;
+#endif
+        }
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+        public async void ProceedConnect()
+        {
+            await ProceedConnectTask();
+        }
+#endif
+
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+        private async UniTask ProceedConnectTask()
+        {
+            // Cancellation for the whole system
             _tokenSource = new CancellationTokenSource();
             _cancellationToken = _tokenSource.Token;
+            // Cancellation for connect
+            _connectTokenSource = new CancellationTokenSource();
+            _connectCancellationToken = _connectTokenSource.Token;
+            // Timeout after 30 seconds
+            _connectTokenSource.CancelAfter(30000);
             try
             {
                 _socket = new ClientWebSocket();
-                _socket.ConnectAsync(new Uri(_url), _cancellationToken).GetAwaiter().GetResult();
+                await _socket.ConnectAsync(new Uri(_url), _connectCancellationToken);
                 _socket_OnOpen();
             }
             catch (Exception ex)
@@ -85,14 +109,13 @@ namespace LiteNetLibManager
                 _socket_OnError(ex.Message);
                 _socket_OnClose(WebSocketCloseCode.AbnormalClosure, ex.Message, false);
                 _tokenSource?.Cancel();
+                _connectTokenSource?.Cancel();
                 _socket?.Dispose();
                 _socket = null;
-                return false;
             }
             Receive();
-            return true;
-#endif
         }
+#endif
 
 #if !UNITY_WEBGL || UNITY_EDITOR
         public async void Receive()
@@ -144,6 +167,7 @@ namespace LiteNetLibManager
                 Debug.LogError($"[WebSockerClient] Error occuring while proceed receiving, {ex.Message}\n{ex.StackTrace}");
                 _socket_OnError(ex.Message);
                 _tokenSource?.Cancel();
+                _connectTokenSource?.Cancel();
             }
             finally
             {
@@ -196,16 +220,17 @@ namespace LiteNetLibManager
         }
 #endif
 
-        public void Close()
+        public async void Close()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             SocketClose_LnlM(_wsNativeInstance);
 #else
             _tokenSource?.Cancel();
+            _connectTokenSource?.Cancel();
             try
             {
                 if (_socket != null && _socket.State == WebSocketState.Open)
-                    _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).GetAwaiter().GetResult();
+                    await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
             }
             catch (Exception ex)
             {
