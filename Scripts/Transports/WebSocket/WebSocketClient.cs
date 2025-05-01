@@ -71,7 +71,7 @@ namespace LiteNetLibManager
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             _wsNativeInstance = SocketCreate_LnlM(_url);
-            return IsOpen;
+            return true;
 #else
             ProceedConnect();
             return true;
@@ -108,12 +108,21 @@ namespace LiteNetLibManager
                 Debug.LogError($"[WebSockerClient] Unable to connect to {_url}, {ex.Message}\n{ex.StackTrace}");
                 _socket_OnError(ex.Message);
                 _socket_OnClose(WebSocketCloseCode.AbnormalClosure, ex.Message, false);
-                _tokenSource?.Cancel();
-                _connectTokenSource?.Cancel();
+                CancelConnection();
                 _socket?.Dispose();
                 _socket = null;
             }
             Receive();
+        }
+#endif
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+        public void CancelConnection()
+        {
+            if (_tokenSource != null && !_tokenSource.IsCancellationRequested)
+                _tokenSource.Cancel();
+            if (_connectTokenSource != null && !_connectTokenSource.IsCancellationRequested)
+                _connectTokenSource.Cancel();
         }
 #endif
 
@@ -166,8 +175,7 @@ namespace LiteNetLibManager
             {
                 Debug.LogError($"[WebSockerClient] Error occuring while proceed receiving, {ex.Message}\n{ex.StackTrace}");
                 _socket_OnError(ex.Message);
-                _tokenSource?.Cancel();
-                _connectTokenSource?.Cancel();
+                CancelConnection();
             }
             finally
             {
@@ -225,8 +233,7 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL && !UNITY_EDITOR
             SocketClose_LnlM(_wsNativeInstance);
 #else
-            _tokenSource?.Cancel();
-            _connectTokenSource?.Cancel();
+            CancelConnection();
             try
             {
                 if (_socket != null && _socket.State == WebSocketState.Open)
