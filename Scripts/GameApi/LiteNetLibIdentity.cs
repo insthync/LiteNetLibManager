@@ -843,11 +843,11 @@ namespace LiteNetLibManager
                 LiteNetLibPlayer player;
                 foreach (long subscriber in Subscribers)
                 {
-                    if (Manager.TryGetPlayer(subscriber, out player))
-                    {
-                        player.Subscribings.Remove(ObjectId);
-                        Manager.SendServerDestroyObject(subscriber, ObjectId, reasons);
-                    }
+                    if (!Manager.TryGetPlayer(subscriber, out player))
+                        continue;
+                    player.Subscribings.Remove(ObjectId);
+                    player.SyncingSpawningObjectIds.Remove(ObjectId);
+                    player.SyncingDespawningObjectIds[ObjectId] = reasons;
                 }
                 // Delete object from owner player's spawned objects collection
                 if (ConnectionId >= 0)

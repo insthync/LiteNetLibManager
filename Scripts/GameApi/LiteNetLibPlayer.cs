@@ -12,6 +12,8 @@ namespace LiteNetLibManager
 
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly HashSet<uint> SyncingSpawningObjectIds = new HashSet<uint>();
+        internal readonly Dictionary<uint, byte> SyncingDespawningObjectIds = new Dictionary<uint, byte>();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
@@ -36,7 +38,8 @@ namespace LiteNetLibManager
             if (Subscribings.Add(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.AddSubscriber(ConnectionId);
-                Manager.SendServerSpawnObjectWithData(ConnectionId, identity);
+                SyncingDespawningObjectIds.Remove(objectId);
+                SyncingSpawningObjectIds.Add(objectId);
             }
         }
 
@@ -46,7 +49,8 @@ namespace LiteNetLibManager
             if (Subscribings.Remove(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.RemoveSubscriber(ConnectionId);
-                Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
+                SyncingSpawningObjectIds.Remove(objectId);
+                SyncingDespawningObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
             }
         }
 
@@ -60,7 +64,10 @@ namespace LiteNetLibManager
                     continue;
                 identity.RemoveSubscriber(ConnectionId);
                 if (destroyObjectsOnPeer)
-                    Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
+                {
+                    SyncingSpawningObjectIds.Remove(objectId);
+                    SyncingDespawningObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
+                }
             }
             Subscribings.Clear();
         }

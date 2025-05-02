@@ -473,11 +473,7 @@ namespace LiteNetLibManager
             RegisterServerMessage(GameMsgTypes.Pong, HandleClientPong);
             // TODO: Server handle sync elements
             // Client messages
-            RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
-            RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
-            RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
             RegisterClientMessage(GameMsgTypes.CallFunction, HandleServerCallFunction);
-            RegisterClientMessage(GameMsgTypes.OperateSyncList, HandleServerUpdateSyncList);
             RegisterClientMessage(GameMsgTypes.SyncElements, HandleServerSyncElements);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
@@ -640,70 +636,6 @@ namespace LiteNetLibManager
             {
                 ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
             }
-        }
-
-        public bool SendServerSpawnSceneObject(long connectionId, LiteNetLibIdentity identity)
-        {
-            if (!IsServer)
-                return false;
-            if (!Players.TryGetValue(connectionId, out LiteNetLibPlayer player) || !player.IsReady)
-                return false;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnSceneObject, new ServerSpawnSceneObjectMessage()
-            {
-                objectId = identity.ObjectId,
-                sceneObjectId = identity.HashSceneObjectId,
-                connectionId = identity.ConnectionId,
-                position = identity.transform.position,
-                rotation = identity.transform.rotation,
-            }, identity.WriteInitSyncFields);
-            return true;
-        }
-
-        public bool SendServerSpawnObject(long connectionId, LiteNetLibIdentity identity)
-        {
-            if (!IsServer)
-                return false;
-            if (!Players.TryGetValue(connectionId, out LiteNetLibPlayer player) || !player.IsReady)
-                return false;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerSpawnObject, new ServerSpawnObjectMessage()
-            {
-                hashAssetId = identity.HashAssetId,
-                objectId = identity.ObjectId,
-                connectionId = identity.ConnectionId,
-                position = identity.transform.position,
-                rotation = identity.transform.rotation,
-            }, identity.WriteInitSyncFields);
-            return true;
-        }
-
-        public void SendServerSpawnObjectWithData(long connectionId, LiteNetLibIdentity identity)
-        {
-            if (identity == null)
-                return;
-            bool spawnObjectSent;
-            if (Assets.ContainsSceneObject(identity.HashSceneObjectId))
-                spawnObjectSent = SendServerSpawnSceneObject(connectionId, identity);
-            else
-                spawnObjectSent = SendServerSpawnObject(connectionId, identity);
-            if (spawnObjectSent)
-            {
-                identity.SendInitSyncFields(connectionId);
-                identity.SendInitSyncLists(connectionId);
-            }
-        }
-
-        public bool SendServerDestroyObject(long connectionId, uint objectId, byte reasons)
-        {
-            if (!IsServer)
-                return false;
-            if (!Players.TryGetValue(connectionId, out LiteNetLibPlayer player) || !player.IsReady)
-                return false;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, new ServerDestroyObjectMessage()
-            {
-                objectId = objectId,
-                reasons = reasons,
-            });
-            return true;
         }
 
         public void SendServerError(bool shouldDisconnect, string errorMessage)
@@ -964,80 +896,6 @@ namespace LiteNetLibManager
             player.RttCalculator.OnPong(messageHandler.ReadMessage<PongMessage>());
         }
 
-        protected virtual void HandleServerSpawnSceneObject(MessageHandlerData messageHandler)
-        {
-            ServerSpawnSceneObjectMessage message = messageHandler.ReadMessage<ServerSpawnSceneObjectMessage>();
-            if (!IsServer)
-                Assets.NetworkSpawnScene(message.objectId, message.sceneObjectId, message.position, message.rotation, message.connectionId);
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(message.objectId, out identity))
-            {
-                // If it is not server, read its initial data
-                if (!IsServer)
-                {
-                    identity.ResetSyncData();
-                    identity.ReadInitSyncFields(messageHandler.Reader);
-                }
-                // If it is host, it may hidden so show it
-                if (IsServer)
-                    identity.OnServerSubscribingAdded();
-            }
-        }
-
-        protected virtual void HandleServerSpawnObject(MessageHandlerData messageHandler)
-        {
-            ServerSpawnObjectMessage message = messageHandler.ReadMessage<ServerSpawnObjectMessage>();
-            if (!IsServer)
-                Assets.NetworkSpawn(message.hashAssetId, message.position, message.rotation, message.objectId, message.connectionId);
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(message.objectId, out identity))
-            {
-                // If it is not server, read its initial data
-                if (!IsServer)
-                    identity.ReadInitSyncFields(messageHandler.Reader);
-                // If it is host, it may hidden so show it
-                if (IsServer)
-                    identity.OnServerSubscribingAdded();
-            }
-        }
-
-        protected virtual void HandleServerDestroyObject(MessageHandlerData messageHandler)
-        {
-            ServerDestroyObjectMessage message = messageHandler.ReadMessage<ServerDestroyObjectMessage>();
-            if (!IsServer)
-            {
-                Assets.NetworkDestroy(message.objectId, message.reasons);
-            }
-            else
-            {
-                LiteNetLibIdentity identity;
-                if (Assets.TryGetSpawnedObject(message.objectId, out identity))
-                    identity.OnServerSubscribingRemoved();
-            }
-        }
-
-        protected virtual void HandleServerInitialSyncField(MessageHandlerData messageHandler)
-        {
-            // Field updated at server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-                identity.ProcessSyncField(info, messageHandler.Reader, true);
-        }
-
-        protected virtual void HandleServerUpdateSyncField(MessageHandlerData messageHandler)
-        {
-            // Field updated at server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-                identity.ProcessSyncField(info, messageHandler.Reader, false);
-        }
-
         protected virtual void HandleServerCallFunction(MessageHandlerData messageHandler)
         {
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
@@ -1047,17 +905,6 @@ namespace LiteNetLibManager
                 // All function from server will be processed (because it's always trust server)
                 identity.ProcessNetFunction(info, messageHandler.Reader, true);
             }
-        }
-
-        protected virtual void HandleServerUpdateSyncList(MessageHandlerData messageHandler)
-        {
-            // List updated at server, if this is host (client and server) then skip it.
-            if (IsServer)
-                return;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-                identity.ProcessSyncList(info, messageHandler.Reader);
         }
 
         protected virtual void HandleServerSyncElements(MessageHandlerData messageHandler)
