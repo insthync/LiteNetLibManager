@@ -12,15 +12,72 @@ namespace LiteNetLibManager
 
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
-
-        internal readonly Dictionary<byte, HashSet<uint>> NetworkSpawningObjectIds = new Dictionary<byte, HashSet<uint>>();
-        internal readonly Dictionary<byte, HashSet<DestroyObjectInfo>> NetworkDestroyingObjectIds = new Dictionary<byte, HashSet<DestroyObjectInfo>>();
+        internal readonly Dictionary<byte, Dictionary<uint, GameStateSyncData>> StateSyncCollection = new Dictionary<byte, Dictionary<uint, GameStateSyncData>>();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
             Manager = manager;
             ConnectionId = connectionId;
             RttCalculator = new RttCalculator();
+        }
+
+        internal Dictionary<uint, GameStateSyncData> PrepareSyncStateCollection(byte channelId)
+        {
+            if (!StateSyncCollection.TryGetValue(channelId, out var collectionByObjectId))
+            {
+                collectionByObjectId = new Dictionary<uint, GameStateSyncData>();
+                StateSyncCollection[channelId] = collectionByObjectId;
+            }
+            return collectionByObjectId;
+        }
+
+        internal GameStateSyncData PrepareSyncStateData(byte channelId, uint objectId)
+        {
+            var collectionByObjectId = PrepareSyncStateCollection(channelId);
+            if (!collectionByObjectId.TryGetValue(objectId, out var syncData))
+            {
+                syncData = new GameStateSyncData();
+                collectionByObjectId[objectId] = syncData;
+            }
+            return syncData;
+        }
+
+        internal void AppendSpawnSyncState(LiteNetLibIdentity identity)
+        {
+            byte channelId = identity.SyncChannelId;
+            uint objectId = identity.ObjectId;
+            var syncData = PrepareSyncStateData(channelId, objectId);
+            syncData.StateType = GameStateSyncData.STATE_TYPE_SPAWN;
+            syncData.SyncElements.Clear();
+        }
+
+        internal void AppendDataSyncState(LiteNetLibSyncElement syncElement)
+        {
+            byte channelId = syncElement.SyncChannelId;
+            uint objectId = syncElement.ObjectId;
+            var syncData = PrepareSyncStateData(channelId, objectId);
+            if (syncData.StateType != GameStateSyncData.STATE_TYPE_NONE && syncData.StateType != GameStateSyncData.STATE_TYPE_SYNC)
+                return;
+            syncData.StateType = GameStateSyncData.STATE_TYPE_SYNC;
+            syncData.SyncElements.Add(syncElement);
+        }
+
+        internal void AppendDestroySyncState(LiteNetLibIdentity identity, byte reasons)
+        {
+            byte channelId = identity.SyncChannelId;
+            uint objectId = identity.ObjectId;
+            var syncData = PrepareSyncStateData(channelId, objectId);
+            syncData.StateType = GameStateSyncData.STATE_TYPE_DESTROY;
+            syncData.SyncElements.Clear();
+            syncData.DestroyReasons = reasons;
+        }
+
+        internal void RemoveSyncState(LiteNetLibIdentity identity)
+        {
+            byte channelId = identity.SyncChannelId;
+            uint objectId = identity.ObjectId;
+            var collectionByObjectId = PrepareSyncStateCollection(channelId);
+            collectionByObjectId.Remove(objectId);
         }
 
         internal bool IsSubscribing(uint objectId)
@@ -39,8 +96,7 @@ namespace LiteNetLibManager
             if (Subscribings.Add(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.AddSubscriber(ConnectionId);
-                NetworkDestroyingObjectIds.Remove(objectId);
-                NetworkSpawningObjectIds.Add(objectId);
+                AppendSpawnSyncState(identity);
             }
         }
 
@@ -50,8 +106,7 @@ namespace LiteNetLibManager
             if (Subscribings.Remove(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.RemoveSubscriber(ConnectionId);
-                NetworkSpawningObjectIds.Remove(objectId);
-                NetworkDestroyingObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
+                AppendDestroySyncState(identity, DestroyObjectReasons.RemovedFromSubscribing);
             }
         }
 
@@ -65,10 +120,7 @@ namespace LiteNetLibManager
                     continue;
                 identity.RemoveSubscriber(ConnectionId);
                 if (destroyObjectsOnPeer)
-                {
-                    NetworkSpawningObjectIds.Remove(objectId);
-                    NetworkDestroyingObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
-                }
+                    AppendDestroySyncState(identity, DestroyObjectReasons.RemovedFromSubscribing);
             }
             Subscribings.Clear();
         }
