@@ -14,8 +14,6 @@ namespace LiteNetLibManager
 
     public class LiteNetLibFunction : LiteNetLibElement
     {
-        public override byte ElementType => SyncElementTypes.Function;
-
         protected readonly static NetDataWriter s_ServerWriter = new NetDataWriter();
         protected readonly static NetDataWriter s_ClientWriter = new NetDataWriter();
 

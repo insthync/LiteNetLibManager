@@ -12,8 +12,8 @@ namespace LiteNetLibManager
 
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        internal readonly HashSet<uint> SyncingSpawningObjectIds = new HashSet<uint>();
-        internal readonly Dictionary<uint, byte> SyncingDespawningObjectIds = new Dictionary<uint, byte>();
+        internal readonly HashSet<uint> NetworkSpawningObjectIds = new HashSet<uint>();
+        internal readonly Dictionary<uint, byte> NetworkDestroyingObjectIds = new Dictionary<uint, byte>();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
@@ -38,8 +38,8 @@ namespace LiteNetLibManager
             if (Subscribings.Add(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.AddSubscriber(ConnectionId);
-                SyncingDespawningObjectIds.Remove(objectId);
-                SyncingSpawningObjectIds.Add(objectId);
+                NetworkDestroyingObjectIds.Remove(objectId);
+                NetworkSpawningObjectIds.Add(objectId);
             }
         }
 
@@ -49,8 +49,8 @@ namespace LiteNetLibManager
             if (Subscribings.Remove(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.RemoveSubscriber(ConnectionId);
-                SyncingSpawningObjectIds.Remove(objectId);
-                SyncingDespawningObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
+                NetworkSpawningObjectIds.Remove(objectId);
+                NetworkDestroyingObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
             }
         }
 
@@ -65,8 +65,8 @@ namespace LiteNetLibManager
                 identity.RemoveSubscriber(ConnectionId);
                 if (destroyObjectsOnPeer)
                 {
-                    SyncingSpawningObjectIds.Remove(objectId);
-                    SyncingDespawningObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
+                    NetworkSpawningObjectIds.Remove(objectId);
+                    NetworkDestroyingObjectIds[objectId] = DestroyObjectReasons.RemovedFromSubscribing;
                 }
             }
             Subscribings.Clear();

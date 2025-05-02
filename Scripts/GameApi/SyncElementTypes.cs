@@ -4,6 +4,5 @@ namespace LiteNetLibManager
     {
         public const byte SyncField = 0;
         public const byte SyncList = 1;
-        public const byte Function = 2;
     }
 }

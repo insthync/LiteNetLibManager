@@ -2,10 +2,9 @@
 
 namespace LiteNetLibManager
 {
-    public abstract class LiteNetLibElement : System.IEquatable<LiteNetLibElement>
+    public abstract class LiteNetLibElement
     {
         public bool IsSetup { get; private set; }
-        public abstract byte ElementType { get; }
 
         [ReadOnly, SerializeField]
         protected LiteNetLibBehaviour _behaviour;
@@ -88,37 +87,6 @@ namespace LiteNetLibManager
         protected virtual bool CanSync()
         {
             return IsSetup;
-        }
-
-        public bool Equals(LiteNetLibElement other)
-        {
-            return IsSetup == other.IsSetup &&
-                ElementType == other.ElementType &&
-                SyncChannelId == other.SyncChannelId &&
-                ObjectId == other.ObjectId &&
-                ElementId == other.ElementId;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is LiteNetLibElement other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            /*
-             * unchecked: avoids exceptions on overflow (safe for hash codes).
-             * 17 and 31 are classic seed and multiplier primes (good hash distribution).
-             */
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 31 + IsSetup.GetHashCode();
-                hash = hash * 31 + ElementType.GetHashCode();
-                hash = hash * 31 + ObjectId.GetHashCode();
-                hash = hash * 31 + ElementId.GetHashCode();
-                return hash;
-            }
         }
     }
 }

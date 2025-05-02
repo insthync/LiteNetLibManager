@@ -88,7 +88,7 @@ namespace LiteNetLibManager
         /// Dictionary[ChannelID:byte, HashSet[LiteNetLibSyncElement]]
         /// </summary>
         protected readonly Dictionary<byte, HashSet<LiteNetLibSyncElement>> _updatingServerSyncElements = new Dictionary<byte, HashSet<LiteNetLibSyncElement>>();
-        protected NetDataWriter _syncElementsWriter = new NetDataWriter(true, 1500);
+        protected NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1500);
 
         protected virtual void Awake()
         {
@@ -105,6 +105,7 @@ namespace LiteNetLibManager
         protected override void OnServerUpdate(LogicUpdater updater)
         {
             ProceedSyncElements(_updatingServerSyncElements, true);
+            ProceedSpawnAndDespawnObjects();
             // Send ping from server
             _serverSendPingCountDown -= updater.DeltaTime;
             if (_serverSendPingCountDown <= 0f)
@@ -134,51 +135,77 @@ namespace LiteNetLibManager
         {
             foreach (var kv in collection)
             {
+                // No data to sync
+                if (collection.Values.Count == 0)
+                    continue;
+
                 byte syncChannelId = kv.Key;
                 // Send to players
+                LiteNetLibPlayer player;
                 foreach (long connectionId in Server.ConnectionIds)
                 {
-                    _syncElementsWriter.Reset();
+                    if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
+                        continue;
+                    _gameStatesWriter.Reset();
                     // Message Type ID
-                    _syncElementsWriter.PutPackedUShort(GameMsgTypes.SyncElements);
+                    _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncElements);
                     // Reserve position for element count
-                    int positionToWriteSyncElementsCount = _syncElementsWriter.Length;
-                    _syncElementsWriter.Put(0);
+                    int positionToWriteSyncElementsCount = _gameStatesWriter.Length;
+                    _gameStatesWriter.Put(0);
 
                     int tempPositionBeforeWrite;
                     int syncElementsCount = 0;
                     foreach (var element in kv.Value)
                     {
-                        if (!element.WillSyncData(connectionId))
+                        // Will sync data to this player or not?
+                        if (!element.WillSyncData(player))
                             continue;
                         // Write element info
-                        _syncElementsWriter.PutPackedUInt(element.ObjectId);
-                        _syncElementsWriter.PutPackedInt(element.ElementId);
+                        _gameStatesWriter.PutPackedUInt(element.ObjectId);
+                        _gameStatesWriter.PutPackedInt(element.ElementId);
                         // Reserve position for data length
-                        int positionToWriteDataLength = _syncElementsWriter.Length;
-                        _syncElementsWriter.Put(0);
+                        int positionToWriteDataLength = _gameStatesWriter.Length;
+                        _gameStatesWriter.Put(0);
                         // Write sync data
-                        element.WriteSyncData(_syncElementsWriter);
-                        int dataLength = _syncElementsWriter.Length - positionToWriteDataLength - 1;
+                        element.WriteSyncData(_gameStatesWriter);
+                        int dataLength = _gameStatesWriter.Length - positionToWriteDataLength - 1;
                         // Put data length
-                        tempPositionBeforeWrite = _syncElementsWriter.Length;
-                        _syncElementsWriter.SetPosition(positionToWriteDataLength);
-                        _syncElementsWriter.Put(dataLength);
-                        _syncElementsWriter.SetPosition(tempPositionBeforeWrite);
+                        tempPositionBeforeWrite = _gameStatesWriter.Length;
+                        _gameStatesWriter.SetPosition(positionToWriteDataLength);
+                        _gameStatesWriter.Put(dataLength);
+                        _gameStatesWriter.SetPosition(tempPositionBeforeWrite);
                         // Increase sync element count
                         syncElementsCount++;
                     }
 
                     // Put element count
-                    tempPositionBeforeWrite = _syncElementsWriter.Length;
-                    _syncElementsWriter.SetPosition(positionToWriteSyncElementsCount);
-                    _syncElementsWriter.Put(syncElementsCount);
-                    _syncElementsWriter.SetPosition(tempPositionBeforeWrite);
+                    tempPositionBeforeWrite = _gameStatesWriter.Length;
+                    _gameStatesWriter.SetPosition(positionToWriteSyncElementsCount);
+                    _gameStatesWriter.Put(syncElementsCount);
+                    _gameStatesWriter.SetPosition(tempPositionBeforeWrite);
                     // Send sync elements
                     if (isServer)
-                        ServerSendMessage(connectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _syncElementsWriter);
+                        ServerSendMessage(connectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
                 }
                 kv.Value.Clear();
+            }
+        }
+
+        private void ProceedSpawnAndDespawnObjects()
+        {
+            LiteNetLibPlayer player;
+            foreach (long connectionId in Server.ConnectionIds)
+            {
+                if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
+                    continue;
+                foreach (uint objectId in player.NetworkSpawningObjectIds)
+                {
+
+                }
+                foreach (var kv in player.NetworkDestroyingObjectIds)
+                {
+
+                }
             }
         }
 
@@ -654,7 +681,7 @@ namespace LiteNetLibManager
                 return;
             if (!Players.TryGetValue(connectionId, out LiteNetLibPlayer player) || !player.IsReady)
                 return;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, new ServerErrorMessage()
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerError, new ServerErrorMessage()
             {
                 shouldDisconnect = shouldDisconnect,
                 errorMessage = errorMessage,
