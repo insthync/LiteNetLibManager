@@ -12,8 +12,9 @@ namespace LiteNetLibManager
 
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        internal readonly HashSet<uint> NetworkSpawningObjectIds = new HashSet<uint>();
-        internal readonly Dictionary<uint, byte> NetworkDestroyingObjectIds = new Dictionary<uint, byte>();
+
+        internal readonly Dictionary<byte, HashSet<uint>> NetworkSpawningObjectIds = new Dictionary<byte, HashSet<uint>>();
+        internal readonly Dictionary<byte, HashSet<DestroyObjectInfo>> NetworkDestroyingObjectIds = new Dictionary<byte, HashSet<DestroyObjectInfo>>();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
