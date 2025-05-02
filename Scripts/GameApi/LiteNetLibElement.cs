@@ -1,32 +1,12 @@
 ﻿using UnityEngine;
-using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public struct LiteNetLibElementInfo
+    public abstract class LiteNetLibElement : System.IEquatable<LiteNetLibElement>
     {
-        public uint objectId;
-        public int elementId;
-        public LiteNetLibElementInfo(uint objectId, int elementId)
-        {
-            this.objectId = objectId;
-            this.elementId = elementId;
-        }
+        public bool IsSetup { get; private set; }
+        public abstract byte ElementType { get; }
 
-        public static void SerializeInfo(LiteNetLibElementInfo info, NetDataWriter writer)
-        {
-            writer.PutPackedUInt(info.objectId);
-            writer.PutPackedUInt((uint)info.elementId);
-        }
-
-        public static LiteNetLibElementInfo DeserializeInfo(NetDataReader reader)
-        {
-            return new LiteNetLibElementInfo(reader.GetPackedUInt(), (int)reader.GetPackedUInt());
-        }
-    }
-
-    public abstract class LiteNetLibElement
-    {
         [ReadOnly, SerializeField]
         protected LiteNetLibBehaviour _behaviour;
         public LiteNetLibBehaviour Behaviour
@@ -47,6 +27,11 @@ namespace LiteNetLibManager
         public uint ObjectId
         {
             get { return !IsSetup ? 0 : Behaviour.ObjectId; }
+        }
+
+        public byte SyncChannelId
+        {
+            get { return !IsSetup ? (byte)0 : Behaviour.SyncChannelId; }
         }
 
         public LiteNetLibGameManager Manager
@@ -77,8 +62,6 @@ namespace LiteNetLibManager
             get { return IsSetup && Behaviour.IsOwnerClient; }
         }
 
-        public bool IsSetup { get; private set; }
-
         [ReadOnly, SerializeField]
         protected int _elementId;
         public int ElementId
@@ -86,16 +69,13 @@ namespace LiteNetLibManager
             get { return _elementId; }
         }
 
-        [ReadOnly, SerializeField]
-        protected byte _groupId;
-        public byte GroupId
-        {
-            get { return _groupId; }
-        }
-
         public LiteNetLibElementInfo GetInfo()
         {
-            return new LiteNetLibElementInfo(Behaviour.ObjectId, ElementId);
+            return new LiteNetLibElementInfo()
+            {
+                objectId = ObjectId,
+                elementId = ElementId,
+            };
         }
 
         internal virtual void Setup(LiteNetLibBehaviour behaviour, int elementId)
@@ -108,6 +88,37 @@ namespace LiteNetLibManager
         protected virtual bool CanSync()
         {
             return IsSetup;
+        }
+
+        public bool Equals(LiteNetLibElement other)
+        {
+            return IsSetup == other.IsSetup &&
+                ElementType == other.ElementType &&
+                SyncChannelId == other.SyncChannelId &&
+                ObjectId == other.ObjectId &&
+                ElementId == other.ElementId;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is LiteNetLibElement other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            /*
+             * unchecked: avoids exceptions on overflow (safe for hash codes).
+             * 17 and 31 are classic seed and multiplier primes (good hash distribution).
+             */
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + IsSetup.GetHashCode();
+                hash = hash * 31 + ElementType.GetHashCode();
+                hash = hash * 31 + ObjectId.GetHashCode();
+                hash = hash * 31 + ElementId.GetHashCode();
+                return hash;
+            }
         }
     }
 }

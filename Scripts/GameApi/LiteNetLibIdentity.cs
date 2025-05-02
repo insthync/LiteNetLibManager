@@ -156,7 +156,6 @@ namespace LiteNetLibManager
         public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
         public int PoolingSize { get { return poolingSize; } set { poolingSize = value; } }
-        public byte DataChannel { get; set; } = 0;
         public string SubChannelId { get; set; } = string.Empty;
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
@@ -389,19 +388,6 @@ namespace LiteNetLibManager
         #endregion
 
         #region SyncField Functions
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader, bool isInitial)
-        {
-            return ProcessSyncField(GetSyncField(info), reader, isInitial);
-        }
-
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibSyncField syncField, NetDataReader reader, bool isInitial)
-        {
-            if (syncField == null)
-                return null;
-            syncField.Deserialize(reader, isInitial);
-            return syncField;
-        }
-
         internal LiteNetLibSyncField GetSyncField(LiteNetLibElementInfo info)
         {
             if (info.objectId != ObjectId)
@@ -416,19 +402,6 @@ namespace LiteNetLibManager
         #endregion
 
         #region SyncList Functions
-        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
-        {
-            return ProcessSyncList(GetSyncList(info), reader);
-        }
-
-        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibSyncList syncList, NetDataReader reader)
-        {
-            if (syncList == null)
-                return null;
-            syncList.ProcessOperations(reader);
-            return syncList;
-        }
-
         internal LiteNetLibSyncList GetSyncList(LiteNetLibElementInfo info)
         {
             if (info.objectId != ObjectId)
@@ -478,56 +451,6 @@ namespace LiteNetLibManager
                 return false;
             behaviour = Behaviours[behaviourIndex] as T;
             return behaviour != null;
-        }
-
-        /// <summary>
-        /// This function will be called when send networked object spawning message, to write sync field data
-        /// </summary>
-        /// <param name="writer"></param>
-        internal void WriteInitSyncFields(NetDataWriter writer)
-        {
-            foreach (LiteNetLibSyncField field in SyncFields)
-            {
-                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
-                    continue;
-                field.Serialize(writer);
-            }
-        }
-
-        /// <summary>
-        /// This function will be called when receive networked object spawning message, to read sync field data
-        /// </summary>
-        /// <param name="reader"></param>
-        internal void ReadInitSyncFields(NetDataReader reader)
-        {
-            foreach (LiteNetLibSyncField field in SyncFields)
-            {
-                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
-                    continue;
-                field.Deserialize(reader, true);
-            }
-        }
-
-        /// <summary>
-        /// This function will be called after networked object spawning message was sent
-        /// </summary>
-        /// <param name="connectionId"></param>
-        internal void SendInitSyncFields(long connectionId)
-        {
-            foreach (LiteNetLibSyncField field in SyncFields)
-            {
-                if (!field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
-                    continue;
-                field.SendUpdate(true, connectionId);
-            }
-        }
-
-        internal void SendInitSyncLists(long connectionId)
-        {
-            foreach (LiteNetLibSyncList list in SyncLists)
-            {
-                list.SendInitialList(connectionId);
-            }
         }
 
         public bool IsSceneObjectExists(int sceneObjectId)

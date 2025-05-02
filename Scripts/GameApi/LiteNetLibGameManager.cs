@@ -80,8 +80,15 @@ namespace LiteNetLibManager
         }
 
         protected BaseInterestManager _defaultInterestManager;
-        protected readonly Dictionary<byte, List<LiteNetLibSyncElement>> _updatingClientSyncElements = new Dictionary<byte, List<LiteNetLibSyncElement>>();
-        protected readonly Dictionary<byte, List<LiteNetLibSyncElement>> _updatingServerSyncElements = new Dictionary<byte, List<LiteNetLibSyncElement>>();
+        /// <summary>
+        /// Dictionary[ChannelID:byte, HashSet[LiteNetLibSyncElement]]
+        /// </summary>
+        protected readonly Dictionary<byte, HashSet<LiteNetLibSyncElement>> _updatingClientSyncElements = new Dictionary<byte, HashSet<LiteNetLibSyncElement>>();
+        /// <summary>
+        /// Dictionary[ChannelID:byte, HashSet[LiteNetLibSyncElement]]
+        /// </summary>
+        protected readonly Dictionary<byte, HashSet<LiteNetLibSyncElement>> _updatingServerSyncElements = new Dictionary<byte, HashSet<LiteNetLibSyncElement>>();
+        protected NetDataWriter _syncElementsWriter = new NetDataWriter(true, 1500);
 
         protected virtual void Awake()
         {
@@ -123,58 +130,55 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ProceedSyncElements(Dictionary<byte, List<LiteNetLibSyncElement>> collection, bool isServer)
+        private void ProceedSyncElements(Dictionary<byte, HashSet<LiteNetLibSyncElement>> collection, bool isServer)
         {
-            uint tick = 0;
-            NetDataWriter writer = new NetDataWriter();
             foreach (var kv in collection)
             {
-                byte groupId = kv.Key;
-                foreach (long connectionId in GetConnectionIds())
+                byte syncChannelId = kv.Key;
+                // Send to players
+                foreach (long connectionId in Server.ConnectionIds)
                 {
-                    writer.Reset();
+                    _syncElementsWriter.Reset();
                     // Message Type ID
-                    writer.PutPackedUShort(GameMsgTypes.SyncElements);
-                    // TODO: Implement tick
-                    //writer.PutPackedUInt(tick);
+                    _syncElementsWriter.PutPackedUShort(GameMsgTypes.SyncElements);
                     // Reserve position for element count
-                    int positionToWriteSyncElementsCount = writer.Length;
-                    writer.Put(0);
+                    int positionToWriteSyncElementsCount = _syncElementsWriter.Length;
+                    _syncElementsWriter.Put(0);
 
                     int tempPositionBeforeWrite;
                     int syncElementsCount = 0;
-                    for (int i = 0; i < kv.Value.Count; ++i)
+                    foreach (var element in kv.Value)
                     {
-                        LiteNetLibSyncElement element = kv.Value[i];
-                        if (!element.WillSyncData(connectionId, tick))
+                        if (!element.WillSyncData(connectionId))
                             continue;
                         // Write element info
-                        writer.PutPackedUInt(element.ObjectId);
-                        writer.PutPackedInt(element.ElementId);
+                        _syncElementsWriter.PutPackedUInt(element.ObjectId);
+                        _syncElementsWriter.PutPackedInt(element.ElementId);
                         // Reserve position for data length
-                        int positionToWriteDataLength = writer.Length;
-                        writer.Put(0);
+                        int positionToWriteDataLength = _syncElementsWriter.Length;
+                        _syncElementsWriter.Put(0);
                         // Write sync data
-                        element.WriteSyncData(writer, tick);
-                        int dataLength = writer.Length - positionToWriteDataLength - 1;
+                        element.WriteSyncData(_syncElementsWriter);
+                        int dataLength = _syncElementsWriter.Length - positionToWriteDataLength - 1;
                         // Put data length
-                        tempPositionBeforeWrite = writer.Length;
-                        writer.SetPosition(positionToWriteDataLength);
-                        writer.Put(dataLength);
-                        writer.SetPosition(tempPositionBeforeWrite);
+                        tempPositionBeforeWrite = _syncElementsWriter.Length;
+                        _syncElementsWriter.SetPosition(positionToWriteDataLength);
+                        _syncElementsWriter.Put(dataLength);
+                        _syncElementsWriter.SetPosition(tempPositionBeforeWrite);
                         // Increase sync element count
                         syncElementsCount++;
                     }
 
                     // Put element count
-                    tempPositionBeforeWrite = writer.Length;
-                    writer.SetPosition(positionToWriteSyncElementsCount);
-                    writer.Put(syncElementsCount);
-                    writer.SetPosition(tempPositionBeforeWrite);
+                    tempPositionBeforeWrite = _syncElementsWriter.Length;
+                    _syncElementsWriter.SetPosition(positionToWriteSyncElementsCount);
+                    _syncElementsWriter.Put(syncElementsCount);
+                    _syncElementsWriter.SetPosition(tempPositionBeforeWrite);
                     // Send sync elements
                     if (isServer)
-                        ServerSendMessage(connectionId, 0, DeliveryMethod.ReliableOrdered, writer);
+                        ServerSendMessage(connectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _syncElementsWriter);
                 }
+                kv.Value.Clear();
             }
         }
 
@@ -198,25 +202,25 @@ namespace LiteNetLibManager
             UnregisterSyncElement(_updatingClientSyncElements, element);
         }
 
-        private void RegisterSyncElement(Dictionary<byte, List<LiteNetLibSyncElement>> collection, LiteNetLibSyncElement element)
+        private void RegisterSyncElement(Dictionary<byte, HashSet<LiteNetLibSyncElement>> collection, LiteNetLibSyncElement element)
         {
             if (element == null)
                 return;
-            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibSyncElement> elements))
+            byte channelId = element.SyncChannelId;
+            if (!collection.TryGetValue(channelId, out HashSet<LiteNetLibSyncElement> elements))
             {
-                elements = new List<LiteNetLibSyncElement>();
-                collection[element.GroupId] = elements;
+                elements = new HashSet<LiteNetLibSyncElement>();
+                collection[channelId] = elements;
             }
-            if (elements.Contains(element))
-                return;
             elements.Add(element);
         }
 
-        private void UnregisterSyncElement(Dictionary<byte, List<LiteNetLibSyncElement>> collection, LiteNetLibSyncElement element)
+        private void UnregisterSyncElement(Dictionary<byte, HashSet<LiteNetLibSyncElement>> collection, LiteNetLibSyncElement element)
         {
             if (element == null)
                 return;
-            if (!collection.TryGetValue(element.GroupId, out List<LiteNetLibSyncElement> elements))
+            byte channelId = element.SyncChannelId;
+            if (!collection.TryGetValue(channelId, out HashSet<LiteNetLibSyncElement> elements))
                 return;
             elements.Remove(element);
         }
@@ -465,17 +469,14 @@ namespace LiteNetLibManager
             RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest, HandleClientNotReadyResponse);
             // Server messages
             RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
-            RegisterServerMessage(GameMsgTypes.UpdateSyncField, HandleClientUpdateSyncField);
-            RegisterServerMessage(GameMsgTypes.InitialSyncField, HandleClientInitialSyncField);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
             RegisterServerMessage(GameMsgTypes.Pong, HandleClientPong);
+            // TODO: Server handle sync elements
             // Client messages
             RegisterClientMessage(GameMsgTypes.ServerSpawnSceneObject, HandleServerSpawnSceneObject);
             RegisterClientMessage(GameMsgTypes.ServerSpawnObject, HandleServerSpawnObject);
             RegisterClientMessage(GameMsgTypes.ServerDestroyObject, HandleServerDestroyObject);
             RegisterClientMessage(GameMsgTypes.CallFunction, HandleServerCallFunction);
-            RegisterClientMessage(GameMsgTypes.UpdateSyncField, HandleServerUpdateSyncField);
-            RegisterClientMessage(GameMsgTypes.InitialSyncField, HandleServerInitialSyncField);
             RegisterClientMessage(GameMsgTypes.OperateSyncList, HandleServerUpdateSyncList);
             RegisterClientMessage(GameMsgTypes.SyncElements, HandleServerSyncElements);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
@@ -910,68 +911,6 @@ namespace LiteNetLibManager
 
         }
 
-        protected virtual void HandleClientInitialSyncField(MessageHandlerData messageHandler)
-        {
-            // Field updated at owner-client, if this is server then multicast message to other clients
-            if (!IsServer)
-                return;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-            {
-                LiteNetLibSyncField syncField = identity.GetSyncField(info);
-                // Sync field at server also have to be client multicast to allow it to multicast to other clients
-                if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
-                {
-                    // If this is server but it is not host, set data (deserialize) then pass to other clients
-                    // If this is host don't set data because it's already did (in LiteNetLibSyncField class)
-                    if (!identity.IsOwnerClient)
-                        syncField.Deserialize(messageHandler.Reader, true);
-                    // Send to other clients
-                    foreach (long connectionId in Server.ConnectionIds)
-                    {
-                        // Don't send the update to owner client because it was updated before send update to server
-                        if (connectionId == messageHandler.ConnectionId)
-                            continue;
-                        // Send update to clients except owner client
-                        if (identity.HasSubscriberOrIsOwning(connectionId))
-                            syncField.SendUpdate(true, connectionId);
-                    }
-                }
-            }
-        }
-
-        protected virtual void HandleClientUpdateSyncField(MessageHandlerData messageHandler)
-        {
-            // Field updated at owner-client, if this is server then multicast message to other clients
-            if (!IsServer)
-                return;
-            LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
-            LiteNetLibIdentity identity;
-            if (Assets.TryGetSpawnedObject(info.objectId, out identity))
-            {
-                LiteNetLibSyncField syncField = identity.GetSyncField(info);
-                // Sync field at server also have to be client multicast to allow it to multicast to other clients
-                if (syncField != null && syncField.syncMode == LiteNetLibSyncField.SyncMode.ClientMulticast)
-                {
-                    // If this is server but it is not host, set data (deserialize) then pass to other clients
-                    // If this is host don't set data because it's already did (in LiteNetLibSyncField class)
-                    if (!identity.IsOwnerClient)
-                        syncField.Deserialize(messageHandler.Reader, false);
-                    // Send to other clients
-                    foreach (long connectionId in Server.ConnectionIds)
-                    {
-                        // Don't send the update to owner client because it was updated before send update to server
-                        if (connectionId == messageHandler.ConnectionId)
-                            continue;
-                        // Send update to clients except owner client
-                        if (identity.HasSubscriberOrIsOwning(connectionId))
-                            syncField.SendUpdate(false, connectionId);
-                    }
-                }
-            }
-        }
-
         protected virtual void HandleClientCallFunction(MessageHandlerData messageHandler)
         {
             FunctionReceivers receivers = (FunctionReceivers)messageHandler.Reader.GetByte();
@@ -1126,7 +1065,6 @@ namespace LiteNetLibManager
             if (IsServer)
                 return;
             NetDataReader reader = messageHandler.Reader;
-            uint tick = 0; // reader.GetPackedUInt();
             int syncElementsCount = reader.GetInt();
             for (int i = 0; i < syncElementsCount; ++i)
             {
@@ -1144,7 +1082,7 @@ namespace LiteNetLibManager
                     // Can read data properly
                     try
                     {
-                        element.ReadSyncData(reader, tick);
+                        element.ReadSyncData(reader);
                     } catch
                     {
                         readFail = true;

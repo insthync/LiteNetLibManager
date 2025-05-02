@@ -8,8 +8,6 @@
         public const ushort ServerSpawnSceneObject = 4;
         public const ushort ServerSpawnObject = 5;
         public const ushort ServerDestroyObject = 6;
-        public const ushort UpdateSyncField = 7;
-        public const ushort InitialSyncField = 8;
         public const ushort OperateSyncList = 9;
         public const ushort SyncElements = 10;
         public const ushort ServerSyncBehaviour = 11;

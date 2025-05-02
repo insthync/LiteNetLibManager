@@ -14,12 +14,15 @@ namespace LiteNetLibManager
 
     public class LiteNetLibFunction : LiteNetLibElement
     {
+        public override byte ElementType => SyncElementTypes.Function;
+
         protected readonly static NetDataWriter s_ServerWriter = new NetDataWriter();
         protected readonly static NetDataWriter s_ClientWriter = new NetDataWriter();
 
         public readonly Type[] ParameterTypes;
         public readonly object[] Parameters;
         public bool CanCallByEveryone { get; set; }
+
         private NetFunctionDelegate _callback;
 
         protected LiteNetLibFunction() : this(0)

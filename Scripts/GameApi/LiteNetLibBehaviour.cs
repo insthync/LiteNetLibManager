@@ -17,7 +17,6 @@ namespace LiteNetLibManager
         {
             public List<FieldInfo> syncFields;
             public List<FieldInfo> syncLists;
-            public List<FieldInfo> syncFieldsWithAttribute;
         }
 
         private struct CacheFunctions
@@ -93,6 +92,11 @@ namespace LiteNetLibManager
         public uint ObjectId
         {
             get { return Identity.ObjectId; }
+        }
+
+        public byte SyncChannelId
+        {
+            get { return Identity.SyncChannelId; }
         }
 
         public LiteNetLibGameManager Manager
@@ -177,12 +181,10 @@ namespace LiteNetLibManager
                 {
                     syncFields = new List<FieldInfo>(),
                     syncLists = new List<FieldInfo>(),
-                    syncFieldsWithAttribute = new List<FieldInfo>()
                 };
                 HashSet<string> tempLookupNames = new HashSet<string>();
                 FieldInfo[] tempLookupFields;
                 Type tempLookupType = ClassType;
-                SyncFieldAttribute tempAttribute = null;
                 // Find for sync field and sync list from the class
                 while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
@@ -201,13 +203,6 @@ namespace LiteNetLibManager
                         {
                             tempCacheFields.syncLists.Add(lookupField);
                         }
-                        else
-                        {
-                            // Must have [SyncField] attribute
-                            tempAttribute = lookupField.GetCustomAttribute<SyncFieldAttribute>();
-                            if (tempAttribute != null)
-                                tempCacheFields.syncFieldsWithAttribute.Add(lookupField);
-                        }
 
                         tempLookupNames.Add(lookupField.Name);
                     }
@@ -223,7 +218,6 @@ namespace LiteNetLibManager
             }
             SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields, LiteNetLibIdentity.SYNC_FIELD_ID_OFFSET);
             SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists, LiteNetLibIdentity.SYNC_LIST_ID_OFFSET);
-            SetupSyncFieldsWithAttribute(tempCacheFields.syncFieldsWithAttribute);
         }
 
         private void SetupSyncElements<T>(List<FieldInfo> fields, List<T> elementList, int idOffset) where T : LiteNetLibElement
@@ -243,116 +237,6 @@ namespace LiteNetLibManager
                         Logging.LogException(LogTag, ex);
                 }
             }
-        }
-
-        private void SetupSyncFieldsWithAttribute(List<FieldInfo> fieldInfos)
-        {
-            if (fieldInfos == null || fieldInfos.Count == 0)
-                return;
-
-            StringBuilder stringBuilder = new StringBuilder();
-            SyncFieldAttribute tempAttribute;
-            LiteNetLibSyncField tempSyncField;
-            MethodInfo tempOnChangeMethod;
-            MethodInfo tempOnUpdateMethod;
-            foreach (FieldInfo fieldInfo in fieldInfos)
-            {
-                try
-                {
-                    tempAttribute = fieldInfo.GetCustomAttribute<SyncFieldAttribute>();
-                    // Find on change method
-                    tempOnChangeMethod = null;
-                    if (!string.IsNullOrEmpty(tempAttribute.onChangeMethodName))
-                    {
-                        tempOnChangeMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onChangeMethodName, fieldInfo, s_CacheOnChangeFunctions, (tempMethodParams) =>
-                        {
-                            return tempMethodParams != null && tempMethodParams.Length == 3
-                                && tempMethodParams[0].ParameterType == typeof(bool)
-                                && tempMethodParams[1].ParameterType == fieldInfo.FieldType
-                                && tempMethodParams[2].ParameterType == fieldInfo.FieldType;
-                        });
-                        if (tempOnChangeMethod == null)
-                        {
-                            if (Manager.LogError)
-                                Logging.LogError(LogTag, $"Cannot find `on change` method named [{tempAttribute.onChangeMethodName}] from [{TypeName}], FYI the function must has 3 parameters with (bool isInitial, type oldValue, type newValue).");
-                        }
-                    }
-                    // Find on update method
-                    tempOnUpdateMethod = null;
-                    if (!string.IsNullOrEmpty(tempAttribute.onUpdateMethodName))
-                    {
-                        tempOnUpdateMethod = FindAndCacheMethods(stringBuilder, tempAttribute.onUpdateMethodName, fieldInfo, s_CacheOnUpdateFunctions, (tempMethodParams) =>
-                        {
-                            return tempMethodParams == null || tempMethodParams.Length == 0;
-                        });
-                        if (tempOnUpdateMethod == null)
-                        {
-                            if (Manager.LogError)
-                                Logging.LogError(LogTag, $"Cannot find `on update` method named [{tempAttribute.onUpdateMethodName}] from [{TypeName}], FYI the function must has 0 parameter.");
-                        }
-                    }
-                    // Create new sync field container
-                    tempSyncField = new LiteNetLibSyncFieldContainer(fieldInfo, this, tempOnChangeMethod, tempOnUpdateMethod);
-                    tempSyncField.dataChannel = tempAttribute.dataChannel;
-                    tempSyncField.deliveryMethod = tempAttribute.deliveryMethod;
-                    tempSyncField.clientDataChannel = tempAttribute.clientDataChannel;
-                    tempSyncField.clientDeliveryMethod = tempAttribute.clientDeliveryMethod;
-                    tempSyncField.sendInterval = tempAttribute.sendInterval;
-                    tempSyncField.syncBehaviour = tempAttribute.syncBehaviour;
-                    tempSyncField.syncMode = tempAttribute.syncMode;
-                    RegisterSyncElement(tempSyncField, Identity.SyncFields, 0);
-                }
-                catch (Exception ex)
-                {
-                    if (Manager.LogFatal)
-                        Logging.LogException(LogTag, ex);
-                }
-            }
-        }
-
-        private MethodInfo FindAndCacheMethods(StringBuilder stringBuilder, string methodName, FieldInfo fieldInfo, Dictionary<string, MethodInfo> dictionary, Func<ParameterInfo[], bool> parameterValidator)
-        {
-            MethodInfo tempMethod;
-            string key = stringBuilder.Clear().Append(TypeName).Append('.').Append(methodName).ToString();
-            if (!dictionary.TryGetValue(key, out tempMethod))
-            {
-                // Not found hook function in cache dictionary, try find the function
-                MethodInfo[] tempLookupMethods;
-                Type tempLookupType = ClassType;
-                while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
-                {
-                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    foreach (MethodInfo lookupMethod in tempLookupMethods)
-                    {
-                        // Return type must be `void`
-                        if (lookupMethod.ReturnType != typeof(void))
-                            continue;
-
-                        // Not the function it's looking for
-                        if (!lookupMethod.Name.Equals(methodName))
-                            continue;
-
-                        // Parameter not match
-                        if (!parameterValidator.Invoke(lookupMethod.GetParameters()))
-                            continue;
-
-                        // Found the function
-                        tempMethod = lookupMethod;
-                        break;
-                    }
-
-                    // Found the function so exit the loop, don't find the function in base class
-                    if (tempMethod != null)
-                        break;
-
-                    tempLookupType = tempLookupType.BaseType;
-                }
-                tempLookupMethods = null;
-                tempLookupType = null;
-                // Add to cache dictionary althrough it's empty to avoid it try to lookup next time
-                dictionary.Add(key, tempMethod);
-            }
-            return tempMethod;
         }
 
         private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<string, CacheFunctions> cacheDict)

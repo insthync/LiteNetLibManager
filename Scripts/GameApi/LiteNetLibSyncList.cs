@@ -9,6 +9,8 @@ namespace LiteNetLibManager
 {
     public abstract class LiteNetLibSyncList : LiteNetLibSyncElement
     {
+        public override byte ElementType => SyncElementTypes.SyncList;
+
         protected readonly static NetDataWriter s_Writer = new NetDataWriter();
         public abstract Type FieldType { get; }
         public abstract int Count { get; }
@@ -375,7 +377,7 @@ namespace LiteNetLibManager
         }
 
         // TODO: Keep this
-        internal override void WriteSyncData(NetDataWriter writer, uint tick)
+        internal override void WriteSyncData(NetDataWriter writer)
         {
             if (_operationEntries.Count <= 0)
                 return;
@@ -387,7 +389,7 @@ namespace LiteNetLibManager
         }
 
         // TODO: Keep this
-        internal override void ReadSyncData(NetDataReader reader, uint tick)
+        internal override void ReadSyncData(NetDataReader reader)
         {
             int operationCount = reader.GetPackedInt();
             for (int i = 0; i < operationCount; ++i)
