@@ -12,7 +12,7 @@ namespace LiteNetLibManager
 
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
-        internal readonly Dictionary<byte, Dictionary<uint, GameStateSyncData>> StateSyncCollection = new Dictionary<byte, Dictionary<uint, GameStateSyncData>>();
+        internal readonly Dictionary<byte, Dictionary<uint, GameStateSyncData>> SyncingStates = new Dictionary<byte, Dictionary<uint, GameStateSyncData>>();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
@@ -23,10 +23,10 @@ namespace LiteNetLibManager
 
         internal Dictionary<uint, GameStateSyncData> PrepareSyncStateCollection(byte channelId)
         {
-            if (!StateSyncCollection.TryGetValue(channelId, out var collectionByObjectId))
+            if (!SyncingStates.TryGetValue(channelId, out var collectionByObjectId))
             {
                 collectionByObjectId = new Dictionary<uint, GameStateSyncData>();
-                StateSyncCollection[channelId] = collectionByObjectId;
+                SyncingStates[channelId] = collectionByObjectId;
             }
             return collectionByObjectId;
         }

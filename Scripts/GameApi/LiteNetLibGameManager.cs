@@ -80,14 +80,8 @@ namespace LiteNetLibManager
         }
 
         protected BaseInterestManager _defaultInterestManager;
-        /// <summary>
-        /// Dictionary[ChannelID:byte, [ObjectId:uint, HashSet[LiteNetLibSyncElement]]]
-        /// </summary>
-        protected readonly Dictionary<byte, Dictionary<uint, HashSet<LiteNetLibSyncElement>>> _updatingClientSyncElements = new Dictionary<byte, Dictionary<uint, HashSet<LiteNetLibSyncElement>>>();
-        /// <summary>
-        /// Dictionary[ChannelID:byte, [ObjectId:uint, HashSet[LiteNetLibSyncElement]]]
-        /// </summary>
-        protected readonly Dictionary<byte, Dictionary<uint, HashSet<LiteNetLibSyncElement>>> _updatingServerSyncElements = new Dictionary<byte, Dictionary<uint, HashSet<LiteNetLibSyncElement>>>();
+        protected readonly HashSet<LiteNetLibSyncElement> _updatingClientSyncElements = new HashSet<LiteNetLibSyncElement>();
+        protected readonly HashSet<LiteNetLibSyncElement> _updatingServerSyncElements = new HashSet<LiteNetLibSyncElement>();
         protected NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1500);
 
         protected virtual void Awake()
@@ -131,9 +125,31 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ProceedSyncElements(Dictionary<byte, Dictionary<uint, HashSet<LiteNetLibSyncElement>>> collection, bool isServer)
+        private void ProceedSyncElements(HashSet<LiteNetLibSyncElement> collection, bool isServer)
         {
-            foreach (var collectionKv in collection)
+            LiteNetLibPlayer tempPlayer;
+            foreach (long connectionId in Server.ConnectionIds)
+            {
+                if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
+                    continue;
+                if (collection.Count == 0)
+                    continue;
+                foreach (var syncElement in collection)
+                {
+                    if (!syncElement.WillSyncData(tempPlayer))
+                        continue;
+                    tempPlayer.AppendDataSyncState(syncElement);
+                }
+            }
+
+            foreach (long connectionId in Server.ConnectionIds)
+            {
+                if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
+                    continue;
+                SyncGameState(tempPlayer);
+            }
+
+                foreach (var collectionKv in collection)
             {
                 // No data to sync
                 if (collection.Values.Count == 0)
@@ -191,6 +207,8 @@ namespace LiteNetLibManager
                         _gameStatesWriter.SetPosition(positionToWriteSyncObjectsCount);
                         _gameStatesWriter.Put(syncElementsCount);
                         _gameStatesWriter.SetPosition(tempPositionBeforeWrite);
+
+                        syncObjectsCount++;
                     }
 
                     // Send sync elements
@@ -201,68 +219,96 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ProceedSpawnAndDespawnObjects()
+        private void SyncGameState(LiteNetLibPlayer player)
         {
-            LiteNetLibPlayer player;
-            foreach (long connectionId in Server.ConnectionIds)
+            if (player.SyncingStates.Count == 0)
+                return;
+            foreach (var syncingStatesByChannelId in player.SyncingStates)
             {
-                if (!Players.TryGetValue(connectionId, out player) || !player.IsReady)
+                int statesCount = syncingStatesByChannelId.Value.Count;
+                // No states to be synced, skip
+                if (statesCount == 0)
                     continue;
-                foreach (uint objectId in player.NetworkSpawningObjectIds)
+                _gameStatesWriter.Reset();
+                _gameStatesWriter.PutPackedInt(statesCount);
+                byte syncChannelId = syncingStatesByChannelId.Key;
+                foreach (var syncingStatesByObjectId in syncingStatesByChannelId.Value)
                 {
-
-                }
-                foreach (var kv in player.NetworkDestroyingObjectIds)
-                {
-
+                    uint objectId = syncingStatesByObjectId.Key;
+                    _gameStatesWriter.Put(syncingStatesByObjectId.Value.StateType);
+                    switch (syncingStatesByObjectId.Value.StateType)
+                    {
+                        case GameStateSyncData.STATE_TYPE_SPAWN:
+                            WriteSpawnGameState(_gameStatesWriter, objectId, syncingStatesByObjectId.Value);
+                            break;
+                        case GameStateSyncData.STATE_TYPE_SYNC:
+                            WriteSyncGameState(_gameStatesWriter, objectId, syncingStatesByObjectId.Value);
+                            break;
+                        case GameStateSyncData.STATE_TYPE_DESTROY:
+                            WriteDestroyGameState(_gameStatesWriter, objectId, syncingStatesByObjectId.Value);
+                            break;
+                    }
                 }
             }
+        }
+
+        private void WriteSpawnGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
+        {
+            writer.PutPackedUInt(objectId);
+            // Write all elements
+        }
+
+        private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
+        {
+            writer.PutPackedUInt(objectId);
+            writer.PutPackedInt(syncData.SyncElements.Count);
+            if (syncData.SyncElements.Count == 0)
+                return;
+            foreach (var syncElement in syncData.SyncElements)
+            {
+                // Write element info
+                _gameStatesWriter.Put(syncElement.ElementType);
+                _gameStatesWriter.PutPackedInt(syncElement.ElementId);
+                // Reserve position for data length
+                int posBeforeWriteDataLen = _gameStatesWriter.Length;
+                int dataLength = 0;
+                _gameStatesWriter.Put(dataLength);
+                int posAfterWriteDataLen = _gameStatesWriter.Length;
+                // Write sync data
+                syncElement.WriteSyncData(_gameStatesWriter);
+                dataLength = _gameStatesWriter.Length - posAfterWriteDataLen;
+                // Put data length
+                int posAfterWriteData = _gameStatesWriter.Length;
+                _gameStatesWriter.SetPosition(posBeforeWriteDataLen);
+                _gameStatesWriter.Put(dataLength);
+                _gameStatesWriter.SetPosition(posAfterWriteData);
+            }
+        }
+
+        private void WriteDestroyGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
+        {
+            writer.PutPackedUInt(objectId);
+            writer.Put(syncData.DestroyReasons);
         }
 
         internal void RegisterServerSyncElement(LiteNetLibSyncElement element)
         {
-            RegisterSyncElement(_updatingServerSyncElements, element);
+            _updatingServerSyncElements.Add(element);
         }
 
         internal void UnregisterServerSyncElement(LiteNetLibSyncElement element)
         {
-            UnregisterSyncElement(_updatingServerSyncElements, element);
+            _updatingServerSyncElements.Remove(element);
         }
 
         internal void RegisterClientSyncElement(LiteNetLibSyncElement element)
         {
-            RegisterSyncElement(_updatingClientSyncElements, element);
+            _updatingClientSyncElements.Add(element);
         }
 
         internal void UnregisterClientSyncElement(LiteNetLibSyncElement element)
         {
-            UnregisterSyncElement(_updatingClientSyncElements, element);
-        }
-
-        private void RegisterSyncElement(Dictionary<byte, Dictionary<uint, HashSet<LiteNetLibSyncElement>>> collection, LiteNetLibSyncElement element)
-        {
-            if (element == null)
-                return;
-            byte channelId = element.SyncChannelId;
-            uint objectId = element.ObjectId;
-            if (!collection.TryGetValue(channelId, out Dictionary<uint, HashSet<LiteNetLibSyncElement>> collectionByObjectId))
-            {
-                collectionByObjectId = new Dictionary<uint, HashSet<LiteNetLibSyncElement>>();
-                collectionByObjectId[objectId] = new HashSet<LiteNetLibSyncElement>();
-                collection[channelId] = collectionByObjectId;
-            }
-            collectionByObjectId[objectId].Add(element);
-        }
-
-        private void UnregisterSyncElement(Dictionary<byte, Dictionary<uint, HashSet<LiteNetLibSyncElement>>> collection, LiteNetLibSyncElement element)
-        {
-            if (element == null)
-                return;
-            byte channelId = element.SyncChannelId;
-            uint objectId = element.ObjectId;
-            if (!collection.TryGetValue(channelId, out Dictionary<uint, HashSet<LiteNetLibSyncElement>> collectionByObjectId))
-                return;
-            collectionByObjectId[objectId].Remove(element);
+            _updatingClientSyncElements.Remove(element);
         }
 
         public virtual uint PacketVersion()
