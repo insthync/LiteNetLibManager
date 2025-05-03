@@ -99,7 +99,6 @@ namespace LiteNetLibManager
         protected override void OnServerUpdate(LogicUpdater updater)
         {
             ProceedSyncElements(_updatingServerSyncElements, true);
-
             // Send ping from server
             _serverSendPingCountDown -= updater.DeltaTime;
             if (_serverSendPingCountDown <= 0f)
@@ -176,7 +175,7 @@ namespace LiteNetLibManager
                     switch (syncingStatesByObjectId.Value.StateType)
                     {
                         case GameStateSyncData.STATE_TYPE_SPAWN:
-                            WriteSpawnGameState(_gameStatesWriter, objectId, syncingStatesByObjectId.Value);
+                            WriteSpawnGameState(_gameStatesWriter, player, objectId, syncingStatesByObjectId.Value);
                             break;
                         case GameStateSyncData.STATE_TYPE_SYNC:
                             WriteSyncGameState(_gameStatesWriter, objectId, syncingStatesByObjectId.Value);
@@ -198,44 +197,57 @@ namespace LiteNetLibManager
             }
         }
 
-        private void WriteSpawnGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
+        private void WriteSpawnGameState(NetDataWriter writer, LiteNetLibPlayer player, uint objectId, GameStateSyncData syncData)
         {
-            if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity)) {
+            if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
+            {
                 writer.Put(GameStateSyncData.STATE_TYPE_NONE);
                 return;
             }
             writer.Put(GameStateSyncData.STATE_TYPE_SPAWN);
             writer.PutPackedUInt(objectId);
-            // Write owner connection ID, all sync elements
             writer.Put(identity.ConnectionId);
-            // TODO: Get all sync elements to write
+            syncData.SyncElements.Clear();
+            foreach (var syncElement in syncData.SyncElements)
+            {
+                if (!syncElement.WillSyncData(player))
+                    continue;
+                syncData.SyncElements.Add(syncElement);
+            }
+            WriteSyncElements(writer, syncData.SyncElements, true);
+            syncData.SyncElements.Clear();
         }
 
         private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
         {
             writer.Put(GameStateSyncData.STATE_TYPE_SYNC);
             writer.PutPackedUInt(objectId);
-            writer.PutPackedInt(syncData.SyncElements.Count);
-            if (syncData.SyncElements.Count == 0)
+            WriteSyncElements(writer, syncData.SyncElements, false);
+            syncData.SyncElements.Clear();
+        }
+
+        private void WriteSyncElements(NetDataWriter writer, ICollection<LiteNetLibSyncElement> elements, bool initial)
+        {
+            writer.PutPackedInt(elements.Count);
+            if (elements.Count == 0)
                 return;
-            foreach (var syncElement in syncData.SyncElements)
+            foreach (var syncElement in elements)
             {
                 // Write element info
-                _gameStatesWriter.Put(syncElement.ElementType);
-                _gameStatesWriter.PutPackedInt(syncElement.ElementId);
+                writer.PutPackedInt(syncElement.ElementId);
                 // Reserve position for data length
-                int posBeforeWriteDataLen = _gameStatesWriter.Length;
+                int posBeforeWriteDataLen = writer.Length;
                 int dataLength = 0;
-                _gameStatesWriter.Put(dataLength);
-                int posAfterWriteDataLen = _gameStatesWriter.Length;
+                writer.Put(dataLength);
+                int posAfterWriteDataLen = writer.Length;
                 // Write sync data
-                syncElement.WriteSyncData(_gameStatesWriter);
-                dataLength = _gameStatesWriter.Length - posAfterWriteDataLen;
+                syncElement.WriteSyncData(initial, writer);
+                dataLength = writer.Length - posAfterWriteDataLen;
                 // Put data length
-                int posAfterWriteData = _gameStatesWriter.Length;
-                _gameStatesWriter.SetPosition(posBeforeWriteDataLen);
-                _gameStatesWriter.Put(dataLength);
-                _gameStatesWriter.SetPosition(posAfterWriteData);
+                int posAfterWriteData = writer.Length;
+                writer.SetPosition(posBeforeWriteDataLen);
+                writer.Put(dataLength);
+                writer.SetPosition(posAfterWriteData);
             }
         }
 

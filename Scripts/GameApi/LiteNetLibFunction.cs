@@ -44,7 +44,7 @@ namespace LiteNetLibManager
             _callback = callback;
         }
 
-        protected override bool CanSync()
+        protected bool CanBeCalled()
         {
             return Behaviour != null && (IsServer || IsOwnerClient || CanCallByEveryone);
         }
@@ -129,7 +129,7 @@ namespace LiteNetLibManager
 
         internal void Call(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameterValues)
         {
-            if (!CanSync())
+            if (!CanBeCalled())
                 return;
 
             SetParameters(parameterValues);
@@ -138,7 +138,7 @@ namespace LiteNetLibManager
 
         internal void Call(byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, params object[] parameterValues)
         {
-            if (!CanSync())
+            if (!CanBeCalled())
                 return;
 
             SetParameters(parameterValues);
@@ -147,7 +147,7 @@ namespace LiteNetLibManager
 
         internal void CallWithoutParametersSet(FunctionReceivers receivers)
         {
-            if (!CanSync())
+            if (!CanBeCalled())
                 return;
 
             SendCall(0, DeliveryMethod.ReliableOrdered, receivers, ConnectionId);
@@ -155,7 +155,7 @@ namespace LiteNetLibManager
 
         internal void CallWithoutParametersSet(long connectionId)
         {
-            if (!CanSync())
+            if (!CanBeCalled())
                 return;
 
             SendCall(0, DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);

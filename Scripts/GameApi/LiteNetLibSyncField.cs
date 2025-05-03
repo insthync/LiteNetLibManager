@@ -1,6 +1,6 @@
-﻿using System;
+﻿using LiteNetLib.Utils;
+using System;
 using UnityEngine;
-using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
@@ -27,9 +27,8 @@ namespace LiteNetLibManager
             ClientMulticast
         }
 
-        [Header("Generic Settings")]
         [Tooltip("Who can sync data and sync to whom")]
-        public SyncMode syncMode;
+        public SyncMode syncMode = SyncMode.ServerToClients;
 
         protected object _defaultValue;
 
@@ -38,7 +37,7 @@ namespace LiteNetLibManager
         protected abstract void SetValue(object value);
         internal abstract void OnChange(bool initial, object oldValue, object newValue);
 
-        protected override bool CanSync()
+        protected bool CanSync()
         {
             switch (syncMode)
             {
@@ -48,6 +47,23 @@ namespace LiteNetLibManager
                     return IsServer;
                 case SyncMode.ClientMulticast:
                     return IsOwnerClient || IsServer;
+            }
+            return false;
+        }
+
+        internal override bool WillSyncData(LiteNetLibPlayer player)
+        {
+            if (!base.WillSyncData(player))
+                return false;
+            bool isOwnerClient = ConnectionId == player.ConnectionId;
+            switch (syncMode)
+            {
+                case SyncMode.ServerToClients:
+                    return IsServer;
+                case SyncMode.ServerToOwnerClient:
+                    return IsServer;
+                case SyncMode.ClientMulticast:
+                    return isOwnerClient || IsServer;
             }
             return false;
         }
@@ -76,16 +92,16 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void WriteSyncData(NetDataWriter writer)
+        internal override void WriteSyncData(bool initial, NetDataWriter writer)
         {
             SerializeValue(writer);
         }
 
-        internal override void ReadSyncData(NetDataReader reader)
+        internal override void ReadSyncData(bool initial, NetDataReader reader)
         {
             object oldValue = GetValue();
             DeserializeValue(reader);
-            OnChange(false, oldValue, GetValue());
+            OnChange(initial, oldValue, GetValue());
         }
 
         internal virtual void DeserializeValue(NetDataReader reader)

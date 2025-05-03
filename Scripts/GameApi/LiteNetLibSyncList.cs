@@ -1,9 +1,8 @@
-﻿using System;
+﻿using LiteNetLib.Utils;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using LiteNetLib;
-using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
@@ -12,15 +11,23 @@ namespace LiteNetLibManager
         public override byte ElementType => SyncElementTypes.SyncList;
 
         protected readonly static NetDataWriter s_Writer = new NetDataWriter();
+
+        [Tooltip("If this is `TRUE`, this will update to owner client only, default is `FALSE`")]
+        public bool forOwnerOnly = false;
+
         public abstract Type FieldType { get; }
         public abstract int Count { get; }
-        internal abstract void SendInitialList(long connectionId);
-        internal abstract bool SendOperations();
-        internal abstract void ProcessOperations(NetDataReader reader);
 
-        protected override bool CanSync()
+        protected bool CanSync()
         {
             return IsServer;
+        }
+
+        internal override bool WillSyncData(LiteNetLibPlayer player)
+        {
+            if (!base.WillSyncData(player))
+                return false;
+            return !forOwnerOnly || ConnectionId == player.ConnectionId;
         }
     }
 
@@ -34,28 +41,10 @@ namespace LiteNetLibManager
         }
 
         public delegate void OnOperationDelegate(LiteNetLibSyncListOp op, int itemIndex, TType oldItem, TType newItem);
-
-        [Tooltip("Sending data channel")]
-        public byte dataChannel = 0;
-        [Tooltip("If this is `TRUE`, this will update to owner client only, default is `FALSE`")]
-        public bool forOwnerOnly = false;
         public OnOperationDelegate onOperation;
 
         protected readonly List<TType> _list = new List<TType>();
         protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>();
-
-        internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
-        {
-            base.Setup(behaviour, elementId);
-            if (Count > 0 && onOperation != null)
-            {
-                for (int i = 0; i < Count; ++i)
-                {
-                    onOperation.Invoke(LiteNetLibSyncListOp.AddInitial, i, default, this[i]);
-                }
-            }
-            RegisterUpdating();
-        }
 
         public TType this[int index]
         {
@@ -285,21 +274,6 @@ namespace LiteNetLibManager
             RegisterUpdating();
         }
 
-        internal override sealed void SendInitialList(long connectionId)
-        {
-            if (!CanSync())
-                return;
-            List<OperationEntry> operationEntries = new List<OperationEntry>();
-            for (int i = 0; i < Count; ++i)
-            {
-                PrepareOperation(operationEntries, LiteNetLibSyncListOp.AddInitial, i, this[i]);
-            }
-            LiteNetLibServer server = Manager.Server;
-            TransportHandler.WritePacket(s_Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(s_Writer, operationEntries);
-            server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, s_Writer);
-        }
-
         private bool ContainsOperation(List<OperationEntry> operationEntries, int index, LiteNetLibSyncListOp operation)
         {
             for (int i = 0; i < operationEntries.Count; ++i)
@@ -328,70 +302,52 @@ namespace LiteNetLibManager
             }
         }
 
-        // TODO: Remove this
-        /// <summary>
-        /// Return `TRUE` to determine that the update is done and unregister updating
-        /// </summary>
-        /// <returns></returns>
-        internal override sealed bool SendOperations()
+        internal override void WriteSyncData(bool initial, NetDataWriter writer)
         {
-            if (!CanSync())
-                return false;
-
-            if (_operationEntries.Count <= 0)
-                return true;
-
-            LiteNetLibGameManager manager = Manager;
-            LiteNetLibServer server = manager.Server;
-            TransportHandler.WritePacket(s_Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(s_Writer, _operationEntries);
-            _operationEntries.Clear();
-            if (forOwnerOnly)
+            if (initial)
             {
-                if (manager.ContainsConnectionId(ConnectionId))
-                    server.SendMessage(ConnectionId, dataChannel, DeliveryMethod.ReliableOrdered, s_Writer);
+                writer.PutPackedInt(Count);
+                if (Count > 0)
+                {
+                    for (int i = 0; i < Count; ++i)
+                    {
+                        SerializeValue(writer, this[i]);
+                    }
+                }
             }
             else
             {
-                foreach (long connectionId in manager.GetConnectionIds())
+                if (_operationEntries.Count <= 0)
+                    return;
+                writer.PutPackedInt(_operationEntries.Count);
+                for (int i = 0; i < _operationEntries.Count; ++i)
                 {
-                    if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, s_Writer);
+                    SerializeOperation(writer, _operationEntries[i]);
                 }
             }
-
-            return true;
         }
 
-        // TODO: Keep this
-        internal override void WriteSyncData(NetDataWriter writer)
+        internal override void ReadSyncData(bool initial, NetDataReader reader)
         {
-            if (_operationEntries.Count <= 0)
-                return;
-            writer.PutPackedInt(_operationEntries.Count);
-            for (int i = 0; i < _operationEntries.Count; ++i)
+            if (initial)
             {
-                SerializeOperation(writer, _operationEntries[i]);
+                _list.Clear();
+                int count = reader.GetPackedInt();
+                if (count > 0)
+                {
+                    for (int i = 0; i < count; ++i)
+                    {
+                        _list.Add(DeserializeValue(reader));
+                    }
+                }
             }
-        }
-
-        // TODO: Keep this
-        internal override void ReadSyncData(NetDataReader reader)
-        {
-            int operationCount = reader.GetPackedInt();
-            for (int i = 0; i < operationCount; ++i)
+            else
             {
-                DeserializeOperation(reader);
-            }
-        }
-
-        // TODO: Remove this
-        internal override sealed void ProcessOperations(NetDataReader reader)
-        {
-            int operationCount = reader.GetPackedInt();
-            for (int i = 0; i < operationCount; ++i)
-            {
-                DeserializeOperation(reader);
+                int operationCount = reader.GetPackedInt();
+                for (int i = 0; i < operationCount; ++i)
+                {
+                    DeserializeOperation(reader);
+                }
             }
         }
 

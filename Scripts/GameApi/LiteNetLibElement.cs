@@ -83,10 +83,5 @@ namespace LiteNetLibManager
             _elementId = elementId;
             IsSetup = true;
         }
-
-        protected virtual bool CanSync()
-        {
-            return IsSetup;
-        }
     }
 }
