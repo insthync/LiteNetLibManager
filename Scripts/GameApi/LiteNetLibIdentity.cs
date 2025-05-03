@@ -16,8 +16,6 @@ namespace LiteNetLibManager
     [DisallowMultipleComponent]
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
-        public const int SYNC_FIELD_ID_OFFSET = 0;
-        public const int SYNC_LIST_ID_OFFSET = 10000;
         public static uint HighestObjectId { get; private set; }
         /// <summary>
         /// If any of these function's result is true, it will force hide the object from another object
@@ -72,21 +70,13 @@ namespace LiteNetLibManager
         /// </summary>
         public LiteNetLibBehaviour[] Behaviours { get; private set; }
         /// <summary>
-        /// List of sync fields from all behaviours (include children behaviours)
+        /// List of sync elements from all behaviours (include children behaviours)
         /// </summary>
-        internal readonly List<LiteNetLibSyncField> SyncFields = new List<LiteNetLibSyncField>();
+        internal readonly Dictionary<int, LiteNetLibSyncElement> SyncElements = new Dictionary<int, LiteNetLibSyncElement>();
         /// <summary>
         /// List of net functions from all behaviours (include children behaviours)
         /// </summary>
-        internal readonly List<LiteNetLibFunction> NetFunctions = new List<LiteNetLibFunction>();
-        /// <summary>
-        /// List of sync lists from all behaviours (include children behaviours)
-        /// </summary>
-        internal readonly List<LiteNetLibSyncList> SyncLists = new List<LiteNetLibSyncList>();
-        /// <summary>
-        /// List of sync behaviours
-        /// </summary>
-        internal readonly List<LiteNetLibBehaviour> SyncBehaviours = new List<LiteNetLibBehaviour>();
+        internal readonly Dictionary<int, LiteNetLibFunction> NetFunctions = new Dictionary<int, LiteNetLibFunction>();
         /// <summary>
         /// List of networked objects which subscribed by this identity
         /// </summary>
@@ -226,7 +216,7 @@ namespace LiteNetLibManager
             get; private set;
         }
 
-        static int GetHashedId(string id)
+        internal static int GetHashedId(string id)
         {
             unchecked
             {
@@ -361,57 +351,10 @@ namespace LiteNetLibManager
 #endif
         #endregion
 
-        #region SyncElement Functions
+        #region Sync Element Functions
         internal bool TryGetSyncElement(int elementId, out LiteNetLibSyncElement syncElement)
         {
-            if (elementId >= SYNC_LIST_ID_OFFSET)
-            {
-                int index = elementId - SYNC_LIST_ID_OFFSET;
-                if (index >= 0 && index < SyncLists.Count)
-                {
-                    syncElement = SyncLists[index];
-                    return true;
-                }
-            }
-            else if (elementId >= SYNC_FIELD_ID_OFFSET)
-            {
-                int index = elementId - SYNC_FIELD_ID_OFFSET;
-                if (index >= 0 && index < SyncFields.Count)
-                {
-                    syncElement = SyncFields[index];
-                    return true;
-                }
-            }
-            syncElement = null;
-            return false;
-        }
-        #endregion
-
-        #region SyncField Functions
-        internal LiteNetLibSyncField GetSyncField(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            int index = info.elementId - SYNC_FIELD_ID_OFFSET;
-            if (index >= 0 && index < SyncFields.Count)
-                return SyncFields[index];
-            if (Manager.LogError)
-                Logging.LogError(LogTag, $"Cannot find sync field: {info.elementId}.");
-            return null;
-        }
-        #endregion
-
-        #region SyncList Functions
-        internal LiteNetLibSyncList GetSyncList(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            int index = info.elementId - SYNC_LIST_ID_OFFSET;
-            if (index >= 0 && index < SyncLists.Count)
-                return SyncLists[index];
-            if (Manager.LogError)
-                Logging.LogError(LogTag, $"Cannot find sync list: {info.elementId}.");
-            return null;
+            return SyncElements.TryGetValue(elementId, out syncElement);
         }
         #endregion
 
@@ -435,11 +378,13 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.elementId >= 0 && info.elementId < NetFunctions.Count)
-                return NetFunctions[info.elementId];
-            if (Manager.LogError)
-                Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
-            return null;
+            if (!NetFunctions.TryGetValue(info.elementId, out LiteNetLibFunction netFunction))
+            {
+                if (Manager.LogError)
+                    Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
+                return null;
+            }
+            return netFunction;
         }
         #endregion
 
@@ -493,13 +438,10 @@ namespace LiteNetLibManager
                 // Setup behaviours index, we will use this as reference for network functions
                 // NOTE: Maximum network behaviour for a identity is 255 (included children)
                 Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
-                SyncBehaviours.Clear();
                 byte loopCounter;
                 for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
                     Behaviours[loopCounter].Setup(loopCounter);
-                    if (Behaviours[loopCounter].CanSyncBehaviour())
-                        SyncBehaviours.Add(Behaviours[loopCounter]);
                 }
                 IsSetupBehaviours = true;
             }
@@ -869,25 +811,17 @@ namespace LiteNetLibManager
         internal void ResetSyncData()
         {
             // Clear/reset syncing data
-            foreach (LiteNetLibSyncField field in SyncFields)
+            foreach (LiteNetLibSyncElement field in SyncElements.Values)
             {
                 field.Reset();
-            }
-            foreach (LiteNetLibSyncList list in SyncLists)
-            {
-                list.Reset();
             }
         }
 
         private void OnDestroy()
         {
-            foreach (LiteNetLibSyncField field in SyncFields)
+            foreach (LiteNetLibSyncElement syncElement in SyncElements.Values)
             {
-                field.UnregisterUpdating();
-            }
-            foreach (LiteNetLibSyncList list in SyncLists)
-            {
-                list.UnregisterUpdating();
+                syncElement.UnregisterUpdating();
             }
             onGetInstance.RemoveAllListeners();
             onGetInstance = null;
@@ -895,10 +829,8 @@ namespace LiteNetLibManager
             onSubscriberAdded = null;
             onSubscriberRemoved.RemoveAllListeners();
             onSubscriberRemoved = null;
-            SyncFields.Clear();
+            SyncElements.Clear();
             NetFunctions.Clear();
-            SyncLists.Clear();
-            SyncBehaviours.Clear();
             Subscribings.Clear();
             Subscribers.Clear();
             HideExceptions.Clear();

@@ -52,7 +52,7 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal void Reset()
+        internal override void Reset()
         {
             SetValue(_defaultValue);
         }
@@ -74,18 +74,6 @@ namespace LiteNetLibManager
                         OnChange(true, _defaultValue, _defaultValue);
                     break;
             }
-        }
-
-        public void RegisterUpdating()
-        {
-            if (!IsSetup)
-                return;
-            Manager?.RegisterServerSyncElement(this);
-        }
-
-        public void UnregisterUpdating()
-        {
-            Manager?.UnregisterServerSyncElement(this);
         }
 
         internal override void WriteSyncData(NetDataWriter writer)

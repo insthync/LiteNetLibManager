@@ -14,7 +14,6 @@ namespace LiteNetLibManager
         protected readonly static NetDataWriter s_Writer = new NetDataWriter();
         public abstract Type FieldType { get; }
         public abstract int Count { get; }
-        internal abstract void Reset();
         internal abstract void SendInitialList(long connectionId);
         internal abstract bool SendOperations();
         internal abstract void ProcessOperations(NetDataReader reader);
@@ -22,18 +21,6 @@ namespace LiteNetLibManager
         protected override bool CanSync()
         {
             return IsServer;
-        }
-
-        public void RegisterUpdating()
-        {
-            if (!IsSetup)
-                return;
-            Manager?.RegisterServerSyncElement(this);
-        }
-
-        public void UnregisterUpdating()
-        {
-            Manager?.UnregisterServerSyncElement(this);
         }
     }
 

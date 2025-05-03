@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
-using System.Text;
+using Cysharp.Text;
 
 namespace LiteNetLibManager
 {
@@ -13,59 +13,29 @@ namespace LiteNetLibManager
     {
         public const string TAG_NULL = "<NULL_B>";
 
-        private struct CacheFields
+        private class CacheFunctions
         {
-            public List<FieldInfo> syncFields;
-            public List<FieldInfo> syncLists;
-        }
-
-        private struct CacheFunctions
-        {
-            public List<MethodInfo> functions;
-            public List<MethodInfo> functionsCanCallByEveryone;
+            public readonly List<MethodInfo> Functions = new List<MethodInfo>();
+            public readonly List<MethodInfo> FunctionsCanCallByEveryone = new List<MethodInfo>();
         }
 
         [ReadOnly, SerializeField]
-        private byte behaviourIndex;
+        private byte _behaviourIndex;
         public byte BehaviourIndex
         {
-            get { return behaviourIndex; }
+            get { return _behaviourIndex; }
         }
 
-        private static readonly Dictionary<string, CacheFields> s_CacheSyncElements = new Dictionary<string, CacheFields>();
+        private static readonly Dictionary<string, List<FieldInfo>> s_CacheSyncElements = new Dictionary<string, List<FieldInfo>>();
         private static readonly Dictionary<string, CacheFunctions> s_CacheElasticRpcs = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, CacheFunctions> s_CacheTargetRpcs = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, CacheFunctions> s_CacheAllRpcs = new Dictionary<string, CacheFunctions>();
         private static readonly Dictionary<string, CacheFunctions> s_CacheServerRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, MethodInfo> s_CacheOnChangeFunctions = new Dictionary<string, MethodInfo>();
-        private static readonly Dictionary<string, MethodInfo> s_CacheOnUpdateFunctions = new Dictionary<string, MethodInfo>();
         private static readonly Dictionary<string, Type[]> s_CacheDyncnamicFunctionTypes = new Dictionary<string, Type[]>();
 
         private readonly Dictionary<string, int> _targetRpcIds = new Dictionary<string, int>();
         private readonly Dictionary<string, int> _allRpcIds = new Dictionary<string, int>();
         private readonly Dictionary<string, int> _serverRpcIds = new Dictionary<string, int>();
-
-        private Type _classType;
-        /// <summary>
-        /// This will be used when setup sync fields and sync lists
-        /// </summary>
-        public Type ClassType
-        {
-            get
-            {
-                if (_classType == null)
-                    _classType = GetType();
-                return _classType;
-            }
-        }
-
-        /// <summary>
-        /// This will be used when setup sync fields and sync lists as key for cached fields
-        /// </summary>
-        public string TypeName
-        {
-            get { return ClassType.FullName; }
-        }
 
         private bool _isFoundIdentity;
         private LiteNetLibIdentity _identity;
@@ -161,9 +131,9 @@ namespace LiteNetLibManager
 
         public void Setup(byte behaviourIndex)
         {
-            this.behaviourIndex = behaviourIndex;
+            _behaviourIndex = behaviourIndex;
             OnSetup();
-            CacheElements();
+            CacheElements(s_CacheSyncElements);
             CacheRpcs<ElasticRpcAttribute>(_serverRpcIds, s_CacheElasticRpcs);
             CacheRpcs<ElasticRpcAttribute>(_allRpcIds, s_CacheElasticRpcs);
             CacheRpcs<ElasticRpcAttribute>(_targetRpcIds, s_CacheElasticRpcs);
@@ -172,20 +142,19 @@ namespace LiteNetLibManager
             CacheRpcs<TargetRpcAttribute>(_targetRpcIds, s_CacheTargetRpcs);
         }
 
-        private void CacheElements()
+        private void CacheElements(Dictionary<string, List<FieldInfo>> cacheDict)
         {
-            CacheFields tempCacheFields;
-            if (!s_CacheSyncElements.TryGetValue(TypeName, out tempCacheFields))
+            Type baseType = GetType();
+            string typeName = baseType.FullName;
+
+            // Find sync elements
+            if (!cacheDict.TryGetValue(typeName, out List<FieldInfo> syncElementFieldInfos))
             {
-                tempCacheFields = new CacheFields()
-                {
-                    syncFields = new List<FieldInfo>(),
-                    syncLists = new List<FieldInfo>(),
-                };
+                syncElementFieldInfos = new List<FieldInfo>();
                 HashSet<string> tempLookupNames = new HashSet<string>();
                 FieldInfo[] tempLookupFields;
-                Type tempLookupType = ClassType;
-                // Find for sync field and sync list from the class
+                Type tempLookupType = baseType;
+                // Find for sync elements from this class
                 while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
                     tempLookupFields = tempLookupType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -195,103 +164,84 @@ namespace LiteNetLibManager
                         if (tempLookupNames.Contains(lookupField.Name))
                             continue;
 
-                        if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncField)))
-                        {
-                            tempCacheFields.syncFields.Add(lookupField);
-                        }
-                        else if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncList)))
-                        {
-                            tempCacheFields.syncLists.Add(lookupField);
-                        }
+                        if (lookupField.FieldType.IsSubclassOf(typeof(LiteNetLibSyncElement)))
+                            syncElementFieldInfos.Add(lookupField);
 
                         tempLookupNames.Add(lookupField.Name);
                     }
                     tempLookupType = tempLookupType.BaseType;
                 }
-                tempLookupNames.Clear();
                 tempLookupFields = null;
                 tempLookupType = null;
-                // Sort name to make sure the fields will be sync correctly by its index
-                tempCacheFields.syncFields.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
-                tempCacheFields.syncLists.Sort((a, b) => a.Name.ToLower().CompareTo(b.Name.ToLower()));
-                s_CacheSyncElements.Add(TypeName, tempCacheFields);
+                cacheDict.Add(typeName, syncElementFieldInfos);
             }
-            SetupSyncElements(tempCacheFields.syncFields, Identity.SyncFields, LiteNetLibIdentity.SYNC_FIELD_ID_OFFSET);
-            SetupSyncElements(tempCacheFields.syncLists, Identity.SyncLists, LiteNetLibIdentity.SYNC_LIST_ID_OFFSET);
-        }
 
-        private void SetupSyncElements<T>(List<FieldInfo> fields, List<T> elementList, int idOffset) where T : LiteNetLibElement
-        {
-            if (fields == null || fields.Count == 0)
+            if (syncElementFieldInfos.Count == 0)
                 return;
 
-            foreach (FieldInfo field in fields)
+            // Setup sync elements
+            foreach (FieldInfo syncElementFieldInfo in syncElementFieldInfos)
             {
-                try
-                {
-                    RegisterSyncElement((T)field.GetValue(this), elementList, idOffset);
-                }
-                catch (Exception ex)
-                {
-                    if (Manager.LogFatal)
-                        Logging.LogException(LogTag, ex);
-                }
+                LiteNetLibSyncElement syncElement = (LiteNetLibSyncElement)syncElementFieldInfo.GetValue(this);
+                if (syncElement == null)
+                    continue;
+                int syncElementId = LiteNetLibIdentity.GetHashedId(MakeSyncElementId(syncElementFieldInfo));
+                syncElement.Setup(this, syncElementId);
+                Identity.SyncElements[syncElementId] = syncElement;
             }
         }
 
         private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<string, CacheFunctions> cacheDict)
             where RpcType : RpcAttribute
         {
-            CacheFunctions tempCacheFunctions;
-            if (!cacheDict.TryGetValue(TypeName, out tempCacheFunctions))
+            Type baseType = GetType();
+            string typeName = baseType.FullName;
+
+            if (!cacheDict.TryGetValue(typeName, out CacheFunctions cacheFunctions))
             {
-                tempCacheFunctions = new CacheFunctions()
-                {
-                    functions = new List<MethodInfo>(),
-                    functionsCanCallByEveryone = new List<MethodInfo>()
-                };
+                cacheFunctions = new CacheFunctions();
                 HashSet<string> tempLookupNames = new HashSet<string>();
                 MethodInfo[] tempLookupMethods;
-                Type tempLookupType = ClassType;
+                Type tempLookupType = baseType;
                 RpcType tempAttribute;
-                // Find for function with [Rpc] attribute to register as RPC
+
                 while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
-                    tempLookupMethods = tempLookupType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                    tempLookupMethods = tempLookupType.GetMethods(
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
                     foreach (MethodInfo lookupMethod in tempLookupMethods)
                     {
-                        // Avoid duplicate functions
-                        if (tempLookupNames.Contains(lookupMethod.Name))
-                            continue;
-
-                        // Must have [Rpc] attribute
                         tempAttribute = lookupMethod.GetCustomAttribute<RpcType>();
                         if (tempAttribute == null)
                             continue;
 
-                        // Return type must be `void`
+                        if (tempLookupNames.Contains(lookupMethod.Name))
+                            continue;
+
                         if (lookupMethod.ReturnType != typeof(void))
                         {
                             if (Manager.LogError)
-                                Logging.LogError(LogTag, $"Cannot register rpc [{lookupMethod.Name}] return type must be void.");
+                                Logging.LogError(LogTag, $"Cannot register RPC [{lookupMethod.Name}] return type must be void.");
                             continue;
                         }
 
                         if (!tempAttribute.canCallByEveryone)
-                            tempCacheFunctions.functions.Add(lookupMethod);
+                            cacheFunctions.Functions.Add(lookupMethod);
                         else
-                            tempCacheFunctions.functionsCanCallByEveryone.Add(lookupMethod);
+                            cacheFunctions.FunctionsCanCallByEveryone.Add(lookupMethod);
+
                         tempLookupNames.Add(lookupMethod.Name);
                     }
+
                     tempLookupType = tempLookupType.BaseType;
                 }
-                tempLookupNames.Clear();
-                tempLookupMethods = null;
-                tempLookupType = null;
-                cacheDict.Add(TypeName, tempCacheFunctions);
+
+                cacheDict.Add(typeName, cacheFunctions);
             }
-            SetupRpcs(ids, tempCacheFunctions.functions, false);
-            SetupRpcs(ids, tempCacheFunctions.functionsCanCallByEveryone, true);
+
+            SetupRpcs(ids, cacheFunctions.Functions, false);
+            SetupRpcs(ids, cacheFunctions.FunctionsCanCallByEveryone, true);
         }
 
         private void SetupRpcs(Dictionary<string, int> ids, List<MethodInfo> methodInfos, bool canCallByEveryone)
@@ -312,25 +262,6 @@ namespace LiteNetLibManager
                 RegisterRPC(ids, tempFunctionId, new LiteNetLibFunctionDynamic(tempParamTypes, this, methodInfo), canCallByEveryone);
             }
         }
-
-        #region Sync Elements Registration
-        private void RegisterSyncElement<T>(T element, List<T> elementList, int idOffset) where T : LiteNetLibElement
-        {
-            int elementId = elementList.Count + idOffset;
-            element.Setup(this, elementId);
-            elementList.Add(element);
-        }
-
-        public void RegisterSyncField<T>(T syncField) where T : LiteNetLibSyncField
-        {
-            RegisterSyncElement(syncField, Identity.SyncFields, LiteNetLibIdentity.SYNC_FIELD_ID_OFFSET);
-        }
-
-        public void RegisterSyncList<T>(T syncList) where T : LiteNetLibSyncList
-        {
-            RegisterSyncElement(syncList, Identity.SyncLists, LiteNetLibIdentity.SYNC_LIST_ID_OFFSET);
-        }
-        #endregion
 
         #region RPCs Registration
         /// <summary>
@@ -724,19 +655,13 @@ namespace LiteNetLibManager
             if (dict.ContainsKey(id))
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, $"[{TypeName}] cannot register rpc with existed id [{id}].");
+                    Logging.LogError(LogTag, $"[{GetType().FullName}] Cannot register rpc with existed id [{id}].");
                 return;
             }
-            if (Identity.NetFunctions.Count >= int.MaxValue)
-            {
-                if (Manager.LogError)
-                    Logging.LogError(LogTag, $"[{TypeName}] cannot register rpc it's exceeds limit.");
-                return;
-            }
-            int elementId = Identity.NetFunctions.Count;
+            int elementId = LiteNetLibIdentity.GetHashedId(id);
             netFunction.Setup(this, elementId);
             netFunction.CanCallByEveryone = canCallByEveryone;
-            Identity.NetFunctions.Add(netFunction);
+            Identity.NetFunctions[elementId] = netFunction;
             dict[id] = elementId;
         }
 
@@ -1337,7 +1262,7 @@ namespace LiteNetLibManager
                     else
                     {
                         if (Manager.LogError)
-                            Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, any rpc [{methodName}] not found.");
+                            Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, any rpc [{methodName}] not found.");
                     }
                     break;
                 case FunctionReceivers.Server:
@@ -1348,12 +1273,12 @@ namespace LiteNetLibManager
                     else
                     {
                         if (Manager.LogError)
-                            Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, any rpc [{methodName}] not found.");
+                            Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, any rpc [{methodName}] not found.");
                     }
                     break;
                 default:
                     if (Manager.LogError)
-                        Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, rpc [{methodName}] receives must be `All` or `Server`.");
+                        Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, rpc [{methodName}] receives must be `All` or `Server`.");
                     break;
             }
         }
@@ -1389,7 +1314,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, client or server rpc [{methodName}] not found.");
+                    Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, client or server rpc [{methodName}] not found.");
             }
         }
 
@@ -1417,7 +1342,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, $"[{TypeName}] cannot call rpc, target rpc [{methodName}] not found.");
+                    Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, target rpc [{methodName}] not found.");
             }
         }
 
@@ -1428,7 +1353,33 @@ namespace LiteNetLibManager
 
         private string MakeNetFunctionId(string methodName)
         {
-            return new StringBuilder(TypeName).Append('+').Append(methodName).ToString();
+            using (var stringBuilder = ZString.CreateStringBuilder(true))
+            {
+                stringBuilder.Append(GetType().FullName);
+                stringBuilder.Append('_');
+                stringBuilder.Append(_behaviourIndex);
+                stringBuilder.Append('_');
+                stringBuilder.Append(methodName);
+                return stringBuilder.ToString();
+            }
+        }
+
+        private string MakeSyncElementId(FieldInfo fieldInfo)
+        {
+            return MakeSyncElementId(fieldInfo.Name);
+        }
+
+        private string MakeSyncElementId(string elementName)
+        {
+            using (var stringBuilder = ZString.CreateStringBuilder(true))
+            {
+                stringBuilder.Append(GetType().FullName);
+                stringBuilder.Append('_');
+                stringBuilder.Append(_behaviourIndex);
+                stringBuilder.Append('_');
+                stringBuilder.Append(elementName);
+                return stringBuilder.ToString();
+            }
         }
 
         public void SetOwnerClient(long connectionId)
@@ -1549,34 +1500,6 @@ namespace LiteNetLibManager
         /// You may do some initialize things within this function
         /// </summary>
         public virtual void OnSetup() { }
-
-        /// <summary>
-        /// Override this function to define condition to sync behaviour data to client or not
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool CanSyncBehaviour()
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// Override this function to define condition to sync behaviour data to client when it should
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool ShouldSyncBehaviour()
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// Override this function to write custom data to send from server to client
-        /// </summary>
-        public virtual void OnSerialize(NetDataWriter writer) { }
-
-        /// <summary>
-        /// Override this function to read data from server at client
-        /// </summary>
-        public virtual void OnDeserialize(NetDataReader reader) { }
 
         /// <summary>
         /// Override this function to change object visibility when this added to player as subcribing

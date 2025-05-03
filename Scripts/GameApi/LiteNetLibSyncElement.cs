@@ -7,16 +7,27 @@ namespace LiteNetLibManager
         public abstract byte ElementType { get; }
         internal virtual bool WillSyncData(LiteNetLibPlayer player)
         {
-            // No pending spawn/despawn for this player
-            if (player.NetworkSpawningObjectIds.Contains(ObjectId) ||
-                player.NetworkDestroyingObjectIds.ContainsKey(ObjectId))
-                return false;
             // Don't sync data if player not subscribe the object
             return Identity.Subscribers.Contains(player.ConnectionId);
         }
 
+        internal abstract void Reset();
         internal abstract void WriteSyncData(NetDataWriter writer);
         internal abstract void ReadSyncData(NetDataReader reader);
+
+        public void RegisterUpdating()
+        {
+            if (!IsSetup)
+                return;
+            if (Manager != null)
+                Manager.RegisterServerSyncElement(this);
+        }
+
+        public void UnregisterUpdating()
+        {
+            if (Manager != null)
+                Manager.UnregisterServerSyncElement(this);
+        }
 
         public bool Equals(LiteNetLibSyncElement other)
         {
