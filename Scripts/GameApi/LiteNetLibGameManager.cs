@@ -160,6 +160,8 @@ namespace LiteNetLibManager
                 // No states to be synced, skip
                 if (statesCount == 0)
                     continue;
+                _gameStatesWriter.Reset();
+                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncElements);
                 byte syncChannelId = syncingStatesByChannelId.Key;
                 WriteGameState(_gameStatesWriter, player, syncChannelId, syncingStatesByChannelId.Value);
                 // Send data to client
@@ -1083,7 +1085,6 @@ namespace LiteNetLibManager
         #region Game State Syncing
         private void WriteGameState(NetDataWriter writer, LiteNetLibPlayer player, byte syncChannelId, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
-            writer.Reset();
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
             int stateCount = 0;
