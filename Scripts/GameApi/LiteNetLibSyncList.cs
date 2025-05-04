@@ -181,6 +181,8 @@ namespace LiteNetLibManager
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
+            if (_list.Count == 0)
+                return;
             _list.Clear();
             PrepareOperation(LiteNetLibSyncListOp.Clear, -1, default, default);
         }
