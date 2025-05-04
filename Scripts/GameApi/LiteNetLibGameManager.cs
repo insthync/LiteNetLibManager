@@ -1168,6 +1168,11 @@ namespace LiteNetLibManager
             }
             WriteSyncElements(writer, syncData.SyncElements, true);
             syncData.SyncElements.Clear();
+            if (player.ConnectionId == ClientConnectionId)
+            {
+                // Simulate object spawning if it is a host
+                identity.OnServerSubscribingAdded();
+            }
         }
 
         private void ReadSpawnGameState(NetDataReader reader)
