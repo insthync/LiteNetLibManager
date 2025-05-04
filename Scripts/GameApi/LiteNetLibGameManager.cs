@@ -148,6 +148,8 @@ namespace LiteNetLibManager
                     continue;
                 SyncGameState(tempPlayer);
             }
+
+            collection.Clear();
         }
 
         private void SyncGameState(LiteNetLibPlayer player)
