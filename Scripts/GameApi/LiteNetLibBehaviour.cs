@@ -1251,11 +1251,12 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
         {
+            string id = MakeNetFunctionId(methodName);
             int elementId;
             switch (receivers)
             {
                 case FunctionReceivers.All:
-                    if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
+                    if (_allRpcIds.TryGetValue(id, out elementId))
                     {
                         Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
@@ -1266,7 +1267,7 @@ namespace LiteNetLibManager
                     }
                     break;
                 case FunctionReceivers.Server:
-                    if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
+                    if (_serverRpcIds.TryGetValue(id, out elementId))
                     {
                         Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
@@ -1302,12 +1303,13 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, params object[] parameters)
         {
+            string id = MakeNetFunctionId(methodName);
             int elementId;
-            if (_allRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
+            if (_allRpcIds.TryGetValue(id, out elementId))
             {
                 Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.All, parameters);
             }
-            else if (_serverRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
+            else if (_serverRpcIds.TryGetValue(id, out elementId))
             {
                 Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.Server, parameters);
             }
@@ -1334,8 +1336,9 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, long connectionId, params object[] parameters)
         {
+            string id = MakeNetFunctionId(methodName);
             int elementId;
-            if (_targetRpcIds.TryGetValue(MakeNetFunctionId(methodName), out elementId) && elementId < Identity.NetFunctions.Count)
+            if (_targetRpcIds.TryGetValue(id, out elementId))
             {
                 Identity.NetFunctions[elementId].Call(Identity.DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, parameters);
             }
