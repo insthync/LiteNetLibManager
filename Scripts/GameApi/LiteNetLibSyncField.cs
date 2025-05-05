@@ -123,7 +123,6 @@ namespace LiteNetLibManager
     public class LiteNetLibSyncField<TType> : LiteNetLibSyncField
     {
         public delegate void OnChangeDelegate(bool initial, TType oldValue, TType newValue);
-        public delegate void OnUpdatedDelegate();
         /// <summary>
         /// Action with initial state and value, this will be invoked after data changed
         /// </summary>
