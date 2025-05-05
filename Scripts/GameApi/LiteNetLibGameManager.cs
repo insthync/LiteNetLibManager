@@ -29,6 +29,7 @@ namespace LiteNetLibManager
         public bool doNotReadyOnSceneLoaded = false;
         public bool doNotDestroyOnSceneChanges = false;
         public bool loadOfflineSceneWhenClientStopped = true;
+        public bool safeGameStatePacket = false;
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
@@ -1128,13 +1129,16 @@ namespace LiteNetLibManager
                 switch (stateType)
                 {
                     case GameStateSyncData.STATE_TYPE_SPAWN:
-                        ReadSpawnGameState(reader);
+                        if (!ReadSpawnGameState(reader))
+                            return;
                         break;
                     case GameStateSyncData.STATE_TYPE_SYNC:
-                        ReadSyncGameState(reader);
+                        if (!ReadSyncGameState(reader))
+                            return;
                         break;
                     case GameStateSyncData.STATE_TYPE_DESTROY:
-                        ReadDestroyGameState(reader);
+                        if (!ReadDestroyGameState(reader))
+                            return;
                         break;
                 }
             }
@@ -1177,7 +1181,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ReadSpawnGameState(NetDataReader reader)
+        private bool ReadSpawnGameState(NetDataReader reader)
         {
             bool isSceneObject = reader.GetBool();
             int hashSceneObjectId = 0;
@@ -1209,7 +1213,7 @@ namespace LiteNetLibManager
                     Quaternion.Euler(angleX, angleY, angleZ),
                     objectId, connectionId);
             }
-            ReadSyncElements(reader, identity, true);
+            return ReadSyncElements(reader, identity, true);
         }
 
         private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
@@ -1220,12 +1224,12 @@ namespace LiteNetLibManager
             syncData.SyncElements.Clear();
         }
 
-        private void ReadSyncGameState(NetDataReader reader)
+        private bool ReadSyncGameState(NetDataReader reader)
         {
             uint objectId = reader.GetPackedUInt();
             if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
-                return;
-            ReadSyncElements(reader, identity, false);
+                return false;
+            return ReadSyncElements(reader, identity, false);
         }
 
         private void WriteDestroyGameState(NetDataWriter writer, LiteNetLibPlayer player, uint objectId, GameStateSyncData syncData)
@@ -1241,11 +1245,12 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ReadDestroyGameState(NetDataReader reader)
+        private bool ReadDestroyGameState(NetDataReader reader)
         {
             uint objectId = reader.GetPackedUInt();
             byte destroyReasons = reader.GetByte();
             Assets.NetworkDestroy(objectId, destroyReasons);
+            return true;
         }
 
         private void WriteSyncElements(NetDataWriter writer, ICollection<LiteNetLibSyncElement> elements, bool initial)
@@ -1257,57 +1262,84 @@ namespace LiteNetLibManager
             {
                 // Write element info
                 writer.PutPackedInt(syncElement.ElementId);
-                // Reserve position for data length
-                int posBeforeWriteDataLen = writer.Length;
-                int dataLength = 0;
-                writer.Put(dataLength);
-                int posAfterWriteDataLen = writer.Length;
-                // Write sync data
-                syncElement.WriteSyncData(initial, writer);
-                dataLength = writer.Length - posAfterWriteDataLen;
-                // Put data length
-                int posAfterWriteData = writer.Length;
-                writer.SetPosition(posBeforeWriteDataLen);
-                writer.Put(dataLength);
-                writer.SetPosition(posAfterWriteData);
+                if (safeGameStatePacket)
+                {
+                    // Reserve position for data length
+                    int posBeforeWriteDataLen = writer.Length;
+                    int dataLength = 0;
+                    writer.Put(dataLength);
+                    int posAfterWriteDataLen = writer.Length;
+                    // Write sync data
+                    syncElement.WriteSyncData(initial, writer);
+                    dataLength = writer.Length - posAfterWriteDataLen;
+                    // Put data length
+                    int posAfterWriteData = writer.Length;
+                    writer.SetPosition(posBeforeWriteDataLen);
+                    writer.Put(dataLength);
+                    writer.SetPosition(posAfterWriteData);
+                }
+                else
+                {
+                    syncElement.WriteSyncData(initial, writer);
+                }
             }
         }
 
-        private void ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, bool initial)
+        private bool ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, bool initial)
         {
             int elementsCount = reader.GetPackedInt();
             if (elementsCount == 0)
-                return;
+                return true;
             for (int i = 0; i < elementsCount; ++i)
             {
                 int elementId = reader.GetPackedInt();
-                int dataLength = reader.GetInt();
-                int positionBeforeRead = reader.Position;
-                bool readFail = false;
-                if (identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
+                if (safeGameStatePacket)
                 {
-                    // Can read data properly
-                    try
+                    int dataLength = reader.GetInt();
+                    int positionBeforeRead = reader.Position;
+
+                    if (identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
                     {
-                        element.ReadSyncData(initial, reader);
+                        try
+                        {
+                            element.ReadSyncData(initial, reader);
+                        }
+                        catch
+                        {
+                            if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, sync element not found.");
+                            reader.SetPosition(positionBeforeRead);
+                            reader.SkipBytes(dataLength);
+                        }
                     }
-                    catch
+                    else
                     {
-                        readFail = true;
+                        if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, sync element not found.");
+                        reader.SetPosition(positionBeforeRead);
+                        reader.SkipBytes(dataLength);
                     }
                 }
                 else
                 {
-                    readFail = true;
-                }
-
-                if (readFail)
-                {
-                    // Missing data, unable to proceed properly, so skip bytes
-                    reader.SetPosition(positionBeforeRead);
-                    reader.SkipBytes(dataLength);
+                    if (identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
+                    {
+                        try
+                        {
+                            element.ReadSyncData(initial, reader);
+                        }
+                        catch
+                        {
+                            if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found.");
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found.");
+                        return false;
+                    }
                 }
             }
+            return true;
         }
         #endregion
     }
