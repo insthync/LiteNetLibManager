@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Profiling;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
