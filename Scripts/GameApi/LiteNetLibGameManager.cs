@@ -704,7 +704,7 @@ namespace LiteNetLibManager
                 return;
             if (!Players.TryGetValue(connectionId, out LiteNetLibPlayer player) || !player.IsReady)
                 return;
-            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerDestroyObject, new ServerErrorMessage()
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.ServerError, new ServerErrorMessage()
             {
                 shouldDisconnect = shouldDisconnect,
                 errorMessage = errorMessage,
