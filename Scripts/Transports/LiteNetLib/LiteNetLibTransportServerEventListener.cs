@@ -7,30 +7,30 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibTransportServerEventListener : INetEventListener
     {
-        private readonly ITransport transport;
-        private readonly string connectKey;
-        private readonly Queue<TransportEventData> eventQueue;
-        private readonly Dictionary<long, NetPeer> serverPeers;
+        private readonly ITransport _transport;
+        private readonly string _connectKey;
+        private readonly Queue<TransportEventData> _eventQueue;
+        private readonly Dictionary<long, NetPeer> _serverPeers;
 
         public LiteNetLibTransportServerEventListener(ITransport transport, string connectKey, Queue<TransportEventData> eventQueue, Dictionary<long, NetPeer> serverPeers)
         {
-            this.transport = transport;
-            this.connectKey = connectKey;
-            this.eventQueue = eventQueue;
-            this.serverPeers = serverPeers;
+            _transport = transport;
+            _connectKey = connectKey;
+            _eventQueue = eventQueue;
+            _serverPeers = serverPeers;
         }
 
         public void OnConnectionRequest(ConnectionRequest request)
         {
-            if (transport.ServerPeersCount < transport.ServerMaxConnections)
-                request.AcceptIfKey(connectKey);
+            if (_transport.ServerPeersCount < _transport.ServerMaxConnections)
+                request.AcceptIfKey(_connectKey);
             else
                 request.Reject();
         }
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
-            eventQueue.Enqueue(new TransportEventData()
+            _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ErrorEvent,
                 endPoint = endPoint,
@@ -44,7 +44,7 @@ namespace LiteNetLibManager
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channelNumber, DeliveryMethod deliveryMethod)
         {
-            eventQueue.Enqueue(new TransportEventData()
+            _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DataEvent,
                 connectionId = peer.Id,
@@ -58,8 +58,8 @@ namespace LiteNetLibManager
 
         public void OnPeerConnected(NetPeer peer)
         {
-            serverPeers[peer.Id] = peer;
-            eventQueue.Enqueue(new TransportEventData()
+            _serverPeers[peer.Id] = peer;
+            _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
                 connectionId = peer.Id,
@@ -68,8 +68,8 @@ namespace LiteNetLibManager
 
         public void OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
-            serverPeers.Remove(peer.Id);
-            eventQueue.Enqueue(new TransportEventData()
+            _serverPeers.Remove(peer.Id);
+            _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
                 connectionId = peer.Id,
