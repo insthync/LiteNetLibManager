@@ -7,28 +7,7 @@ namespace LiteNetLibManager
     public abstract class LiteNetLibSyncField : LiteNetLibSyncElement
     {
         public override byte ElementType => SyncElementTypes.SyncField;
-
-        public enum SyncMode : byte
-        {
-            /// <summary>
-            /// Changes handle by server
-            /// Will send to connected clients when changes occurs on server
-            /// </summary>
-            ServerToClients,
-            /// <summary>
-            /// Changes handle by server
-            /// Will send to owner-client when changes occurs on server
-            /// </summary>
-            ServerToOwnerClient,
-            /// <summary>
-            /// Changes handle by owner-client
-            /// Will send to server then server multicast to other clients when changes occurs on owner-client
-            /// </summary>
-            ClientMulticast
-        }
-
-        [Tooltip("Who can sync data and sync to whom")]
-        public SyncMode syncMode = SyncMode.ServerToClients;
+        public LiteNetLibSyncFieldMode SyncMode { get; set; } = LiteNetLibSyncFieldMode.ServerToClients;
 
         protected object _defaultValue;
 
@@ -39,13 +18,13 @@ namespace LiteNetLibManager
 
         protected bool CanSync()
         {
-            switch (syncMode)
+            switch (SyncMode)
             {
-                case SyncMode.ServerToClients:
+                case LiteNetLibSyncFieldMode.ServerToClients:
                     return IsServer;
-                case SyncMode.ServerToOwnerClient:
+                case LiteNetLibSyncFieldMode.ServerToOwnerClient:
                     return IsServer;
-                case SyncMode.ClientMulticast:
+                case LiteNetLibSyncFieldMode.ClientMulticast:
                     return IsOwnerClient || IsServer;
             }
             return false;
@@ -56,13 +35,13 @@ namespace LiteNetLibManager
             if (!base.WillSyncData(player))
                 return false;
             bool isOwnerClient = ConnectionId == player.ConnectionId;
-            switch (syncMode)
+            switch (SyncMode)
             {
-                case SyncMode.ServerToClients:
+                case LiteNetLibSyncFieldMode.ServerToClients:
                     return IsServer;
-                case SyncMode.ServerToOwnerClient:
+                case LiteNetLibSyncFieldMode.ServerToOwnerClient:
                     return IsServer;
-                case SyncMode.ClientMulticast:
+                case LiteNetLibSyncFieldMode.ClientMulticast:
                     return isOwnerClient || IsServer;
             }
             return false;
@@ -78,14 +57,14 @@ namespace LiteNetLibManager
             base.Setup(behaviour, elementId);
             _defaultValue = GetValue();
             // Invoke on change function with initial state = true
-            switch (syncMode)
+            switch (SyncMode)
             {
-                case SyncMode.ServerToClients:
-                case SyncMode.ServerToOwnerClient:
+                case LiteNetLibSyncFieldMode.ServerToClients:
+                case LiteNetLibSyncFieldMode.ServerToOwnerClient:
                     if (IsServer)
                         OnChange(true, _defaultValue, _defaultValue);
                     break;
-                case SyncMode.ClientMulticast:
+                case LiteNetLibSyncFieldMode.ClientMulticast:
                     if (IsOwnerClient || IsServer)
                         OnChange(true, _defaultValue, _defaultValue);
                     break;
@@ -128,7 +107,6 @@ namespace LiteNetLibManager
         /// </summary>
         public OnChangeDelegate onChange;
 
-        [SerializeField]
         protected TType _value;
         public TType Value
         {
@@ -138,15 +116,15 @@ namespace LiteNetLibManager
                 bool canSync = CanSync();
                 if (IsSetup && !canSync)
                 {
-                    switch (syncMode)
+                    switch (SyncMode)
                     {
-                        case SyncMode.ServerToClients:
+                        case LiteNetLibSyncFieldMode.ServerToClients:
                             Logging.LogError(LogTag, "Cannot access sync field from client.");
                             break;
-                        case SyncMode.ServerToOwnerClient:
+                        case LiteNetLibSyncFieldMode.ServerToOwnerClient:
                             Logging.LogError(LogTag, "Cannot access sync field from client.");
                             break;
-                        case SyncMode.ClientMulticast:
+                        case LiteNetLibSyncFieldMode.ClientMulticast:
                             Logging.LogError(LogTag, "Cannot access sync field, client is not its owner.");
                             break;
                     }
@@ -225,15 +203,15 @@ namespace LiteNetLibManager
                 bool canSync = CanSync();
                 if (IsSetup && !canSync)
                 {
-                    switch (syncMode)
+                    switch (SyncMode)
                     {
-                        case SyncMode.ServerToClients:
+                        case LiteNetLibSyncFieldMode.ServerToClients:
                             Logging.LogError(LogTag, "Cannot access sync field from client.");
                             break;
-                        case SyncMode.ServerToOwnerClient:
+                        case LiteNetLibSyncFieldMode.ServerToOwnerClient:
                             Logging.LogError(LogTag, "Cannot access sync field from client.");
                             break;
-                        case SyncMode.ClientMulticast:
+                        case LiteNetLibSyncFieldMode.ClientMulticast:
                             Logging.LogError(LogTag, "Cannot access sync field, client is not its owner.");
                             break;
                     }
