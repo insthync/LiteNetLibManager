@@ -138,9 +138,15 @@ namespace LiteNetLibManager
                     continue;
                 foreach (LiteNetLibSyncElement syncElement in _updatingServerSyncElements)
                 {
-                    if (!syncElement.WillSyncFromServerReliably(tempPlayer))
+                    if (!syncElement.CanSyncFromServer(tempPlayer))
                         continue;
-                    tempPlayer.SyncingStates.AppendDataSyncState(syncElement);
+                    if (syncElement.WillSyncFromServerUnreliably(tempPlayer))
+                    {
+                        // TODO: sync state unreliably
+                        tempPlayer.SyncingStates.AppendDataSyncState(syncElement);
+                    }
+                    if (syncElement.WillSyncFromServerReliably(tempPlayer))
+                        tempPlayer.SyncingStates.AppendDataSyncState(syncElement);
                 }
             }
 
@@ -151,7 +157,13 @@ namespace LiteNetLibManager
                 SyncGameStateToClient(tempPlayer);
             }
 
-            _updatingServerSyncElements.Clear();
+            if (_updatingServerSyncElements.Count > 0)
+            {
+                for (int i = _updatingServerSyncElements.Count - 1; i >= 0; --i)
+                {
+                    _updatingServerSyncElements[i].Synced();
+                }
+            }
         }
 
         private void ProceedClientGameStateSync()
@@ -160,12 +172,21 @@ namespace LiteNetLibManager
                 return;
             foreach (LiteNetLibSyncElement syncElement in _updatingClientSyncElements)
             {
-                if (!syncElement.WillSyncFromClientReliably(ClientConnectionId))
+                if (!syncElement.CanSyncFromOwnerClient())
                     continue;
-                ClientSyncingStates.AppendDataSyncState(syncElement);
+                if (syncElement.WillSyncFromOwnerClientUnreliably())
+                {
+                    // TODO: sync state unreliably
+                    ClientSyncingStates.AppendDataSyncState(syncElement);
+                }
+                if (syncElement.WillSyncFromOwnerClientReliably())
+                    ClientSyncingStates.AppendDataSyncState(syncElement);
             }
             SyncGameStateToServer();
-            _updatingClientSyncElements.Clear();
+            for (int i = _updatingClientSyncElements.Count - 1; i >= 0; --i)
+            {
+                _updatingClientSyncElements[i].Synced();
+            }
         }
 
         private void SyncGameStateToClient(LiteNetLibPlayer player)
@@ -1142,6 +1163,7 @@ namespace LiteNetLibManager
         #region Game State Syncing
         private int WriteGameStateFromServer(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
+            writer.PutPackedLong(ServerTimestamp);
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
             int stateCount = 0;
@@ -1169,7 +1191,7 @@ namespace LiteNetLibManager
                             break;
                         case GameStateSyncData.STATE_TYPE_SYNC:
                             writer.Put(GameStateSyncData.STATE_TYPE_SYNC);
-                            WriteReliablySyncGameState(writer, objectId, syncingStatesByObjectId.Value);
+                            WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value);
                             ++stateCount;
                             break;
                         case GameStateSyncData.STATE_TYPE_DESTROY:
@@ -1197,6 +1219,7 @@ namespace LiteNetLibManager
 
         private int WriteGameStateFromClient(NetDataWriter writer, byte syncChannelId, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
+            writer.PutPackedLong(ServerTimestamp);
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
             int stateCount = 0;
@@ -1210,7 +1233,7 @@ namespace LiteNetLibManager
                 switch (syncingStatesByObjectId.Value.StateType)
                 {
                     case GameStateSyncData.STATE_TYPE_SYNC:
-                        WriteReliablySyncGameState(writer, objectId, syncingStatesByObjectId.Value);
+                        WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value);
                         ++stateCount;
                         break;
                 }
@@ -1226,6 +1249,7 @@ namespace LiteNetLibManager
 
         private void ReadGameStateFromServer(NetDataReader reader)
         {
+            long timestamp = reader.GetPackedLong();
             int stateCount = reader.GetInt();
             for (int i = 0; i < stateCount; ++i)
             {
@@ -1250,6 +1274,7 @@ namespace LiteNetLibManager
 
         private void ReadGameStateFromClient(NetDataReader reader)
         {
+            long timestamp = reader.GetPackedLong();
             int stateCount = reader.GetInt();
             for (int i = 0; i < stateCount; ++i)
             {
@@ -1276,8 +1301,7 @@ namespace LiteNetLibManager
             syncData.SyncElements.Clear();
             foreach (LiteNetLibSyncElement syncElement in identity.SyncElements.Values)
             {
-                if (!syncElement.WillSyncFromServerUnreliably(player) &&
-                    !syncElement.WillSyncFromServerReliably(player))
+                if (!syncElement.CanSyncFromServer(player))
                     continue;
                 syncData.SyncElements.Add(syncElement);
             }
@@ -1320,7 +1344,7 @@ namespace LiteNetLibManager
             return ReadSyncElements(reader, identity, true);
         }
 
-        private void WriteReliablySyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
+        private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
         {
             writer.PutPackedUInt(objectId);
             WriteSyncElements(writer, syncData.SyncElements, false);

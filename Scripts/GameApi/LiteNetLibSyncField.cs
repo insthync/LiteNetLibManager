@@ -8,52 +8,90 @@ namespace LiteNetLibManager
     {
         public override byte ElementType => SyncElementTypes.SyncField;
         public LiteNetLibSyncFieldMode SyncMode { get; set; } = LiteNetLibSyncFieldMode.ServerToClients;
+        public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected object _defaultValue;
+        /// <summary>
+        /// 0 - No syncing
+        /// 1 - Change occurs, will sync unreliably
+        /// 2 - Sent unreliably already, will sync packed state reliably
+        /// </summary>
+        protected byte _syncStep = 0;
 
         public abstract Type GetFieldType();
         protected abstract object GetValue();
         protected abstract void SetValue(object value);
         internal abstract void OnChange(bool initial, object oldValue, object newValue);
 
-        protected bool CanSync()
+        protected bool CanSync(bool isServer, bool isOwnerClient)
         {
             switch (SyncMode)
             {
                 case LiteNetLibSyncFieldMode.ServerToClients:
-                    return IsServer;
+                    return isServer;
                 case LiteNetLibSyncFieldMode.ServerToOwnerClient:
-                    return IsServer;
+                    return isServer;
+                case LiteNetLibSyncFieldMode.ClientMulticast:
+                    return isOwnerClient || isServer;
+            }
+            return false;
+        }
+
+        protected bool CanSync()
+        {
+            return CanSync(IsServer, IsOwnerClient);
+        }
+
+        internal override bool CanSyncFromServer(LiteNetLibPlayer player)
+        {
+            return CanSync(IsServer, ConnectionId == player.ConnectionId) && base.CanSyncFromServer(player);
+        }
+
+        internal override bool CanSyncFromOwnerClient()
+        {
+            switch (SyncMode)
+            {
                 case LiteNetLibSyncFieldMode.ClientMulticast:
                     return IsOwnerClient || IsServer;
             }
             return false;
         }
 
-        internal override bool WillSyncFromServerReliably(LiteNetLibPlayer player)
+        internal override bool WillSyncFromServerUnreliably(LiteNetLibPlayer player)
         {
-            bool isOwnerClient = ConnectionId == player.ConnectionId;
-            switch (SyncMode)
-            {
-                case LiteNetLibSyncFieldMode.ServerToClients:
-                    return IsServer;
-                case LiteNetLibSyncFieldMode.ServerToOwnerClient:
-                    return IsServer;
-                case LiteNetLibSyncFieldMode.ClientMulticast:
-                    return isOwnerClient || IsServer;
-            }
-            return base.WillSyncFromServerReliably(player);
+            return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
         }
 
-        internal override bool WillSyncFromClientReliably(long connectionId)
+        internal override bool WillSyncFromServerReliably(LiteNetLibPlayer player)
         {
-            bool isOwnerClient = ConnectionId == connectionId;
-            switch (SyncMode)
+            return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
+        }
+
+        internal override bool WillSyncFromOwnerClientUnreliably()
+        {
+            return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
+        }
+
+        internal override bool WillSyncFromOwnerClientReliably()
+        {
+            return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
+        }
+
+        public override void Synced()
+        {
+            switch (SyncFieldStep)
             {
-                case LiteNetLibSyncFieldMode.ClientMulticast:
-                    return isOwnerClient || IsServer;
+                case LiteNetLibSyncFieldStep.Syncing:
+                    SyncFieldStep = LiteNetLibSyncFieldStep.Confirming;
+                    break;
+                case LiteNetLibSyncFieldStep.Confirming:
+                    SyncFieldStep = LiteNetLibSyncFieldStep.None;
+                    UnregisterUpdating();
+                    break;
+                default:
+                    UnregisterUpdating();
+                    break;
             }
-            return false;
         }
 
         internal override void Reset()
@@ -91,7 +129,10 @@ namespace LiteNetLibManager
             DeserializeValue(reader);
             OnChange(initial, oldValue, GetValue());
             if (SyncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
+            {
+                SyncFieldStep = LiteNetLibSyncFieldStep.Syncing;
                 RegisterUpdating();
+            }
         }
 
         internal virtual void DeserializeValue(NetDataReader reader)
@@ -151,6 +192,7 @@ namespace LiteNetLibManager
                 if (IsSetup && canSync)
                 {
                     OnChange(false, oldValue, value);
+                    SyncFieldStep = LiteNetLibSyncFieldStep.Syncing;
                     RegisterUpdating();
                 }
             }
@@ -231,6 +273,7 @@ namespace LiteNetLibManager
                 Value[i] = value;
                 if (IsSetup && canSync)
                 {
+                    SyncFieldStep = LiteNetLibSyncFieldStep.Syncing;
                     RegisterUpdating();
                 }
             }

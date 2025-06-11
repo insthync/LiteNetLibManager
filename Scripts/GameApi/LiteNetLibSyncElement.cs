@@ -6,10 +6,20 @@ namespace LiteNetLibManager
     {
         public abstract byte ElementType { get; }
 
+        internal virtual bool CanSyncFromServer(LiteNetLibPlayer player)
+        {
+            return Identity.Subscribers.Contains(player.ConnectionId);
+        }
+
+        internal virtual bool CanSyncFromOwnerClient()
+        {
+            return false;
+        }
+
         internal virtual bool WillSyncFromServerReliably(LiteNetLibPlayer player)
         {
-            // Don't sync data if player not subscribe the object
-            return Identity.Subscribers.Contains(player.ConnectionId);
+            // Always sync reliably by default
+            return true;
         }
 
         internal virtual bool WillSyncFromServerUnreliably(LiteNetLibPlayer player)
@@ -18,13 +28,13 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal virtual bool WillSyncFromClientReliably(long connectionId)
+        internal virtual bool WillSyncFromOwnerClientReliably()
         {
             // Not be able to be sent from client by default
             return false;
         }
 
-        internal virtual bool WillSyncFromClientUnreliably(long connectionId)
+        internal virtual bool WillSyncFromOwnerClientUnreliably()
         {
             // Not be able to be sent from client by default
             return false;
@@ -54,6 +64,11 @@ namespace LiteNetLibManager
                 Manager.UnregisterServerSyncElement(this);
             else
                 Manager.UnregisterClientSyncElement(this);
+        }
+
+        public virtual void Synced()
+        {
+            UnregisterUpdating();
         }
 
         public bool Equals(LiteNetLibSyncElement other)
