@@ -144,6 +144,7 @@ namespace LiteNetLibManager
                     if (syncElement.WillSyncFromServerUnreliably(tempPlayer))
                     {
                         _syncElementWriter.Reset();
+                        _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncElement);
                         WriteSyncElement(_syncElementWriter, syncElement);
                         ServerSendMessage(tempPlayer.ConnectionId, 0, DeliveryMethod.Unreliable, _syncElementWriter);
                     }
@@ -179,6 +180,7 @@ namespace LiteNetLibManager
                 if (syncElement.WillSyncFromOwnerClientUnreliably())
                 {
                     _syncElementWriter.Reset();
+                    _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncElement);
                     WriteSyncElement(_syncElementWriter, syncElement);
                     ClientSendMessage(0, DeliveryMethod.Unreliable, _syncElementWriter);
                 }
