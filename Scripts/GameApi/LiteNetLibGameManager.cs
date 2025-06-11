@@ -181,10 +181,14 @@ namespace LiteNetLibManager
                 _gameStatesWriter.Reset();
                 _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncElements);
                 byte syncChannelId = syncingStatesByChannelId.Key;
-                WriteGameStateFromServer(_gameStatesWriter, player, syncingStatesByChannelId.Value);
-                // Send data to client
-                ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
+                int stateCount = WriteGameStateFromServer(_gameStatesWriter, player, syncingStatesByChannelId.Value);
+                if (stateCount > 0)
+                {
+                    // Send data to client
+                    ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
+                }
             }
+            player.SyncingStates.Clear();
         }
 
         private void SyncGameStateToServer()
@@ -200,10 +204,14 @@ namespace LiteNetLibManager
                 _gameStatesWriter.Reset();
                 _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncElements);
                 byte syncChannelId = syncingStatesByChannelId.Key;
-                WriteGameStateFromClient(_gameStatesWriter, syncChannelId, syncingStatesByChannelId.Value);
-                // Send data to client
-                ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
+                int stateCount = WriteGameStateFromClient(_gameStatesWriter, syncChannelId, syncingStatesByChannelId.Value);
+                if (stateCount > 0)
+                {
+                    // Send data to client
+                    ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
+                }
             }
+            ClientSyncingStates.Clear();
         }
 
         internal void RegisterServerSyncElement(LiteNetLibSyncElement element)
@@ -1132,7 +1140,7 @@ namespace LiteNetLibManager
         }
 
         #region Game State Syncing
-        private void WriteGameStateFromServer(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
+        private int WriteGameStateFromServer(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
@@ -1184,9 +1192,10 @@ namespace LiteNetLibManager
             writer.SetPosition(posBeforeWriteStateCount);
             writer.Put(stateCount);
             writer.SetPosition(posAfterWriteStates);
+            return stateCount;
         }
 
-        private void WriteGameStateFromClient(NetDataWriter writer, byte syncChannelId, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
+        private int WriteGameStateFromClient(NetDataWriter writer, byte syncChannelId, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
@@ -1212,6 +1221,7 @@ namespace LiteNetLibManager
             writer.SetPosition(posBeforeWriteStateCount);
             writer.Put(stateCount);
             writer.SetPosition(posAfterWriteStates);
+            return stateCount;
         }
 
         private void ReadGameStateFromServer(NetDataReader reader)
