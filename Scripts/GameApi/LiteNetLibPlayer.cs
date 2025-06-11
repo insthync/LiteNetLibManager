@@ -12,6 +12,7 @@ namespace LiteNetLibManager
 
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly LiteNetLibSyncingStates SyncingStates = new LiteNetLibSyncingStates();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
@@ -36,7 +37,7 @@ namespace LiteNetLibManager
             if (Subscribings.Add(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.AddSubscriber(ConnectionId);
-                Manager.SendServerSpawnObjectWithData(ConnectionId, identity);
+                SyncingStates.AppendSpawnSyncState(identity);
             }
         }
 
@@ -46,7 +47,7 @@ namespace LiteNetLibManager
             if (Subscribings.Remove(objectId) && Manager.Assets.TryGetSpawnedObject(objectId, out identity))
             {
                 identity.RemoveSubscriber(ConnectionId);
-                Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
+                SyncingStates.AppendDestroySyncState(identity, DestroyObjectReasons.RemovedFromSubscribing);
             }
         }
 
@@ -60,7 +61,7 @@ namespace LiteNetLibManager
                     continue;
                 identity.RemoveSubscriber(ConnectionId);
                 if (destroyObjectsOnPeer)
-                    Manager.SendServerDestroyObject(ConnectionId, objectId, DestroyObjectReasons.RemovedFromSubscribing);
+                    SyncingStates.AppendDestroySyncState(identity, DestroyObjectReasons.RemovedFromSubscribing);
             }
             Subscribings.Clear();
         }

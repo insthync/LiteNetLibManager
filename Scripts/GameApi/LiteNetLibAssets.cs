@@ -1,7 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using Insthync.AddressableAssetTools;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -118,7 +117,7 @@ namespace LiteNetLibManager
                 RegisterPrefab(playerPrefab);
             }
 #endif
-            List<Task<LiteNetLibIdentity>> ops = new List<Task<LiteNetLibIdentity>>();
+            List<UniTask<LiteNetLibIdentity>> ops = new List<UniTask<LiteNetLibIdentity>>();
             for (int i = 0; i < addressableSpawnablePrefabs.Length; ++i)
             {
                 if (addressableSpawnablePrefabs[i].IsDataValid())
@@ -130,7 +129,7 @@ namespace LiteNetLibManager
             {
                 ops.Add(RegisterAddressablePrefabAsync(addressablePlayerPrefab));
             }
-            await Task.WhenAll(ops);
+            await UniTask.WhenAll(ops);
         }
 
         public LiteNetLibIdentity RegisterPrefab(LiteNetLibIdentity prefab)
@@ -156,7 +155,7 @@ namespace LiteNetLibManager
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
-        public async Task<LiteNetLibIdentity> RegisterAddressablePrefabAsync(AssetReferenceLiteNetLibIdentity addressablePrefab)
+        public async UniTask<LiteNetLibIdentity> RegisterAddressablePrefabAsync(AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
             if (!addressablePrefab.IsDataValid())
             {

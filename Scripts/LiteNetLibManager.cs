@@ -167,20 +167,24 @@ namespace LiteNetLibManager
             if (_isApplicationQuitted)
                 return;
             StopHost();
+            /*
             if (_clientTransport != null)
                 _clientTransport.Destroy();
             if (_serverTransport != null)
                 _serverTransport.Destroy();
+            */
         }
 
         protected virtual void OnApplicationQuit()
         {
             _isApplicationQuitted = true;
             StopHost();
+            /*
             if (_clientTransport != null)
                 _clientTransport.Destroy();
             if (_serverTransport != null)
                 _serverTransport.Destroy();
+            */
         }
 
         /// <summary>

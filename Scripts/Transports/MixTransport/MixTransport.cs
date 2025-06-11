@@ -20,14 +20,11 @@ namespace LiteNetLibManager
         }
 
         public int ServerPeersCount => _lnlTransport.ServerPeersCount + _wsTransport.ServerPeersCount;
-
         public int ServerMaxConnections => _lnlTransport.ServerMaxConnections + _wsTransport.ServerMaxConnections;
-
         public bool IsClientStarted => !_useWebSocketForClient ? _lnlTransport.IsClientStarted : _wsTransport.IsClientStarted;
-
         public bool IsServerStarted => _lnlTransport.IsServerStarted || _wsTransport.IsServerStarted;
-
-        public bool HasImplementedPing => !_useWebSocketForClient ? _lnlTransport.HasImplementedPing : _wsTransport.HasImplementedPing;
+        public bool HasImplementedPing => false;
+        public bool IsReliableOnly => true;
 
         public long GetClientRtt()
         {
