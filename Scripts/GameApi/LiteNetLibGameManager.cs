@@ -187,8 +187,8 @@ namespace LiteNetLibManager
                     // Send data to client
                     ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
                 }
+                syncingStatesByChannelId.Value.Clear();
             }
-            player.SyncingStates.Clear();
         }
 
         private void SyncGameStateToServer()
@@ -210,8 +210,8 @@ namespace LiteNetLibManager
                     // Send data to client
                     ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
                 }
+                syncingStatesByChannelId.Value.Clear();
             }
-            ClientSyncingStates.Clear();
         }
 
         internal void RegisterServerSyncElement(LiteNetLibSyncElement element)
