@@ -23,6 +23,11 @@ namespace LiteNetLibManager
         protected abstract void SetValue(object value);
         internal abstract void OnChange(bool initial, object oldValue, object newValue);
 
+        protected virtual bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue == null || !oldValue.Equals(newValue);
+        }
+
         protected bool CanSync(bool isServer, bool isOwnerClient)
         {
             switch (SyncMode)
