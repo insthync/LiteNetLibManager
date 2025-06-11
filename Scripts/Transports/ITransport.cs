@@ -10,6 +10,7 @@ namespace LiteNetLibManager
         bool IsClientStarted { get; }
         bool IsServerStarted { get; }
         bool HasImplementedPing { get; }
+        bool IsReliableOnly { get; }
         bool StartClient(string address, int port);
         bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer);
         bool ClientReceive(out TransportEventData eventData);

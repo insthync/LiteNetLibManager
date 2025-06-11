@@ -59,8 +59,8 @@ namespace LiteNetLibManager
 #endif
             }
         }
-
         public bool HasImplementedPing => false;
+        public bool IsReliableOnly => true;
 
         public WebSocketTransport(bool secure, string certificateFilePath, string certificatePassword, string certificateBase64String)
         {

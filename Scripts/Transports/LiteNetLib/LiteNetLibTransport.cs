@@ -33,11 +33,8 @@ namespace LiteNetLibManager
         {
             get { return Server != null; }
         }
-
-        public bool HasImplementedPing
-        {
-            get { return true; }
-        }
+        public bool HasImplementedPing => true;
+        public bool IsReliableOnly => false;
 
         public LiteNetLibTransport(string connectKey, byte clientDataChannelsCount, byte serverDataChannelsCount)
         {
