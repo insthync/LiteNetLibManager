@@ -788,7 +788,7 @@ namespace LiteNetLibManager
                     if (!Manager.TryGetPlayer(subscriber, out player))
                         continue;
                     player.Subscribings.Remove(ObjectId);
-                    player.AppendDestroySyncState(this, reasons);
+                    player.SyncingStates.AppendDestroySyncState(this, reasons);
                 }
                 // Delete object from owner player's spawned objects collection
                 if (ConnectionId >= 0)

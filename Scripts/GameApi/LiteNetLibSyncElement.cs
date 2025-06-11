@@ -5,10 +5,29 @@ namespace LiteNetLibManager
     public abstract class LiteNetLibSyncElement : LiteNetLibElement, System.IEquatable<LiteNetLibSyncElement>
     {
         public abstract byte ElementType { get; }
-        internal virtual bool WillSyncData(LiteNetLibPlayer player)
+
+        internal virtual bool WillSyncFromServerReliably(LiteNetLibPlayer player)
         {
             // Don't sync data if player not subscribe the object
             return Identity.Subscribers.Contains(player.ConnectionId);
+        }
+
+        internal virtual bool WillSyncFromServerUnreliably(LiteNetLibPlayer player)
+        {
+            // Always sync reliably by default
+            return false;
+        }
+
+        internal virtual bool WillSyncFromClientReliably(long connectionId)
+        {
+            // Not be able to be sent from client by default
+            return false;
+        }
+
+        internal virtual bool WillSyncFromClientUnreliably(long connectionId)
+        {
+            // Not be able to be sent from client by default
+            return false;
         }
 
         internal abstract void Reset();
@@ -19,14 +38,22 @@ namespace LiteNetLibManager
         {
             if (!IsSetup)
                 return;
-            if (Manager != null)
+            if (Manager == null)
+                return;
+            if (Manager.IsServer)
                 Manager.RegisterServerSyncElement(this);
+            else
+                Manager.RegisterClientSyncElement(this);
         }
 
         public void UnregisterUpdating()
         {
-            if (Manager != null)
+            if (Manager == null)
+                return;
+            if (Manager.IsServer)
                 Manager.UnregisterServerSyncElement(this);
+            else
+                Manager.UnregisterClientSyncElement(this);
         }
 
         public bool Equals(LiteNetLibSyncElement other)

@@ -30,10 +30,8 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal override bool WillSyncData(LiteNetLibPlayer player)
+        internal override bool WillSyncFromServerReliably(LiteNetLibPlayer player)
         {
-            if (!base.WillSyncData(player))
-                return false;
             bool isOwnerClient = ConnectionId == player.ConnectionId;
             switch (SyncMode)
             {
@@ -41,6 +39,17 @@ namespace LiteNetLibManager
                     return IsServer;
                 case LiteNetLibSyncFieldMode.ServerToOwnerClient:
                     return IsServer;
+                case LiteNetLibSyncFieldMode.ClientMulticast:
+                    return isOwnerClient || IsServer;
+            }
+            return !base.WillSyncFromServerReliably(player);
+        }
+
+        internal override bool WillSyncFromClientReliably(long connectionId)
+        {
+            bool isOwnerClient = ConnectionId == connectionId;
+            switch (SyncMode)
+            {
                 case LiteNetLibSyncFieldMode.ClientMulticast:
                     return isOwnerClient || IsServer;
             }

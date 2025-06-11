@@ -23,9 +23,9 @@ namespace LiteNetLibManager
             return IsServer;
         }
 
-        internal override bool WillSyncData(LiteNetLibPlayer player)
+        internal override bool WillSyncFromServerReliably(LiteNetLibPlayer player)
         {
-            if (!base.WillSyncData(player))
+            if (!base.WillSyncFromServerReliably(player))
                 return false;
             return !forOwnerOnly || ConnectionId == player.ConnectionId;
         }
