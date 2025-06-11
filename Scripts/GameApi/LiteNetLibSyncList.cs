@@ -35,9 +35,9 @@ namespace LiteNetLibManager
     {
         protected struct OperationEntry
         {
-            public LiteNetLibSyncListOp operation;
-            public int index;
-            public TType item;
+            public LiteNetLibSyncListOp Operation;
+            public int Index;
+            public TType Item;
         }
 
         public delegate void OnOperationDelegate(LiteNetLibSyncListOp op, int itemIndex, TType oldItem, TType newItem);
@@ -232,8 +232,8 @@ namespace LiteNetLibManager
                     operationEntries.Clear();
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
+                        Operation = operation,
+                        Index = index,
                     });
                     break;
                 case LiteNetLibSyncListOp.RemoveAt:
@@ -242,34 +242,34 @@ namespace LiteNetLibManager
                     RemoveSetOrDirtyOperations(operationEntries, index);
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
+                        Operation = operation,
+                        Index = index,
                     });
                     break;
                 case LiteNetLibSyncListOp.Set:
                     RemoveSetOrDirtyOperations(operationEntries, index);
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
-                        item = _list[index],
+                        Operation = operation,
+                        Index = index,
+                        Item = _list[index],
                     });
                     break;
                 case LiteNetLibSyncListOp.Dirty:
                     RemoveDirtyOperations(operationEntries, index);
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
-                        item = _list[index],
+                        Operation = operation,
+                        Index = index,
+                        Item = _list[index],
                     });
                     break;
                 default:
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
-                        item = _list[index],
+                        Operation = operation,
+                        Index = index,
+                        Item = _list[index],
                     });
                     break;
             }
@@ -280,7 +280,7 @@ namespace LiteNetLibManager
         {
             for (int i = 0; i < operationEntries.Count; ++i)
             {
-                if (operationEntries[i].operation == operation && operationEntries[i].index == index)
+                if (operationEntries[i].Operation == operation && operationEntries[i].Index == index)
                     return true;
             }
             return false;
@@ -290,7 +290,7 @@ namespace LiteNetLibManager
         {
             for (int i = operationEntries.Count - 1; i >= 0; --i)
             {
-                if ((operationEntries[i].operation == LiteNetLibSyncListOp.Set || operationEntries[i].operation == LiteNetLibSyncListOp.Dirty) && operationEntries[i].index == index)
+                if ((operationEntries[i].Operation == LiteNetLibSyncListOp.Set || operationEntries[i].Operation == LiteNetLibSyncListOp.Dirty) && operationEntries[i].Index == index)
                     operationEntries.RemoveAt(i);
             }
         }
@@ -299,7 +299,7 @@ namespace LiteNetLibManager
         {
             for (int i = operationEntries.Count - 1; i >= 0; --i)
             {
-                if (operationEntries[i].operation == LiteNetLibSyncListOp.Dirty && operationEntries[i].index == index)
+                if (operationEntries[i].Operation == LiteNetLibSyncListOp.Dirty && operationEntries[i].Index == index)
                     operationEntries.RemoveAt(i);
             }
         }
@@ -413,24 +413,24 @@ namespace LiteNetLibManager
 
         protected void SerializeOperation(NetDataWriter writer, OperationEntry entry)
         {
-            writer.Put((byte)entry.operation);
-            switch (entry.operation)
+            writer.Put((byte)entry.Operation);
+            switch (entry.Operation)
             {
                 case LiteNetLibSyncListOp.Add:
                 case LiteNetLibSyncListOp.AddInitial:
-                    SerializeValueForAddOrInsert(entry.index, writer, entry.item);
+                    SerializeValueForAddOrInsert(entry.Index, writer, entry.Item);
                     break;
                 case LiteNetLibSyncListOp.Insert:
-                    writer.Put(entry.index);
-                    SerializeValueForAddOrInsert(entry.index, writer, entry.item);
+                    writer.Put(entry.Index);
+                    SerializeValueForAddOrInsert(entry.Index, writer, entry.Item);
                     break;
                 case LiteNetLibSyncListOp.Set:
                 case LiteNetLibSyncListOp.Dirty:
-                    writer.Put(entry.index);
-                    SerializeValueForSetOrDirty(entry.index, writer, entry.item);
+                    writer.Put(entry.Index);
+                    SerializeValueForSetOrDirty(entry.Index, writer, entry.Item);
                     break;
                 case LiteNetLibSyncListOp.RemoveAt:
-                    writer.Put(entry.index);
+                    writer.Put(entry.Index);
                     break;
                 case LiteNetLibSyncListOp.RemoveFirst:
                 case LiteNetLibSyncListOp.RemoveLast:
