@@ -100,7 +100,7 @@ namespace LiteNetLibManager
 
         protected override void OnServerUpdate(LogicUpdater updater)
         {
-            ProceedServerSyncElements();
+            ProceedServerGameStateSync();
             // Send ping from server
             _serverSendPingCountDown -= updater.DeltaTime;
             if (_serverSendPingCountDown <= 0f)
@@ -116,7 +116,7 @@ namespace LiteNetLibManager
         protected override void OnClientUpdate(LogicUpdater updater)
         {
             if (!IsServer)
-                ProceedClientSyncElements();
+                ProceedClientGameStateSync();
             // Send ping from client
             _clientSendPingCountDown -= updater.DeltaTime;
             if (_clientSendPingCountDown <= 0f)
@@ -126,7 +126,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ProceedServerSyncElements()
+        private void ProceedServerGameStateSync()
         {
             // Filter which elements can be synced
             LiteNetLibPlayer tempPlayer;
@@ -154,7 +154,7 @@ namespace LiteNetLibManager
             _updatingServerSyncElements.Clear();
         }
 
-        private void ProceedClientSyncElements()
+        private void ProceedClientGameStateSync()
         {
             if (_updatingClientSyncElements.Count == 0)
                 return;
@@ -1264,7 +1264,7 @@ namespace LiteNetLibManager
             writer.PutPackedUInt(identity.ObjectId);
             writer.PutPackedLong(identity.ConnectionId);
             syncData.SyncElements.Clear();
-            foreach (var syncElement in syncData.SyncElements)
+            foreach (LiteNetLibSyncElement syncElement in identity.SyncElements.Values)
             {
                 if (!syncElement.WillSyncFromServerUnreliably(player) &&
                     !syncElement.WillSyncFromServerReliably(player))

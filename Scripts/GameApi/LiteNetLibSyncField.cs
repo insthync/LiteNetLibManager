@@ -42,7 +42,7 @@ namespace LiteNetLibManager
                 case LiteNetLibSyncFieldMode.ClientMulticast:
                     return isOwnerClient || IsServer;
             }
-            return !base.WillSyncFromServerReliably(player);
+            return base.WillSyncFromServerReliably(player);
         }
 
         internal override bool WillSyncFromClientReliably(long connectionId)
@@ -90,6 +90,8 @@ namespace LiteNetLibManager
             object oldValue = GetValue();
             DeserializeValue(reader);
             OnChange(initial, oldValue, GetValue());
+            if (SyncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
+                RegisterUpdating();
         }
 
         internal virtual void DeserializeValue(NetDataReader reader)
