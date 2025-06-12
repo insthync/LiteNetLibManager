@@ -63,15 +63,7 @@ namespace LiteNetLibManager
                 return RttCalculator.PeerTimestamp;
             }
         }
-        public uint Tick
-        {
-            get
-            {
-                if (IsServer)
-                    return _serverUpdater.Tick;
-                return _clientUpdater.Tick;
-            }
-        }
+        public uint Tick => _logicUpdater.Tick;
         public ServerSceneInfo? ServerSceneInfo { get; protected set; } = null;
         public LiteNetLibAssets Assets { get; protected set; }
 
@@ -950,7 +942,7 @@ namespace LiteNetLibManager
         {
             PingMessage pingMessage = messageHandler.ReadMessage<PingMessage>();
             PongMessage pongMessage = RttCalculator.GetPongMessage(pingMessage);
-            pongMessage.tick = _serverUpdater.Tick;
+            pongMessage.tick = _logicUpdater.Tick;
             ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, pongMessage);
         }
 
@@ -1044,7 +1036,8 @@ namespace LiteNetLibManager
         {
             PongMessage message = messageHandler.ReadMessage<PongMessage>();
             RttCalculator.OnPong(message);
-            _clientUpdater.OnSyncTick(message.tick, RttCalculator.Rtt);
+            if (!IsServer)
+                _logicUpdater.OnSyncTick(message.tick, RttCalculator.Rtt);
         }
 
         protected void HandleServerDisconnect(MessageHandlerData messageHandler)

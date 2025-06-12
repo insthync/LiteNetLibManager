@@ -6,6 +6,8 @@ namespace LiteNetLibManager
     {
         private const int MaxTicksPerUpdate = 5;
 
+        public bool IsRunning => _stopwatch != null && _stopwatch.IsRunning;
+
         /// <summary>
         /// Tick count
         /// </summary>

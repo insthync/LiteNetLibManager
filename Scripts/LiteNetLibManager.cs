@@ -73,8 +73,7 @@ namespace LiteNetLibManager
             }
         }
 
-        protected LogicUpdater _serverUpdater;
-        protected LogicUpdater _clientUpdater;
+        protected LogicUpdater _logicUpdater;
         private bool _isApplicationQuitted = false;
 
         protected virtual void Start()
@@ -137,21 +136,18 @@ namespace LiteNetLibManager
             _offlineTransport = new OfflineTransport();
             Client = new LiteNetLibClient(this);
             Server = new LiteNetLibServer(this);
+            _logicUpdater = new LogicUpdater(1.0 / updateFps);
             RegisterMessages();
         }
 
         protected virtual void Update()
         {
+            if (IsServer || IsClient)
+                _logicUpdater.Update();
             if (IsServer)
-            {
-                _serverUpdater.Update();
                 Server.Update();
-            }
             if (IsClient)
-            {
-                _clientUpdater.Update();
                 Client.Update();
-            }
         }
 
         protected virtual void OnServerUpdate(LogicUpdater updater)
@@ -206,11 +202,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
                 return false;
             }
-            if (_serverUpdater != null)
-                _serverUpdater.Stop();
-            _serverUpdater = new LogicUpdater(1.0 / updateFps);
-            _serverUpdater.OnLogicUpdate += OnServerUpdate;
-            _serverUpdater.Start();
+            _logicUpdater.OnLogicUpdate -= OnServerUpdate;
+            _logicUpdater.OnLogicUpdate += OnServerUpdate;
+            if (!_logicUpdater.IsRunning)
+                _logicUpdater.Start();
             IsServer = true;
             OnStartServer();
             return true;
@@ -238,11 +233,10 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
                 return false;
             }
-            if (_clientUpdater != null)
-                _clientUpdater.Stop();
-            _clientUpdater = new LogicUpdater(1.0 / updateFps);
-            _clientUpdater.OnLogicUpdate += OnClientUpdate;
-            _clientUpdater.Start();
+            _logicUpdater.OnLogicUpdate -= OnClientUpdate;
+            _logicUpdater.OnLogicUpdate += OnClientUpdate;
+            if (!IsServer && !_logicUpdater.IsRunning)
+                _logicUpdater.Start();
             IsClient = true;
             OnStartClient(Client);
             return true;
@@ -277,8 +271,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopServer");
-            if (_serverUpdater != null)
-                _serverUpdater.Stop();
+            if (_logicUpdater.IsRunning)
+                _logicUpdater.Stop();
             IsServer = false;
             if (Server != null)
                 Server.StopServer();
@@ -297,8 +291,8 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopClient");
-            if (_clientUpdater != null)
-                _clientUpdater.Stop();
+            if (!IsServer && _logicUpdater.IsRunning)
+                _logicUpdater.Stop();
             IsClient = false;
             if (Client != null)
                 Client.StopClient();
