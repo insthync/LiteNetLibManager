@@ -82,6 +82,19 @@ namespace LiteNetLibManager
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
 
+        protected void ValueChangedState()
+        {
+            if (Manager.IsServer)
+            {
+                SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+            }
+            else
+            {
+                SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+            }
+            RegisterUpdating();
+        }
+
         public override void Synced()
         {
             switch (SyncFieldStep)
@@ -134,10 +147,7 @@ namespace LiteNetLibManager
             DeserializeValue(reader);
             OnChange(initial, oldValue, GetValue());
             if (SyncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
-            {
-                SyncFieldStep = LiteNetLibSyncFieldStep.Syncing;
-                RegisterUpdating();
-            }
+                ValueChangedState();
         }
 
         internal virtual void DeserializeValue(NetDataReader reader)
@@ -197,8 +207,7 @@ namespace LiteNetLibManager
                 if (IsSetup && canSync)
                 {
                     OnChange(false, oldValue, value);
-                    SyncFieldStep = LiteNetLibSyncFieldStep.Syncing;
-                    RegisterUpdating();
+                    ValueChangedState();
                 }
             }
         }
@@ -282,10 +291,7 @@ namespace LiteNetLibManager
                 }
                 Value[i] = value;
                 if (IsSetup && canSync)
-                {
-                    SyncFieldStep = LiteNetLibSyncFieldStep.Syncing;
-                    RegisterUpdating();
-                }
+                    ValueChangedState();
             }
         }
 
