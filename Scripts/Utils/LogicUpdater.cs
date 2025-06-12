@@ -7,6 +7,11 @@ namespace LiteNetLibManager
         private const int MaxTicksPerUpdate = 5;
 
         /// <summary>
+        /// Tick count
+        /// </summary>
+        public uint Tick { get; private set; } = 0;
+
+        /// <summary>
         /// Fixed delta time
         /// </summary>
         public double DeltaTime { get; private set; }
@@ -16,34 +21,23 @@ namespace LiteNetLibManager
         /// </summary>
         public float DeltaTimeF { get; private set; }
         public double VisualDeltaTime { get; private set; }
+        public LogicUpdateDelegate OnLogicUpdate;
 
         private long _deltaTimeTicks;
-        private LogicUpdateDelegate _action;
         private long _accumulator;
         private long _lastTime;
 
         private readonly Stopwatch _stopwatch;
         private readonly double _stopwatchFrequency;
 
-        public LogicUpdater(double deltaTime, LogicUpdateDelegate action)
+        public LogicUpdater(double deltaTime)
         {
             _stopwatch = new Stopwatch();
             _stopwatchFrequency = 1.0 / Stopwatch.Frequency;
             SetDeltaTime(deltaTime);
-            SetTickAction(action);
         }
 
-        public LogicUpdater(LogicUpdateDelegate action) : this(1.0 / 60, action)
-        {
-
-        }
-
-        public LogicUpdater(double deltaTime) : this(deltaTime, null)
-        {
-
-        }
-
-        public LogicUpdater() : this(1.0 / 60, null)
+        public LogicUpdater() : this(1.0 / 30)
         {
 
         }
@@ -53,11 +47,6 @@ namespace LiteNetLibManager
             DeltaTime = deltaTime;
             DeltaTimeF = (float)DeltaTime;
             _deltaTimeTicks = (long)(DeltaTime * Stopwatch.Frequency);
-        }
-
-        public void SetTickAction(LogicUpdateDelegate action)
-        {
-            _action = action;
         }
 
         public void Start()
@@ -78,10 +67,10 @@ namespace LiteNetLibManager
             _stopwatch.Restart();
         }
 
-        protected virtual void OnAction()
+        protected virtual void LogicUpdate()
         {
-            if (_action != null)
-                _action.Invoke(this);
+            if (OnLogicUpdate != null)
+                OnLogicUpdate.Invoke(this);
         }
 
         /// <summary>
@@ -89,11 +78,11 @@ namespace LiteNetLibManager
         /// </summary>
         public virtual void Update()
         {
-            long elapsedTicks = _stopwatch.ElapsedTicks;
-            long ticksDelta = elapsedTicks - _lastTime;
+            long elapsedTime = _stopwatch.ElapsedTicks;
+            long ticksDelta = elapsedTime - _lastTime;
             VisualDeltaTime = ticksDelta * _stopwatchFrequency;
             _accumulator += ticksDelta;
-            _lastTime = elapsedTicks;
+            _lastTime = elapsedTime;
 
             int updates = 0;
             while (_accumulator >= _deltaTimeTicks)
@@ -104,11 +93,23 @@ namespace LiteNetLibManager
                     _accumulator = 0;
                     return;
                 }
-                OnAction();
+                LogicUpdate();
+                Tick++;
 
                 _accumulator -= _deltaTimeTicks;
                 updates++;
             }
+        }
+
+        public uint TimeToTick(long milliseconds)
+        {
+            return (uint)((milliseconds / 1000) / DeltaTime);
+        }
+
+        public void OnSyncTick(uint tick, long rtt)
+        {
+            uint newTick = tick + TimeToTick(rtt / 2);
+            Tick = newTick;
         }
     }
 }

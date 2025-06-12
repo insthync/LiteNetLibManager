@@ -73,8 +73,8 @@ namespace LiteNetLibManager
             }
         }
 
-        private LogicUpdater _serverUpdater;
-        private LogicUpdater _clientUpdater;
+        protected LogicUpdater _serverUpdater;
+        protected LogicUpdater _clientUpdater;
         private bool _isApplicationQuitted = false;
 
         protected virtual void Start()
@@ -208,7 +208,8 @@ namespace LiteNetLibManager
             }
             if (_serverUpdater != null)
                 _serverUpdater.Stop();
-            _serverUpdater = new LogicUpdater(1.0 / updateFps, OnServerUpdate);
+            _serverUpdater = new LogicUpdater(1.0 / updateFps);
+            _serverUpdater.OnLogicUpdate += OnServerUpdate;
             _serverUpdater.Start();
             IsServer = true;
             OnStartServer();
@@ -239,7 +240,8 @@ namespace LiteNetLibManager
             }
             if (_clientUpdater != null)
                 _clientUpdater.Stop();
-            _clientUpdater = new LogicUpdater(1.0 / updateFps, OnClientUpdate);
+            _clientUpdater = new LogicUpdater(1.0 / updateFps);
+            _clientUpdater.OnLogicUpdate += OnClientUpdate;
             _clientUpdater.Start();
             IsClient = true;
             OnStartClient(Client);
