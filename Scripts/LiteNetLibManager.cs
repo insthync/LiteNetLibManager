@@ -271,6 +271,7 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopServer");
+            _logicUpdater.OnLogicUpdate -= OnServerUpdate;
             if (_logicUpdater.IsRunning)
                 _logicUpdater.Stop();
             IsServer = false;
@@ -291,6 +292,7 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopClient");
+            _logicUpdater.OnLogicUpdate -= OnClientUpdate;
             if (!IsServer && _logicUpdater.IsRunning)
                 _logicUpdater.Stop();
             IsClient = false;
