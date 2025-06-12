@@ -1195,7 +1195,7 @@ namespace LiteNetLibManager
         #region Game State Syncing
         private void WriteSyncElement(NetDataWriter writer, LiteNetLibSyncElement syncElement)
         {
-            writer.PutPackedLong(ServerTimestamp);
+            writer.PutPackedUInt(Tick);
             writer.PutPackedUInt(syncElement.ObjectId);
             writer.PutPackedInt(syncElement.ElementId);
             if (safeGameStatePacket)
@@ -1222,7 +1222,7 @@ namespace LiteNetLibManager
 
         private bool ReadSymcElement(NetDataReader reader)
         {
-            long timestamp = reader.GetPackedLong();
+            uint tick = reader.GetPackedUInt();
             uint objectId = reader.GetPackedUInt();
             if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
                 return false;
@@ -1277,7 +1277,7 @@ namespace LiteNetLibManager
 
         private int WriteGameStateFromServer(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
-            writer.PutPackedLong(ServerTimestamp);
+            writer.PutPackedUInt(Tick);
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
             int stateCount = 0;
@@ -1333,7 +1333,7 @@ namespace LiteNetLibManager
 
         private int WriteGameStateFromClient(NetDataWriter writer, byte syncChannelId, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
-            writer.PutPackedLong(ServerTimestamp);
+            writer.PutPackedUInt(Tick);
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
             int stateCount = 0;
@@ -1363,7 +1363,7 @@ namespace LiteNetLibManager
 
         private void ReadGameStateFromServer(NetDataReader reader)
         {
-            long timestamp = reader.GetPackedLong();
+            uint tick = reader.GetPackedUInt();
             int stateCount = reader.GetInt();
             for (int i = 0; i < stateCount; ++i)
             {
@@ -1388,7 +1388,7 @@ namespace LiteNetLibManager
 
         private void ReadGameStateFromClient(NetDataReader reader)
         {
-            long timestamp = reader.GetPackedLong();
+            uint tick = reader.GetPackedUInt();
             int stateCount = reader.GetInt();
             for (int i = 0; i < stateCount; ++i)
             {
