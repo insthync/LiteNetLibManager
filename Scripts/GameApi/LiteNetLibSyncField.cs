@@ -10,6 +10,7 @@ namespace LiteNetLibManager
         public LiteNetLibSyncFieldMode SyncMode { get; set; } = LiteNetLibSyncFieldMode.ServerToClients;
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
+        protected bool _latestChangeSyncedFromOwner = false;
         protected object _defaultValue;
         /// <summary>
         /// 0 - No syncing
@@ -49,7 +50,13 @@ namespace LiteNetLibManager
 
         internal override bool CanSyncFromServer(LiteNetLibPlayer player)
         {
-            return CanSync(IsServer, ConnectionId == player.ConnectionId) && base.CanSyncFromServer(player);
+            bool isOwner = ConnectionId == player.ConnectionId;
+            if (_latestChangeSyncedFromOwner && isOwner)
+            {
+                // If value was synced from owner client, then don't sync back to the client
+                return false;
+            }
+            return CanSync(IsServer, isOwner) && base.CanSyncFromServer(player);
         }
 
         internal override bool CanSyncFromOwnerClient()
@@ -82,8 +89,9 @@ namespace LiteNetLibManager
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
 
-        protected void ValueChangedState()
+        protected void ValueChangedState(bool latestChangeSyncedFromOwner)
         {
+            _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
             if (Manager.IsServer)
             {
                 SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
@@ -147,7 +155,7 @@ namespace LiteNetLibManager
             DeserializeValue(reader);
             OnChange(initial, oldValue, GetValue());
             if (SyncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
-                ValueChangedState();
+                ValueChangedState(true);
         }
 
         internal virtual void DeserializeValue(NetDataReader reader)
@@ -207,7 +215,7 @@ namespace LiteNetLibManager
                 if (IsSetup && canSync)
                 {
                     OnChange(false, oldValue, value);
-                    ValueChangedState();
+                    ValueChangedState(false);
                 }
             }
         }
@@ -291,7 +299,7 @@ namespace LiteNetLibManager
                 }
                 Value[i] = value;
                 if (IsSetup && canSync)
-                    ValueChangedState();
+                    ValueChangedState(false);
             }
         }
 
