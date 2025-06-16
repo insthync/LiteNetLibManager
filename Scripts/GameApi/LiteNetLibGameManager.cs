@@ -935,7 +935,7 @@ namespace LiteNetLibManager
 
         protected virtual void HandleClientSyncElement(MessageHandlerData messageHandler)
         {
-            ReadSymcElement(messageHandler.Reader);
+            ReadSyncElement(messageHandler.Reader);
         }
 
         protected void HandleClientPing(MessageHandlerData messageHandler)
@@ -975,7 +975,7 @@ namespace LiteNetLibManager
         {
             if (IsServer)
                 return;
-            ReadSymcElement(messageHandler.Reader);
+            ReadSyncElement(messageHandler.Reader);
         }
 
         protected virtual void HandleServerError(MessageHandlerData messageHandler)
@@ -1213,7 +1213,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private bool ReadSymcElement(NetDataReader reader)
+        private bool ReadSyncElement(NetDataReader reader)
         {
             uint tick = reader.GetPackedUInt();
             uint objectId = reader.GetPackedUInt();
