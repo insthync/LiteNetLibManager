@@ -25,9 +25,11 @@ namespace LiteNetLibManager
         public double VisualDeltaTime { get; private set; }
         public LogicUpdateDelegate OnLogicUpdate;
 
-        private long _deltaTimeTicks;
-        private long _accumulator;
-        private long _lastTime;
+        private long _deltaTimeTicks = 0;
+        private long _accumulator = 0;
+        private long _lastTime = 0;
+        private uint _latestSyncedTick = 0;
+        private int _diffSyncedTick = 0;
 
         private readonly Stopwatch _stopwatch;
         private readonly double _stopwatchFrequency;
@@ -110,7 +112,11 @@ namespace LiteNetLibManager
 
         public void OnSyncTick(uint tick, long rtt)
         {
+            if (_latestSyncedTick > tick)
+                return;
+            _latestSyncedTick = tick;
             uint newTick = tick + TimeToTick(rtt / 2);
+            _diffSyncedTick = (int)newTick - (int)Tick;
             Tick = newTick;
         }
     }
