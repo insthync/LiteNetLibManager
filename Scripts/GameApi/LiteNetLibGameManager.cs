@@ -1229,7 +1229,7 @@ namespace LiteNetLibManager
                 {
                     try
                     {
-                        element.ReadSyncData(false, reader);
+                        element.ReadSyncData(tick, false, reader);
                     }
                     catch
                     {
@@ -1251,7 +1251,7 @@ namespace LiteNetLibManager
                 {
                     try
                     {
-                        element.ReadSyncData(false, reader);
+                        element.ReadSyncData(tick, false, reader);
                     }
                     catch
                     {
@@ -1364,11 +1364,11 @@ namespace LiteNetLibManager
                 switch (stateType)
                 {
                     case GameStateSyncData.STATE_TYPE_SPAWN:
-                        if (!ReadSpawnGameState(reader))
+                        if (!ReadSpawnGameState(reader, tick))
                             return;
                         break;
                     case GameStateSyncData.STATE_TYPE_SYNC:
-                        if (!ReadSyncGameState(reader))
+                        if (!ReadSyncGameState(reader, tick))
                             return;
                         break;
                     case GameStateSyncData.STATE_TYPE_DESTROY:
@@ -1385,7 +1385,7 @@ namespace LiteNetLibManager
             int stateCount = reader.GetInt();
             for (int i = 0; i < stateCount; ++i)
             {
-                if (!ReadSyncGameState(reader))
+                if (!ReadSyncGameState(reader, tick))
                     return;
             }
         }
@@ -1416,7 +1416,7 @@ namespace LiteNetLibManager
             syncData.SyncElements.Clear();
         }
 
-        private bool ReadSpawnGameState(NetDataReader reader)
+        private bool ReadSpawnGameState(NetDataReader reader, uint tick)
         {
             bool isSceneObject = reader.GetBool();
             int hashSceneObjectId = 0;
@@ -1448,7 +1448,7 @@ namespace LiteNetLibManager
                     Quaternion.Euler(angleX, angleY, angleZ),
                     objectId, connectionId);
             }
-            return ReadSyncElements(reader, identity, true);
+            return ReadSyncElements(reader, identity, tick, true);
         }
 
         private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
@@ -1458,12 +1458,12 @@ namespace LiteNetLibManager
             syncData.SyncElements.Clear();
         }
 
-        private bool ReadSyncGameState(NetDataReader reader)
+        private bool ReadSyncGameState(NetDataReader reader, uint tick)
         {
             uint objectId = reader.GetPackedUInt();
             if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
                 return false;
-            return ReadSyncElements(reader, identity, false);
+            return ReadSyncElements(reader, identity, tick, false);
         }
 
         private void WriteDestroyGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
@@ -1512,7 +1512,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private bool ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, bool initial)
+        private bool ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, uint tick, bool initial)
         {
             int elementsCount = reader.GetPackedInt();
             if (elementsCount == 0)
@@ -1529,7 +1529,7 @@ namespace LiteNetLibManager
                     {
                         try
                         {
-                            element.ReadSyncData(initial, reader);
+                            element.ReadSyncData(tick, initial, reader);
                         }
                         catch
                         {
@@ -1551,7 +1551,7 @@ namespace LiteNetLibManager
                     {
                         try
                         {
-                            element.ReadSyncData(initial, reader);
+                            element.ReadSyncData(tick, initial, reader);
                         }
                         catch
                         {

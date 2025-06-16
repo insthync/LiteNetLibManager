@@ -11,6 +11,7 @@ namespace LiteNetLibManager
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected bool _latestChangeSyncedFromOwner = false;
+        protected uint _latestSyncTick = 0;
         protected object _defaultValue;
         /// <summary>
         /// 0 - No syncing
@@ -149,10 +150,17 @@ namespace LiteNetLibManager
             SerializeValue(writer);
         }
 
-        internal override void ReadSyncData(bool initial, NetDataReader reader)
+        internal override void ReadSyncData(uint tick, bool initial, NetDataReader reader)
         {
             object oldValue = GetValue();
             DeserializeValue(reader);
+            if (!initial && tick <= _latestSyncTick)
+            {
+                // Don't accept this, revert changes
+                SetValue(oldValue);
+                return;
+            }
+            _latestSyncTick = tick;
             OnChange(initial, oldValue, GetValue());
             if (SyncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
                 ValueChangedState(true);

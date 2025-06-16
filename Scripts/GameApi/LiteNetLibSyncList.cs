@@ -329,7 +329,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void ReadSyncData(bool initial, NetDataReader reader)
+        internal override void ReadSyncData(uint tick, bool initial, NetDataReader reader)
         {
             if (initial)
             {
