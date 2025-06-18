@@ -788,7 +788,9 @@ namespace LiteNetLibManager
             {
                 if (oldSubscribing == ObjectId)
                     continue;
-                RemoveSubscribing(oldSubscribing);
+                Player.Unsubscribe(oldSubscribing);
+                if (Manager.LogDebug)
+                    Logging.Log(LogTag, $"Player: {ConnectionId} unsubscribe object ID: {oldSubscribing}.");
             }
             Subscribings.Clear();
             if (IsDestroyed)
@@ -812,7 +814,9 @@ namespace LiteNetLibManager
                     continue;
                 if (newSubscribings.Contains(oldSubscribing))
                     continue;
-                RemoveSubscribing(oldSubscribing);
+                Player.Unsubscribe(oldSubscribing);
+                if (Manager.LogDebug)
+                    Logging.Log(LogTag, $"Player: {ConnectionId} unsubscribe object ID: {oldSubscribing}.");
             }
             Subscribings.Clear();
             foreach (uint newSubscribing in newSubscribings)
