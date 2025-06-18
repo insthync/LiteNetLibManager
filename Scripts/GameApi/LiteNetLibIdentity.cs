@@ -764,12 +764,36 @@ namespace LiteNetLibManager
         {
             Subscribings.Add(subscribing);
             Player.Subscribe(subscribing);
+            if (Manager.LogDebug)
+                Logging.Log(LogTag, $"Player: {ConnectionId} subscribe object ID: {subscribing}.");
         }
 
         public void RemoveSubscribing(uint subscribing)
         {
             Subscribings.Remove(subscribing);
             Player.Unsubscribe(subscribing);
+            if (Manager.LogDebug)
+                Logging.Log(LogTag, $"Player: {ConnectionId} unsubscribe object ID: {subscribing}.");
+        }
+
+        public void ClearSubscribings()
+        {
+            if (!IsServer || ConnectionId < 0 || !Player.IsReady)
+            {
+                // This is not player's networked object
+                return;
+            }
+            // Always add controlled network object to subscribe it
+            foreach (uint oldSubscribing in Subscribings)
+            {
+                if (oldSubscribing == ObjectId)
+                    continue;
+                RemoveSubscribing(oldSubscribing);
+            }
+            Subscribings.Clear();
+            if (IsDestroyed)
+                return;
+            AddSubscribing(ObjectId);
         }
 
         public void UpdateSubscribings(HashSet<uint> newSubscribings)
@@ -786,23 +810,16 @@ namespace LiteNetLibManager
             {
                 if (oldSubscribing == ObjectId)
                     continue;
-                if (!newSubscribings.Contains(oldSubscribing))
-                {
-                    Player.Unsubscribe(oldSubscribing);
-                    if (Manager.LogDebug)
-                        Logging.Log(LogTag, $"Player: {ConnectionId} unsubscribe object ID: {oldSubscribing}.");
-                }
+                if (newSubscribings.Contains(oldSubscribing))
+                    continue;
+                RemoveSubscribing(oldSubscribing);
             }
             Subscribings.Clear();
             foreach (uint newSubscribing in newSubscribings)
             {
-                if (!Manager.Assets.TryGetSpawnedObject(newSubscribing, out tempIdentity) ||
-                    tempIdentity.IsDestroyed)
+                if (!Manager.Assets.TryGetSpawnedObject(newSubscribing, out tempIdentity) || tempIdentity.IsDestroyed)
                     continue;
-                Subscribings.Add(newSubscribing);
-                Player.Subscribe(newSubscribing);
-                if (Manager.LogDebug)
-                    Logging.Log(LogTag, $"Player: {ConnectionId} subscribe object ID: {newSubscribing}.");
+                AddSubscribing(newSubscribing);
             }
         }
 
