@@ -386,10 +386,9 @@ namespace LiteNetLibManager
         public void AssignSceneObjectIDs()
         {
             s_AssignSceneObjectIDs();
-            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        internal static void s_AssignSceneObjectIDs()
+        public static void s_AssignSceneObjectIDs()
         {
             for (int i = 0; i < SceneManager.loadedSceneCount; ++i)
             {
@@ -405,6 +404,7 @@ namespace LiteNetLibManager
                 }
                 rootObjects = null;
             }
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
         internal static string GenerateSceneObjectId(LiteNetLibIdentity identity, int countSuffix)
