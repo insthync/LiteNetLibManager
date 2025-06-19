@@ -1276,11 +1276,12 @@ namespace LiteNetLibManager
                     continue;
                 // Writer sync state
                 uint objectId = syncingStatesByObjectId.Key;
-                if (Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
+                LiteNetLibIdentity identity;
+                switch (syncingStatesByObjectId.Value.StateType)
                 {
-                    switch (syncingStatesByObjectId.Value.StateType)
-                    {
-                        case GameStateSyncData.STATE_TYPE_SPAWN:
+                    case GameStateSyncData.STATE_TYPE_SPAWN:
+                        if (Assets.TryGetSpawnedObject(objectId, out identity))
+                        {
                             writer.Put(GameStateSyncData.STATE_TYPE_SPAWN);
                             WriteSpawnGameState(writer, player, identity, syncingStatesByObjectId.Value);
                             // TODO: Move this to somewhere else
@@ -1290,24 +1291,28 @@ namespace LiteNetLibManager
                                 identity.OnServerSubscribingAdded();
                             }
                             ++stateCount;
-                            break;
-                        case GameStateSyncData.STATE_TYPE_SYNC:
+                        }
+                        break;
+                    case GameStateSyncData.STATE_TYPE_SYNC:
+                        if (Assets.TryGetSpawnedObject(objectId, out identity))
+                        {
                             writer.Put(GameStateSyncData.STATE_TYPE_SYNC);
                             WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value);
                             ++stateCount;
-                            break;
-                        case GameStateSyncData.STATE_TYPE_DESTROY:
-                            writer.Put(GameStateSyncData.STATE_TYPE_DESTROY);
-                            WriteDestroyGameState(writer, objectId, syncingStatesByObjectId.Value);
-                            // TODO: Move this to somewhere else
-                            if (player.ConnectionId == ClientConnectionId)
-                            {
-                                // Simulate object destroying if it is a host
+                        }
+                        break;
+                    case GameStateSyncData.STATE_TYPE_DESTROY:
+                        writer.Put(GameStateSyncData.STATE_TYPE_DESTROY);
+                        WriteDestroyGameState(writer, objectId, syncingStatesByObjectId.Value);
+                        // TODO: Move this to somewhere else
+                        if (player.ConnectionId == ClientConnectionId)
+                        {
+                            // Simulate object destroying if it is a host
+                            if (Assets.TryGetSpawnedObject(objectId, out identity))
                                 identity.OnServerSubscribingRemoved();
-                            }
-                            ++stateCount;
-                            break;
-                    }
+                        }
+                        ++stateCount;
+                        break;
                 }
                 // Reset syncing state, so next time it won't being synced
                 syncingStatesByObjectId.Value.Reset();
