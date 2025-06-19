@@ -937,7 +937,7 @@ namespace LiteNetLibManager
             PingMessage pingMessage = messageHandler.ReadMessage<PingMessage>();
             PongMessage pongMessage = RttCalculator.GetPongMessage(pingMessage);
             pongMessage.tick = _logicUpdater.Tick;
-            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, pongMessage);
+            ServerSendPacket(messageHandler.ConnectionId, 0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, pongMessage);
         }
 
         protected void HandleClientPong(MessageHandlerData messageHandler)
@@ -1023,7 +1023,7 @@ namespace LiteNetLibManager
         {
             PingMessage message = messageHandler.ReadMessage<PingMessage>();
             // Send pong back to server (then server will calculates Rtt for this client later)
-            ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Pong, RttCalculator.GetPongMessage(message));
+            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Pong, RttCalculator.GetPongMessage(message));
         }
 
         protected void HandleServerPong(MessageHandlerData messageHandler)
