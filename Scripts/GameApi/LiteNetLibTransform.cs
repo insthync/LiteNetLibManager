@@ -110,11 +110,21 @@ namespace LiteNetLibManager
         [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
         [FormerlySerializedAs("ownerClientCanSendTransform")]
         public bool syncByOwnerClient;
+        [Tooltip("Whats will be synced?")]
         public SyncTransformState syncData = SyncTransformState.PositionX | SyncTransformState.PositionY | SyncTransformState.PositionZ | SyncTransformState.EulerAnglesY;
+        [Tooltip("If distance between current frame and previous frame is greater than this value, then it will determine that changes occurs and will sync transform later")]
+        [Min(0.01f)]
         public float positionThreshold = 0.01f;
+        [Tooltip("If angle between current frame and previous frame is greater than this value, then it will determine that changes occurs and will sync transform later")]
+        [Min(0.01f)]
         public float eulerAnglesThreshold = 1f;
+        [Tooltip("If distance between current frame and previous frame is greater than this value, then it will determine that changes occurs and will sync transform later")]
+        [Min(0.01f)]
         public float scaleThreshold = 0.1f;
+        [Tooltip("Keep alive ticks before it is stop syncing (after has no changes)")]
         public int keepAliveTicks = 10;
+        [Tooltip("Ticks for interpolation")]
+        [Min(2)]
         public uint interpolationTicks = 2;
 
         private Vector3 _lastChangePosition;
