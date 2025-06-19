@@ -74,6 +74,11 @@ namespace LiteNetLibManager
         }
 
         protected LogicUpdater _logicUpdater;
+        public LogicUpdater LogicUpdater
+        {
+            get { return _logicUpdater; }
+        }
+
         private bool _isApplicationQuitted = false;
 
         protected virtual void Start()
@@ -202,8 +207,8 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot start server at port: {networkPort}.");
                 return false;
             }
-            _logicUpdater.OnLogicUpdate -= OnServerUpdate;
-            _logicUpdater.OnLogicUpdate += OnServerUpdate;
+            _logicUpdater.OnTick -= OnServerUpdate;
+            _logicUpdater.OnTick += OnServerUpdate;
             if (!_logicUpdater.IsRunning)
                 _logicUpdater.Start();
             IsServer = true;
@@ -233,8 +238,8 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Cannot connect to {networkAddress}:{networkPort}.");
                 return false;
             }
-            _logicUpdater.OnLogicUpdate -= OnClientUpdate;
-            _logicUpdater.OnLogicUpdate += OnClientUpdate;
+            _logicUpdater.OnTick -= OnClientUpdate;
+            _logicUpdater.OnTick += OnClientUpdate;
             if (!IsServer && !_logicUpdater.IsRunning)
                 _logicUpdater.Start();
             IsClient = true;
@@ -271,7 +276,7 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopServer");
-            _logicUpdater.OnLogicUpdate -= OnServerUpdate;
+            _logicUpdater.OnTick -= OnServerUpdate;
             if (_logicUpdater.IsRunning)
                 _logicUpdater.Stop();
             IsServer = false;
@@ -292,7 +297,7 @@ namespace LiteNetLibManager
                 return;
 
             if (LogInfo) Logging.Log(LogTag, "StopClient");
-            _logicUpdater.OnLogicUpdate -= OnClientUpdate;
+            _logicUpdater.OnTick -= OnClientUpdate;
             if (!IsServer && _logicUpdater.IsRunning)
                 _logicUpdater.Stop();
             IsClient = false;

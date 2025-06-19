@@ -27,8 +27,8 @@ namespace LiteNetLibManager
         /// Fixed delta time (float for less precision)
         /// </summary>
         public float DeltaTimeF { get; private set; }
-        public double VisualDeltaTime { get; private set; }
-        public LogicUpdateDelegate OnLogicUpdate;
+
+        public event LogicUpdateDelegate OnTick;
 
         private long _deltaTimeTicks = 0;
         private long _accumulator = 0;
@@ -70,26 +70,24 @@ namespace LiteNetLibManager
 
         public void Reset()
         {
-            VisualDeltaTime = 0.0;
             _accumulator = 0;
             _lastTime = 0;
             _stopwatch.Restart();
         }
 
-        protected virtual void LogicUpdate()
+        protected virtual void InvokeOnTick()
         {
-            if (OnLogicUpdate != null)
-                OnLogicUpdate.Invoke(this);
+            if (OnTick != null)
+                OnTick.Invoke(this);
         }
 
         /// <summary>
         /// Main update method, updates internal fixed timer and do all other stuff
         /// </summary>
-        public virtual void Update()
+        public void Update()
         {
             long elapsedTime = _stopwatch.ElapsedTicks;
             long ticksDelta = elapsedTime - _lastTime;
-            VisualDeltaTime = ticksDelta * _stopwatchFrequency;
             _accumulator += ticksDelta;
             _lastTime = elapsedTime;
 
@@ -102,7 +100,7 @@ namespace LiteNetLibManager
                     _accumulator = 0;
                     return;
                 }
-                LogicUpdate();
+                InvokeOnTick();
                 LocalTick++;
 
                 _accumulator -= _deltaTimeTicks;
