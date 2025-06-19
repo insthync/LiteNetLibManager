@@ -3,40 +3,40 @@ namespace LiteNetLibManager
     public class RttCalculator
     {
         public long Rtt { get; internal set; }
-        public long LastPongTime { get; internal set; }
-        public long TotalRtt { get; internal set; }
-        public int RttCount { get; internal set; }
-        public long TimestampOffsets { get; internal set; }
         public long LocalTimestamp { get => System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); }
-        public long PeerTimestamp { get => LocalTimestamp + TimestampOffsets; }
+        public long PeerTimestamp { get => LocalTimestamp + _timestampOffsets; }
+
+        private int _rttCount;
+        private long _totalRtt;
+        private long _latestPongTime;
+        private long _timestampOffsets;
 
         public void OnPong(PongMessage message)
         {
-            if (LastPongTime < message.pongTime)
+            long rtt = LocalTimestamp - message.pingTime;
+            if (_rttCount > 10)
             {
-                LastPongTime = message.pongTime;
-                long rtt = LocalTimestamp - message.pingTime;
-                if (RttCount > 10)
-                {
-                    TotalRtt = Rtt;
-                    RttCount = 1;
-                }
-                TotalRtt += rtt;
-                RttCount++;
-                Rtt = TotalRtt / RttCount;
-                // Calculate time offsets by peer time, local time and RTT
-                long newTimestamp = message.pongTime + (Rtt / 2);
-                TimestampOffsets = newTimestamp - LocalTimestamp;
+                _totalRtt = Rtt;
+                _rttCount = 1;
             }
+            _totalRtt += rtt;
+            _rttCount++;
+            Rtt = _totalRtt / _rttCount;
+            // Calculate time offsets by peer time, local time and RTT
+            if (_latestPongTime > message.pongTime)
+                return;
+            _latestPongTime = message.pongTime;
+            long newTimestamp = message.pongTime + (Rtt / 2);
+            _timestampOffsets = newTimestamp - LocalTimestamp;
         }
 
         public void Reset()
         {
             Rtt = 0;
-            LastPongTime = 0;
-            TotalRtt = 0;
-            RttCount = 0;
-            TimestampOffsets = 0;
+            _latestPongTime = 0;
+            _totalRtt = 0;
+            _rttCount = 0;
+            _timestampOffsets = 0;
         }
 
         public PingMessage GetPingMessage()
