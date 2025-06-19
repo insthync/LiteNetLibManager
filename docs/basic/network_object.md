@@ -12,7 +12,7 @@ The `LiteNetLibBehaviour` is base class which should be inherited by scripts whi
 
 This is allows you to invoke `LiteNetLibNetFunction`, receive various callbacks, and automatically sync `LiteNetLibSyncField` and `LiteNetLibSyncList` from server to client. There can be multiple `LiteNetLibBehaviour` on a single game object but only one `LiteNetLibIdentity`. 
 
-Some of the built-in components of the networking system are derived from `LiteNetLibBehaviour`, including `LiteNetLibTransform` and `LiteNetLibVisibleChecker`.
+Some of the built-in components of the networking system are derived from `LiteNetLibBehaviour`, including `LiteNetLibTransform`.
 
 There are following event functions that overrideable:
 - `OnSetOwnerClient(bool isOwnerClient)`, This function will be called when this client has been verified as owner client (Player who can controls it)
