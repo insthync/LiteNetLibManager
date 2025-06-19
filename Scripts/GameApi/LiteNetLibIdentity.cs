@@ -239,12 +239,6 @@ namespace LiteNetLibManager
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            Event evt = Event.current;
-            if (evt != null && evt.commandName == "Duplicate")
-            {
-                // Reset asset ID to regenerate it
-                assetId = string.Empty;
-            }
             if (string.IsNullOrWhiteSpace(assetId) || assetId.Equals("0"))
             {
                 if (autoAssignAssetIdIfEmpty)
@@ -273,7 +267,6 @@ namespace LiteNetLibManager
                     return;
                 }
                 Debug.LogWarning($"[LiteNetLibIdentity] scene object named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Scene Object ID\" context menu to assign ID or set yours.", gameObject);
-
             }
         }
 
