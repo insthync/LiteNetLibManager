@@ -9,9 +9,14 @@ namespace LiteNetLibManager
         public bool IsRunning => _stopwatch != null && _stopwatch.IsRunning;
 
         /// <summary>
+        /// Local tick count
+        /// </summary>
+        public uint LocalTick { get; private set; } = 0;
+
+        /// <summary>
         /// Tick count
         /// </summary>
-        public uint Tick { get; private set; } = 0;
+        public uint Tick => (uint)(LocalTick + _tickOffsets);
 
         /// <summary>
         /// Fixed delta time
@@ -29,7 +34,7 @@ namespace LiteNetLibManager
         private long _accumulator = 0;
         private long _lastTime = 0;
         private uint _latestSyncedTick = 0;
-        private int _diffSyncedTick = 0;
+        private int _tickOffsets = 0;
 
         private readonly Stopwatch _stopwatch;
         private readonly double _stopwatchFrequency;
@@ -98,7 +103,7 @@ namespace LiteNetLibManager
                     return;
                 }
                 LogicUpdate();
-                Tick++;
+                LocalTick++;
 
                 _accumulator -= _deltaTimeTicks;
                 updates++;
@@ -116,8 +121,7 @@ namespace LiteNetLibManager
                 return;
             _latestSyncedTick = tick;
             uint newTick = tick + TimeToTick(rtt / 2);
-            _diffSyncedTick = (int)newTick - (int)Tick;
-            Tick = newTick;
+            _tickOffsets = (int)newTick - (int)LocalTick;
         }
     }
 }
