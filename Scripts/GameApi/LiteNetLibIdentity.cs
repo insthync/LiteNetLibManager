@@ -25,12 +25,16 @@ namespace LiteNetLibManager
         /// If any of these function's result is true, it will not hide the object from another object
         /// </summary>
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
+#if UNITY_EDITOR
         [SerializeField, Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID, so when you delete/clear it won't assign)")]
         private bool autoAssignAssetIdIfEmpty = true;
+#endif
         [SerializeField, Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path")]
         private string assetId = string.Empty;
+#if UNITY_EDITOR
         [SerializeField, Tooltip("Turn this on to assign scene object ID automatically, if it is empty (should turn this off if you want to set custom ID, so when you delete/clear it won't assign)")]
         private bool autoAssignSceneObjectIdIfEmpty = true;
+#endif
         [SerializeField, FormerlySerializedAs("objectId"), Tooltip("Scene object ID will be hashed to uses as reference for networked object spawning message")]
         private string sceneObjectId = string.Empty;
         [SerializeField, ReadOnly]
