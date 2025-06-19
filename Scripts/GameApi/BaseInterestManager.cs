@@ -51,7 +51,7 @@ namespace LiteNetLibManager
 
         public float GetVisibleRange(LiteNetLibIdentity identity)
         {
-            return identity.VisibleRange > 0f ? identity.VisibleRange : defaultVisibleRange;
+            return identity.AlwaysVisible ? float.MaxValue : (identity.VisibleRange > 0f ? identity.VisibleRange : defaultVisibleRange);
         }
 
         public virtual bool ShouldSubscribe(LiteNetLibIdentity subscriber, LiteNetLibIdentity target, bool checkRange = true)

@@ -770,18 +770,15 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EnterGameResponseMessage response)
         {
-            ReadExtraEnterGameResponse(responseCode, response, responseHandler.Reader);
-            if (responseCode == AckResponseCode.Success)
+            if (responseCode != AckResponseCode.Success)
             {
-                ClientConnectionId = response.connectionId;
-                if (IsClientConnected)
-                    HandleServerSceneChange(response.serverSceneInfo);
-            }
-            else
-            {
-                if (LogError) Logging.LogError(LogTag, "Enter game request was refused by server, disconnecting...");
+                if (LogError) Logging.LogError(LogTag, "Enter game request was failed or refused by server, disconnecting...");
                 OnClientConnectionRefused();
             }
+            ReadExtraEnterGameResponse(responseCode, response, responseHandler.Reader);
+            ClientConnectionId = response.connectionId;
+            if (IsClientConnected)
+                HandleServerSceneChange(response.serverSceneInfo);
         }
 
         /// <summary>
@@ -824,6 +821,8 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EmptyMessage response)
         {
+            if (responseCode != AckResponseCode.Success)
+                return;
             ReadExtraClientReadyResponse(responseCode, response, responseHandler.Reader);
         }
 
@@ -868,6 +867,8 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EmptyMessage response)
         {
+            if (responseCode != AckResponseCode.Success)
+                return;
             ReadExtraClientNotReadyResponse(responseCode, response, responseHandler.Reader);
         }
 
