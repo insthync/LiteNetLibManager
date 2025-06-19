@@ -47,7 +47,7 @@ namespace LiteNetLibManager
                 }
             }
             // Find for a game manager instance
-            LiteNetLibGameManager gameManager = FindObjectOfType<LiteNetLibGameManager>();
+            LiteNetLibGameManager gameManager = FindFirstObjectByType<LiteNetLibGameManager>();
             if (gameManager == null)
             {
                 Logging.LogError($"[LiteNetLibObjectPlaceholder] Cannot set {uniqueAssetId} as a prefab, there is no instance of `LiteNetLibGameManager` in the scene.");
@@ -72,7 +72,7 @@ namespace LiteNetLibManager
                 Logging.LogError("[LiteNetLibObjectPlaceholder] Cannot instantiates, `objectPrefab` is empty.");
                 return;
             }
-            LiteNetLibGameManager gameManager = FindObjectOfType<LiteNetLibGameManager>();
+            LiteNetLibGameManager gameManager = FindFirstObjectByType<LiteNetLibGameManager>();
             if (gameManager == null)
             {
                 Logging.LogError("[LiteNetLibObjectPlaceholder] Cannot instantiates, there is no instance of `LiteNetLibGameManager` in the scene.");

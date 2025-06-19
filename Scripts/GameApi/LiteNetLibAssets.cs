@@ -101,7 +101,7 @@ namespace LiteNetLibManager
         public void RegisterSpawnPoints()
         {
             SpawnPoints.Clear();
-            SpawnPoints.AddRange(FindObjectsOfType<LiteNetLibSpawnPoint>());
+            SpawnPoints.AddRange(FindObjectsByType<LiteNetLibSpawnPoint>(FindObjectsSortMode.None));
         }
 
         public async UniTask RegisterPrefabs()
