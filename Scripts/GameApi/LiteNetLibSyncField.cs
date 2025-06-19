@@ -7,7 +7,7 @@ namespace LiteNetLibManager
     public abstract class LiteNetLibSyncField : LiteNetLibSyncElement
     {
         public override byte ElementType => SyncElementTypes.SyncField;
-        public LiteNetLibSyncFieldMode SyncMode { get; set; } = LiteNetLibSyncFieldMode.ServerToClients;
+        public LiteNetLibSyncFieldMode syncMode = LiteNetLibSyncFieldMode.ServerToClients;
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected bool _latestChangeSyncedFromOwner = false;
@@ -32,7 +32,7 @@ namespace LiteNetLibManager
 
         protected bool CanSync(bool isServer, bool isOwnerClient)
         {
-            switch (SyncMode)
+            switch (syncMode)
             {
                 case LiteNetLibSyncFieldMode.ServerToClients:
                     return isServer;
@@ -62,7 +62,7 @@ namespace LiteNetLibManager
 
         internal override bool CanSyncFromOwnerClient()
         {
-            switch (SyncMode)
+            switch (syncMode)
             {
                 case LiteNetLibSyncFieldMode.ClientMulticast:
                     return IsOwnerClient || IsServer;
@@ -131,7 +131,7 @@ namespace LiteNetLibManager
             base.Setup(behaviour, elementId);
             _defaultValue = GetValue();
             // Invoke on change function with initial state = true
-            switch (SyncMode)
+            switch (syncMode)
             {
                 case LiteNetLibSyncFieldMode.ServerToClients:
                 case LiteNetLibSyncFieldMode.ServerToOwnerClient:
@@ -162,7 +162,7 @@ namespace LiteNetLibManager
             }
             _latestSyncTick = tick;
             OnChange(initial, oldValue, GetValue());
-            if (SyncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
+            if (syncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
                 ValueChangedState(true);
         }
 
@@ -199,7 +199,7 @@ namespace LiteNetLibManager
                 bool canSync = CanSync();
                 if (IsSetup && !canSync)
                 {
-                    switch (SyncMode)
+                    switch (syncMode)
                     {
                         case LiteNetLibSyncFieldMode.ServerToClients:
                             Logging.LogError(LogTag, "Cannot access sync field from client.");
@@ -291,7 +291,7 @@ namespace LiteNetLibManager
                 bool canSync = CanSync();
                 if (IsSetup && !canSync)
                 {
-                    switch (SyncMode)
+                    switch (syncMode)
                     {
                         case LiteNetLibSyncFieldMode.ServerToClients:
                             Logging.LogError(LogTag, "Cannot access sync field from client.");
