@@ -25,7 +25,8 @@ namespace LiteNetLibManager
                 RttCount++;
                 Rtt = TotalRtt / RttCount;
                 // Calculate time offsets by peer time, local time and RTT
-                TimestampOffsets = message.pongTime - LocalTimestamp + (Rtt / 2);
+                long newTimestamp = message.pongTime + (Rtt / 2);
+                TimestampOffsets = newTimestamp - LocalTimestamp;
             }
         }
 
