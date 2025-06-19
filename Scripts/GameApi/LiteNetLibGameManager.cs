@@ -667,20 +667,14 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            for (int i = 0; i < 10; ++i)
-            {
-                ClientSendPacket(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
-            }
+            ClientSendPacket(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
         }
 
         public void SendServerPing()
         {
             if (!IsServer)
                 return;
-            for (int i = 0; i < 10; ++i)
-            {
-                ServerSendPacketToAllConnections(0, DeliveryMethod.Unreliable, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
-            }
+            ServerSendPacketToAllConnections(0, DeliveryMethod.ReliableUnordered, GameMsgTypes.Ping, RttCalculator.GetPingMessage());
         }
 
         public void SendServerError(bool shouldDisconnect, string errorMessage)
