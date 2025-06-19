@@ -1,37 +1,33 @@
-﻿using System;
+﻿using LiteNetLib.Utils;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using LiteNetLib;
-using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public abstract partial class LiteNetLibSyncList : LiteNetLibElement
+    public abstract class LiteNetLibSyncList : LiteNetLibSyncElement
     {
+        public override byte ElementType => SyncElementTypes.SyncList;
+
         protected readonly static NetDataWriter s_Writer = new NetDataWriter();
+
+        [Tooltip("If this is `TRUE`, this will update to owner client only, default is `FALSE`")]
+        public bool forOwnerOnly = false;
+
         public abstract Type FieldType { get; }
         public abstract int Count { get; }
-        internal abstract void Reset();
-        internal abstract void SendInitialList(long connectionId);
-        internal abstract bool SendOperations();
-        internal abstract void ProcessOperations(NetDataReader reader);
 
-        protected override bool CanSync()
+        protected bool CanSync()
         {
             return IsServer;
         }
 
-        public void RegisterUpdating()
+        internal override bool WillSyncFromServerReliably(LiteNetLibPlayer player)
         {
-            if (!IsSetup)
-                return;
-            Manager?.RegisterSyncListUpdating(this);
-        }
-
-        public void UnregisterUpdating()
-        {
-            Manager?.UnregisterSyncListUpdating(this);
+            if (!base.WillSyncFromServerReliably(player))
+                return false;
+            return !forOwnerOnly || ConnectionId == player.ConnectionId;
         }
     }
 
@@ -39,34 +35,16 @@ namespace LiteNetLibManager
     {
         protected struct OperationEntry
         {
-            public LiteNetLibSyncListOp operation;
-            public int index;
-            public TType item;
+            public LiteNetLibSyncListOp Operation;
+            public int Index;
+            public TType Item;
         }
 
         public delegate void OnOperationDelegate(LiteNetLibSyncListOp op, int itemIndex, TType oldItem, TType newItem);
-
-        [Tooltip("Sending data channel")]
-        public byte dataChannel = 0;
-        [Tooltip("If this is `TRUE`, this will update to owner client only, default is `FALSE`")]
-        public bool forOwnerOnly = false;
         public OnOperationDelegate onOperation;
 
         protected readonly List<TType> _list = new List<TType>();
         protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>();
-
-        internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
-        {
-            base.Setup(behaviour, elementId);
-            if (Count > 0 && onOperation != null)
-            {
-                for (int i = 0; i < Count; ++i)
-                {
-                    onOperation.Invoke(LiteNetLibSyncListOp.AddInitial, i, default, this[i]);
-                }
-            }
-            RegisterUpdating();
-        }
 
         public TType this[int index]
         {
@@ -203,6 +181,8 @@ namespace LiteNetLibManager
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
             }
+            if (_list.Count == 0)
+                return;
             _list.Clear();
             PrepareOperation(LiteNetLibSyncListOp.Clear, -1, default, default);
         }
@@ -252,8 +232,8 @@ namespace LiteNetLibManager
                     operationEntries.Clear();
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
+                        Operation = operation,
+                        Index = index,
                     });
                     break;
                 case LiteNetLibSyncListOp.RemoveAt:
@@ -262,60 +242,45 @@ namespace LiteNetLibManager
                     RemoveSetOrDirtyOperations(operationEntries, index);
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
+                        Operation = operation,
+                        Index = index,
                     });
                     break;
                 case LiteNetLibSyncListOp.Set:
                     RemoveSetOrDirtyOperations(operationEntries, index);
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
-                        item = _list[index],
+                        Operation = operation,
+                        Index = index,
+                        Item = _list[index],
                     });
                     break;
                 case LiteNetLibSyncListOp.Dirty:
                     RemoveDirtyOperations(operationEntries, index);
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
-                        item = _list[index],
+                        Operation = operation,
+                        Index = index,
+                        Item = _list[index],
                     });
                     break;
                 default:
                     operationEntries.Add(new OperationEntry()
                     {
-                        operation = operation,
-                        index = index,
-                        item = _list[index],
+                        Operation = operation,
+                        Index = index,
+                        Item = _list[index],
                     });
                     break;
             }
             RegisterUpdating();
         }
 
-        internal override sealed void SendInitialList(long connectionId)
-        {
-            if (!CanSync())
-                return;
-            List<OperationEntry> operationEntries = new List<OperationEntry>();
-            for (int i = 0; i < Count; ++i)
-            {
-                PrepareOperation(operationEntries, LiteNetLibSyncListOp.AddInitial, i, this[i]);
-            }
-            LiteNetLibServer server = Manager.Server;
-            TransportHandler.WritePacket(s_Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(s_Writer, operationEntries);
-            server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, s_Writer);
-        }
-
         private bool ContainsOperation(List<OperationEntry> operationEntries, int index, LiteNetLibSyncListOp operation)
         {
             for (int i = 0; i < operationEntries.Count; ++i)
             {
-                if (operationEntries[i].operation == operation && operationEntries[i].index == index)
+                if (operationEntries[i].Operation == operation && operationEntries[i].Index == index)
                     return true;
             }
             return false;
@@ -325,7 +290,7 @@ namespace LiteNetLibManager
         {
             for (int i = operationEntries.Count - 1; i >= 0; --i)
             {
-                if ((operationEntries[i].operation == LiteNetLibSyncListOp.Set || operationEntries[i].operation == LiteNetLibSyncListOp.Dirty) && operationEntries[i].index == index)
+                if ((operationEntries[i].Operation == LiteNetLibSyncListOp.Set || operationEntries[i].Operation == LiteNetLibSyncListOp.Dirty) && operationEntries[i].Index == index)
                     operationEntries.RemoveAt(i);
             }
         }
@@ -334,51 +299,57 @@ namespace LiteNetLibManager
         {
             for (int i = operationEntries.Count - 1; i >= 0; --i)
             {
-                if (operationEntries[i].operation == LiteNetLibSyncListOp.Dirty && operationEntries[i].index == index)
+                if (operationEntries[i].Operation == LiteNetLibSyncListOp.Dirty && operationEntries[i].Index == index)
                     operationEntries.RemoveAt(i);
             }
         }
 
-        /// <summary>
-        /// Return `TRUE` to determine that the update is done and unregister updating
-        /// </summary>
-        /// <returns></returns>
-        internal override sealed bool SendOperations()
+        internal override void WriteSyncData(bool initial, NetDataWriter writer)
         {
-            if (!CanSync())
-                return false;
-
-            if (_operationEntries.Count <= 0)
-                return true;
-
-            LiteNetLibGameManager manager = Manager;
-            LiteNetLibServer server = manager.Server;
-            TransportHandler.WritePacket(s_Writer, GameMsgTypes.OperateSyncList);
-            SerializeForSendOperations(s_Writer, _operationEntries);
-            _operationEntries.Clear();
-            if (forOwnerOnly)
+            if (initial)
             {
-                if (manager.ContainsConnectionId(ConnectionId))
-                    server.SendMessage(ConnectionId, dataChannel, DeliveryMethod.ReliableOrdered, s_Writer);
+                writer.PutPackedInt(Count);
+                if (Count > 0)
+                {
+                    for (int i = 0; i < Count; ++i)
+                    {
+                        SerializeValue(writer, this[i]);
+                    }
+                }
             }
             else
             {
-                foreach (long connectionId in manager.GetConnectionIds())
+                if (_operationEntries.Count <= 0)
+                    return;
+                writer.PutPackedInt(_operationEntries.Count);
+                for (int i = 0; i < _operationEntries.Count; ++i)
                 {
-                    if (Identity.HasSubscriberOrIsOwning(connectionId))
-                        server.SendMessage(connectionId, dataChannel, DeliveryMethod.ReliableOrdered, s_Writer);
+                    SerializeOperation(writer, _operationEntries[i]);
                 }
             }
-
-            return true;
         }
 
-        internal override sealed void ProcessOperations(NetDataReader reader)
+        internal override void ReadSyncData(uint tick, bool initial, NetDataReader reader)
         {
-            int operationCount = reader.GetPackedInt();
-            for (int i = 0; i < operationCount; ++i)
+            if (initial)
             {
-                DeserializeOperation(reader);
+                _list.Clear();
+                int count = reader.GetPackedInt();
+                if (count > 0)
+                {
+                    for (int i = 0; i < count; ++i)
+                    {
+                        _list.Add(DeserializeValue(reader));
+                    }
+                }
+            }
+            else
+            {
+                int operationCount = reader.GetPackedInt();
+                for (int i = 0; i < operationCount; ++i)
+                {
+                    DeserializeOperation(reader);
+                }
             }
         }
 
@@ -442,24 +413,24 @@ namespace LiteNetLibManager
 
         protected void SerializeOperation(NetDataWriter writer, OperationEntry entry)
         {
-            writer.Put((byte)entry.operation);
-            switch (entry.operation)
+            writer.Put((byte)entry.Operation);
+            switch (entry.Operation)
             {
                 case LiteNetLibSyncListOp.Add:
                 case LiteNetLibSyncListOp.AddInitial:
-                    SerializeValueForAddOrInsert(entry.index, writer, entry.item);
+                    SerializeValueForAddOrInsert(entry.Index, writer, entry.Item);
                     break;
                 case LiteNetLibSyncListOp.Insert:
-                    writer.Put(entry.index);
-                    SerializeValueForAddOrInsert(entry.index, writer, entry.item);
+                    writer.Put(entry.Index);
+                    SerializeValueForAddOrInsert(entry.Index, writer, entry.Item);
                     break;
                 case LiteNetLibSyncListOp.Set:
                 case LiteNetLibSyncListOp.Dirty:
-                    writer.Put(entry.index);
-                    SerializeValueForSetOrDirty(entry.index, writer, entry.item);
+                    writer.Put(entry.Index);
+                    SerializeValueForSetOrDirty(entry.Index, writer, entry.Item);
                     break;
                 case LiteNetLibSyncListOp.RemoveAt:
-                    writer.Put(entry.index);
+                    writer.Put(entry.Index);
                     break;
                 case LiteNetLibSyncListOp.RemoveFirst:
                 case LiteNetLibSyncListOp.RemoveLast:

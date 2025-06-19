@@ -25,16 +25,24 @@ namespace LiteNetLibManager
         /// If any of these function's result is true, it will not hide the object from another object
         /// </summary>
         public static readonly List<HideExceptionDelegate> HideExceptionFunctions = new List<HideExceptionDelegate>();
+#if UNITY_EDITOR
         [SerializeField, Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID, so when you delete/clear it won't assign)")]
         private bool autoAssignAssetIdIfEmpty = true;
+#endif
         [SerializeField, Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path")]
         private string assetId = string.Empty;
+#if UNITY_EDITOR
         [SerializeField, Tooltip("Turn this on to assign scene object ID automatically, if it is empty (should turn this off if you want to set custom ID, so when you delete/clear it won't assign)")]
         private bool autoAssignSceneObjectIdIfEmpty = true;
+#endif
         [SerializeField, FormerlySerializedAs("objectId"), Tooltip("Scene object ID will be hashed to uses as reference for networked object spawning message")]
         private string sceneObjectId = string.Empty;
         [SerializeField, ReadOnly]
         private uint networkedObjectId = 0;
+        [SerializeField, Tooltip("Sync field/list channel ID")]
+        private byte syncChannelId = 0;
+        [SerializeField, Tooltip("Default RPCs channel ID")]
+        private byte defaultRpcChannelId = 0;
         [SerializeField, Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting")]
         private float visibleRange = 0f;
         [SerializeField, Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects")]
@@ -66,21 +74,13 @@ namespace LiteNetLibManager
         /// </summary>
         public LiteNetLibBehaviour[] Behaviours { get; private set; }
         /// <summary>
-        /// List of sync fields from all behaviours (include children behaviours)
+        /// List of sync elements from all behaviours (include children behaviours)
         /// </summary>
-        internal readonly List<LiteNetLibSyncField> SyncFields = new List<LiteNetLibSyncField>();
+        internal readonly Dictionary<int, LiteNetLibSyncElement> SyncElements = new Dictionary<int, LiteNetLibSyncElement>();
         /// <summary>
         /// List of net functions from all behaviours (include children behaviours)
         /// </summary>
-        internal readonly List<LiteNetLibFunction> NetFunctions = new List<LiteNetLibFunction>();
-        /// <summary>
-        /// List of sync lists from all behaviours (include children behaviours)
-        /// </summary>
-        internal readonly List<LiteNetLibSyncList> SyncLists = new List<LiteNetLibSyncList>();
-        /// <summary>
-        /// List of sync behaviours
-        /// </summary>
-        internal readonly List<LiteNetLibBehaviour> SyncBehaviours = new List<LiteNetLibBehaviour>();
+        internal readonly Dictionary<int, LiteNetLibFunction> NetFunctions = new Dictionary<int, LiteNetLibFunction>();
         /// <summary>
         /// List of networked objects which subscribed by this identity
         /// </summary>
@@ -144,11 +144,12 @@ namespace LiteNetLibManager
         }
 
         public uint ObjectId { get { return networkedObjectId; } internal set { networkedObjectId = value; } }
+        public byte SyncChannelId { get { return syncChannelId; } }
+        public byte DefaultRpcChannelId { get { return defaultRpcChannelId; } }
         public float VisibleRange { get { return visibleRange; } set { visibleRange = value; } }
         public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
         public int PoolingSize { get { return poolingSize; } set { poolingSize = value; } }
-        public byte DataChannel { get; set; } = 0;
         public string SubChannelId { get; set; } = string.Empty;
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
@@ -219,7 +220,7 @@ namespace LiteNetLibManager
             get; private set;
         }
 
-        static int GetHashedId(string id)
+        internal static int GetHashedId(string id)
         {
             unchecked
             {
@@ -242,12 +243,6 @@ namespace LiteNetLibManager
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            Event evt = Event.current;
-            if (evt != null && evt.commandName == "Duplicate")
-            {
-                // Reset asset ID to regenerate it
-                assetId = string.Empty;
-            }
             if (string.IsNullOrWhiteSpace(assetId) || assetId.Equals("0"))
             {
                 if (autoAssignAssetIdIfEmpty)
@@ -276,7 +271,6 @@ namespace LiteNetLibManager
                     return;
                 }
                 Debug.LogWarning($"[LiteNetLibIdentity] scene object named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Scene Object ID\" context menu to assign ID or set yours.", gameObject);
-
             }
         }
 
@@ -432,29 +426,10 @@ namespace LiteNetLibManager
 #endif
         #endregion
 
-        #region SyncField Functions
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibElementInfo info, NetDataReader reader, bool isInitial)
+        #region Sync Element Functions
+        internal bool TryGetSyncElement(int elementId, out LiteNetLibSyncElement syncElement)
         {
-            return ProcessSyncField(GetSyncField(info), reader, isInitial);
-        }
-
-        internal LiteNetLibSyncField ProcessSyncField(LiteNetLibSyncField syncField, NetDataReader reader, bool isInitial)
-        {
-            if (syncField == null)
-                return null;
-            syncField.Deserialize(reader, isInitial);
-            return syncField;
-        }
-
-        internal LiteNetLibSyncField GetSyncField(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            if (info.elementId >= 0 && info.elementId < SyncFields.Count)
-                return SyncFields[info.elementId];
-            if (Manager.LogError)
-                Logging.LogError(LogTag, $"Cannot find sync field: {info.elementId}.");
-            return null;
+            return SyncElements.TryGetValue(elementId, out syncElement);
         }
         #endregion
 
@@ -478,48 +453,15 @@ namespace LiteNetLibManager
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (info.elementId >= 0 && info.elementId < NetFunctions.Count)
-                return NetFunctions[info.elementId];
-            if (Manager.LogError)
-                Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
-            return null;
+            if (!NetFunctions.TryGetValue(info.elementId, out LiteNetLibFunction netFunction))
+            {
+                if (Manager.LogError)
+                    Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
+                return null;
+            }
+            return netFunction;
         }
         #endregion
-
-        #region SyncList Functions
-        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibElementInfo info, NetDataReader reader)
-        {
-            return ProcessSyncList(GetSyncList(info), reader);
-        }
-
-        internal LiteNetLibSyncList ProcessSyncList(LiteNetLibSyncList syncList, NetDataReader reader)
-        {
-            if (syncList == null)
-                return null;
-            syncList.ProcessOperations(reader);
-            return syncList;
-        }
-
-        internal LiteNetLibSyncList GetSyncList(LiteNetLibElementInfo info)
-        {
-            if (info.objectId != ObjectId)
-                return null;
-            if (info.elementId >= 0 && info.elementId < SyncLists.Count)
-                return SyncLists[info.elementId];
-            if (Manager.LogError)
-                Logging.LogError(LogTag, $"Cannot find sync list: {info.elementId}.");
-            return null;
-        }
-        #endregion
-
-        internal LiteNetLibBehaviour ProcessSyncBehaviour(byte behaviourIndex, NetDataReader reader)
-        {
-            if (behaviourIndex >= Behaviours.Length)
-                return null;
-            LiteNetLibBehaviour behaviour = Behaviours[behaviourIndex];
-            behaviour.Deserialize(reader);
-            return behaviour;
-        }
 
         internal bool TryGetBehaviour<T>(byte behaviourIndex, out T behaviour)
             where T : LiteNetLibBehaviour
@@ -529,56 +471,6 @@ namespace LiteNetLibManager
                 return false;
             behaviour = Behaviours[behaviourIndex] as T;
             return behaviour != null;
-        }
-
-        /// <summary>
-        /// This function will be called when send networked object spawning message, to write sync field data
-        /// </summary>
-        /// <param name="writer"></param>
-        internal void WriteInitSyncFields(NetDataWriter writer)
-        {
-            foreach (LiteNetLibSyncField field in SyncFields)
-            {
-                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
-                    continue;
-                field.Serialize(writer);
-            }
-        }
-
-        /// <summary>
-        /// This function will be called when receive networked object spawning message, to read sync field data
-        /// </summary>
-        /// <param name="reader"></param>
-        internal void ReadInitSyncFields(NetDataReader reader)
-        {
-            foreach (LiteNetLibSyncField field in SyncFields)
-            {
-                if (field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
-                    continue;
-                field.Deserialize(reader, true);
-            }
-        }
-
-        /// <summary>
-        /// This function will be called after networked object spawning message was sent
-        /// </summary>
-        /// <param name="connectionId"></param>
-        internal void SendInitSyncFields(long connectionId)
-        {
-            foreach (LiteNetLibSyncField field in SyncFields)
-            {
-                if (!field.HasSyncBehaviourFlag(LiteNetLibSyncField.SyncBehaviour.DoNotSyncInitialDataImmediately))
-                    continue;
-                field.SendUpdate(true, connectionId);
-            }
-        }
-
-        internal void SendInitSyncLists(long connectionId)
-        {
-            foreach (LiteNetLibSyncList list in SyncLists)
-            {
-                list.SendInitialList(connectionId);
-            }
         }
 
         public bool IsSceneObjectExists(int sceneObjectId)
@@ -621,13 +513,10 @@ namespace LiteNetLibManager
                 // Setup behaviours index, we will use this as reference for network functions
                 // NOTE: Maximum network behaviour for a identity is 255 (included children)
                 Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
-                SyncBehaviours.Clear();
                 byte loopCounter;
                 for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
                     Behaviours[loopCounter].Setup(loopCounter);
-                    if (Behaviours[loopCounter].CanSyncBehaviour())
-                        SyncBehaviours.Add(Behaviours[loopCounter]);
                 }
                 IsSetupBehaviours = true;
             }
@@ -956,11 +845,10 @@ namespace LiteNetLibManager
                 LiteNetLibPlayer player;
                 foreach (long subscriber in Subscribers)
                 {
-                    if (Manager.TryGetPlayer(subscriber, out player))
-                    {
-                        player.Subscribings.Remove(ObjectId);
-                        Manager.SendServerDestroyObject(subscriber, ObjectId, reasons);
-                    }
+                    if (!Manager.TryGetPlayer(subscriber, out player))
+                        continue;
+                    player.Subscribings.Remove(ObjectId);
+                    player.SyncingStates.AppendDestroySyncState(this, reasons);
                 }
                 // Delete object from owner player's spawned objects collection
                 if (ConnectionId >= 0)
@@ -983,25 +871,17 @@ namespace LiteNetLibManager
         internal void ResetSyncData()
         {
             // Clear/reset syncing data
-            foreach (LiteNetLibSyncField field in SyncFields)
+            foreach (LiteNetLibSyncElement field in SyncElements.Values)
             {
                 field.Reset();
-            }
-            foreach (LiteNetLibSyncList list in SyncLists)
-            {
-                list.Reset();
             }
         }
 
         private void OnDestroy()
         {
-            foreach (LiteNetLibSyncField field in SyncFields)
+            foreach (LiteNetLibSyncElement syncElement in SyncElements.Values)
             {
-                field.UnregisterUpdating();
-            }
-            foreach (LiteNetLibSyncList list in SyncLists)
-            {
-                list.UnregisterUpdating();
+                syncElement.UnregisterUpdating();
             }
             onGetInstance.RemoveAllListeners();
             onGetInstance = null;
@@ -1009,10 +889,8 @@ namespace LiteNetLibManager
             onSubscriberAdded = null;
             onSubscriberRemoved.RemoveAllListeners();
             onSubscriberRemoved = null;
-            SyncFields.Clear();
+            SyncElements.Clear();
             NetFunctions.Clear();
-            SyncLists.Clear();
-            SyncBehaviours.Clear();
             Subscribings.Clear();
             Subscribers.Clear();
             HideExceptions.Clear();

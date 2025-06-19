@@ -14,10 +14,8 @@ namespace LiteNetLibManager
         public int ServerMaxConnections { get { return 1; } }
         public bool IsClientStarted { get; private set; }
         public bool IsServerStarted { get; private set; }
-        public bool HasImplementedPing
-        {
-            get { return true; }
-        }
+        public bool HasImplementedPing => true;
+        public bool IsReliableOnly => false;
 
         public bool StartClient(string address, int port)
         {

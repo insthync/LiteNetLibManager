@@ -12,7 +12,5 @@
   - [Part 1 - LiteNetLibManager](/how_does_it_work/part001.md)
   - [Part 2 - LiteNetLibGameManager connection](/how_does_it_work/part002.md)
   - [Part 3 - Networking objects spawn/destroy/subscribe/unsubscribe](/how_does_it_work/part003.md)
-- Tutorial
-  - [Shooter Game](/tutorial/shooter.md)
 - Advanced Topics
   - [Custom Transport Layer](/advanced/custom_transport_layer.md)

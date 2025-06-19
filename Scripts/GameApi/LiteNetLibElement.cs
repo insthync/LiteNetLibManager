@@ -1,32 +1,11 @@
 ﻿using UnityEngine;
-using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public readonly struct LiteNetLibElementInfo
-    {
-        public readonly uint objectId;
-        public readonly int elementId;
-        public LiteNetLibElementInfo(uint objectId, int elementId)
-        {
-            this.objectId = objectId;
-            this.elementId = elementId;
-        }
-
-        public static void SerializeInfo(LiteNetLibElementInfo info, NetDataWriter writer)
-        {
-            writer.PutPackedUInt(info.objectId);
-            writer.PutPackedUInt((uint)info.elementId);
-        }
-
-        public static LiteNetLibElementInfo DeserializeInfo(NetDataReader reader)
-        {
-            return new LiteNetLibElementInfo(reader.GetPackedUInt(), (int)reader.GetPackedUInt());
-        }
-    }
-
     public abstract class LiteNetLibElement
     {
+        public bool IsSetup { get; private set; }
+
         [ReadOnly, SerializeField]
         protected LiteNetLibBehaviour _behaviour;
         public LiteNetLibBehaviour Behaviour
@@ -47,6 +26,11 @@ namespace LiteNetLibManager
         public uint ObjectId
         {
             get { return !IsSetup ? 0 : Behaviour.ObjectId; }
+        }
+
+        public byte SyncChannelId
+        {
+            get { return !IsSetup ? (byte)0 : Behaviour.SyncChannelId; }
         }
 
         public LiteNetLibGameManager Manager
@@ -77,8 +61,6 @@ namespace LiteNetLibManager
             get { return IsSetup && Behaviour.IsOwnerClient; }
         }
 
-        public bool IsSetup { get; private set; }
-
         [ReadOnly, SerializeField]
         protected int _elementId;
         public int ElementId
@@ -88,7 +70,11 @@ namespace LiteNetLibManager
 
         public LiteNetLibElementInfo GetInfo()
         {
-            return new LiteNetLibElementInfo(Behaviour.ObjectId, ElementId);
+            return new LiteNetLibElementInfo()
+            {
+                objectId = ObjectId,
+                elementId = ElementId,
+            };
         }
 
         internal virtual void Setup(LiteNetLibBehaviour behaviour, int elementId)
@@ -96,11 +82,6 @@ namespace LiteNetLibManager
             _behaviour = behaviour;
             _elementId = elementId;
             IsSetup = true;
-        }
-
-        protected virtual bool CanSync()
-        {
-            return IsSetup;
         }
     }
 }
