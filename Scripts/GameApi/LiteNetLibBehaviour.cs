@@ -96,7 +96,7 @@ namespace LiteNetLibManager
 
         public bool IsOwnerHost
         {
-            get { return IsServer && IsOwnerClient; }
+            get { return Identity.IsOwnerHost; }
         }
 
         public bool IsOwnedByServer

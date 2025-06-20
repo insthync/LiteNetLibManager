@@ -20,22 +20,69 @@ namespace LiteNetLibManager
 
         public long ConnectionId
         {
-            get { return !IsSetup ? -1 : Behaviour.ConnectionId; }
+            get { return !IsSetup ? -1 : Identity.ConnectionId; }
         }
 
         public uint ObjectId
         {
-            get { return !IsSetup ? 0 : Behaviour.ObjectId; }
+            get { return !IsSetup ? 0 : Identity.ObjectId; }
         }
 
         public byte SyncChannelId
         {
-            get { return !IsSetup ? (byte)0 : Behaviour.SyncChannelId; }
+            get { return !IsSetup ? (byte)0 : Identity.SyncChannelId; }
         }
 
         public LiteNetLibGameManager Manager
         {
-            get { return Behaviour.Manager; }
+            get { return Identity.Manager; }
+        }
+
+        public LiteNetLibPlayer Player
+        {
+            get { return Identity.Player; }
+        }
+
+        public bool IsServer
+        {
+            get { return IsSetup && Identity.IsServer; }
+        }
+
+        public bool IsClient
+        {
+            get { return IsSetup && Identity.IsClient; }
+        }
+
+        public bool IsOwnerClient
+        {
+            get { return IsSetup && Identity.IsOwnerClient; }
+        }
+
+        public bool IsOwnerHost
+        {
+            get { return IsSetup && Identity.IsOwnerHost; }
+        }
+
+        public bool IsOwnedByServer
+        {
+            get { return IsSetup && Identity.IsOwnedByServer; }
+        }
+
+        public bool IsOwnerClientOrOwnedByServer
+        {
+            get { return IsSetup && Identity.IsOwnerClientOrOwnedByServer; }
+        }
+
+        public bool IsSceneObject
+        {
+            get { return IsSetup && Identity.IsSceneObject; }
+        }
+
+        [ReadOnly, SerializeField]
+        protected int _elementId;
+        public int ElementId
+        {
+            get { return _elementId; }
         }
 
         public virtual string LogTag
@@ -44,28 +91,6 @@ namespace LiteNetLibManager
             {
                 return (!IsSetup ? LiteNetLibBehaviour.TAG_NULL : Behaviour.LogTag) + ".E";
             }
-        }
-
-        public bool IsServer
-        {
-            get { return IsSetup && Behaviour.IsServer; }
-        }
-
-        public bool IsClient
-        {
-            get { return IsSetup && Behaviour.IsClient; }
-        }
-
-        public bool IsOwnerClient
-        {
-            get { return IsSetup && Behaviour.IsOwnerClient; }
-        }
-
-        [ReadOnly, SerializeField]
-        protected int _elementId;
-        public int ElementId
-        {
-            get { return _elementId; }
         }
 
         public LiteNetLibElementInfo GetInfo()

@@ -200,7 +200,7 @@ namespace LiteNetLibManager
             get { return IsClient && Manager.ClientConnectionId >= 0 && ConnectionId >= 0 && Manager.ClientConnectionId == ConnectionId; }
         }
 
-        public bool IsHost
+        public bool IsOwnerHost
         {
             get { return IsServer && IsOwnerClient; }
         }
