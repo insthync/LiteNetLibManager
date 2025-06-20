@@ -51,7 +51,7 @@ namespace LiteNetLibManager
             get { return _list[index]; }
             set
             {
-                if (IsSetup && !IsServer)
+                if (IsSpawned && !IsServer)
                 {
                     Logging.LogError(LogTag, "Cannot access sync list from client.");
                     return;
@@ -89,7 +89,7 @@ namespace LiteNetLibManager
 
         public void Add(TType item)
         {
-            if (IsSetup && !CanSync())
+            if (IsSpawned && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
@@ -101,7 +101,7 @@ namespace LiteNetLibManager
 
         public void AddRange(IEnumerable<TType> collection)
         {
-            if (IsSetup && !CanSync())
+            if (IsSpawned && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
@@ -114,7 +114,7 @@ namespace LiteNetLibManager
 
         public void Insert(int index, TType item)
         {
-            if (IsSetup && !CanSync())
+            if (IsSpawned && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
@@ -135,7 +135,7 @@ namespace LiteNetLibManager
 
         public bool Remove(TType item)
         {
-            if (IsSetup && !CanSync())
+            if (IsSpawned && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return false;
@@ -151,7 +151,7 @@ namespace LiteNetLibManager
 
         public void RemoveAt(int index)
         {
-            if (IsSetup && !CanSync())
+            if (IsSpawned && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
@@ -176,7 +176,7 @@ namespace LiteNetLibManager
 
         public void Clear()
         {
-            if (IsSetup && !CanSync())
+            if (IsSpawned && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
@@ -204,7 +204,7 @@ namespace LiteNetLibManager
 
         public void Dirty(int index)
         {
-            if (IsSetup && !CanSync())
+            if (IsSpawned && !CanSync())
             {
                 Logging.LogError(LogTag, "Cannot access sync list from client.");
                 return;
@@ -226,6 +226,8 @@ namespace LiteNetLibManager
 
         protected void PrepareOperation(LiteNetLibSyncListOp operation, int index, TType oldItem, TType newItem)
         {
+            if (!IsSpawned)
+                return;
             OnOperation(operation, index, oldItem, newItem);
             PrepareOperation(_operationEntries, operation, index, newItem);
         }

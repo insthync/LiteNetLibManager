@@ -54,6 +54,16 @@ namespace LiteNetLibManager
             }
         }
 
+        public bool IsSpawned
+        {
+            get { return Identity.IsSpawned; }
+        }
+
+        public bool IsDestroyed
+        {
+            get { return Identity.IsDestroyed; }
+        }
+
         public long ConnectionId
         {
             get { return Identity.ConnectionId; }

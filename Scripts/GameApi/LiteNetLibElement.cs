@@ -4,7 +4,7 @@ namespace LiteNetLibManager
 {
     public abstract class LiteNetLibElement
     {
-        public bool IsSetup { get; private set; }
+        private bool _isSetup;
 
         [ReadOnly, SerializeField]
         protected LiteNetLibBehaviour _behaviour;
@@ -18,64 +18,74 @@ namespace LiteNetLibManager
             get { return Behaviour.Identity; }
         }
 
+        public bool IsSpawned
+        {
+            get { return _isSetup && Identity.IsSpawned; }
+        }
+
+        public bool IsDestroyed
+        {
+            get { return _isSetup && Identity.IsDestroyed; }
+        }
+
         public long ConnectionId
         {
-            get { return !IsSetup ? -1 : Identity.ConnectionId; }
+            get { return !_isSetup ? -1 : Identity.ConnectionId; }
         }
 
         public uint ObjectId
         {
-            get { return !IsSetup ? 0 : Identity.ObjectId; }
+            get { return !_isSetup ? 0 : Identity.ObjectId; }
         }
 
         public byte SyncChannelId
         {
-            get { return !IsSetup ? (byte)0 : Identity.SyncChannelId; }
+            get { return !_isSetup ? (byte)0 : Identity.SyncChannelId; }
         }
 
         public LiteNetLibGameManager Manager
         {
-            get { return Identity.Manager; }
+            get { return !_isSetup ? null : Identity.Manager; }
         }
 
         public LiteNetLibPlayer Player
         {
-            get { return Identity.Player; }
+            get { return !_isSetup ? null : Identity.Player; }
         }
 
         public bool IsServer
         {
-            get { return IsSetup && Identity.IsServer; }
+            get { return _isSetup && Identity.IsServer; }
         }
 
         public bool IsClient
         {
-            get { return IsSetup && Identity.IsClient; }
+            get { return _isSetup && Identity.IsClient; }
         }
 
         public bool IsOwnerClient
         {
-            get { return IsSetup && Identity.IsOwnerClient; }
+            get { return _isSetup && Identity.IsOwnerClient; }
         }
 
         public bool IsOwnerHost
         {
-            get { return IsSetup && Identity.IsOwnerHost; }
+            get { return _isSetup && Identity.IsOwnerHost; }
         }
 
         public bool IsOwnedByServer
         {
-            get { return IsSetup && Identity.IsOwnedByServer; }
+            get { return _isSetup && Identity.IsOwnedByServer; }
         }
 
         public bool IsOwnerClientOrOwnedByServer
         {
-            get { return IsSetup && Identity.IsOwnerClientOrOwnedByServer; }
+            get { return _isSetup && Identity.IsOwnerClientOrOwnedByServer; }
         }
 
         public bool IsSceneObject
         {
-            get { return IsSetup && Identity.IsSceneObject; }
+            get { return _isSetup && Identity.IsSceneObject; }
         }
 
         [ReadOnly, SerializeField]
@@ -89,7 +99,7 @@ namespace LiteNetLibManager
         {
             get
             {
-                return (!IsSetup ? LiteNetLibBehaviour.TAG_NULL : Behaviour.LogTag) + ".E";
+                return (!_isSetup ? LiteNetLibBehaviour.TAG_NULL : Behaviour.LogTag) + ".E";
             }
         }
 
@@ -106,7 +116,7 @@ namespace LiteNetLibManager
         {
             _behaviour = behaviour;
             _elementId = elementId;
-            IsSetup = true;
+            _isSetup = true;
         }
     }
 }

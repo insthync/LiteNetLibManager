@@ -197,7 +197,7 @@ namespace LiteNetLibManager
             set
             {
                 bool canSync = CanSync();
-                if (IsSetup && !canSync)
+                if (IsSpawned && !canSync)
                 {
                     switch (syncMode)
                     {
@@ -220,7 +220,7 @@ namespace LiteNetLibManager
                 }
                 TType oldValue = _value;
                 _value = value;
-                if (IsSetup && canSync)
+                if (IsSpawned && canSync)
                 {
                     OnChange(false, oldValue, value);
                     ValueChangedState(false);
@@ -289,7 +289,7 @@ namespace LiteNetLibManager
             set
             {
                 bool canSync = CanSync();
-                if (IsSetup && !canSync)
+                if (IsSpawned && !canSync)
                 {
                     switch (syncMode)
                     {
@@ -306,7 +306,7 @@ namespace LiteNetLibManager
                     return;
                 }
                 Value[i] = value;
-                if (IsSetup && canSync)
+                if (IsSpawned && canSync)
                     ValueChangedState(false);
             }
         }

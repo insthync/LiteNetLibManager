@@ -46,7 +46,7 @@ namespace LiteNetLibManager
 
         public void RegisterUpdating()
         {
-            if (!IsSetup)
+            if (!IsSpawned)
                 return;
             if (Manager == null)
                 return;
@@ -73,7 +73,7 @@ namespace LiteNetLibManager
 
         public bool Equals(LiteNetLibSyncElement other)
         {
-            return IsSetup == other.IsSetup &&
+            return IsSpawned == other.IsSpawned &&
                 ElementType == other.ElementType &&
                 SyncChannelId == other.SyncChannelId &&
                 ObjectId == other.ObjectId &&
@@ -94,7 +94,7 @@ namespace LiteNetLibManager
             unchecked
             {
                 int hash = 17;
-                hash = hash * 31 + IsSetup.GetHashCode();
+                hash = hash * 31 + IsSpawned.GetHashCode();
                 hash = hash * 31 + ElementType.GetHashCode();
                 hash = hash * 31 + ObjectId.GetHashCode();
                 hash = hash * 31 + ElementId.GetHashCode();
