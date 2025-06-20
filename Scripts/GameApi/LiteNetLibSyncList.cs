@@ -215,6 +215,7 @@ namespace LiteNetLibManager
         public override void Synced()
         {
             _operationEntries.Clear();
+            UnregisterUpdating();
         }
 
         internal override sealed void Reset()
