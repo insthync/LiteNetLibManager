@@ -212,6 +212,11 @@ namespace LiteNetLibManager
             PrepareOperation(LiteNetLibSyncListOp.Dirty, index, this[index], this[index]);
         }
 
+        public override void Synced()
+        {
+            _operationEntries.Clear();
+        }
+
         internal override sealed void Reset()
         {
             _list.Clear();
@@ -319,9 +324,9 @@ namespace LiteNetLibManager
             }
             else
             {
+                writer.PutPackedInt(_operationEntries.Count);
                 if (_operationEntries.Count <= 0)
                     return;
-                writer.PutPackedInt(_operationEntries.Count);
                 for (int i = 0; i < _operationEntries.Count; ++i)
                 {
                     SerializeOperation(writer, _operationEntries[i]);
