@@ -248,9 +248,8 @@ namespace LiteNetLibManager
                 if (autoAssignAssetIdIfEmpty)
                 {
                     AssignAssetID();
-                    return;
                 }
-                if (ThisIsAPrefab())
+                else if (ThisIsAPrefab())
                 {
                     Debug.LogWarning($"[LiteNetLibIdentity] prefab named {name} has no assigned ID, the ID must be assigned, you can use \"Assign Asset ID\" context menu to assign ID or set yours.", gameObject);
                 }
