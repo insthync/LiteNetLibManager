@@ -7,7 +7,15 @@ namespace LiteNetLibManager
     public abstract class LiteNetLibSyncField : LiteNetLibSyncElement
     {
         public override byte ElementType => SyncElementTypes.SyncField;
+        /// <summary>
+        /// How data will be synced to other
+        /// </summary>
+        [NonSerialized]
         public LiteNetLibSyncFieldMode syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+        /// <summary>
+        /// When it will be synced after latest one
+        /// </summary>
+        [NonSerialized]
         public float sendInterval = 0.1f;
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 

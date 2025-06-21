@@ -12,7 +12,10 @@ namespace LiteNetLibManager
 
         protected readonly static NetDataWriter s_Writer = new NetDataWriter();
 
-        [Tooltip("If this is `TRUE`, this will update to owner client only, default is `FALSE`")]
+        /// <summary>
+        /// If this is `TRUE`, this will update to owner client only, default is `FALSE`
+        /// </summary>
+        [NonSerialized]
         public bool forOwnerOnly = false;
 
         public abstract Type FieldType { get; }
