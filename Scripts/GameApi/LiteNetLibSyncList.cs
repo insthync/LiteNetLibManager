@@ -23,10 +23,8 @@ namespace LiteNetLibManager
             return IsServer;
         }
 
-        internal override bool WillSyncFromServerReliably(LiteNetLibPlayer player)
+        internal override sealed bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
         {
-            if (!base.WillSyncFromServerReliably(player))
-                return false;
             return !forOwnerOnly || ConnectionId == player.ConnectionId;
         }
     }

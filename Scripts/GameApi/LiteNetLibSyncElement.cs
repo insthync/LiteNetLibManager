@@ -16,25 +16,25 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal virtual bool WillSyncFromServerReliably(LiteNetLibPlayer player)
+        internal virtual bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
         {
             // Always sync reliably by default
             return true;
         }
 
-        internal virtual bool WillSyncFromServerUnreliably(LiteNetLibPlayer player)
+        internal virtual bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
         {
             // Always sync reliably by default
             return false;
         }
 
-        internal virtual bool WillSyncFromOwnerClientReliably()
+        internal virtual bool WillSyncFromOwnerClientReliably(uint tick)
         {
             // Not be able to be sent from client by default
             return false;
         }
 
-        internal virtual bool WillSyncFromOwnerClientUnreliably()
+        internal virtual bool WillSyncFromOwnerClientUnreliably(uint tick)
         {
             // Not be able to be sent from client by default
             return false;

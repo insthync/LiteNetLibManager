@@ -102,7 +102,7 @@ namespace LiteNetLibManager
 
         protected override void OnServerUpdate(LogicUpdater updater)
         {
-            ProceedServerGameStateSync();
+            ProceedServerGameStateSync(updater.LocalTick);
             // Send ping from server
             _serverSendPingCountDown -= updater.DeltaTime;
             if (_serverSendPingCountDown <= 0f)
@@ -118,7 +118,7 @@ namespace LiteNetLibManager
         protected override void OnClientUpdate(LogicUpdater updater)
         {
             if (!IsServer)
-                ProceedClientGameStateSync();
+                ProceedClientGameStateSync(updater.LocalTick);
             // Send ping from client
             _clientSendPingCountDown -= updater.DeltaTime;
             if (_clientSendPingCountDown <= 0f)
@@ -128,7 +128,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ProceedServerGameStateSync()
+        private void ProceedServerGameStateSync(uint tick)
         {
             // Filter which elements can be synced
             LiteNetLibPlayer tempPlayer;
@@ -142,14 +142,14 @@ namespace LiteNetLibManager
                 {
                     if (!syncElement.CanSyncFromServer(tempPlayer))
                         continue;
-                    if (syncElement.WillSyncFromServerUnreliably(tempPlayer))
+                    if (syncElement.WillSyncFromServerUnreliably(tempPlayer, tick))
                     {
                         _syncElementWriter.Reset();
                         _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncElement);
                         WriteSyncElement(_syncElementWriter, syncElement);
                         ServerSendMessage(tempPlayer.ConnectionId, 0, DeliveryMethod.Unreliable, _syncElementWriter);
                     }
-                    if (syncElement.WillSyncFromServerReliably(tempPlayer))
+                    if (syncElement.WillSyncFromServerReliably(tempPlayer, tick))
                         tempPlayer.SyncingStates.AppendDataSyncState(syncElement);
                 }
             }
@@ -170,7 +170,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void ProceedClientGameStateSync()
+        private void ProceedClientGameStateSync(uint tick)
         {
             if (_updatingClientSyncElements.Count == 0)
                 return;
@@ -178,14 +178,14 @@ namespace LiteNetLibManager
             {
                 if (!syncElement.CanSyncFromOwnerClient())
                     continue;
-                if (syncElement.WillSyncFromOwnerClientUnreliably())
+                if (syncElement.WillSyncFromOwnerClientUnreliably(tick))
                 {
                     _syncElementWriter.Reset();
                     _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncElement);
                     WriteSyncElement(_syncElementWriter, syncElement);
                     ClientSendMessage(0, DeliveryMethod.Unreliable, _syncElementWriter);
                 }
-                if (syncElement.WillSyncFromOwnerClientReliably())
+                if (syncElement.WillSyncFromOwnerClientReliably(tick))
                     ClientSyncingStates.AppendDataSyncState(syncElement);
             }
             SyncGameStateToServer();

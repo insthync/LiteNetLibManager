@@ -8,10 +8,12 @@ namespace LiteNetLibManager
     {
         public override byte ElementType => SyncElementTypes.SyncField;
         public LiteNetLibSyncFieldMode syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+        public float sendInterval = 0.1f;
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected bool _latestChangeSyncedFromOwner = false;
-        protected uint _latestSyncTick = 0;
+        protected uint _latestSendTick = 0;
+        protected uint _latestReceiveTick = 0;
         protected object _defaultValue;
         /// <summary>
         /// 0 - No syncing
@@ -49,7 +51,7 @@ namespace LiteNetLibManager
             return CanSync(IsServer, IsOwnerClient);
         }
 
-        internal override bool CanSyncFromServer(LiteNetLibPlayer player)
+        internal override sealed bool CanSyncFromServer(LiteNetLibPlayer player)
         {
             bool isOwner = ConnectionId == player.ConnectionId;
             if (_latestChangeSyncedFromOwner && isOwner)
@@ -60,7 +62,7 @@ namespace LiteNetLibManager
             return CanSync(IsServer, isOwner) && base.CanSyncFromServer(player);
         }
 
-        internal override bool CanSyncFromOwnerClient()
+        internal override sealed bool CanSyncFromOwnerClient()
         {
             switch (syncMode)
             {
@@ -70,22 +72,28 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal override bool WillSyncFromServerUnreliably(LiteNetLibPlayer player)
+        internal override sealed bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
         {
+            if (tick - _latestSendTick <= Manager.LogicUpdater.TimeInSecondsToTick(sendInterval))
+                return false;
+            tick = _latestSendTick;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
         }
 
-        internal override bool WillSyncFromServerReliably(LiteNetLibPlayer player)
+        internal override sealed bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
         {
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
 
-        internal override bool WillSyncFromOwnerClientUnreliably()
+        internal override sealed bool WillSyncFromOwnerClientUnreliably(uint tick)
         {
+            if (tick - _latestSendTick <= Manager.LogicUpdater.TimeInSecondsToTick(sendInterval))
+                return false;
+            tick = _latestSendTick;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
         }
 
-        internal override bool WillSyncFromOwnerClientReliably()
+        internal override sealed bool WillSyncFromOwnerClientReliably(uint tick)
         {
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
@@ -121,7 +129,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void Reset()
+        internal override sealed void Reset()
         {
             SetValue(_defaultValue);
         }
@@ -154,13 +162,13 @@ namespace LiteNetLibManager
         {
             object oldValue = GetValue();
             DeserializeValue(reader);
-            if (!initial && tick <= _latestSyncTick)
+            if (!initial && tick <= _latestReceiveTick)
             {
                 // Don't accept this, revert changes
                 SetValue(oldValue);
                 return;
             }
-            _latestSyncTick = tick;
+            _latestReceiveTick = tick;
             OnChange(initial, oldValue, GetValue());
             if (syncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
                 ValueChangedState(true);
