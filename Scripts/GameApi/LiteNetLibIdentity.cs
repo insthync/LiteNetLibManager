@@ -28,6 +28,8 @@ namespace LiteNetLibManager
 #if UNITY_EDITOR
         [SerializeField, Tooltip("Turn this on to assign asset ID automatically, if it is empty (should turn this off if you want to set custom ID, so when you delete/clear it won't assign)")]
         private bool autoAssignAssetIdIfEmpty = true;
+        [SerializeField, Tooltip("Turn this on then it will always use GUID as its asset ID")]
+        private bool forceUseAssetGUIDAsAssetId = false;
 #endif
         [SerializeField, Tooltip("Asset ID will be hashed to uses as prefab instantiating reference, leave it empty to auto generate asset ID by asset path")]
         private string assetId = string.Empty;
@@ -243,9 +245,16 @@ namespace LiteNetLibManager
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (string.IsNullOrWhiteSpace(assetId) || assetId.Equals("0"))
+            Event evt = Event.current;
+            if (evt != null && (string.Equals(evt.commandName, "Duplicate") || string.Equals(evt.commandName, "Paste")))
             {
-                if (autoAssignAssetIdIfEmpty)
+                // Reset asset ID to regenerate it
+                assetId = string.Empty;
+                sceneObjectId = string.Empty;
+            }
+            if (string.IsNullOrWhiteSpace(assetId) || assetId.Equals("0") || forceUseAssetGUIDAsAssetId)
+            {
+                if (autoAssignAssetIdIfEmpty || forceUseAssetGUIDAsAssetId)
                 {
                     AssignAssetID();
                 }
@@ -275,7 +284,7 @@ namespace LiteNetLibManager
 
         internal void AssignAssetID(GameObject prefab)
         {
-            if (!string.IsNullOrWhiteSpace(assetId))
+            if (!string.IsNullOrWhiteSpace(assetId) && !forceUseAssetGUIDAsAssetId)
                 return;
             assetId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
         }
@@ -407,6 +416,8 @@ namespace LiteNetLibManager
 
         internal static bool FoundAObjectWithSceneObjectID(Scene loadedScene, string id, LiteNetLibIdentity ignoreIdentity)
         {
+            if (!loadedScene.isLoaded)
+                return false;
             GameObject[] rootObjects = loadedScene.GetRootGameObjects();
             for (int i = 0; i < rootObjects.Length; ++i)
             {
