@@ -113,6 +113,21 @@ namespace LiteNetLibManager
             return (uint)(milliseconds / 1000 / DeltaTime);
         }
 
+        public uint TimeToTick(float milliseconds)
+        {
+            return (uint)(milliseconds / 1000f / DeltaTimeF);
+        }
+
+        public uint TimeInSecondsToTick(long seconds)
+        {
+            return (uint)(seconds / DeltaTime);
+        }
+
+        public uint TimeInSecondsToTick(float seconds)
+        {
+            return (uint)(seconds / DeltaTimeF);
+        }
+
         public void OnSyncTick(uint tick, long rtt)
         {
             if (_latestSyncedTick > tick)
