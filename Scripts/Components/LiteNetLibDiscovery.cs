@@ -55,6 +55,7 @@ namespace LiteNetLibManager
         {
             _server = new NetManager(_serverListener);
             _server.BroadcastReceiveEnabled = true;
+            _server.IPv6Enabled = true;
             if (!_server.Start(broadcastPort))
             {
                 _server = null;
@@ -68,6 +69,7 @@ namespace LiteNetLibManager
         {
             _client = new NetManager(_clientListener);
             _client.UnconnectedMessagesEnabled = true;
+            _client.IPv6Enabled = true;
             if (!_client.Start())
             {
                 _client = null;
