@@ -20,15 +20,9 @@ namespace LiteNetLibManager
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected bool _latestChangeSyncedFromOwner = false;
-        protected uint _latestSendTick = 0;
+        protected float _latestSendTime = 0f;
         protected uint _latestReceiveTick = 0;
         protected object _defaultValue;
-        /// <summary>
-        /// 0 - No syncing
-        /// 1 - Change occurs, will sync unreliably
-        /// 2 - Sent unreliably already, will sync packed state reliably
-        /// </summary>
-        protected byte _syncStep = 0;
 
         public abstract Type GetFieldType();
         protected abstract object GetValue();
@@ -82,50 +76,56 @@ namespace LiteNetLibManager
 
         internal override sealed bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
         {
-            if (tick - _latestSendTick <= Manager.LogicUpdater.TimeInSecondsToTick(sendInterval))
+            if (_latestSendTime + sendInterval > Time.unscaledTime)
                 return false;
-            tick = _latestSendTick;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
         }
 
         internal override sealed bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
         {
+            if (_latestSendTime + sendInterval > Time.unscaledTime)
+                return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
 
         internal override sealed bool WillSyncFromOwnerClientUnreliably(uint tick)
         {
-            if (tick - _latestSendTick <= Manager.LogicUpdater.TimeInSecondsToTick(sendInterval))
+            if (_latestSendTime + sendInterval > Time.unscaledTime)
                 return false;
-            tick = _latestSendTick;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
         }
 
         internal override sealed bool WillSyncFromOwnerClientReliably(uint tick)
         {
+            if (_latestSendTime + sendInterval > Time.unscaledTime)
+                return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
 
         protected void ValueChangedState(bool latestChangeSyncedFromOwner)
         {
             _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
-            if (Manager.IsServer)
+            if (SyncFieldStep == LiteNetLibSyncFieldStep.None || _latestSendTime + sendInterval <= Time.unscaledTime)
             {
-                SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
-            }
-            else
-            {
-                SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+                if (Manager.IsServer)
+                {
+                    SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+                }
+                else
+                {
+                    SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+                }
             }
             RegisterUpdating();
         }
 
-        public override void Synced()
+        public override void Synced(uint tick)
         {
             switch (SyncFieldStep)
             {
                 case LiteNetLibSyncFieldStep.Syncing:
                     SyncFieldStep = LiteNetLibSyncFieldStep.Confirming;
+                    _latestSendTime = Time.unscaledTime;
                     break;
                 case LiteNetLibSyncFieldStep.Confirming:
                     SyncFieldStep = LiteNetLibSyncFieldStep.None;

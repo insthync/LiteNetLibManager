@@ -66,7 +66,7 @@ namespace LiteNetLibManager
                 Manager.UnregisterClientSyncElement(this);
         }
 
-        public virtual void Synced()
+        public virtual void Synced(uint tick)
         {
             UnregisterUpdating();
         }

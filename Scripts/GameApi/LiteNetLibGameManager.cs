@@ -165,7 +165,7 @@ namespace LiteNetLibManager
             {
                 for (int i = _updatingServerSyncElements.Count - 1; i >= 0; --i)
                 {
-                    _updatingServerSyncElements[i].Synced();
+                    _updatingServerSyncElements[i].Synced(tick);
                 }
             }
         }
@@ -191,7 +191,7 @@ namespace LiteNetLibManager
             SyncGameStateToServer();
             for (int i = _updatingClientSyncElements.Count - 1; i >= 0; --i)
             {
-                _updatingClientSyncElements[i].Synced();
+                _updatingClientSyncElements[i].Synced(tick);
             }
         }
 

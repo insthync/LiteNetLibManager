@@ -213,7 +213,7 @@ namespace LiteNetLibManager
             PrepareOperation(LiteNetLibSyncListOp.Dirty, index, this[index], this[index]);
         }
 
-        public override void Synced()
+        public override void Synced(uint tick)
         {
             _operationEntries.Clear();
             UnregisterUpdating();
