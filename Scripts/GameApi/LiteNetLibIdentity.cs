@@ -1,14 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using Cysharp.Text;
+using Cysharp.Threading.Tasks;
+using LiteNetLib.Utils;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
-using LiteNetLib.Utils;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
-using Cysharp.Threading.Tasks;
 using UnityEngine.Serialization;
 
 namespace LiteNetLibManager
@@ -16,6 +17,8 @@ namespace LiteNetLibManager
     [DisallowMultipleComponent]
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
+        public const string TAG_NULL = "<NULL_I>";
+
         public static uint HighestObjectId { get; private set; }
         /// <summary>
         /// If any of these function's result is true, it will force hide the object from another object
@@ -170,9 +173,30 @@ namespace LiteNetLibManager
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(_logTag))
-                    _logTag = $"{Manager.LogTag}->{name}({GetType().Name})";
-                return _logTag;
+                using (var stringBuilder = ZString.CreateStringBuilder(false))
+                {
+                    if (Manager != null)
+                    {
+                        stringBuilder.Append(Manager.LogTag);
+                    }
+                    else
+                    {
+                        stringBuilder.Append(LiteNetLibManager.TAG_NULL);
+                    }
+                    stringBuilder.Append('.');
+                    if (this != null)
+                    {
+                        stringBuilder.Append(name);
+                        stringBuilder.Append('<');
+                        stringBuilder.Append('I');
+                        stringBuilder.Append('>');
+                    }
+                    else
+                    {
+                        stringBuilder.Append(TAG_NULL);
+                    }
+                    return stringBuilder.ToString();
+                }
             }
         }
 

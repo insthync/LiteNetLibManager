@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using Cysharp.Text;
+using Cysharp.Threading.Tasks;
 using Insthync.AddressableAssetTools;
 using System.Collections.Generic;
 using UnityEngine;
@@ -57,18 +58,33 @@ namespace LiteNetLibManager
 
         public LiteNetLibGameManager Manager { get; private set; }
 
-        private string _logTag;
         public string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(_logTag))
+                using (var stringBuilder = ZString.CreateStringBuilder(false))
                 {
-                    string managerTag = Manager != null ? Manager.LogTag : LiteNetLibManager.TAG_NULL;
-                    string behaviourTag = this != null ? $"{name}<A_{GetType().Name}>" : TAG_NULL;
-                    _logTag = $"{managerTag}.{behaviourTag}";
+                    if (Manager != null)
+                    {
+                        stringBuilder.Append(Manager.LogTag);
+                    }
+                    else
+                    {
+                        stringBuilder.Append(LiteNetLibManager.TAG_NULL);
+                    }
+                    stringBuilder.Append('.');
+                    if (this != null)
+                    {
+                        stringBuilder.Append('<');
+                        stringBuilder.Append('A');
+                        stringBuilder.Append('>');
+                    }
+                    else
+                    {
+                        stringBuilder.Append(TAG_NULL);
+                    }
+                    return stringBuilder.ToString();
                 }
-                return _logTag;
             }
         }
 
