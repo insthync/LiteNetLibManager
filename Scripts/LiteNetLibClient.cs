@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using Cysharp.Text;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
@@ -11,7 +12,24 @@ namespace LiteNetLibManager
         {
             get
             {
-                return (Manager == null ? "<NULL_M>" : Manager.LogTag) + ".C";
+                using (var stringBuilder = ZString.CreateStringBuilder(false))
+                {
+                    if (Manager != null)
+                    {
+                        stringBuilder.Append(Manager.LogTag);
+                    }
+                    else
+                    {
+                        stringBuilder.Append(LiteNetLibManager.TAG_NULL);
+                    }
+                    stringBuilder.Append('.');
+                    stringBuilder.Append('<');
+                    stringBuilder.Append('C');
+                    stringBuilder.Append('_');
+                    stringBuilder.Append(GetType().Name);
+                    stringBuilder.Append('>');
+                    return stringBuilder.ToString();
+                }
             }
         }
         private bool _isNetworkActive;

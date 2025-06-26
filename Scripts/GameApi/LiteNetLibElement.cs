@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Cysharp.Text;
+using UnityEngine;
 
 namespace LiteNetLibManager
 {
@@ -95,11 +96,30 @@ namespace LiteNetLibManager
             get { return _elementId; }
         }
 
+        public string logTagName;
         public virtual string LogTag
         {
             get
             {
-                return (!_isSetup ? LiteNetLibBehaviour.TAG_NULL : Behaviour.LogTag) + ".E";
+                using (var stringBuilder = ZString.CreateStringBuilder(false))
+                {
+                    if (_isSetup)
+                    {
+                        stringBuilder.Append(Behaviour.LogTag);
+                    }
+                    else
+                    {
+                        stringBuilder.Append(LiteNetLibBehaviour.TAG_NULL);
+                    }
+                    stringBuilder.Append('.');
+                    stringBuilder.Append(logTagName);
+                    stringBuilder.Append('<');
+                    stringBuilder.Append('E');
+                    stringBuilder.Append('_');
+                    stringBuilder.Append(GetType().Name);
+                    stringBuilder.Append('>');
+                    return stringBuilder.ToString();
+                }
             }
         }
 

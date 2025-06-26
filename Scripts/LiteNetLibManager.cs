@@ -5,6 +5,7 @@ using UnityEngine;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Cysharp.Threading.Tasks;
+using Cysharp.Text;
 
 namespace LiteNetLibManager
 {
@@ -60,16 +61,27 @@ namespace LiteNetLibManager
 
         public bool IsOfflineConnection { get; protected set; }
 
-        private string _logTag;
         public virtual string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(_logTag))
+                using (var stringBuilder = ZString.CreateStringBuilder(false))
                 {
-                    _logTag = this != null ? $"{name}<M_{GetType().Name}>" : TAG_NULL;
+                    if (this != null)
+                    {
+                        stringBuilder.Append(name);
+                        stringBuilder.Append('<');
+                        stringBuilder.Append('M');
+                        stringBuilder.Append('_');
+                        stringBuilder.Append(GetType().Name);
+                        stringBuilder.Append('>');
+                    }
+                    else
+                    {
+                        stringBuilder.Append(TAG_NULL);
+                    }
+                    return stringBuilder.ToString();
                 }
-                return _logTag;
             }
         }
 

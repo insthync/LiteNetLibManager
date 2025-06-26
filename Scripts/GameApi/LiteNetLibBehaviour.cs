@@ -124,18 +124,36 @@ namespace LiteNetLibManager
             get { return Identity.IsSceneObject; }
         }
 
-        private string _logTag;
         public virtual string LogTag
         {
             get
             {
-                if (string.IsNullOrEmpty(_logTag))
+                using (var stringBuilder = ZString.CreateStringBuilder(false))
                 {
-                    string managerTag = Manager != null ? Manager.LogTag : LiteNetLibManager.TAG_NULL;
-                    string behaviourTag = this != null ? $"{name}<B_{GetType().Name}>" : TAG_NULL;
-                    _logTag = $"{managerTag}.{behaviourTag}";
+                    if (Manager != null)
+                    {
+                        stringBuilder.Append(Manager.LogTag);
+                    }
+                    else
+                    {
+                        stringBuilder.Append(LiteNetLibManager.TAG_NULL);
+                    }
+                    stringBuilder.Append('.');
+                    if (this != null)
+                    {
+                        stringBuilder.Append(name);
+                        stringBuilder.Append('<');
+                        stringBuilder.Append('B');
+                        stringBuilder.Append('_');
+                        stringBuilder.Append(GetType().Name);
+                        stringBuilder.Append('>');
+                    }
+                    else
+                    {
+                        stringBuilder.Append(TAG_NULL);
+                    }
+                    return stringBuilder.ToString();
                 }
-                return _logTag;
             }
         }
 
