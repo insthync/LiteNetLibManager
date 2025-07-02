@@ -567,6 +567,12 @@ namespace LiteNetLibManager
             }
 
             Manager.InterestManager.NotifyNewObject(this);
+
+            // Initialized, tell behaviours
+            for (int i = 0; i < Behaviours.Length; ++i)
+            {
+                Behaviours[i].OnIdentityInitialize();
+            }
         }
 
         internal void OnSetOwnerClient(bool isOwnerClient)
@@ -928,6 +934,14 @@ namespace LiteNetLibManager
             Subscribings.Clear();
             Subscribers.Clear();
             HideExceptions.Clear();
+            if (Behaviours != null)
+            {
+                // `Behaviours` can be null because it is not setup yet.
+                for (int i = 0; i < Behaviours.Length; ++i)
+                {
+                    Behaviours[i].OnIdentityDestroy();
+                }
+            }
         }
     }
 }

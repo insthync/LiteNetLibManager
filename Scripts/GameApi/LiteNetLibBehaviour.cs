@@ -1494,6 +1494,16 @@ namespace LiteNetLibManager
         }
 
         /// <summary>
+        /// This function will be called when its identity initialized
+        /// </summary>
+        public virtual void OnIdentityInitialize() { }
+
+        /// <summary>
+        /// This function will be called when its identity destroyed
+        /// </summary>
+        public virtual void OnIdentityDestroy() { }
+
+        /// <summary>
         /// This function will be called when this behaviour spawned at server
         /// </summary>
         public virtual void OnStartServer() { }
