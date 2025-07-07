@@ -1280,7 +1280,8 @@ namespace LiteNetLibManager
                 switch (syncingStatesByObjectId.Value.StateType)
                 {
                     case GameStateSyncData.STATE_TYPE_SPAWN:
-                        if (Assets.TryGetSpawnedObject(objectId, out identity))
+                        // NOTE: Temporary avoid null ref exception, will find cause of issues later
+                        if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
                         {
                             writer.Put(GameStateSyncData.STATE_TYPE_SPAWN);
                             WriteSpawnGameState(writer, player, identity, syncingStatesByObjectId.Value);
@@ -1294,7 +1295,8 @@ namespace LiteNetLibManager
                         }
                         break;
                     case GameStateSyncData.STATE_TYPE_SYNC:
-                        if (Assets.TryGetSpawnedObject(objectId, out identity))
+                        // NOTE: Temporary avoid null ref exception, will find cause of issues later
+                        if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
                         {
                             writer.Put(GameStateSyncData.STATE_TYPE_SYNC);
                             WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value);
@@ -1308,7 +1310,8 @@ namespace LiteNetLibManager
                         if (player.ConnectionId == ClientConnectionId)
                         {
                             // Simulate object destroying if it is a host
-                            if (Assets.TryGetSpawnedObject(objectId, out identity))
+                            // NOTE: Temporary avoid null ref exception, will find cause of issues later
+                            if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
                                 identity.OnServerSubscribingRemoved();
                         }
                         ++stateCount;
