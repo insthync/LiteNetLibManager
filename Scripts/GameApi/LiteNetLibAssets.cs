@@ -184,19 +184,6 @@ namespace LiteNetLibManager
             return prefab;
         }
 
-        public LiteNetLibIdentity RegisterAddressablePrefab(AssetReferenceLiteNetLibIdentity addressablePrefab)
-        {
-            if (!addressablePrefab.IsDataValid())
-            {
-                if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - prefab is null.");
-                return null;
-            }
-            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
-            LiteNetLibIdentity prefab = addressablePrefab.GetOrLoadAsset<LiteNetLibIdentity>();
-            GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
-            return prefab;
-        }
-
         public bool UnregisterAddressablePrefab(AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
             if (!addressablePrefab.IsDataValid())
