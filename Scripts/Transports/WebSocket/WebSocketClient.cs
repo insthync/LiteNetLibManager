@@ -157,11 +157,11 @@ namespace LiteNetLibManager
 
                         if (result.MessageType == WebSocketMessageType.Text)
                         {
-                            _socket_OnMessage(ms.ToArray());
+                            _socket_OnMessage(ms.GetBuffer(), 0, (int)ms.Length);
                         }
                         else if (result.MessageType == WebSocketMessageType.Binary)
                         {
-                            _socket_OnMessage(ms.ToArray());
+                            _socket_OnMessage(ms.GetBuffer(), 0, (int)ms.Length);
                         }
                         else if (result.MessageType == WebSocketMessageType.Close)
                         {
@@ -192,6 +192,17 @@ namespace LiteNetLibManager
             {
                 type = ENetworkEvent.DataEvent,
                 reader = new NetDataReader(rawData),
+            });
+        }
+#endif
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+        private void _socket_OnMessage(byte[] source, int offset, int maxSize)
+        {
+            _clientEventQueue.Enqueue(new TransportEventData()
+            {
+                type = ENetworkEvent.DataEvent,
+                reader = new NetDataReader(source, offset, maxSize),
             });
         }
 #endif
@@ -297,13 +308,12 @@ namespace LiteNetLibManager
 
         public bool ClientSend(NetDataWriter writer)
         {
-            var buffer = writer.CopyData();
             if (!IsOpen)
                 return false;
 #if UNITY_WEBGL && !UNITY_EDITOR
-            SocketSend_LnlM(_wsNativeInstance, buffer, buffer.Length);
+            SocketSend_LnlM(_wsNativeInstance, writer, writer.Length);
 #else
-            _socket?.SendAsync(buffer, WebSocketMessageType.Binary, true, _cancellationToken);
+            _socket?.SendAsync(new ArraySegment<byte>(writer.Data, 0, writer.Length), WebSocketMessageType.Binary, true, _cancellationToken);
 #endif
             return true;
         }
