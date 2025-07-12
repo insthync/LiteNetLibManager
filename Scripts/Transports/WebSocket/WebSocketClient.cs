@@ -311,7 +311,7 @@ namespace LiteNetLibManager
             if (!IsOpen)
                 return false;
 #if UNITY_WEBGL && !UNITY_EDITOR
-            SocketSend_LnlM(_wsNativeInstance, writer, writer.Length);
+            SocketSend_LnlM(_wsNativeInstance, writer.Data, writer.Length);
 #else
             _socket?.SendAsync(new ArraySegment<byte>(writer.Data, 0, writer.Length), WebSocketMessageType.Binary, true, _cancellationToken);
 #endif
