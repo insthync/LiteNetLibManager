@@ -743,24 +743,24 @@ namespace LiteNetLibManager
         {
             AckResponseCode responseCode = AckResponseCode.Error;
             EnterGameResponseMessage response = new EnterGameResponseMessage();
-            if (request.packetVersion == PacketVersion() &&
-                await DeserializeEnterGameData(requestHandler.ConnectionId, requestHandler.Reader))
+            if (await DeserializeEnterGameData(requestHandler.RequestId, requestHandler.ConnectionId, request, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
                 response.connectionId = requestHandler.ConnectionId;
                 if (ServerSceneInfo.HasValue)
                     response.serverSceneInfo = ServerSceneInfo.Value;
             }
-            result.Invoke(responseCode, response, serializer => WriteExtraEnterGameResponse(responseCode, request, serializer));
+            result.Invoke(responseCode, response, serializer => WriteExtraEnterGameResponse(requestHandler.RequestId, requestHandler.ConnectionId, request, responseCode, serializer));
         }
-
         /// <summary>
         /// Override this to write more data when sending enter game response to client
         /// </summary>
-        /// <param name="responseCode"></param>
+        /// <param name="requestId"></param>
+        /// <param name="connectionId"></param>
         /// <param name="request"></param>
+        /// <param name="responseCode"></param>
         /// <param name="writer"></param>
-        protected virtual void WriteExtraEnterGameResponse(AckResponseCode responseCode, EnterGameRequestMessage request, NetDataWriter writer)
+        protected virtual void WriteExtraEnterGameResponse(uint requestId, long connectionId, EnterGameRequestMessage request, AckResponseCode responseCode, NetDataWriter writer)
         {
 
         }
@@ -770,12 +770,9 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EnterGameResponseMessage response)
         {
-            if (responseCode != AckResponseCode.Success)
-            {
-                if (LogError) Logging.LogError(LogTag, "Enter game request was failed or refused by server, disconnecting...");
-                OnClientConnectionRefused();
-            }
             ReadExtraEnterGameResponse(responseCode, response, responseHandler.Reader);
+            if (responseCode != AckResponseCode.Success)
+                return;
             ClientConnectionId = response.connectionId;
             if (IsClientConnected)
                 HandleServerSceneChange(response.serverSceneInfo);
@@ -789,7 +786,10 @@ namespace LiteNetLibManager
         /// <param name="reader"></param>
         protected virtual void ReadExtraEnterGameResponse(AckResponseCode responseCode, EnterGameResponseMessage response, NetDataReader reader)
         {
-
+            if (responseCode == AckResponseCode.Success)
+                return;
+            if (LogError) Logging.LogError(LogTag, "Enter game request was failed or refused by server, disconnecting...");
+            OnClientConnectionRefused();
         }
 
         protected virtual async UniTaskVoid HandleClientReadyRequest(
@@ -798,20 +798,21 @@ namespace LiteNetLibManager
             RequestProceedResultDelegate<EmptyMessage> result)
         {
             AckResponseCode responseCode = AckResponseCode.Error;
-            if (await SetPlayerReady(requestHandler.ConnectionId, requestHandler.Reader))
+            if (await SetPlayerReady(requestHandler.RequestId, requestHandler.ConnectionId, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
             }
-            result.Invoke(responseCode, EmptyMessage.Value, serializer => WriteExtraClientReadyResponse(responseCode, request, serializer));
+            result.Invoke(responseCode, EmptyMessage.Value, serializer => WriteExtraClientReadyResponse(requestHandler.RequestId, requestHandler.ConnectionId, responseCode, serializer));
         }
 
         /// <summary>
         /// Override this to write more data when sending client ready response to client
         /// </summary>
+        /// <param name="requestId"></param>
+        /// <param name="connectionId"></param>
         /// <param name="responseCode"></param>
-        /// <param name="request"></param>
         /// <param name="writer"></param>
-        protected virtual void WriteExtraClientReadyResponse(AckResponseCode responseCode, EmptyMessage request, NetDataWriter writer)
+        protected virtual void WriteExtraClientReadyResponse(uint requestId, long connectionId, AckResponseCode responseCode, NetDataWriter writer)
         {
 
         }
@@ -821,8 +822,6 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EmptyMessage response)
         {
-            if (responseCode != AckResponseCode.Success)
-                return;
             ReadExtraClientReadyResponse(responseCode, response, responseHandler.Reader);
         }
 
@@ -1053,12 +1052,14 @@ namespace LiteNetLibManager
         /// <summary>
         /// Override this function to read custom data that come with enter game message, enter game message will be sent from client to request to join a game before client's scene loading
         /// </summary>
+        /// <param name="requestId"></param>
         /// <param name="connectionId"></param>
+        /// <param name="request"></param>
         /// <param name="reader"></param>
         /// <returns>Return `true` if allow player to enter game.</returns>
-        public virtual UniTask<bool> DeserializeEnterGameData(long connectionId, NetDataReader reader)
+        public virtual UniTask<bool> DeserializeEnterGameData(uint requestId, long connectionId, EnterGameRequestMessage request, NetDataReader reader)
         {
-            return new UniTask<bool>(true);
+            return new UniTask<bool>(request.packetVersion == PacketVersion());
         }
 
         /// <summary>
@@ -1073,11 +1074,12 @@ namespace LiteNetLibManager
         /// <summary>
         /// Override this function to read custom data that come with client ready message, client ready message will be sent from client when client's scene loaded
         /// </summary>
-        /// <param name="playerIdentity"></param>
+        /// <param name="requestId"></param>
         /// <param name="connectionId"></param>
         /// <param name="reader"></param>
+        /// <param name="playerIdentity"></param>
         /// <returns>Return `true` if player is ready to play.</returns>
-        public virtual UniTask<bool> DeserializeClientReadyData(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader)
+        public virtual UniTask<bool> DeserializeClientReadyData(uint requestId, long connectionId, NetDataReader reader, LiteNetLibIdentity playerIdentity)
         {
             return new UniTask<bool>(true);
         }
@@ -1116,7 +1118,7 @@ namespace LiteNetLibManager
                 StopClient();
         }
 
-        public virtual async UniTask<bool> SetPlayerReady(long connectionId, NetDataReader reader)
+        public virtual async UniTask<bool> SetPlayerReady(uint requestId, long connectionId, NetDataReader reader)
         {
             if (!IsServer)
                 return false;
@@ -1125,7 +1127,7 @@ namespace LiteNetLibManager
             if (player.IsReady)
                 return false;
             player.IsReady = true;
-            if (!await DeserializeClientReadyData(SpawnPlayer(connectionId), connectionId, reader))
+            if (!await DeserializeClientReadyData(requestId, connectionId, reader, SpawnPlayer(connectionId)))
             {
                 player.IsReady = false;
                 return false;
