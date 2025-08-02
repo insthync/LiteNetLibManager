@@ -63,6 +63,7 @@ namespace LiteNetLibManager
                 return RttCalculator.PeerTimestamp;
             }
         }
+        public uint LocalTick => _logicUpdater.LocalTick;
         public uint Tick => _logicUpdater.Tick;
         public ServerSceneInfo? ServerSceneInfo { get; protected set; } = null;
         public LiteNetLibAssets Assets { get; protected set; }
