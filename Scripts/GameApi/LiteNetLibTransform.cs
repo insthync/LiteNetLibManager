@@ -26,7 +26,6 @@ namespace LiteNetLibManager
         [System.Serializable]
         public struct TransformData : INetSerializable
         {
-            public float StoreTime;
             public uint Tick;
             public SyncTransformState SyncData;
             public Vector3 Position;
@@ -127,10 +126,7 @@ namespace LiteNetLibManager
         [Min(2)]
         public uint interpolationTicks = 2;
 
-        private Vector3 _lastChangePosition;
-        private Vector3 _lastChangeEulerAngles;
-        private Vector3 _lastChangeScale;
-        private uint _lastChangeTick;
+        private TransformData _lastChangeData;
         private uint _prevOlderTick;
         private float _startInterpTime;
         private float _endInterpTime;
@@ -143,7 +139,9 @@ namespace LiteNetLibManager
 
         private SortedList<uint, TransformData> _buffers = new SortedList<uint, TransformData>();
 
-        public uint RenderTick => Manager.Tick - interpolationTicks;
+        private bool _hasInitialTick = false;
+        private uint _initialTick;
+        public uint RenderTick => _initialTick - interpolationTicks;
 
         private void Start()
         {
@@ -161,47 +159,42 @@ namespace LiteNetLibManager
             Manager.LogicUpdater.OnTick -= LogicUpdater_OnTick;
         }
 
+        public override void OnSetOwnerClient(bool isOwnerClient)
+        {
+            base.OnSetOwnerClient(isOwnerClient);
+            _hasInitialTick = false;
+        }
+
         private void LogicUpdater_OnTick(LogicUpdater updater)
         {
+            _initialTick++;
+
+            TransformData transformData = _lastChangeData;
             bool changed =
-                Vector3.Distance(transform.position, _lastChangePosition) > positionThreshold ||
-                Vector3.Angle(transform.eulerAngles, _lastChangeEulerAngles) > eulerAnglesThreshold ||
-                Vector3.Distance(transform.localScale, _lastChangeScale) > scaleThreshold;
-            bool keepAlive = updater.Tick - _lastChangeTick >= keepAliveTicks;
+                Vector3.Distance(transform.position, transformData.Position) > positionThreshold ||
+                Vector3.Angle(transform.eulerAngles, transformData.EulerAngles) > eulerAnglesThreshold ||
+                Vector3.Distance(transform.localScale, transformData.Scale) > scaleThreshold;
+            bool keepAlive = updater.LocalTick - transformData.Tick >= keepAliveTicks;
 
             if (!changed && !keepAlive)
                 return;
 
             if (changed)
-                _lastChangeTick = updater.Tick;
-            _lastChangePosition = transform.position;
-            _lastChangeEulerAngles = transform.eulerAngles;
-            _lastChangeScale = transform.localScale;
+            {
+                transformData.Tick = updater.LocalTick;
+                transformData.SyncData = syncData;
+                transformData.Position = transform.position;
+                transformData.EulerAngles = transform.eulerAngles;
+                transformData.Scale = transform.localScale;
+                _lastChangeData = transformData;
+            }
 
+            transformData.Tick = updater.LocalTick;
+            StoreSyncBuffer(transformData);
             if (!syncByOwnerClient && IsServer)
-            {
-                StoreSyncBuffer(new TransformData()
-                {
-                    Tick = updater.Tick,
-                    SyncData = syncData,
-                    Position = transform.position,
-                    EulerAngles = transform.eulerAngles,
-                    Scale = transform.localScale,
-                });
                 RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _buffers.Values.ToArray());
-            }
             if (syncByOwnerClient && IsOwnerClient)
-            {
-                StoreSyncBuffer(new TransformData()
-                {
-                    Tick = updater.Tick,
-                    SyncData = syncData,
-                    Position = transform.position,
-                    EulerAngles = transform.eulerAngles,
-                    Scale = transform.localScale,
-                });
                 RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _buffers.Values.ToArray());
-            }
         }
 
         private void Update()
@@ -224,6 +217,7 @@ namespace LiteNetLibManager
                 return;
             }
 
+            float currentTime = Time.time;
             uint renderTick = RenderTick;
 
             // Find two ticks around renderTick
@@ -249,15 +243,15 @@ namespace LiteNetLibManager
                     _newerScale = data2.GetScale(transform.localScale);
                     if (_prevOlderTick != olderTick)
                     {
-                        _startInterpTime = Time.time;
-                        _endInterpTime = Time.time + (Manager.LogicUpdater.DeltaTimeF * (tick2 - tick1));
+                        _startInterpTime = currentTime;
+                        _endInterpTime = currentTime + (Manager.LogicUpdater.DeltaTimeF * (tick2 - tick1));
                         _prevOlderTick = olderTick;
                     }
                     break;
                 }
             }
 
-            float t = Mathf.InverseLerp(_startInterpTime, _endInterpTime, Time.time);
+            float t = Mathf.InverseLerp(_startInterpTime, _endInterpTime, currentTime);
             transform.position = Vector3.Lerp(_olderPosition, _newerPosition, t);
             Quaternion olderRot = Quaternion.Euler(_olderEulerAngles);
             Quaternion newerRot = Quaternion.Euler(_newerEulerAngles);
@@ -296,6 +290,11 @@ namespace LiteNetLibManager
             {
                 _buffers.RemoveAt(0);
             }
+            if (!_hasInitialTick && _buffers.Count > 0)
+            {
+                _hasInitialTick = true;
+                _initialTick = _buffers.Keys[0];
+            }
         }
 
         private void StoreSyncBuffer(TransformData entry, int maxBuffers = 3)
@@ -308,6 +307,11 @@ namespace LiteNetLibManager
             while (_buffers.Count > maxBuffers)
             {
                 _buffers.RemoveAt(0);
+            }
+            if (!_hasInitialTick && _buffers.Count > 0)
+            {
+                _hasInitialTick = true;
+                _initialTick = _buffers.Keys[0];
             }
         }
     }
