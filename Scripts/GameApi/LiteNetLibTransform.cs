@@ -190,11 +190,16 @@ namespace LiteNetLibManager
             }
 
             transformData.Tick = updater.LocalTick;
-            StoreSyncBuffer(transformData);
             if (!syncByOwnerClient && IsServer)
+            {
+                StoreSyncBuffer(transformData);
                 RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _buffers.Values.ToArray());
+            }
             if (syncByOwnerClient && IsOwnerClient)
+            {
+                StoreSyncBuffer(transformData);
                 RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _buffers.Values.ToArray());
+            }
         }
 
         private void Update()
@@ -265,7 +270,7 @@ namespace LiteNetLibManager
             if (!syncByOwnerClient && IsServer)
                 return;
             StoreSyncBuffers(data, 30);
-            if (!_hasInitialTick && _buffers.Count > 0)
+            if (!IsOwnerClient && !_hasInitialTick && _buffers.Count > 0)
             {
                 _hasInitialTick = true;
                 _initialTick = _buffers.Keys[0];
@@ -280,7 +285,7 @@ namespace LiteNetLibManager
             if (syncByOwnerClient && IsOwnerClient)
                 return;
             StoreSyncBuffers(data, 30);
-            if (!_hasInitialTick && _buffers.Count > 0)
+            if (!IsServer && !_hasInitialTick && _buffers.Count > 0)
             {
                 _hasInitialTick = true;
                 _initialTick = _buffers.Keys[0];
