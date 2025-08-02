@@ -163,6 +163,13 @@ namespace LiteNetLibManager
         {
             base.OnSetOwnerClient(isOwnerClient);
             _hasInitialTick = false;
+            TransformData transformData = _lastChangeData;
+            transformData.Tick = Manager.LocalTick;
+            transformData.SyncData = syncData;
+            transformData.Position = transform.position;
+            transformData.EulerAngles = transform.eulerAngles;
+            transformData.Scale = transform.localScale;
+            _lastChangeData = transformData;
         }
 
         private void LogicUpdater_OnTick(LogicUpdater updater)
