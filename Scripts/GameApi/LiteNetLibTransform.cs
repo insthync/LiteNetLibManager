@@ -265,6 +265,11 @@ namespace LiteNetLibManager
             if (!syncByOwnerClient && IsServer)
                 return;
             StoreSyncBuffers(data, 30);
+            if (!_hasInitialTick && _buffers.Count > 0)
+            {
+                _hasInitialTick = true;
+                _initialTick = _buffers.Keys[0];
+            }
             // Sync to other clients immediately
             RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
         }
@@ -275,6 +280,11 @@ namespace LiteNetLibManager
             if (syncByOwnerClient && IsOwnerClient)
                 return;
             StoreSyncBuffers(data, 30);
+            if (!_hasInitialTick && _buffers.Count > 0)
+            {
+                _hasInitialTick = true;
+                _initialTick = _buffers.Keys[0];
+            }
         }
 
         private void StoreSyncBuffers(TransformData[] data, int maxBuffers = 3)
@@ -290,11 +300,6 @@ namespace LiteNetLibManager
             {
                 _buffers.RemoveAt(0);
             }
-            if (!_hasInitialTick && _buffers.Count > 0)
-            {
-                _hasInitialTick = true;
-                _initialTick = _buffers.Keys[0];
-            }
         }
 
         private void StoreSyncBuffer(TransformData entry, int maxBuffers = 3)
@@ -307,11 +312,6 @@ namespace LiteNetLibManager
             while (_buffers.Count > maxBuffers)
             {
                 _buffers.RemoveAt(0);
-            }
-            if (!_hasInitialTick && _buffers.Count > 0)
-            {
-                _hasInitialTick = true;
-                _initialTick = _buffers.Keys[0];
             }
         }
     }
