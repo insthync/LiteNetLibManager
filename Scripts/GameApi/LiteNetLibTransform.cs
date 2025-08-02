@@ -273,7 +273,7 @@ namespace LiteNetLibManager
             if (!IsOwnerClient && !_hasInitialTick && _buffers.Count > 0)
             {
                 _hasInitialTick = true;
-                _initialTick = _buffers.Keys[0];
+                _initialTick = _buffers.Keys[_buffers.Count - 1];
             }
             // Sync to other clients immediately
             RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
@@ -288,7 +288,7 @@ namespace LiteNetLibManager
             if (!IsServer && !_hasInitialTick && _buffers.Count > 0)
             {
                 _hasInitialTick = true;
-                _initialTick = _buffers.Keys[0];
+                _initialTick = _buffers.Keys[_buffers.Count - 1];
             }
         }
 
