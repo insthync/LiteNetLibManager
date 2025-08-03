@@ -123,7 +123,7 @@ namespace LiteNetLibManager
         [Tooltip("Keep alive ticks before it is stop syncing (after has no changes)")]
         public int keepAliveTicks = 10;
         [Tooltip("Ticks for interpolation")]
-        [Min(2)]
+        [Min(1)]
         public uint interpolationTicks = 2;
 
         private TransformData _prevSyncData;
