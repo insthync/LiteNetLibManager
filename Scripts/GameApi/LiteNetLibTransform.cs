@@ -126,16 +126,12 @@ namespace LiteNetLibManager
         [Min(2)]
         public uint interpolationTicks = 2;
 
-        private TransformData _lastChangeData;
-        private uint _prevOlderTick;
+        private TransformData _prevSyncData;
+        private TransformData _interpFromData;
+        private TransformData _interpToData;
+        private uint _prevInterpFromTick;
         private float _startInterpTime;
         private float _endInterpTime;
-        private Vector3 _olderPosition;
-        private Vector3 _newerPosition;
-        private Vector3 _olderEulerAngles;
-        private Vector3 _newerEulerAngles;
-        private Vector3 _olderScale;
-        private Vector3 _newerScale;
 
         private SortedList<uint, TransformData> _buffers = new SortedList<uint, TransformData>();
 
@@ -146,12 +142,12 @@ namespace LiteNetLibManager
         private void Start()
         {
             Manager.LogicUpdater.OnTick += LogicUpdater_OnTick;
-            _olderPosition = transform.position;
-            _newerPosition = transform.position;
-            _olderEulerAngles = transform.eulerAngles;
-            _newerEulerAngles = transform.eulerAngles;
-            _olderScale = transform.localScale;
-            _newerScale = transform.localScale;
+            _interpFromData = _interpToData = new TransformData()
+            {
+                Position = transform.position,
+                EulerAngles = transform.eulerAngles,
+                Scale = transform.localScale,
+            };
         }
 
         private void OnDestroy()
@@ -163,20 +159,20 @@ namespace LiteNetLibManager
         {
             base.OnSetOwnerClient(isOwnerClient);
             _hasInitialTick = false;
-            TransformData transformData = _lastChangeData;
+            TransformData transformData = _prevSyncData;
             transformData.Tick = Manager.LocalTick;
             transformData.SyncData = syncData;
             transformData.Position = transform.position;
             transformData.EulerAngles = transform.eulerAngles;
             transformData.Scale = transform.localScale;
-            _lastChangeData = transformData;
+            _prevSyncData = transformData;
         }
 
         private void LogicUpdater_OnTick(LogicUpdater updater)
         {
             _initialTick++;
 
-            TransformData transformData = _lastChangeData;
+            TransformData transformData = _prevSyncData;
             bool changed =
                 Vector3.Distance(transform.position, transformData.Position) > positionThreshold ||
                 Vector3.Angle(transform.eulerAngles, transformData.EulerAngles) > eulerAnglesThreshold ||
@@ -193,7 +189,7 @@ namespace LiteNetLibManager
                 transformData.Position = transform.position;
                 transformData.EulerAngles = transform.eulerAngles;
                 transformData.Scale = transform.localScale;
-                _lastChangeData = transformData;
+                _prevSyncData = transformData;
             }
 
             transformData.Tick = updater.LocalTick;
@@ -225,7 +221,7 @@ namespace LiteNetLibManager
         {
             if (_buffers.Count < 2)
             {
-                _prevOlderTick = 0;
+                _prevInterpFromTick = 0;
                 return;
             }
 
@@ -233,8 +229,8 @@ namespace LiteNetLibManager
             uint renderTick = RenderTick;
 
             // Find two ticks around renderTick
-            uint olderTick = 0;
-            uint newerTick = 0;
+            uint interpFromTick = 0;
+            uint interpToTick = 0;
 
             for (int i = 0; i < _buffers.Count - 1; i++)
             {
@@ -245,30 +241,26 @@ namespace LiteNetLibManager
 
                 if (tick1 <= renderTick && renderTick <= tick2)
                 {
-                    olderTick = tick1;
-                    newerTick = tick2;
-                    _olderPosition = data1.GetPosition(transform.position);
-                    _newerPosition = data2.GetPosition(transform.position);
-                    _olderEulerAngles = data1.GetEulerAngles(transform.eulerAngles);
-                    _newerEulerAngles = data2.GetEulerAngles(transform.eulerAngles);
-                    _olderScale = data1.GetScale(transform.localScale);
-                    _newerScale = data2.GetScale(transform.localScale);
-                    if (_prevOlderTick != olderTick)
+                    interpFromTick = tick1;
+                    interpToTick = tick2;
+                    _interpFromData = data1;
+                    _interpToData = data2;
+                    if (_prevInterpFromTick != interpFromTick)
                     {
                         _startInterpTime = currentTime;
                         _endInterpTime = currentTime + (Manager.LogicUpdater.DeltaTimeF * (tick2 - tick1));
-                        _prevOlderTick = olderTick;
+                        _prevInterpFromTick = interpFromTick;
                     }
                     break;
                 }
             }
 
             float t = Mathf.InverseLerp(_startInterpTime, _endInterpTime, currentTime);
-            transform.position = Vector3.Lerp(_olderPosition, _newerPosition, t);
-            Quaternion olderRot = Quaternion.Euler(_olderEulerAngles);
-            Quaternion newerRot = Quaternion.Euler(_newerEulerAngles);
+            transform.position = Vector3.Lerp(_interpFromData.Position, _interpToData.Position, t);
+            Quaternion olderRot = Quaternion.Euler(_interpFromData.EulerAngles);
+            Quaternion newerRot = Quaternion.Euler(_interpToData.EulerAngles);
             transform.rotation = Quaternion.Slerp(olderRot, newerRot, t);
-            transform.localScale = Vector3.Lerp(_olderScale, _newerScale, t);
+            transform.localScale = Vector3.Lerp(_interpFromData.Scale, _interpToData.Scale, t);
         }
 
         [ServerRpc]
