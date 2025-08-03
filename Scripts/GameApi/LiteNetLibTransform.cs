@@ -238,8 +238,20 @@ namespace LiteNetLibManager
                 {
                     interpFromTick = tick1;
                     interpToTick = tick2;
-                    _interpFromData = data1;
-                    _interpToData = data2;
+                    _interpFromData = new TransformData()
+                    {
+                        Tick = data1.Tick,
+                        Position = data1.GetPosition(transform.position),
+                        EulerAngles = data1.GetEulerAngles(transform.eulerAngles),
+                        Scale = data1.GetScale(transform.localScale),
+                    };
+                    _interpToData = new TransformData()
+                    {
+                        Tick = data2.Tick,
+                        Position = data2.GetPosition(transform.position),
+                        EulerAngles = data2.GetEulerAngles(transform.eulerAngles),
+                        Scale = data2.GetScale(transform.localScale),
+                    };
                     if (_prevInterpFromTick != interpFromTick)
                     {
                         _startInterpTime = currentTime;
