@@ -157,7 +157,7 @@ namespace LiteNetLibManager
         {
             base.OnSetOwnerClient(isOwnerClient);
             TransformData transformData = _prevSyncData;
-            transformData.Tick = Manager.LocalTick;
+            transformData.Tick = Manager.Tick;
             transformData.SyncData = syncData;
             transformData.Position = transform.position;
             transformData.EulerAngles = transform.eulerAngles;
