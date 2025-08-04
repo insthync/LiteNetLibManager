@@ -70,6 +70,7 @@ namespace LiteNetLibManager
 
         public void Reset()
         {
+            LocalTick = 0;
             _accumulator = 0;
             _lastTime = 0;
             _stopwatch.Restart();
