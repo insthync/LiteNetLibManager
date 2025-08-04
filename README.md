@@ -9,3 +9,4 @@ LiteNetLib Network Manager for Unity, this is required LiteNetLib (https://githu
 - [ZLogger](https://github.com/Cysharp/ZLogger)
 - [ZString](https://github.com/Cysharp/ZString)
 - [Fleck](https://github.com/Facepunch/Fleck) / ([base](https://github.com/statianzo/Fleck))
+- [Unity Addressable Asset Tools](https://github.com/insthync/unity-addressable-asset-tools)
