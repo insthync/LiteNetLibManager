@@ -140,7 +140,7 @@ namespace LiteNetLibManager
         public uint InitialInterpTick { get; private set; }
         public uint RenderTick => _interpTick - interpolationTicks;
 
-        private void Start()
+        public override void OnIdentityInitialize()
         {
             Manager.LogicUpdater.OnTick += LogicUpdater_OnTick;
             _interpFromData = _interpToData = new TransformData()
@@ -151,7 +151,7 @@ namespace LiteNetLibManager
             };
         }
 
-        private void OnDestroy()
+        public override void OnIdentityDestroy()
         {
             Manager.LogicUpdater.OnTick -= LogicUpdater_OnTick;
         }
