@@ -135,6 +135,7 @@ namespace LiteNetLibManager
 
         private SortedList<uint, TransformData> _buffers = new SortedList<uint, TransformData>();
 
+        private LogicUpdater _logicUpdater = null;
         private bool _hasInterpTick = false;
         private uint _interpTick;
         public uint InitialInterpTick { get; private set; }
@@ -142,8 +143,11 @@ namespace LiteNetLibManager
 
         public override void OnIdentityInitialize()
         {
-            Manager.LogicUpdater.OnTick -= LogicUpdater_OnTick;
-            Manager.LogicUpdater.OnTick += LogicUpdater_OnTick;
+            if (_logicUpdater == null)
+            {
+                _logicUpdater = Manager.LogicUpdater;
+                _logicUpdater.OnTick += LogicUpdater_OnTick;
+            }
             _hasInterpTick = false;
             _interpTick = InitialInterpTick = 0;
             _prevSyncData = new TransformData()
@@ -164,7 +168,8 @@ namespace LiteNetLibManager
 
         public override void OnIdentityDestroy()
         {
-            Manager.LogicUpdater.OnTick -= LogicUpdater_OnTick;
+            if (_logicUpdater != null)
+                _logicUpdater.OnTick -= LogicUpdater_OnTick;
         }
 
         public override void OnSetOwnerClient(bool isOwnerClient)
@@ -278,7 +283,7 @@ namespace LiteNetLibManager
                     if (_prevInterpFromTick != interpFromTick)
                     {
                         _startInterpTime = currentTime;
-                        _endInterpTime = currentTime + (Manager.LogicUpdater.DeltaTimeF * (tick2 - tick1));
+                        _endInterpTime = currentTime + (_logicUpdater.DeltaTimeF * (tick2 - tick1));
                         _prevInterpFromTick = interpFromTick;
                     }
                     break;
@@ -304,7 +309,7 @@ namespace LiteNetLibManager
                 _hasInterpTick = true;
                 uint interpTick = _buffers.Keys[_buffers.Count - 1];
                 if (Player != null)
-                    interpTick += LogicUpdater.TimeToTick(Player.Rtt / 2, Manager.LogicUpdater.DeltaTime);
+                    interpTick += LogicUpdater.TimeToTick(Player.Rtt / 2, _logicUpdater.DeltaTime);
                 _interpTick = InitialInterpTick = interpTick;
             }
             // Sync to other clients immediately
@@ -323,7 +328,7 @@ namespace LiteNetLibManager
             {
                 _hasInterpTick = true;
                 uint interpTick = _buffers.Keys[_buffers.Count - 1];
-                interpTick += LogicUpdater.TimeToTick(Manager.Rtt / 2, Manager.LogicUpdater.DeltaTime);
+                interpTick += LogicUpdater.TimeToTick(Manager.Rtt / 2, _logicUpdater.DeltaTime);
                 _interpTick = InitialInterpTick = interpTick;
             }
         }
