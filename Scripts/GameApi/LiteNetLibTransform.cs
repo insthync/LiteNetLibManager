@@ -284,7 +284,10 @@ namespace LiteNetLibManager
             if (!IsOwnerClient && !_hasInterpTick && _buffers.Count > 0)
             {
                 _hasInterpTick = true;
-                _interpTick = _buffers.Keys[_buffers.Count - 1];
+                uint interpTick = _buffers.Keys[_buffers.Count - 1];
+                if (Manager.TryGetPlayer(ConnectionId, out LiteNetLibPlayer player))
+                    interpTick += LogicUpdater.TimeToTick(player.Rtt / 2, Manager.LogicUpdater.DeltaTime);
+                _interpTick = interpTick;
             }
             // Sync to other clients immediately
             RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
@@ -299,7 +302,9 @@ namespace LiteNetLibManager
             if (!IsServer && !_hasInterpTick && _buffers.Count > 0)
             {
                 _hasInterpTick = true;
-                _interpTick = _buffers.Keys[_buffers.Count - 1];
+                uint interpTick = _buffers.Keys[_buffers.Count - 1];
+                interpTick += LogicUpdater.TimeToTick(Manager.Rtt / 2, Manager.LogicUpdater.DeltaTime);
+                _interpTick = interpTick;
             }
         }
 
