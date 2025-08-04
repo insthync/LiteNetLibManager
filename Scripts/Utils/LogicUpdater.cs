@@ -108,24 +108,24 @@ namespace LiteNetLibManager
             }
         }
 
-        public uint TimeToTick(long milliseconds)
+        public static uint TimeToTick(long milliseconds, double deltaTime)
         {
-            return (uint)(milliseconds / 1000 / DeltaTime);
+            return (uint)(milliseconds / 1000 / deltaTime);
         }
 
-        public uint TimeToTick(float milliseconds)
+        public static uint TimeToTickF(float milliseconds, float deltaTime)
         {
-            return (uint)(milliseconds / 1000f / DeltaTimeF);
+            return (uint)(milliseconds / 1000f / deltaTime);
         }
 
-        public uint TimeInSecondsToTick(long seconds)
+        public static uint TimeInSecondsToTick(long seconds, double deltaTime)
         {
-            return (uint)(seconds / DeltaTime);
+            return (uint)(seconds / deltaTime);
         }
 
-        public uint TimeInSecondsToTick(float seconds)
+        public static uint TimeInSecondsToTickF(float seconds, float deltaTime)
         {
-            return (uint)(seconds / DeltaTimeF);
+            return (uint)(seconds / deltaTime);
         }
 
         public void OnSyncTick(uint tick, long rtt)
@@ -133,7 +133,7 @@ namespace LiteNetLibManager
             if (_latestSyncedTick > tick)
                 return;
             _latestSyncedTick = tick;
-            uint newTick = tick + TimeToTick(rtt / 2);
+            uint newTick = tick + TimeToTick(rtt / 2, DeltaTime);
             _tickOffsets = (int)newTick - (int)LocalTick;
         }
     }
