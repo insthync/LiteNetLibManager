@@ -137,6 +137,7 @@ namespace LiteNetLibManager
 
         private bool _hasInterpTick = false;
         private uint _interpTick;
+        public uint InitialInterpTick { get; private set; }
         public uint RenderTick => _interpTick - interpolationTicks;
 
         private void Start()
@@ -285,9 +286,9 @@ namespace LiteNetLibManager
             {
                 _hasInterpTick = true;
                 uint interpTick = _buffers.Keys[_buffers.Count - 1];
-                if (Manager.TryGetPlayer(ConnectionId, out LiteNetLibPlayer player))
-                    interpTick += LogicUpdater.TimeToTick(player.Rtt / 2, Manager.LogicUpdater.DeltaTime);
-                _interpTick = interpTick;
+                if (Player != null)
+                    interpTick += LogicUpdater.TimeToTick(Player.Rtt / 2, Manager.LogicUpdater.DeltaTime);
+                _interpTick = InitialInterpTick = interpTick;
             }
             // Sync to other clients immediately
             RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
@@ -304,7 +305,7 @@ namespace LiteNetLibManager
                 _hasInterpTick = true;
                 uint interpTick = _buffers.Keys[_buffers.Count - 1];
                 interpTick += LogicUpdater.TimeToTick(Manager.Rtt / 2, Manager.LogicUpdater.DeltaTime);
-                _interpTick = interpTick;
+                _interpTick = InitialInterpTick = interpTick;
             }
         }
 
