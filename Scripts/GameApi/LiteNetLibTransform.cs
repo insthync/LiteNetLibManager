@@ -135,7 +135,9 @@ namespace LiteNetLibManager
 
         private SortedList<uint, TransformData> _buffers = new SortedList<uint, TransformData>();
 
-        public uint RenderTick => Manager.Tick - interpolationTicks;
+        private bool _hasInterpTick = false;
+        private uint _interpTick;
+        public uint RenderTick => _interpTick - interpolationTicks;
 
         private void Start()
         {
@@ -156,6 +158,7 @@ namespace LiteNetLibManager
         public override void OnSetOwnerClient(bool isOwnerClient)
         {
             base.OnSetOwnerClient(isOwnerClient);
+            _hasInterpTick = false;
             TransformData transformData = _prevSyncData;
             transformData.Tick = Manager.Tick;
             transformData.SyncData = syncData;
@@ -167,19 +170,21 @@ namespace LiteNetLibManager
 
         private void LogicUpdater_OnTick(LogicUpdater updater)
         {
+            _interpTick++;
+
             TransformData transformData = _prevSyncData;
             bool changed =
                 Vector3.Distance(transform.position, transformData.Position) > positionThreshold ||
                 Vector3.Angle(transform.eulerAngles, transformData.EulerAngles) > eulerAnglesThreshold ||
                 Vector3.Distance(transform.localScale, transformData.Scale) > scaleThreshold;
-            bool keepAlive = updater.Tick - transformData.Tick >= keepAliveTicks;
+            bool keepAlive = updater.LocalTick - transformData.Tick >= keepAliveTicks;
 
             if (!changed && !keepAlive)
                 return;
 
             if (changed)
             {
-                transformData.Tick = updater.Tick;
+                transformData.Tick = updater.LocalTick;
                 transformData.SyncData = syncData;
                 transformData.Position = transform.position;
                 transformData.EulerAngles = transform.eulerAngles;
@@ -187,7 +192,7 @@ namespace LiteNetLibManager
                 _prevSyncData = transformData;
             }
 
-            transformData.Tick = updater.Tick;
+            transformData.Tick = updater.LocalTick;
             if (!syncByOwnerClient && IsServer)
             {
                 StoreSyncBuffer(transformData);
@@ -276,6 +281,11 @@ namespace LiteNetLibManager
             if (!syncByOwnerClient && IsServer)
                 return;
             StoreSyncBuffers(data, 30);
+            if (!IsOwnerClient && !_hasInterpTick && _buffers.Count > 0)
+            {
+                _hasInterpTick = true;
+                _interpTick = _buffers.Keys[_buffers.Count - 1];
+            }
             // Sync to other clients immediately
             RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
         }
@@ -286,6 +296,11 @@ namespace LiteNetLibManager
             if (syncByOwnerClient && IsOwnerClient)
                 return;
             StoreSyncBuffers(data, 30);
+            if (!IsServer && !_hasInterpTick && _buffers.Count > 0)
+            {
+                _hasInterpTick = true;
+                _interpTick = _buffers.Keys[_buffers.Count - 1];
+            }
         }
 
         private void StoreSyncBuffers(TransformData[] data, int maxBuffers = 3)
