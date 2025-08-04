@@ -199,7 +199,12 @@ namespace LiteNetLibManager
                 StoreSyncBuffer(transformData);
                 RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _buffers.Values.ToArray());
             }
-            if (syncByOwnerClient && IsOwnerClient)
+            else if (syncByOwnerClient && IsOwnedByServer)
+            {
+                StoreSyncBuffer(transformData);
+                RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _buffers.Values.ToArray());
+            }
+            else if (syncByOwnerClient && IsOwnerClient)
             {
                 StoreSyncBuffer(transformData);
                 RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _buffers.Values.ToArray());
@@ -212,7 +217,7 @@ namespace LiteNetLibManager
             {
                 InterpolateTransform();
             }
-            if (syncByOwnerClient && !IsOwnerClient)
+            if (syncByOwnerClient && !IsOwnedByServer && !IsOwnerClient)
             {
                 InterpolateTransform();
             }
