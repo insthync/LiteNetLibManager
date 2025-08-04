@@ -148,22 +148,13 @@ namespace LiteNetLibManager
                 _logicUpdater = Manager.LogicUpdater;
                 _logicUpdater.OnTick += LogicUpdater_OnTick;
             }
-            _hasInterpTick = false;
-            _interpTick = InitialInterpTick = 0;
-            _prevSyncData = new TransformData()
-            {
-                Tick = Manager.LocalTick,
-                SyncData = syncData,
-                Position = transform.position,
-                EulerAngles = transform.eulerAngles,
-                Scale = transform.localScale,
-            };
             _interpFromData = _interpToData = new TransformData()
             {
                 Position = transform.position,
                 EulerAngles = transform.eulerAngles,
                 Scale = transform.localScale,
             };
+            ResetBuffersAndStates();
         }
 
         public override void OnIdentityDestroy()
@@ -174,8 +165,14 @@ namespace LiteNetLibManager
 
         public override void OnSetOwnerClient(bool isOwnerClient)
         {
-            base.OnSetOwnerClient(isOwnerClient);
+            ResetBuffersAndStates();
+        }
+
+        private void ResetBuffersAndStates()
+        {
+            _buffers.Clear();
             _hasInterpTick = false;
+            _interpTick = InitialInterpTick = 0;
             _prevSyncData = new TransformData()
             {
                 Tick = Manager.LocalTick,
