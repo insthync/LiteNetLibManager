@@ -5,11 +5,11 @@ namespace LiteNetLibManager
 {
     public struct DirectionVector2 : INetSerializable
     {
-        public static implicit operator DirectionVector2(Vector2 value) { return new DirectionVector2(value); }
-        public static implicit operator DirectionVector2(Vector3 value) { return new DirectionVector2(value); }
-        public static implicit operator Vector2(DirectionVector2 value) { return new Vector2((float)value.x / 100f, (float)value.y / 100f); }
-        public static implicit operator Vector3(DirectionVector2 value) { return new Vector2((float)value.x / 100f, (float)value.y / 100f); }
-
+        public static implicit operator DirectionVector2(Vector2 value) => new DirectionVector2(value);
+        public static implicit operator DirectionVector2(Vector3 value) => new DirectionVector2(value);
+        public static implicit operator Vector2(DirectionVector2 value) => value.ToVector2();
+        public static implicit operator Vector3(DirectionVector2 value) => value.ToVector2();
+        public Vector2 ToVector2() => new Vector2((float)x / 100f, (float)y / 100f);
         public sbyte x;
         public sbyte y;
 

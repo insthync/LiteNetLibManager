@@ -5,9 +5,9 @@ namespace LiteNetLibManager
 {
     public struct HalfPrecision : INetSerializable
     {
-        public static implicit operator HalfPrecision(float value) { return new HalfPrecision(value); }
-        public static implicit operator float(HalfPrecision value) { return Mathf.HalfToFloat(value.halfValue); }
-
+        public static implicit operator HalfPrecision(float value) => new HalfPrecision(value);
+        public static implicit operator float(HalfPrecision value) => value.ToFloat();
+        public float ToFloat() => Mathf.HalfToFloat(halfValue);
         public ushort halfValue;
 
         public HalfPrecision(float value)

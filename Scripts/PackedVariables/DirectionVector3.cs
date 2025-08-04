@@ -5,9 +5,9 @@ namespace LiteNetLibManager
 {
     public struct DirectionVector3 : INetSerializable
     {
-        public static implicit operator DirectionVector3(Vector3 value) { return new DirectionVector3(value); }
-        public static implicit operator Vector3(DirectionVector3 value) { return new Vector3((float)value.x / 100f, (float)value.y / 100f, (float)value.z / 100f); }
-
+        public static implicit operator DirectionVector3(Vector3 value) => new DirectionVector3(value);
+        public static implicit operator Vector3(DirectionVector3 value) => value.ToVector3();
+        public Vector3 ToVector3() => new Vector3((float)x / 100f, (float)y / 100f, (float)z / 100f);
         public sbyte x;
         public sbyte y;
         public sbyte z;

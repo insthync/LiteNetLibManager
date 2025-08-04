@@ -5,9 +5,9 @@ namespace LiteNetLibManager
 {
     public struct HalfVector3 : INetSerializable
     {
-        public static implicit operator HalfVector3(Vector3 value) { return new HalfVector3(value); }
-        public static implicit operator Vector3(HalfVector3 value) { return new Vector3(Mathf.HalfToFloat(value.x), Mathf.HalfToFloat(value.y), Mathf.HalfToFloat(value.z)); }
-
+        public static implicit operator HalfVector3(Vector3 value) => new HalfVector3(value);
+        public static implicit operator Vector3(HalfVector3 value) => value.ToVector3();
+        public Vector3 ToVector3() => new Vector3(Mathf.HalfToFloat(x), Mathf.HalfToFloat(y), Mathf.HalfToFloat(z));
         public ushort x;
         public ushort y;
         public ushort z;
