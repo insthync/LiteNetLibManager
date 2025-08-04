@@ -142,7 +142,18 @@ namespace LiteNetLibManager
 
         public override void OnIdentityInitialize()
         {
+            Manager.LogicUpdater.OnTick -= LogicUpdater_OnTick;
             Manager.LogicUpdater.OnTick += LogicUpdater_OnTick;
+            _hasInterpTick = false;
+            _interpTick = InitialInterpTick = 0;
+            _prevSyncData = new TransformData()
+            {
+                Tick = Manager.LocalTick,
+                SyncData = syncData,
+                Position = transform.position,
+                EulerAngles = transform.eulerAngles,
+                Scale = transform.localScale,
+            };
             _interpFromData = _interpToData = new TransformData()
             {
                 Position = transform.position,
@@ -160,13 +171,14 @@ namespace LiteNetLibManager
         {
             base.OnSetOwnerClient(isOwnerClient);
             _hasInterpTick = false;
-            TransformData transformData = _prevSyncData;
-            transformData.Tick = Manager.Tick;
-            transformData.SyncData = syncData;
-            transformData.Position = transform.position;
-            transformData.EulerAngles = transform.eulerAngles;
-            transformData.Scale = transform.localScale;
-            _prevSyncData = transformData;
+            _prevSyncData = new TransformData()
+            {
+                Tick = Manager.LocalTick,
+                SyncData = syncData,
+                Position = transform.position,
+                EulerAngles = transform.eulerAngles,
+                Scale = transform.localScale,
+            };
         }
 
         private void LogicUpdater_OnTick(LogicUpdater updater)
@@ -302,10 +314,12 @@ namespace LiteNetLibManager
         [AllRpc]
         private void ServerSyncTransform(TransformData[] data)
         {
+            if (IsServer)
+                return;
             if (syncByOwnerClient && IsOwnerClient)
                 return;
             StoreSyncBuffers(data, 30);
-            if (!IsServer && !_hasInterpTick && _buffers.Count > 0)
+            if (!_hasInterpTick && _buffers.Count > 0)
             {
                 _hasInterpTick = true;
                 uint interpTick = _buffers.Keys[_buffers.Count - 1];
