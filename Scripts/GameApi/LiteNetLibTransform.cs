@@ -174,7 +174,6 @@ namespace LiteNetLibManager
         private SortedList<uint, TransformData> _interpBuffers = new SortedList<uint, TransformData>();
 
         private LogicUpdater _logicUpdater = null;
-        private bool _hasInterpTick = false;
         private uint _interpTick;
         public uint InitialInterpTick { get; private set; }
         public uint RenderTick => _interpTick - interpolationTicks;
@@ -210,7 +209,6 @@ namespace LiteNetLibManager
         {
             _syncBuffers.Clear();
             _interpBuffers.Clear();
-            _hasInterpTick = false;
             _interpTick = InitialInterpTick = 0;
             _prevSyncData = new TransformData()
             {
@@ -220,6 +218,13 @@ namespace LiteNetLibManager
                 EulerAngles = transform.eulerAngles,
                 Scale = transform.localScale,
             };
+        }
+
+        private void OnApplicationPause(bool pause)
+        {
+            if (pause)
+                return;
+            ResetBuffersAndStates();
         }
 
         private void LogicUpdater_OnTick(LogicUpdater updater)
@@ -291,10 +296,10 @@ namespace LiteNetLibManager
             uint interpFromTick = 0;
             uint interpToTick = 0;
 
-            for (int i = 0; i < _interpBuffers.Count - 1; i++)
+            for (int i = _interpBuffers.Count - 1; i >= 1; --i)
             {
-                uint tick1 = _interpBuffers.Keys[i];
-                uint tick2 = _interpBuffers.Keys[i + 1];
+                uint tick1 = _interpBuffers.Keys[i - 1];
+                uint tick2 = _interpBuffers.Keys[i];
                 TransformData data1 = _interpBuffers[tick1];
                 TransformData data2 = _interpBuffers[tick2];
 
@@ -340,14 +345,16 @@ namespace LiteNetLibManager
         {
             if (!syncByOwnerClient && IsServer)
                 return;
-            StoreInterpBuffers(data, 30);
-            if (!IsOwnerClient && !_hasInterpTick && _interpBuffers.Count > 0)
+            StoreInterpolateBuffers(data, 30);
+            if (!IsOwnerClient && _interpBuffers.Count > 0)
             {
-                _hasInterpTick = true;
                 uint interpTick = _interpBuffers.Keys[_interpBuffers.Count - 1];
                 if (Player != null)
                     interpTick += LogicUpdater.TimeToTick(Player.Rtt / 2, _logicUpdater.DeltaTime);
-                _interpTick = InitialInterpTick = interpTick;
+                if (_interpTick > interpTick && _interpTick - interpTick > 1)
+                    _interpTick = InitialInterpTick = interpTick;
+                if (interpTick > _interpTick && interpTick - _interpTick > 1)
+                    _interpTick = InitialInterpTick = interpTick;
             }
             // Sync to other clients immediately
             RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
@@ -360,17 +367,19 @@ namespace LiteNetLibManager
                 return;
             if (syncByOwnerClient && IsOwnerClient)
                 return;
-            StoreInterpBuffers(data, 30);
-            if (!_hasInterpTick && _interpBuffers.Count > 0)
+            StoreInterpolateBuffers(data, 30);
+            if (_interpBuffers.Count > 0)
             {
-                _hasInterpTick = true;
                 uint interpTick = _interpBuffers.Keys[_interpBuffers.Count - 1];
                 interpTick += LogicUpdater.TimeToTick(Manager.Rtt / 2, _logicUpdater.DeltaTime);
-                _interpTick = InitialInterpTick = interpTick;
+                if (_interpTick > interpTick && _interpTick - interpTick > 1)
+                    _interpTick = InitialInterpTick = interpTick;
+                if (interpTick > _interpTick && interpTick - _interpTick > 1)
+                    _interpTick = InitialInterpTick = interpTick;
             }
         }
 
-        private void StoreInterpBuffers(TransformData[] data, int maxBuffers = 3)
+        private void StoreInterpolateBuffers(TransformData[] data, int maxBuffers = 3)
         {
             foreach (var entry in data)
             {
