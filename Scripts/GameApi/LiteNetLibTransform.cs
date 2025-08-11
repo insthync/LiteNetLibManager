@@ -351,9 +351,9 @@ namespace LiteNetLibManager
                 uint interpTick = _interpBuffers.Keys[_interpBuffers.Count - 1];
                 if (Player != null)
                     interpTick += LogicUpdater.TimeToTick(Player.Rtt / 2, _logicUpdater.DeltaTime);
-                if (_interpTick > interpTick && _interpTick - interpTick > 1)
+                if (_interpTick > interpTick && _interpTick - interpTick > 2)
                     _interpTick = InitialInterpTick = interpTick;
-                if (interpTick > _interpTick && interpTick - _interpTick > 1)
+                if (interpTick > _interpTick && interpTick - _interpTick > 2)
                     _interpTick = InitialInterpTick = interpTick;
             }
             // Sync to other clients immediately
@@ -372,9 +372,9 @@ namespace LiteNetLibManager
             {
                 uint interpTick = _interpBuffers.Keys[_interpBuffers.Count - 1];
                 interpTick += LogicUpdater.TimeToTick(Manager.Rtt / 2, _logicUpdater.DeltaTime);
-                if (_interpTick > interpTick && _interpTick - interpTick > 1)
+                if (_interpTick > interpTick && _interpTick - interpTick > 2)
                     _interpTick = InitialInterpTick = interpTick;
-                if (interpTick > _interpTick && interpTick - _interpTick > 1)
+                if (interpTick > _interpTick && interpTick - _interpTick > 2)
                     _interpTick = InitialInterpTick = interpTick;
             }
         }
