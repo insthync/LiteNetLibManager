@@ -21,6 +21,12 @@ namespace LiteNetLibManager
             public bool isOnline;
         }
 
+        public class PendingRpcData
+        {
+            public LiteNetLibElementInfo info;
+            public NetDataReader reader;
+        }
+
         [Header("Game manager configs")]
         public uint packetVersion = 1;
         public float pingDuration = 1f;
@@ -88,6 +94,7 @@ namespace LiteNetLibManager
         protected readonly List<LiteNetLibSyncElement> _updatingServerSyncElements = new List<LiteNetLibSyncElement>();
         protected NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
         protected NetDataWriter _syncElementWriter = new NetDataWriter(true, 1024);
+        protected readonly List<PendingRpcData> _pendingRpcs = new List<PendingRpcData>();
 
         protected virtual void Awake()
         {
@@ -559,6 +566,7 @@ namespace LiteNetLibManager
             RttCalculator.Reset();
             _updatingClientSyncElements.Clear();
             _updatingServerSyncElements.Clear();
+            _pendingRpcs.Clear();
 
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
@@ -574,6 +582,7 @@ namespace LiteNetLibManager
             RttCalculator.Reset();
             _updatingClientSyncElements.Clear();
             _updatingServerSyncElements.Clear();
+            _pendingRpcs.Clear();
 
             string activeSceneName = SceneManager.GetActiveScene().name;
             if (Assets.addressableOnlineScene.IsDataValid() && !Assets.addressableOnlineScene.IsSameSceneName(activeSceneName))
@@ -956,6 +965,15 @@ namespace LiteNetLibManager
             {
                 // All function from server will be processed (because it's always trust server)
                 identity.ProcessNetFunction(info, messageHandler.Reader, true);
+            }
+            else
+            {
+                // No spawned entity yet, store to pending collection, then processs later when it was spawned
+                _pendingRpcs.Add(new PendingRpcData()
+                {
+                    info = info,
+                    reader = new NetDataReader(messageHandler.Reader.RawData, messageHandler.Reader.Position, messageHandler.Reader.RawDataSize),
+                });
             }
         }
 
@@ -1454,7 +1472,23 @@ namespace LiteNetLibManager
                     Quaternion.Euler(angleX, angleY, angleZ),
                     objectId, connectionId);
             }
-            return ReadSyncElements(reader, identity, tick, true);
+            if (ReadSyncElements(reader, identity, tick, true))
+            {
+                // Proceed pending RPCs
+                PendingRpcData pendingRpc;
+                for (int i = 0; i < _pendingRpcs.Count; ++i)
+                {
+                    pendingRpc = _pendingRpcs[i];
+                    if (pendingRpc.info.objectId == objectId)
+                    {
+                        identity.ProcessNetFunction(pendingRpc.info, pendingRpc.reader, true);
+                        _pendingRpcs.RemoveAt(i);
+                        i--;
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
