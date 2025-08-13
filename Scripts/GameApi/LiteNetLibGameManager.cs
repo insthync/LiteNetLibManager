@@ -2,6 +2,7 @@
 using Insthync.AddressableAssetTools;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using UnityEngine;
@@ -969,10 +970,12 @@ namespace LiteNetLibManager
             else
             {
                 // No spawned entity yet, store to pending collection, then processs later when it was spawned
+                byte[] pendingRpcData = new byte[messageHandler.Reader.AvailableBytes];
+                Buffer.BlockCopy(messageHandler.Reader.RawData, messageHandler.Reader.Position, pendingRpcData, 0, messageHandler.Reader.AvailableBytes);
                 _pendingRpcs.Add(new PendingRpcData()
                 {
                     info = info,
-                    reader = new NetDataReader(messageHandler.Reader.RawData, messageHandler.Reader.Position, messageHandler.Reader.RawDataSize),
+                    reader = new NetDataReader(pendingRpcData),
                 });
             }
         }
