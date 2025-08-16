@@ -24,5 +24,10 @@ namespace LiteNetLibManager
         {
             halfValue = reader.GetPackedUShort();
         }
+
+        public override string ToString()
+        {
+            return ToFloat().ToString();
+        }
     }
 }

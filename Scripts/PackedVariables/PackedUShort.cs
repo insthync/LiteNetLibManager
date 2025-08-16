@@ -21,5 +21,10 @@ namespace LiteNetLibManager
         {
             value = reader.GetPackedUShort();
         }
+
+        public override string ToString()
+        {
+            return value.ToString();
+        }
     }
 }

@@ -30,5 +30,10 @@ namespace LiteNetLibManager
             x = reader.GetSByte();
             y = reader.GetSByte();
         }
+
+        public override string ToString()
+        {
+            return ToVector2().ToString();
+        }
     }
 }
