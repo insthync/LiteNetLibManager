@@ -12,6 +12,7 @@ namespace LiteNetLibManager
         private static readonly NetDataReader s_ExtraReader = new NetDataReader();
         public delegate void WriteSyncBufferDelegate(NetDataWriter writer, uint tick);
         public delegate void ReadInterpBufferDelegate(NetDataReader reader, uint tick);
+        public delegate bool ValidateInterpolationDelegate(TransformData interpFromData, TransformData interpToData, TransformData currentData, float interpTime);
         public delegate void InterpolateDelegate(TransformData interpFromData, TransformData interpToData, float interpTime);
 
         [System.Flags]
@@ -161,6 +162,7 @@ namespace LiteNetLibManager
 
         public event WriteSyncBufferDelegate onWriteSyncBuffer;
         public event ReadInterpBufferDelegate onReadInterpBuffer;
+        public event ValidateInterpolationDelegate onValidateInterpolation;
         public event InterpolateDelegate onInterpolate;
 
         private TransformData _prevSyncData;
@@ -332,11 +334,20 @@ namespace LiteNetLibManager
             }
 
             float t = Mathf.InverseLerp(_startInterpTime, _endInterpTime, currentTime);
-            transform.position = Vector3.Lerp(_interpFromData.Position, _interpToData.Position, t);
-            Quaternion olderRot = Quaternion.Euler(_interpFromData.EulerAngles);
-            Quaternion newerRot = Quaternion.Euler(_interpToData.EulerAngles);
-            transform.rotation = Quaternion.Slerp(olderRot, newerRot, t);
-            transform.localScale = Vector3.Lerp(_interpFromData.Scale, _interpToData.Scale, t);
+            TransformData currentInterp = new TransformData()
+            {
+                Position = Vector3.Lerp(_interpFromData.Position, _interpToData.Position, t),
+                EulerAngles = Vector3.Slerp(_interpFromData.EulerAngles, _interpToData.EulerAngles, t),
+                Scale = Vector3.Lerp(_interpFromData.Scale, _interpToData.Scale, t),
+            };
+            if (onValidateInterpolation != null && !onValidateInterpolation.Invoke(_interpFromData, _interpToData, currentInterp, t))
+            {
+                // Not pass the validation
+                return;
+            }
+            transform.position = currentInterp.Position;
+            transform.eulerAngles = currentInterp.EulerAngles;
+            transform.localScale = currentInterp.Scale;
             onInterpolate?.Invoke(_interpFromData, _interpToData, t);
         }
 
