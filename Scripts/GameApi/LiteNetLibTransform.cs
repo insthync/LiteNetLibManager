@@ -334,10 +334,13 @@ namespace LiteNetLibManager
             }
 
             float t = Mathf.InverseLerp(_startInterpTime, _endInterpTime, currentTime);
+            Quaternion fromRot = Quaternion.Euler(_interpFromData.EulerAngles);
+            Quaternion toRot = Quaternion.Euler(_interpToData.EulerAngles);
+            Quaternion currentRot = Quaternion.Slerp(fromRot, toRot, t);
             TransformData currentInterp = new TransformData()
             {
                 Position = Vector3.Lerp(_interpFromData.Position, _interpToData.Position, t),
-                EulerAngles = Vector3.Slerp(_interpFromData.EulerAngles, _interpToData.EulerAngles, t),
+                EulerAngles = currentRot.eulerAngles,
                 Scale = Vector3.Lerp(_interpFromData.Scale, _interpToData.Scale, t),
             };
             if (onValidateInterpolation != null && !onValidateInterpolation.Invoke(_interpFromData, _interpToData, currentInterp, t))
