@@ -17,6 +17,11 @@ namespace LiteNetLibManager
         /// </summary>
         [NonSerialized]
         public float sendInterval = 0.1f;
+        /// <summary>
+        /// If this is `TRUE` it will sync unreliable every tick then sync reliable later by `sendInterval`
+        /// </summary>
+        [NonSerialized]
+        public bool sendUnreliableEveryTick = true;
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected bool _latestChangeSyncedFromOwner = false;
@@ -76,28 +81,28 @@ namespace LiteNetLibManager
 
         internal override sealed bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
         {
-            if (_latestSendTime + sendInterval > Time.unscaledTime)
+            if (!sendUnreliableEveryTick && !IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
         }
 
         internal override sealed bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
         {
-            if (_latestSendTime + sendInterval > Time.unscaledTime)
+            if (!IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
 
         internal override sealed bool WillSyncFromOwnerClientUnreliably(uint tick)
         {
-            if (_latestSendTime + sendInterval > Time.unscaledTime)
+            if (!sendUnreliableEveryTick && !IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
         }
 
         internal override sealed bool WillSyncFromOwnerClientReliably(uint tick)
         {
-            if (_latestSendTime + sendInterval > Time.unscaledTime)
+            if (!IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
         }
@@ -121,12 +126,12 @@ namespace LiteNetLibManager
             switch (SyncFieldStep)
             {
                 case LiteNetLibSyncFieldStep.Syncing:
-                    if (_latestSendTime + sendInterval > Time.unscaledTime)
+                    if (!sendUnreliableEveryTick && !IsReadyToSend())
                         return;
                     SyncFieldStep = LiteNetLibSyncFieldStep.Confirming;
                     break;
                 case LiteNetLibSyncFieldStep.Confirming:
-                    if (_latestSendTime + sendInterval > Time.unscaledTime)
+                    if (!IsReadyToSend())
                         return;
                     SyncFieldStep = LiteNetLibSyncFieldStep.None;
                     _latestSendTime = Time.unscaledTime;
@@ -136,6 +141,11 @@ namespace LiteNetLibManager
                     UnregisterUpdating();
                     break;
             }
+        }
+
+        protected bool IsReadyToSend()
+        {
+            return _latestSendTime + sendInterval <= Time.unscaledTime;
         }
 
         internal override sealed void Reset()
@@ -165,7 +175,7 @@ namespace LiteNetLibManager
         internal override void WriteSyncData(bool isState, uint tick, bool initial, NetDataWriter writer)
         {
             if (isDebug)
-                Logging.Log(LogTag, $"Write sync data, syncMode {syncMode}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, isState {isState}, tick {tick}, initial {initial}, value {GetValue()}");
+                Logging.Log(LogTag, $"Write sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, isState {isState}, tick {tick}, initial {initial}, value {GetValue()}");
             SerializeValue(writer);
         }
 
@@ -181,7 +191,7 @@ namespace LiteNetLibManager
             }
             _latestReceiveTick = tick;
             if (isDebug)
-                Logging.Log(LogTag, $"Read sync data, syncMode {syncMode}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, isState {isState}, tick {tick}, initial {initial}, oldValue {oldValue}, newValue {GetValue()}");
+                Logging.Log(LogTag, $"Read sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, isState {isState}, tick {tick}, initial {initial}, oldValue {oldValue}, newValue {GetValue()}");
             OnChange(initial, oldValue, GetValue());
             if (syncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
                 ValueChangedState(true);
