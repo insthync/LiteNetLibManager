@@ -319,7 +319,7 @@ namespace LiteNetLibManager
         /// <param name="serverSceneInfo"></param>
         /// <param name="isOnline"></param>
         /// <returns></returns>
-        private async UniTaskVoid LoadSceneRoutine(ServerSceneInfo serverSceneInfo, bool isOnline)
+        protected async UniTaskVoid LoadSceneRoutine(ServerSceneInfo serverSceneInfo, bool isOnline)
         {
             if (IsServer)
                 ServerSceneInfo = null;
