@@ -102,8 +102,8 @@ namespace LiteNetLibManager
                     break;
                 case ENetworkEvent.DisconnectEvent:
                     if (Manager.LogInfo) Logging.Log(LogTag, $"OnClientDisconnected peer. disconnectInfo.Reason: {eventData.disconnectInfo.Reason}");
-                    Manager.StopClient();
                     Manager.OnClientDisconnected(eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode, _disconnectData);
+                    Manager.StopClient();
                     _disconnectData = null;
                     break;
                 case ENetworkEvent.ErrorEvent:
