@@ -313,7 +313,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void WriteSyncData(bool initial, NetDataWriter writer)
+        internal override void WriteSyncData(bool isState, uint tick, bool initial, NetDataWriter writer)
         {
             if (initial)
             {
@@ -338,7 +338,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void ReadSyncData(uint tick, bool initial, NetDataReader reader)
+        internal override void ReadSyncData(bool isState, uint tick, bool initial, NetDataReader reader)
         {
             if (initial)
             {

@@ -1207,7 +1207,8 @@ namespace LiteNetLibManager
         #region Game State Syncing
         private void WriteSyncElement(NetDataWriter writer, LiteNetLibSyncElement syncElement)
         {
-            writer.PutPackedUInt(Tick);
+            uint tick = Tick;
+            writer.PutPackedUInt(tick);
             writer.PutPackedUInt(syncElement.ObjectId);
             writer.PutPackedInt(syncElement.ElementId);
             if (safeGameStatePacket)
@@ -1218,7 +1219,7 @@ namespace LiteNetLibManager
                 writer.Put(dataLength);
                 int posAfterWriteDataLen = writer.Length;
                 // Write sync data
-                syncElement.WriteSyncData(false, writer);
+                syncElement.WriteSyncData(false, tick, false, writer);
                 dataLength = writer.Length - posAfterWriteDataLen;
                 // Put data length
                 int posAfterWriteData = writer.Length;
@@ -1228,7 +1229,7 @@ namespace LiteNetLibManager
             }
             else
             {
-                syncElement.WriteSyncData(false, writer);
+                syncElement.WriteSyncData(false, tick, false, writer);
             }
         }
 
@@ -1248,7 +1249,7 @@ namespace LiteNetLibManager
                 {
                     try
                     {
-                        element.ReadSyncData(tick, false, reader);
+                        element.ReadSyncData(false, tick, false, reader);
                     }
                     catch
                     {
@@ -1270,7 +1271,7 @@ namespace LiteNetLibManager
                 {
                     try
                     {
-                        element.ReadSyncData(tick, false, reader);
+                        element.ReadSyncData(false, tick, false, reader);
                     }
                     catch
                     {
@@ -1289,7 +1290,8 @@ namespace LiteNetLibManager
 
         private int WriteGameStateFromServer(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
-            writer.PutPackedUInt(Tick);
+            uint tick = Tick;
+            writer.PutPackedUInt(tick);
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
             int stateCount = 0;
@@ -1308,7 +1310,7 @@ namespace LiteNetLibManager
                         if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
                         {
                             writer.Put(GameStateSyncData.STATE_TYPE_SPAWN);
-                            WriteSpawnGameState(writer, player, identity, syncingStatesByObjectId.Value);
+                            WriteSpawnGameState(writer, player, identity, syncingStatesByObjectId.Value, tick);
                             // TODO: Move this to somewhere else
                             if (player.ConnectionId == ClientConnectionId)
                             {
@@ -1323,7 +1325,7 @@ namespace LiteNetLibManager
                         if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
                         {
                             writer.Put(GameStateSyncData.STATE_TYPE_SYNC);
-                            WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value);
+                            WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value, tick);
                             ++stateCount;
                         }
                         break;
@@ -1353,7 +1355,8 @@ namespace LiteNetLibManager
 
         private int WriteGameStateFromClient(NetDataWriter writer, byte syncChannelId, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
         {
-            writer.PutPackedUInt(Tick);
+            uint tick = Tick;
+            writer.PutPackedUInt(tick);
             // Reserve position for state length
             int posBeforeWriteStateCount = writer.Length;
             int stateCount = 0;
@@ -1367,7 +1370,7 @@ namespace LiteNetLibManager
                 switch (syncingStatesByObjectId.Value.StateType)
                 {
                     case GameStateSyncData.STATE_TYPE_SYNC:
-                        WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value);
+                        WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value, tick);
                         ++stateCount;
                         break;
                 }
@@ -1417,7 +1420,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void WriteSpawnGameState(NetDataWriter writer, LiteNetLibPlayer player, LiteNetLibIdentity identity, GameStateSyncData syncData)
+        private void WriteSpawnGameState(NetDataWriter writer, LiteNetLibPlayer player, LiteNetLibIdentity identity, GameStateSyncData syncData, uint tick)
         {
             writer.Put(identity.IsSceneObject);
             if (identity.IsSceneObject)
@@ -1439,7 +1442,7 @@ namespace LiteNetLibManager
                     continue;
                 syncData.SyncElements.Add(syncElement);
             }
-            WriteSyncElements(writer, syncData.SyncElements, true);
+            WriteSyncElements(writer, syncData.SyncElements, tick, true);
             syncData.SyncElements.Clear();
         }
 
@@ -1494,10 +1497,10 @@ namespace LiteNetLibManager
             return false;
         }
 
-        private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
+        private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData, uint tick)
         {
             writer.PutPackedUInt(objectId);
-            WriteSyncElements(writer, syncData.SyncElements, false);
+            WriteSyncElements(writer, syncData.SyncElements, tick, false);
             syncData.SyncElements.Clear();
         }
 
@@ -1523,7 +1526,7 @@ namespace LiteNetLibManager
             return true;
         }
 
-        private void WriteSyncElements(NetDataWriter writer, ICollection<LiteNetLibSyncElement> elements, bool initial)
+        private void WriteSyncElements(NetDataWriter writer, ICollection<LiteNetLibSyncElement> elements, uint tick, bool initial)
         {
             writer.PutPackedInt(elements.Count);
             if (elements.Count == 0)
@@ -1540,7 +1543,7 @@ namespace LiteNetLibManager
                     writer.Put(dataLength);
                     int posAfterWriteDataLen = writer.Length;
                     // Write sync data
-                    syncElement.WriteSyncData(initial, writer);
+                    syncElement.WriteSyncData(true, tick, initial, writer);
                     dataLength = writer.Length - posAfterWriteDataLen;
                     // Put data length
                     int posAfterWriteData = writer.Length;
@@ -1550,7 +1553,7 @@ namespace LiteNetLibManager
                 }
                 else
                 {
-                    syncElement.WriteSyncData(initial, writer);
+                    syncElement.WriteSyncData(true, tick, initial, writer);
                 }
             }
         }
@@ -1572,7 +1575,7 @@ namespace LiteNetLibManager
                     {
                         try
                         {
-                            element.ReadSyncData(tick, initial, reader);
+                            element.ReadSyncData(true, tick, initial, reader);
                         }
                         catch
                         {
@@ -1594,7 +1597,7 @@ namespace LiteNetLibManager
                     {
                         try
                         {
-                            element.ReadSyncData(tick, initial, reader);
+                            element.ReadSyncData(true, tick, initial, reader);
                         }
                         catch
                         {

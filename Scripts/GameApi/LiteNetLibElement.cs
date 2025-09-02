@@ -96,7 +96,7 @@ namespace LiteNetLibManager
             get { return _elementId; }
         }
 
-        public string logTagName;
+        public string logTagName = null;
         public virtual string LogTag
         {
             get
@@ -122,6 +122,8 @@ namespace LiteNetLibManager
                 }
             }
         }
+
+        public bool isDebug = false;
 
         public LiteNetLibElementInfo GetInfo()
         {
