@@ -35,6 +35,10 @@ namespace LiteNetLibManager
         private bool _isNetworkActive;
         public override bool IsNetworkActive { get { return _isNetworkActive; } }
         private byte[] _disconnectData;
+        private byte _timeoutCount;
+        private bool _reconnecting;
+        private string _latestConnectAddress;
+        private int _latestConnectPort;
 
         public LiteNetLibClient(LiteNetLibManager manager) : base()
         {
@@ -70,6 +74,8 @@ namespace LiteNetLibManager
             }
             // Clear and reset request Id
             _requestCallbacks.Clear();
+            _latestConnectAddress = address;
+            _latestConnectPort = port;
             if (_isNetworkActive = Transport.StartClient(address, port))
             {
                 OnStartClient();
@@ -95,15 +101,29 @@ namespace LiteNetLibManager
             {
                 case ENetworkEvent.ConnectEvent:
                     if (Manager.LogInfo) Logging.Log(LogTag, "OnClientConnected");
-                    Manager.OnClientConnected();
+                    if (!_reconnecting)
+                        Manager.OnClientConnected();
+                    _timeoutCount = 0;
+                    _reconnecting = false;
                     break;
                 case ENetworkEvent.DataEvent:
                     ReadPacket(-1, eventData.reader);
                     break;
                 case ENetworkEvent.DisconnectEvent:
                     if (Manager.LogInfo) Logging.Log(LogTag, $"OnClientDisconnected peer. disconnectInfo.Reason: {eventData.disconnectInfo.Reason}");
-                    Manager.StopClient();
-                    Manager.OnClientDisconnected(eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode, _disconnectData);
+                    if (eventData.disconnectInfo.Reason == DisconnectReason.Timeout && _timeoutCount < 3)
+                    {
+                        _timeoutCount++;
+                        _reconnecting = true;
+                        Transport.StartClient(_latestConnectAddress, _latestConnectPort);
+                    }
+                    else
+                    {
+                        _timeoutCount = 0;
+                        _reconnecting = false;
+                        Manager.StopClient();
+                        Manager.OnClientDisconnected(eventData.disconnectInfo.Reason, eventData.disconnectInfo.SocketErrorCode, _disconnectData);
+                    }
                     _disconnectData = null;
                     break;
                 case ENetworkEvent.ErrorEvent:
