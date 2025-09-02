@@ -105,16 +105,13 @@ namespace LiteNetLibManager
         protected void ValueChangedState(bool latestChangeSyncedFromOwner)
         {
             _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
-            if (SyncFieldStep == LiteNetLibSyncFieldStep.None || _latestSendTime + sendInterval <= Time.unscaledTime)
+            if (Manager.IsServer)
             {
-                if (Manager.IsServer)
-                {
-                    SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
-                }
-                else
-                {
-                    SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
-                }
+                SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+            }
+            else
+            {
+                SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
             }
             RegisterUpdating();
         }
@@ -124,11 +121,15 @@ namespace LiteNetLibManager
             switch (SyncFieldStep)
             {
                 case LiteNetLibSyncFieldStep.Syncing:
+                    if (_latestSendTime + sendInterval > Time.unscaledTime)
+                        return;
                     SyncFieldStep = LiteNetLibSyncFieldStep.Confirming;
-                    _latestSendTime = Time.unscaledTime;
                     break;
                 case LiteNetLibSyncFieldStep.Confirming:
+                    if (_latestSendTime + sendInterval > Time.unscaledTime)
+                        return;
                     SyncFieldStep = LiteNetLibSyncFieldStep.None;
+                    _latestSendTime = Time.unscaledTime;
                     UnregisterUpdating();
                     break;
                 default:
