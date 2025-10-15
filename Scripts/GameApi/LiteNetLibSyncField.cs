@@ -32,6 +32,7 @@ namespace LiteNetLibManager
         public abstract Type GetFieldType();
         protected abstract object GetValue();
         protected abstract void SetValue(object value);
+        protected virtual object GetDefaultValue() => GetValue();
         internal abstract void OnChange(bool initial, object oldValue, object newValue);
 
         protected virtual bool IsValueChanged(object oldValue, object newValue)
@@ -156,7 +157,7 @@ namespace LiteNetLibManager
         internal override sealed void Setup(LiteNetLibBehaviour behaviour, int elementId)
         {
             base.Setup(behaviour, elementId);
-            _defaultValue = GetValue();
+            _defaultValue = GetDefaultValue();
             // Invoke on change function with initial state = true
             switch (syncMode)
             {
