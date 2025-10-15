@@ -346,9 +346,12 @@ namespace LiteNetLibManager
                 int count = reader.GetPackedInt();
                 if (count > 0)
                 {
+                    TType tempEntry;
                     for (int i = 0; i < count; ++i)
                     {
-                        _list.Add(DeserializeValue(reader));
+                        tempEntry = DeserializeValue(reader);
+                        _list.Add(tempEntry);
+                        OnOperation(LiteNetLibSyncListOp.AddInitial, i, tempEntry, tempEntry);
                     }
                 }
             }
