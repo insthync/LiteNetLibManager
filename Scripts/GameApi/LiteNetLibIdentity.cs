@@ -42,6 +42,8 @@ namespace LiteNetLibManager
 #endif
         [SerializeField, FormerlySerializedAs("objectId"), Tooltip("Scene object ID will be hashed to uses as reference for networked object spawning message")]
         private string sceneObjectId = string.Empty;
+        [SerializeField, Tooltip("If this is `TRUE` this object will never be scene object")]
+        private bool forceNotSceneObject = false;
         [SerializeField, ReadOnly]
         private uint networkedObjectId = 0;
         [SerializeField, Tooltip("Sync field/list channel ID")]
@@ -147,7 +149,7 @@ namespace LiteNetLibManager
                 return _hashSceneObjectId.Value;
             }
         }
-
+        public bool ForceNotSceneObject { get { return forceNotSceneObject; } set { forceNotSceneObject = value; } }
         public uint ObjectId { get { return networkedObjectId; } internal set { networkedObjectId = value; } }
         public byte SyncChannelId { get { return syncChannelId; } }
         public byte DefaultRpcChannelId { get { return defaultRpcChannelId; } }

@@ -348,6 +348,8 @@ namespace LiteNetLibManager
                     for (int k = 0; k < sceneObjects.Length; ++k)
                     {
                         LiteNetLibIdentity sceneObject = sceneObjects[k];
+                        if (sceneObject.ForceNotSceneObject)
+                            continue;
                         sceneObject.gameObject.SetActive(false);
                         SceneObjects[sceneObject.HashSceneObjectId] = sceneObject;
                     }
