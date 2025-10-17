@@ -22,6 +22,11 @@ namespace LiteNetLibManager
         /// </summary>
         [NonSerialized]
         public bool sendUnreliableEveryTick = true;
+        /// <summary>
+        /// If this is `TRUE` it will not sync to peers
+        /// </summary>
+        [NonSerialized]
+        public bool doNotSync = false;
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected bool _latestChangeSyncedFromOwner = false;
@@ -82,6 +87,8 @@ namespace LiteNetLibManager
 
         internal override sealed bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
         {
+            if (doNotSync)
+                return false;
             if (!sendUnreliableEveryTick && !IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
@@ -89,6 +96,8 @@ namespace LiteNetLibManager
 
         internal override sealed bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
         {
+            if (doNotSync)
+                return false;
             if (!IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
@@ -96,6 +105,8 @@ namespace LiteNetLibManager
 
         internal override sealed bool WillSyncFromOwnerClientUnreliably(uint tick)
         {
+            if (doNotSync)
+                return false;
             if (!sendUnreliableEveryTick && !IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
@@ -103,6 +114,8 @@ namespace LiteNetLibManager
 
         internal override sealed bool WillSyncFromOwnerClientReliably(uint tick)
         {
+            if (doNotSync)
+                return false;
             if (!IsReadyToSend())
                 return false;
             return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
