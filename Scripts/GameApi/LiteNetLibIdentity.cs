@@ -50,6 +50,8 @@ namespace LiteNetLibManager
         private byte syncChannelId = 0;
         [SerializeField, Tooltip("Default RPCs channel ID")]
         private byte defaultRpcChannelId = 0;
+        [SerializeField, Tooltip("If objects have differences `Sub Channel ID` it will not being subscribed")]
+        private string subChannelId = string.Empty;
         [SerializeField, Tooltip("If this is <= 0f, it will uses interest manager's `defaultVisibleRange` setting")]
         private float visibleRange = 0f;
         [SerializeField, Tooltip("If this is `TRUE` it will always visible no matter how far from player's objects")]
@@ -58,8 +60,6 @@ namespace LiteNetLibManager
         private bool doNotDestroyWhenDisconnect = false;
         [SerializeField, Tooltip("If this is > 0, it will get instance from pooling system")]
         private int poolingSize = 0;
-        [SerializeField, Tooltip("If objects have differences `sub channel ID` it will not being subscribed")]
-        private string subChannelId = string.Empty;
 #if !UNITY_SERVER
         [SerializeField]
         private bool forceRenderingOffWhileHidding = true;
@@ -163,11 +163,11 @@ namespace LiteNetLibManager
         public uint ObjectId { get { return networkedObjectId; } internal set { networkedObjectId = value; } }
         public byte SyncChannelId { get { return syncChannelId; } }
         public byte DefaultRpcChannelId { get { return defaultRpcChannelId; } }
+        public string SubChannelId { get { return subChannelId; } set { subChannelId = value; } }
         public float VisibleRange { get { return visibleRange; } set { visibleRange = value; } }
         public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
         public int PoolingSize { get { return poolingSize; } set { poolingSize = value; } }
-        public string SubChannelId { get { return subChannelId; } set { subChannelId = value; } }
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
         /// </summary>
