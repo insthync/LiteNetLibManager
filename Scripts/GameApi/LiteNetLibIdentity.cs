@@ -4,13 +4,13 @@ using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Events;
+using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
-using UnityEngine.Events;
-using UnityEngine.Rendering;
-using UnityEngine.Serialization;
 
 namespace LiteNetLibManager
 {
@@ -58,11 +58,21 @@ namespace LiteNetLibManager
         private bool doNotDestroyWhenDisconnect = false;
         [SerializeField, Tooltip("If this is > 0, it will get instance from pooling system")]
         private int poolingSize = 0;
+        [SerializeField, Tooltip("If objects have differences `sub channel ID` it will not being subscribed")]
+        private string subChannelId = string.Empty;
+#if !UNITY_SERVER
+        [SerializeField]
+        private bool forceRenderingOffWhileHidding = true;
+        [SerializeField]
+        private bool muteAudioSourceWhileHidding = true;
+#endif
 
         [Header("Events")]
         public UnityEvent onGetInstance = new UnityEvent();
         public LiteNetLibConnectionIdEvent onSubscriberAdded = new LiteNetLibConnectionIdEvent();
         public LiteNetLibConnectionIdEvent onSubscriberRemoved = new LiteNetLibConnectionIdEvent();
+        public UnityEvent onServerSubscribingAdded = new UnityEvent();
+        public UnityEvent onServerSubscribingRemoved = new UnityEvent();
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -157,7 +167,7 @@ namespace LiteNetLibManager
         public bool AlwaysVisible { get { return alwaysVisible; } set { alwaysVisible = value; } }
         public bool DoNotDestroyWhenDisconnect { get { return doNotDestroyWhenDisconnect; } set { doNotDestroyWhenDisconnect = value; } }
         public int PoolingSize { get { return poolingSize; } set { poolingSize = value; } }
-        public string SubChannelId { get; set; } = string.Empty;
+        public string SubChannelId { get { return subChannelId; } set { subChannelId = value; } }
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
         /// </summary>
@@ -166,6 +176,10 @@ namespace LiteNetLibManager
         /// This will be used while `IsHide` is `TRUE` to allow some connections to subscribe this networked object
         /// </summary>
         public HashSet<long> HideExceptions { get; } = new HashSet<long>();
+#if !UNITY_SERVER
+        private HashSet<Renderer> _hiddingRenderers = new HashSet<Renderer>();
+        private HashSet<AudioSource> _hiddingAudioSources = new HashSet<AudioSource>();
+#endif
         public long ConnectionId { get; internal set; } = -1;
         public bool IsPooledInstance { get; internal set; } = false;
         public LiteNetLibGameManager Manager { get; internal set; }
@@ -812,13 +826,22 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnServerSubscribingAdded();
             }
+            onServerSubscribingAdded.Invoke();
+#if !UNITY_SERVER
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; ++i)
+            // Reset renderers/audio sources
+            foreach (Renderer renderer in _hiddingRenderers)
             {
-                renderers[i].forceRenderingOff = false;
+                renderer.forceRenderingOff = false;
             }
+            foreach (AudioSource audioSource in _hiddingAudioSources)
+            {
+                audioSource.mute = false;
+            }
+            _hiddingRenderers.Clear();
+            _hiddingAudioSources.Clear();
+#endif
         }
 
         public void OnServerSubscribingRemoved()
@@ -828,13 +851,46 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnServerSubscribingRemoved();
             }
+            onServerSubscribingRemoved.Invoke();
+#if !UNITY_SERVER
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-            for (int i = 0; i < renderers.Length; ++i)
+            // Reset renderers/audio sources
+            foreach (Renderer renderer in _hiddingRenderers)
             {
-                renderers[i].forceRenderingOff = true;
+                renderer.forceRenderingOff = false;
             }
+            foreach (AudioSource audioSource in _hiddingAudioSources)
+            {
+                audioSource.mute = false;
+            }
+            _hiddingRenderers.Clear();
+            _hiddingAudioSources.Clear();
+            // Set renderers
+            if (forceRenderingOffWhileHidding)
+            {
+                Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+                foreach (Renderer renderer in renderers)
+                {
+                    if (renderer.forceRenderingOff)
+                        continue;
+                    renderer.forceRenderingOff = true;
+                    _hiddingRenderers.Add(renderer);
+                }
+            }
+            // Set audio sources
+            if (muteAudioSourceWhileHidding)
+            {
+                AudioSource[] audioSources = GetComponentsInChildren<AudioSource>(true);
+                foreach (AudioSource audioSource in audioSources)
+                {
+                    if (audioSource.mute)
+                        continue;
+                    audioSource.mute = true;
+                    _hiddingAudioSources.Add(audioSource);
+                }
+            }
+#endif
         }
 
         public void SetOwnerClient(long connectionId)
@@ -944,6 +1000,10 @@ namespace LiteNetLibManager
                     Behaviours[i].OnIdentityDestroy();
                 }
             }
+#if !UNITY_SERVER
+            _hiddingRenderers.Clear();
+            _hiddingAudioSources.Clear();
+#endif
         }
     }
 }
