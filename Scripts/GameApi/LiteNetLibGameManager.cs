@@ -96,6 +96,7 @@ namespace LiteNetLibManager
         protected NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
         protected NetDataWriter _syncElementWriter = new NetDataWriter(true, 1024);
         protected readonly List<PendingRpcData> _pendingRpcs = new List<PendingRpcData>();
+        protected readonly List<AsyncOperationHandle<SceneInstance>> _loadingAddressableSceneHandles = new List<AsyncOperationHandle<SceneInstance>>();
 
         protected virtual void Awake()
         {
@@ -390,29 +391,35 @@ namespace LiteNetLibManager
                     Assets.onSceneDepsFileDownloading.Invoke,
                     Assets.onSceneDepsDownloaded.Invoke,
                     null);
-                // Load the scene
-                AsyncOperationHandle<SceneInstance> asyncOp = Addressables.LoadSceneAsync(
+                await UnloadAddressableScenes();
+                AsyncOperationHandle<SceneInstance> addressableAsyncOp = Addressables.LoadSceneAsync(
                     serverSceneInfo.addressableKey,
-                    new LoadSceneParameters(LoadSceneMode.Single));
+                    new LoadSceneParameters(LoadSceneMode.Single), false);
+                _loadingAddressableSceneHandles.Add(addressableAsyncOp);
                 // Wait until scene loaded
-                while (!asyncOp.IsDone)
+                while (!addressableAsyncOp.IsDone)
                 {
                     await UniTask.Yield();
-                    float percentageComplete = asyncOp.GetDownloadStatus().Percent;
+                    float percentageComplete = addressableAsyncOp.GetDownloadStatus().Percent;
                     Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, percentageComplete);
                 }
+                await addressableAsyncOp.Result.ActivateAsync();
             }
             else
             {
+                await UnloadAddressableScenes();
                 // Load the scene
                 AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
                     serverSceneInfo.sceneName,
                     new LoadSceneParameters(LoadSceneMode.Single));
+                asyncOp.allowSceneActivation = false;
                 // Wait until scene loaded
                 while (asyncOp != null && !asyncOp.isDone)
                 {
                     await UniTask.Yield();
                     Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.progress);
+                    if (asyncOp.progress >= 0.9f)
+                        asyncOp.allowSceneActivation = true;
                 }
             }
 
@@ -447,7 +454,7 @@ namespace LiteNetLibManager
                     Assets.onLoadAdditiveSceneStart.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                     for (int j = 0; j < listOfLoaders.Count; ++j)
                     {
-                        await listOfLoaders[i].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline);
+                        await listOfLoaders[i].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline, _loadingAddressableSceneHandles);
                     }
                     Assets.onLoadAdditiveSceneFinish.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                 }
@@ -472,6 +479,21 @@ namespace LiteNetLibManager
 
             if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
             Assets.onLoadSceneFinish.Invoke(serverSceneInfo.sceneName, false, isOnline, 1f);
+        }
+
+        protected async UniTask UnloadAddressableScenes()
+        {
+            if (_loadingAddressableSceneHandles.Count == 0)
+                return;
+            for (int i = 0; i < _loadingAddressableSceneHandles.Count; ++i)
+            {
+                AsyncOperationHandle<SceneInstance> addressableAsyncOp = Addressables.UnloadSceneAsync(_loadingAddressableSceneHandles[i], UnloadSceneOptions.UnloadAllEmbeddedSceneObjects, true);
+                while (!addressableAsyncOp.IsDone)
+                {
+                    await UniTask.Yield();
+                }
+            }
+            _loadingAddressableSceneHandles.Clear();
         }
 
         protected async UniTask ProceedOnlineSceneLoaded(ServerSceneInfo serverSceneInfo)
