@@ -1,10 +1,7 @@
 using Cysharp.Threading.Tasks;
 using Insthync.AddressableAssetTools;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
-using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
 namespace LiteNetLibManager
@@ -42,22 +39,22 @@ namespace LiteNetLibManager
             return total;
         }
 
-        public async UniTask LoadAll(LiteNetLibGameManager manager, string sceneName, bool isOnline, List<AsyncOperationHandle<SceneInstance>> loadingAddressableSceneHandles)
+        public async UniTask LoadAll(LiteNetLibGameManager manager, string sceneName, bool isOnline)
         {
             int loadCount = 0;
-            loadCount = await LoadAll(manager, sceneName, isOnline, scenes, addressableScenes, loadCount, loadingAddressableSceneHandles);
+            loadCount = await LoadAll(manager, sceneName, isOnline, scenes, addressableScenes, loadCount);
 #if UNITY_SERVER
-            loadCount = await LoadAll(manager, sceneName, isOnline, serverOnlyScenes, serverOnlyAddressableScenes, loadCount, loadingAddressableSceneHandles);
+            loadCount = await LoadAll(manager, sceneName, isOnline, serverOnlyScenes, serverOnlyAddressableScenes, loadCount);
 #endif
 #if !UNITY_SERVER
-            loadCount = await LoadAll(manager, sceneName, isOnline, clientOnlyScenes, clientOnlyAddressableScenes, loadCount, loadingAddressableSceneHandles);
+            loadCount = await LoadAll(manager, sceneName, isOnline, clientOnlyScenes, clientOnlyAddressableScenes, loadCount);
 #endif
 #if UNITY_EDITOR
-            loadCount = await LoadAll(manager, sceneName, isOnline, editorOnlyScenes, editorOnlyAddressableScenes, loadCount, loadingAddressableSceneHandles);
+            loadCount = await LoadAll(manager, sceneName, isOnline, editorOnlyScenes, editorOnlyAddressableScenes, loadCount);
 #endif
         }
 
-        public async UniTask<int> LoadAll(LiteNetLibGameManager manager, string sceneName, bool isOnline, SceneField[] scenes, AssetReferenceScene[] addressableScenes, int loadCount, List<AsyncOperationHandle<SceneInstance>> loadingAddressableSceneHandles)
+        public async UniTask<int> LoadAll(LiteNetLibGameManager manager, string sceneName, bool isOnline, SceneField[] scenes, AssetReferenceScene[] addressableScenes, int loadCount)
         {
             // Load scene
             for (int i = 0; i < scenes.Length; ++i)
@@ -97,7 +94,7 @@ namespace LiteNetLibManager
                 var op = Addressables.LoadSceneAsync(
                     addressableScenes[i].RuntimeKey,
                     new LoadSceneParameters(LoadSceneMode.Additive));
-                loadingAddressableSceneHandles.Add(op);
+                AddressableAssetsManager.AddAddressableSceneHandle(op);
                 while (!op.IsDone)
                 {
                     await UniTask.Yield();
