@@ -182,7 +182,7 @@ namespace LiteNetLibManager
             for (int i = 0; i < Parameters.Length; ++i)
             {
                 if (ParameterTypes[i].IsArray)
-                    Parameters[i] = reader.GetArray(ParameterTypes[i].GetElementType());
+                    Parameters[i] = reader.GetArrayObject(ParameterTypes[i].GetElementType());
                 else
                     Parameters[i] = reader.GetValue(ParameterTypes[i]);
             }
@@ -195,7 +195,7 @@ namespace LiteNetLibManager
             for (int i = 0; i < Parameters.Length; ++i)
             {
                 if (ParameterTypes[i].IsArray)
-                    writer.PutArray(ParameterTypes[i].GetElementType(), Parameters[i]);
+                    writer.PutArrayObject(ParameterTypes[i].GetElementType(), Parameters[i]);
                 else
                     writer.PutValue(ParameterTypes[i], Parameters[i]);
             }

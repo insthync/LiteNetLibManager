@@ -140,7 +140,7 @@ namespace LiteNetLib.Utils
             return result;
         }
 
-        public static object GetArray(this NetDataReader reader, Type type)
+        public static object GetArrayObject(this NetDataReader reader, Type type)
         {
             int count = reader.GetInt();
             Array array = Array.CreateInstance(type, count);

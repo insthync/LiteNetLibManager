@@ -217,7 +217,7 @@ namespace LiteNetLib.Utils
             }
         }
 
-        public static void PutArray(this NetDataWriter writer, Type type, object array)
+        public static void PutArrayObject(this NetDataWriter writer, Type type, object array)
         {
             if (array == null)
             {
