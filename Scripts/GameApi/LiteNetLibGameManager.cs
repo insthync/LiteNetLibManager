@@ -538,13 +538,13 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.Disconnect, HandleServerDisconnect);
         }
 
-        public async void KickClient(long connectionId, byte[] data)
+        public async UniTask<bool> KickClient(long connectionId, byte[] data)
         {
             if (!IsServer)
-                return;
+                return false;
             ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.Disconnect, (writer) => writer.PutBytesWithLength(data));
             await UniTask.Delay(500);
-            ServerTransport.ServerDisconnect(connectionId);
+            return ServerTransport.ServerDisconnect(connectionId);
         }
 
         public override void OnPeerConnected(long connectionId)
