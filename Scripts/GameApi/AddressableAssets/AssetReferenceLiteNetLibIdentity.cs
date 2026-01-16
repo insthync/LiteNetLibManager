@@ -31,7 +31,7 @@ namespace LiteNetLibManager
                 return;
             }
             hashAssetId = identity.HashAssetId;
-            Debug.Log($"[AssetReferenceLiteNetLibBehaviour] Set `hashAssetId` to `{hashAssetId}`, name: {identity.name}");
+            Debug.Log($"[AssetReferenceLiteNetLibIdentity] Set `hashAssetId` to `{hashAssetId}`, name: {identity.name}");
         }
 #endif
 
