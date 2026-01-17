@@ -411,7 +411,8 @@ namespace LiteNetLibManager
                 AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
                     serverSceneInfo.sceneName,
                     new LoadSceneParameters(LoadSceneMode.Single));
-                asyncOp.allowSceneActivation = false;
+                if (asyncOp != null)
+                    asyncOp.allowSceneActivation = false;
                 // Wait until scene loaded
                 while (asyncOp != null && !asyncOp.isDone)
                 {
