@@ -5,7 +5,7 @@ namespace LiteNetLibManager
     public class LiteNetLibSyncingStates
     {
         private readonly Dictionary<byte, Dictionary<uint, GameStateSyncData>> _states = new Dictionary<byte, Dictionary<uint, GameStateSyncData>>();
-        public IReadOnlyDictionary<byte, Dictionary<uint, GameStateSyncData>> States => _states;
+        public Dictionary<byte, Dictionary<uint, GameStateSyncData>> States => _states;
 
         public void Clear()
         {
