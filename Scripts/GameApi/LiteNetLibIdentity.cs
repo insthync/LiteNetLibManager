@@ -285,6 +285,13 @@ namespace LiteNetLibManager
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            PrefabStage prefabStage = PrefabStageUtility.GetPrefabStage(gameObject);
+            if (prefabStage != null && !prefabStage.scene.isLoaded)
+            {
+                // In prefab mode, and it is not loaded yet. No data to validate yet, skip it.
+                return;
+            }
+
             Event evt = Event.current;
             if (evt != null && (string.Equals(evt.commandName, "Duplicate") || string.Equals(evt.commandName, "Paste")))
             {
@@ -331,32 +338,15 @@ namespace LiteNetLibManager
 
         private bool ThisIsAPrefab()
         {
-#if UNITY_2018_3_OR_NEWER
             return PrefabUtility.IsPartOfPrefabAsset(gameObject);
-#else
-            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-            if (prefabType == PrefabType.Prefab)
-                return true;
-            return false;
-#endif
         }
 
         private bool ThisIsASceneObjectWithThatReferencesPrefabAsset(out GameObject prefab)
         {
             prefab = null;
-#if UNITY_2018_3_OR_NEWER
             if (!PrefabUtility.IsPartOfNonAssetPrefabInstance(gameObject))
                 return false;
-#else
-            PrefabType prefabType = PrefabUtility.GetPrefabType(gameObject);
-            if (prefabType == PrefabType.None)
-                return false;
-#endif
-#if UNITY_2018_2_OR_NEWER
             prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
-#else
-            prefab = (GameObject)PrefabUtility.GetPrefabParent(gameObject);
-#endif
             if (prefab == null)
             {
                 Logging.LogError(LogTag, $"Failed to find prefab parent for scene object: {gameObject.name}.", gameObject);
@@ -386,16 +376,6 @@ namespace LiteNetLibManager
                 AssignAssetID(prefab);
                 if (string.IsNullOrWhiteSpace(sceneObjectId))
                     Debug.LogWarning($"[LiteNetLibIdentity] No object ID set for {name}", gameObject);
-            }
-            else
-            {
-                if (Application.isPlaying)
-                {
-                    Debug.LogWarning($"[LiteNetLibIdentity] Cannot setup IDs while playing", gameObject);
-                    return;
-                }
-                // This is a pure scene object (Not a prefab)
-                assetId = string.Empty;
             }
             // Do not mark dirty while playing
             if (!Application.isPlaying && !string.Equals(oldAssetId, assetId))
