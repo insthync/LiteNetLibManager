@@ -390,29 +390,36 @@ namespace LiteNetLibManager
                     Assets.onSceneDepsFileDownloading.Invoke,
                     Assets.onSceneDepsDownloaded.Invoke,
                     null);
-                // Load the scene
-                AsyncOperationHandle<SceneInstance> asyncOp = Addressables.LoadSceneAsync(
+                await AddressableAssetsManager.UnloadAddressableScenes();
+                AsyncOperationHandle<SceneInstance> addressableAsyncOp = Addressables.LoadSceneAsync(
                     serverSceneInfo.addressableKey,
-                    new LoadSceneParameters(LoadSceneMode.Single));
+                    new LoadSceneParameters(LoadSceneMode.Single), false);
+                AddressableAssetsManager.AddAddressableSceneHandle(addressableAsyncOp);
                 // Wait until scene loaded
-                while (!asyncOp.IsDone)
+                while (!addressableAsyncOp.IsDone)
                 {
                     await UniTask.Yield();
-                    float percentageComplete = asyncOp.GetDownloadStatus().Percent;
+                    float percentageComplete = addressableAsyncOp.GetDownloadStatus().Percent;
                     Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, percentageComplete);
                 }
+                await addressableAsyncOp.Result.ActivateAsync();
             }
             else
             {
+                await AddressableAssetsManager.UnloadAddressableScenes();
                 // Load the scene
                 AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
                     serverSceneInfo.sceneName,
                     new LoadSceneParameters(LoadSceneMode.Single));
+                if (asyncOp != null)
+                    asyncOp.allowSceneActivation = false;
                 // Wait until scene loaded
                 while (asyncOp != null && !asyncOp.isDone)
                 {
                     await UniTask.Yield();
                     Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.progress);
+                    if (asyncOp.progress >= 0.9f)
+                        asyncOp.allowSceneActivation = true;
                 }
             }
 
@@ -532,13 +539,13 @@ namespace LiteNetLibManager
             RegisterClientMessage(GameMsgTypes.Disconnect, HandleServerDisconnect);
         }
 
-        public async void KickClient(long connectionId, byte[] data)
+        public async UniTask<bool> KickClient(long connectionId, byte[] data)
         {
             if (!IsServer)
-                return;
+                return false;
             ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered, GameMsgTypes.Disconnect, (writer) => writer.PutBytesWithLength(data));
             await UniTask.Delay(500);
-            ServerTransport.ServerDisconnect(connectionId);
+            return ServerTransport.ServerDisconnect(connectionId);
         }
 
         public override void OnPeerConnected(long connectionId)

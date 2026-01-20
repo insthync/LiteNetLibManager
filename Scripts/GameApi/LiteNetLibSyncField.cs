@@ -408,6 +408,11 @@ namespace LiteNetLibManager
         {
             writer.Put(_value);
         }
+
+        protected override bool IsValueChanged(bool oldValue, bool newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -421,6 +426,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, bool element)
         {
             writer.Put(element);
+        }
+
+        protected override bool IsValueChanged(bool[] oldValue, bool[] newValue)
+        {
+            return true;
         }
     }
 
@@ -436,6 +446,11 @@ namespace LiteNetLibManager
         {
             writer.Put(_value);
         }
+
+        protected override bool IsValueChanged(byte oldValue, byte newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -449,6 +464,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, byte element)
         {
             writer.Put(element);
+        }
+
+        protected override bool IsValueChanged(byte[] oldValue, byte[] newValue)
+        {
+            return true;
         }
     }
 
@@ -464,6 +484,11 @@ namespace LiteNetLibManager
         {
             writer.Put(_value);
         }
+
+        protected override bool IsValueChanged(char oldValue, char newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -477,6 +502,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, char element)
         {
             writer.Put(element);
+        }
+
+        protected override bool IsValueChanged(char[] oldValue, char[] newValue)
+        {
+            return true;
         }
     }
 
@@ -492,6 +522,11 @@ namespace LiteNetLibManager
         {
             writer.Put(_value);
         }
+
+        protected override bool IsValueChanged(double oldValue, double newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -505,6 +540,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, double element)
         {
             writer.Put(element);
+        }
+
+        protected override bool IsValueChanged(double[] oldValue, double[] newValue)
+        {
+            return true;
         }
     }
 
@@ -520,6 +560,11 @@ namespace LiteNetLibManager
         {
             writer.Put(_value);
         }
+
+        protected override bool IsValueChanged(float oldValue, float newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -533,6 +578,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, float element)
         {
             writer.Put(element);
+        }
+
+        protected override bool IsValueChanged(float[] oldValue, float[] newValue)
+        {
+            return true;
         }
     }
 
@@ -548,6 +598,11 @@ namespace LiteNetLibManager
         {
             writer.PutPackedInt(_value);
         }
+
+        protected override bool IsValueChanged(int oldValue, int newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -561,6 +616,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, int element)
         {
             writer.PutPackedInt(element);
+        }
+
+        protected override bool IsValueChanged(int[] oldValue, int[] newValue)
+        {
+            return true;
         }
     }
 
@@ -576,6 +636,11 @@ namespace LiteNetLibManager
         {
             writer.PutPackedLong(_value);
         }
+
+        protected override bool IsValueChanged(long oldValue, long newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -589,6 +654,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, long element)
         {
             writer.PutPackedLong(element);
+        }
+
+        protected override bool IsValueChanged(long[] oldValue, long[] newValue)
+        {
+            return true;
         }
     }
 
@@ -604,6 +674,11 @@ namespace LiteNetLibManager
         {
             writer.Put(_value);
         }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -617,6 +692,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, sbyte element)
         {
             writer.Put(element);
+        }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return true;
         }
     }
 
@@ -632,6 +712,11 @@ namespace LiteNetLibManager
         {
             writer.PutPackedShort(_value);
         }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -645,6 +730,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, short element)
         {
             writer.PutPackedShort(element);
+        }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return true;
         }
     }
 
@@ -660,6 +750,11 @@ namespace LiteNetLibManager
         {
             writer.Put(_value);
         }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -673,6 +768,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, string element)
         {
             writer.Put(element);
+        }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return true;
         }
     }
 
@@ -688,6 +788,11 @@ namespace LiteNetLibManager
         {
             writer.PutPackedUInt(_value);
         }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -701,6 +806,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, uint element)
         {
             writer.PutPackedUInt(element);
+        }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return true;
         }
     }
 
@@ -716,6 +826,11 @@ namespace LiteNetLibManager
         {
             writer.PutPackedULong(_value);
         }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -729,6 +844,11 @@ namespace LiteNetLibManager
         internal override void SerializeElementValue(NetDataWriter writer, ulong element)
         {
             writer.PutPackedULong(element);
+        }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return true;
         }
     }
 
@@ -744,6 +864,11 @@ namespace LiteNetLibManager
         {
             writer.PutPackedUShort(_value);
         }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return oldValue != newValue;
+        }
     }
 
     [Serializable]
@@ -758,11 +883,20 @@ namespace LiteNetLibManager
         {
             writer.PutPackedUShort(element);
         }
+
+        protected override bool IsValueChanged(object oldValue, object newValue)
+        {
+            return true;
+        }
     }
 
     [Serializable]
     public class SyncFieldColor : LiteNetLibSyncField<Color>
     {
+        protected override bool IsValueChanged(Color oldValue, Color newValue)
+        {
+            return oldValue.r != newValue.r || oldValue.g != newValue.g || oldValue.b != newValue.b || oldValue.a != newValue.a;
+        }
     }
 
     [Serializable]
@@ -878,7 +1012,7 @@ namespace LiteNetLibManager
     {
         protected override bool IsValueChanged(DirectionVector2 oldValue, DirectionVector2 newValue)
         {
-            return Value.x != newValue.x || Value.y != newValue.y;
+            return oldValue.x != newValue.x || oldValue.y != newValue.y;
         }
     }
 
@@ -887,7 +1021,7 @@ namespace LiteNetLibManager
     {
         protected override bool IsValueChanged(DirectionVector3 oldValue, DirectionVector3 newValue)
         {
-            return Value.x != newValue.x || Value.y != newValue.y || Value.z != newValue.z;
+            return oldValue.x != newValue.x || oldValue.y != newValue.y || oldValue.z != newValue.z;
         }
     }
 
@@ -896,7 +1030,7 @@ namespace LiteNetLibManager
     {
         protected override bool IsValueChanged(HalfPrecision oldValue, HalfPrecision newValue)
         {
-            return Value.halfValue != newValue.halfValue;
+            return oldValue.halfValue != newValue.halfValue;
         }
     }
 
@@ -905,7 +1039,7 @@ namespace LiteNetLibManager
     {
         protected override bool IsValueChanged(HalfVector2 oldValue, HalfVector2 newValue)
         {
-            return Value.x != newValue.x || Value.y != newValue.y;
+            return oldValue.x != newValue.x || oldValue.y != newValue.y;
         }
     }
 
@@ -914,7 +1048,7 @@ namespace LiteNetLibManager
     {
         protected override bool IsValueChanged(HalfVector3 oldValue, HalfVector3 newValue)
         {
-            return Value.x != newValue.x || Value.y != newValue.y || Value.z != newValue.z;
+            return oldValue.x != newValue.x || oldValue.y != newValue.y || oldValue.z != newValue.z;
         }
     }
     #endregion

@@ -329,7 +329,7 @@ namespace LiteNetLibManager
             return Server.ConnectionIds.Contains(connectionId);
         }
 
-        public IEnumerable<long> GetConnectionIds()
+        public HashSet<long> GetConnectionIds()
         {
             return Server.ConnectionIds;
         }

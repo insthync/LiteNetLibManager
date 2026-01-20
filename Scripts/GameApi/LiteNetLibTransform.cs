@@ -238,7 +238,7 @@ namespace LiteNetLibManager
                 Vector3.Distance(transform.position, transformData.Position) > positionThreshold ||
                 Vector3.Angle(transform.eulerAngles, transformData.EulerAngles) > eulerAnglesThreshold ||
                 Vector3.Distance(transform.localScale, transformData.Scale) > scaleThreshold;
-            bool keepAlive = updater.LocalTick - transformData.Tick >= keepAliveTicks;
+            bool keepAlive = updater.LocalTick - transformData.Tick <= keepAliveTicks;
 
             if (!changed && !keepAlive)
                 return;

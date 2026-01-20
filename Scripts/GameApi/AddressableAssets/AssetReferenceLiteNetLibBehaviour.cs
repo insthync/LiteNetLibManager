@@ -1,7 +1,4 @@
-using Insthync.AddressableAssetTools;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -59,21 +56,6 @@ namespace LiteNetLibManager
             }
         }
 #endif
-
-        public new AsyncOperationHandle<TBehaviour> InstantiateAsync(Vector3 position, Quaternion rotation, Transform parent = null)
-        {
-            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, position, rotation, parent, false), AssetReferenceUtils.CreateGetComponentCompletedOperation<TBehaviour>);
-        }
-
-        public new AsyncOperationHandle<TBehaviour> InstantiateAsync(Transform parent = null, bool instantiateInWorldSpace = false)
-        {
-            return Addressables.ResourceManager.CreateChainOperation(Addressables.InstantiateAsync(RuntimeKey, parent, instantiateInWorldSpace, false), AssetReferenceUtils.CreateGetComponentCompletedOperation<TBehaviour>);
-        }
-
-        public new AsyncOperationHandle<TBehaviour> LoadAssetAsync()
-        {
-            return Addressables.ResourceManager.CreateChainOperation(base.LoadAssetAsync<GameObject>(), AssetReferenceUtils.CreateGetComponentCompletedOperation<TBehaviour>);
-        }
 
         public override bool ValidateAsset(Object obj)
         {

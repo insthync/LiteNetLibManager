@@ -94,6 +94,7 @@ namespace LiteNetLibManager
                 var op = Addressables.LoadSceneAsync(
                     addressableScenes[i].RuntimeKey,
                     new LoadSceneParameters(LoadSceneMode.Additive));
+                AddressableAssetsManager.AddAddressableSceneHandle(op);
                 while (!op.IsDone)
                 {
                     await UniTask.Yield();
