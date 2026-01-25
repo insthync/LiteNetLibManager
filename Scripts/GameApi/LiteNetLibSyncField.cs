@@ -213,12 +213,20 @@ namespace LiteNetLibManager
 
         internal virtual void DeserializeValue(NetDataReader reader)
         {
-            SetValue(reader.GetValue(GetFieldType()));
+            Type type = GetFieldType();
+            if (type.IsArray)
+                SetValue(reader.GetArrayObject(type.GetElementType()));
+            else
+                SetValue(reader.GetValue(type));
         }
 
         internal virtual void SerializeValue(NetDataWriter writer)
         {
-            writer.PutValue(GetFieldType(), GetValue());
+            Type type = GetFieldType();
+            if (type.IsArray)
+                writer.PutArrayObject(type.GetElementType(), GetValue());
+            else
+                writer.PutValue(type, GetValue());
         }
 
         public override string ToString()
