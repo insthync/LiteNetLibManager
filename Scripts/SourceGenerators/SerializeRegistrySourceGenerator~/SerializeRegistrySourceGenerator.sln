@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SerializeRegistrySourceGenerator", "SerializeRegistrySourceGenerator.csproj", "{9C34B748-725B-4915-9188-948731216CAD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9C34B748-725B-4915-9188-948731216CAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C34B748-725B-4915-9188-948731216CAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C34B748-725B-4915-9188-948731216CAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C34B748-725B-4915-9188-948731216CAD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C39E16E7-6961-4E77-8CB8-E3350759B01F}
+	EndGlobalSection
+EndGlobal

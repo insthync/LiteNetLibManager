@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LiteNetLibManager.Serialization;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,73 +14,17 @@ namespace LiteNetLib.Utils
 
         public static object GetValue(this NetDataReader reader, Type type)
         {
-            #region Generic Values
             if (type.IsEnum)
                 type = type.GetEnumUnderlyingType();
 
-            if (type == typeof(bool))
-                return reader.GetBool();
+            if (ReaderRegistry.TryGetReader(type, out Func<NetDataReader, object> readerFunc))
+            {
+                return readerFunc(reader);
+            }
 
-            if (type == typeof(byte))
-                return reader.GetByte();
-
-            if (type == typeof(char))
-                return reader.GetChar();
-
-            if (type == typeof(double))
-                return reader.GetDouble();
-
-            if (type == typeof(float))
-                return reader.GetFloat();
-
-            if (type == typeof(int))
-                return reader.GetPackedInt();
-
-            if (type == typeof(long))
-                return reader.GetPackedLong();
-
-            if (type == typeof(sbyte))
-                return reader.GetSByte();
-
-            if (type == typeof(short))
-                return reader.GetPackedShort();
-
-            if (type == typeof(string))
-                return reader.GetString();
-
-            if (type == typeof(uint))
-                return reader.GetPackedUInt();
-
-            if (type == typeof(ulong))
-                return reader.GetPackedULong();
-
-            if (type == typeof(ushort))
-                return reader.GetPackedUShort();
-            #endregion
-
-            #region Unity Values
-            if (type == typeof(Color))
-                return reader.GetColor();
-
-            if (type == typeof(Quaternion))
-                return reader.GetQuaternion();
-
-            if (type == typeof(Vector2))
-                return reader.GetVector2();
-
-            if (type == typeof(Vector2Int))
-                return reader.GetVector2Int();
-
-            if (type == typeof(Vector3))
-                return reader.GetVector3();
-
-            if (type == typeof(Vector3Int))
-                return reader.GetVector3Int();
-
-            if (type == typeof(Vector4))
-                return reader.GetVector4();
-            #endregion
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning($"No reader registered for type: {type.FullName}");
+#endif
             if (typeof(INetSerializable).IsAssignableFrom(type))
             {
                 object instance = Activator.CreateInstance(type);

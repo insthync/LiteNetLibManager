@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LiteNetLibManager.Serialization;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,133 +14,18 @@ namespace LiteNetLib.Utils
 
         public static void PutValue(this NetDataWriter writer, Type type, object value)
         {
-            #region Generic Values
             if (type.IsEnum)
                 type = type.GetEnumUnderlyingType();
 
-            if (type == typeof(bool))
+            if (WriterRegistry.TryGetWriter(type, out Action<NetDataWriter, object> writeFunc))
             {
-                writer.Put((bool)value);
+                writeFunc(writer, value);
                 return;
             }
 
-            if (type == typeof(byte))
-            {
-                writer.Put((byte)value);
-                return;
-            }
-
-            if (type == typeof(char))
-            {
-                writer.Put((char)value);
-                return;
-            }
-
-            if (type == typeof(double))
-            {
-                writer.Put((double)value);
-                return;
-            }
-
-            if (type == typeof(float))
-            {
-                writer.Put((float)value);
-                return;
-            }
-
-            if (type == typeof(int))
-            {
-                writer.PutPackedInt((int)value);
-                return;
-            }
-
-            if (type == typeof(long))
-            {
-                writer.PutPackedLong((long)value);
-                return;
-            }
-
-            if (type == typeof(sbyte))
-            {
-                writer.Put((sbyte)value);
-                return;
-            }
-
-            if (type == typeof(short))
-            {
-                writer.PutPackedShort((short)value);
-                return;
-            }
-
-            if (type == typeof(string))
-            {
-                writer.Put((string)value);
-                return;
-            }
-
-            if (type == typeof(uint))
-            {
-                writer.PutPackedUInt((uint)value);
-                return;
-            }
-
-            if (type == typeof(ulong))
-            {
-                writer.PutPackedULong((ulong)value);
-                return;
-            }
-
-            if (type == typeof(ushort))
-            {
-                writer.PutPackedUShort((ushort)value);
-                return;
-            }
-            #endregion
-
-            #region Unity Values
-            if (type == typeof(Color))
-            {
-                writer.PutColor((Color)value);
-                return;
-            }
-
-            if (type == typeof(Quaternion))
-            {
-                writer.PutQuaternion((Quaternion)value);
-                return;
-            }
-
-            if (type == typeof(Vector2))
-            {
-                writer.PutVector2((Vector2)value);
-                return;
-            }
-
-            if (type == typeof(Vector2Int))
-            {
-                writer.PutVector2Int((Vector2Int)value);
-                return;
-            }
-
-            if (type == typeof(Vector3))
-            {
-                writer.PutVector3((Vector3)value);
-                return;
-            }
-
-            if (type == typeof(Vector3Int))
-            {
-                writer.PutVector3Int((Vector3Int)value);
-                return;
-            }
-
-            if (type == typeof(Vector4))
-            {
-                writer.PutVector4((Vector4)value);
-                return;
-            }
-            #endregion
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning($"No writer registered for type: {type.FullName}");
+#endif
             if (typeof(INetSerializable).IsAssignableFrom(type))
             {
                 (value as INetSerializable).Serialize(writer);
