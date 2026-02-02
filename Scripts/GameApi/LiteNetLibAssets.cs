@@ -14,7 +14,7 @@ namespace LiteNetLibManager
         private static int s_spawnPositionCounter = 0;
 
         public bool playerSpawnRandomly;
-#if !EXCLUDE_PREFAB_REFS
+#if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
         #region Prefab Refs
         public LiteNetLibIdentity playerPrefab;
         public LiteNetLibIdentity[] spawnablePrefabs = new LiteNetLibIdentity[0];
@@ -24,6 +24,7 @@ namespace LiteNetLibManager
         #endregion
 #endif
 
+#if !DISABLE_ADDRESSABLES
         #region Addressable Assets Refs
         public AssetReferenceLiteNetLibIdentity addressablePlayerPrefab;
         public AssetReferenceLiteNetLibIdentity[] addressableSpawnablePrefabs = new AssetReferenceLiteNetLibIdentity[0];
@@ -33,6 +34,7 @@ namespace LiteNetLibManager
         [Tooltip("If this is not empty, it will load online scene by this instead of `onlineScene`")]
         public AssetReferenceScene addressableOnlineScene;
         #endregion
+#endif
 
         public UnityEvent onInitialize = new UnityEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
@@ -112,7 +114,9 @@ namespace LiteNetLibManager
             ResetSpawnPositionCounter();
             if (!doNotResetObjectId)
                 LiteNetLibIdentity.ResetObjectId();
+#if !DISABLE_ADDRESSABLES
             AddressableAssetsManager.ReleaseAll();
+#endif
         }
 
         public void RegisterSpawnPoints()
@@ -123,7 +127,7 @@ namespace LiteNetLibManager
 
         public async UniTask RegisterPrefabs()
         {
-#if !EXCLUDE_PREFAB_REFS
+#if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
             for (int i = 0; i < spawnablePrefabs.Length; ++i)
             {
                 RegisterPrefab(spawnablePrefabs[i]);
@@ -134,6 +138,8 @@ namespace LiteNetLibManager
                 RegisterPrefab(playerPrefab);
             }
 #endif
+
+#if !DISABLE_ADDRESSABLES
             List<UniTask<LiteNetLibIdentity>> ops = new List<UniTask<LiteNetLibIdentity>>();
             for (int i = 0; i < addressableSpawnablePrefabs.Length; ++i)
             {
@@ -147,6 +153,9 @@ namespace LiteNetLibManager
                 ops.Add(RegisterAddressablePrefabAsync(addressablePlayerPrefab));
             }
             await UniTask.WhenAll(ops);
+#else
+            await UniTask.Yield();
+#endif
         }
 
         public LiteNetLibIdentity RegisterPrefab(LiteNetLibIdentity prefab)
@@ -172,6 +181,7 @@ namespace LiteNetLibManager
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
+#if !DISABLE_ADDRESSABLES
         public async UniTask<LiteNetLibIdentity> RegisterAddressablePrefabAsync(AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
             if (!addressablePrefab.IsDataValid())
@@ -184,7 +194,9 @@ namespace LiteNetLibManager
             GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
             return prefab;
         }
+#endif
 
+#if !DISABLE_ADDRESSABLES
         public bool UnregisterAddressablePrefab(AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
             if (!addressablePrefab.IsDataValid())
@@ -195,6 +207,7 @@ namespace LiteNetLibManager
             if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
             return GuidToPrefabs.Remove(addressablePrefab.HashAssetId);
         }
+#endif
 
         public void ClearSpawnedObjects()
         {

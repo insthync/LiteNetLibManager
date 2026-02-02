@@ -1,7 +1,9 @@
 using Cysharp.Threading.Tasks;
 using Insthync.AddressableAssetTools;
 using UnityEngine;
+#if !DISABLE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
+#endif
 using UnityEngine.SceneManagement;
 
 namespace LiteNetLibManager
@@ -9,32 +11,55 @@ namespace LiteNetLibManager
     public class LiteNetLibAdditiveSceneLoader : MonoBehaviour
     {
         public SceneField[] scenes = new SceneField[0];
+#if !DISABLE_ADDRESSABLES
         public AssetReferenceScene[] addressableScenes = new AssetReferenceScene[0];
+#endif
 #if UNITY_SERVER || UNITY_EDITOR
         public SceneField[] serverOnlyScenes = new SceneField[0];
+#if !DISABLE_ADDRESSABLES
         public AssetReferenceScene[] serverOnlyAddressableScenes = new AssetReferenceScene[0];
+#endif
 #endif
 #if !UNITY_SERVER || UNITY_EDITOR
         public SceneField[] clientOnlyScenes = new SceneField[0];
+#if !DISABLE_ADDRESSABLES
         public AssetReferenceScene[] clientOnlyAddressableScenes = new AssetReferenceScene[0];
+#endif
 #endif
 #if UNITY_EDITOR
         public SceneField[] editorOnlyScenes = new SceneField[0];
+#if !DISABLE_ADDRESSABLES
         public AssetReferenceScene[] editorOnlyAddressableScenes = new AssetReferenceScene[0];
+#endif
 #endif
 
         public int GetTotalLoadCount()
         {
             int total = 0;
-            total += scenes.Length + addressableScenes.Length;
+            total += scenes.Length;
+#if !DISABLE_ADDRESSABLES
+            total += addressableScenes.Length;
+#endif
+
 #if UNITY_SERVER
-            total += serverOnlyScenes.Length + serverOnlyAddressableScenes.Length;
+            total += serverOnlyScenes.Length;
+#if !DISABLE_ADDRESSABLES
+            total += serverOnlyAddressableScenes.Length;
 #endif
+#endif
+
 #if !UNITY_SERVER
-            total += clientOnlyScenes.Length + clientOnlyAddressableScenes.Length;
+            total += clientOnlyScenes.Length;
+#if !DISABLE_ADDRESSABLES
+            total += clientOnlyAddressableScenes.Length;
 #endif
+#endif
+
 #if UNITY_EDITOR
-            total += editorOnlyScenes.Length + editorOnlyAddressableScenes.Length;
+            total += editorOnlyScenes.Length;
+#if !DISABLE_ADDRESSABLES
+            total += editorOnlyAddressableScenes.Length;
+#endif
 #endif
             return total;
         }
@@ -42,19 +67,44 @@ namespace LiteNetLibManager
         public async UniTask LoadAll(LiteNetLibGameManager manager, string sceneName, bool isOnline)
         {
             int loadCount = 0;
-            loadCount = await LoadAll(manager, sceneName, isOnline, scenes, addressableScenes, loadCount);
+            loadCount = await LoadAll(manager, sceneName, isOnline,
+                scenes,
+#if !DISABLE_ADDRESSABLES
+                addressableScenes,
+#endif
+                loadCount);
 #if UNITY_SERVER
-            loadCount = await LoadAll(manager, sceneName, isOnline, serverOnlyScenes, serverOnlyAddressableScenes, loadCount);
+            loadCount = await LoadAll(manager, sceneName, isOnline,
+                serverOnlyScenes,
+#if !DISABLE_ADDRESSABLES
+                serverOnlyAddressableScenes,
+#endif
+                loadCount);
 #endif
 #if !UNITY_SERVER
-            loadCount = await LoadAll(manager, sceneName, isOnline, clientOnlyScenes, clientOnlyAddressableScenes, loadCount);
+            loadCount = await LoadAll(manager, sceneName, isOnline,
+                clientOnlyScenes,
+#if !DISABLE_ADDRESSABLES
+                clientOnlyAddressableScenes,
+#endif
+                loadCount);
 #endif
 #if UNITY_EDITOR
-            loadCount = await LoadAll(manager, sceneName, isOnline, editorOnlyScenes, editorOnlyAddressableScenes, loadCount);
+            loadCount = await LoadAll(manager, sceneName, isOnline,
+                editorOnlyScenes,
+#if !DISABLE_ADDRESSABLES
+                editorOnlyAddressableScenes,
+#endif
+                loadCount);
 #endif
         }
 
-        public async UniTask<int> LoadAll(LiteNetLibGameManager manager, string sceneName, bool isOnline, SceneField[] scenes, AssetReferenceScene[] addressableScenes, int loadCount)
+        public async UniTask<int> LoadAll(LiteNetLibGameManager manager, string sceneName, bool isOnline, 
+            SceneField[] scenes,
+#if !DISABLE_ADDRESSABLES
+            AssetReferenceScene[] addressableScenes, 
+#endif
+            int loadCount)
         {
             // Load scene
             for (int i = 0; i < scenes.Length; ++i)
@@ -76,6 +126,7 @@ namespace LiteNetLibManager
                 manager.LoadedAdditiveScenesCount++;
                 manager.Assets.onLoadAdditiveSceneProgress.Invoke(manager.LoadedAdditiveScenesCount, manager.TotalAdditiveScensCount);
             }
+#if !DISABLE_ADDRESSABLES
             // Load from addressable
             for (int i = 0; i < addressableScenes.Length; ++i)
             {
@@ -106,6 +157,7 @@ namespace LiteNetLibManager
                 manager.LoadedAdditiveScenesCount++;
                 manager.Assets.onLoadAdditiveSceneProgress.Invoke(manager.LoadedAdditiveScenesCount, manager.TotalAdditiveScensCount);
             }
+#endif
             return loadCount;
         }
     }

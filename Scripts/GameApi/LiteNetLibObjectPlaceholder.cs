@@ -1,4 +1,4 @@
-#if !EXCLUDE_PREFAB_REFS
+#if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
 using UnityEngine;
 
 namespace LiteNetLibManager

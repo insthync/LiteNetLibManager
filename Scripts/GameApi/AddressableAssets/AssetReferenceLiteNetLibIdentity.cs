@@ -1,3 +1,4 @@
+#if !DISABLE_ADDRESSABLES
 using Insthync.AddressableAssetTools;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -84,3 +85,4 @@ namespace LiteNetLibManager
 #endif
     }
 }
+#endif

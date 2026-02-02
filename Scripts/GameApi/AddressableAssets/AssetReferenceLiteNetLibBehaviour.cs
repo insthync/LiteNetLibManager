@@ -1,3 +1,4 @@
+#if !DISABLE_ADDRESSABLES
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -83,3 +84,4 @@ namespace LiteNetLibManager
 #endif
     }
 }
+#endif

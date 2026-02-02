@@ -6,9 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using UnityEngine;
+#if !DISABLE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
+#endif
 using UnityEngine.SceneManagement;
 
 namespace LiteNetLibManager
@@ -379,6 +381,7 @@ namespace LiteNetLibManager
 
             if (LogDev) Logging.Log(LogTag, $"Loading Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
             Assets.onLoadSceneStart.Invoke(serverSceneInfo.sceneName, false, isOnline, 0f);
+#if !DISABLE_ADDRESSABLES
             if (serverSceneInfo.isAddressable)
             {
                 // Download the scene
@@ -405,8 +408,11 @@ namespace LiteNetLibManager
                 await addressableAsyncOp.Result.ActivateAsync();
             }
             else
+#endif
             {
+#if !DISABLE_ADDRESSABLES
                 await AddressableAssetsManager.UnloadAddressableScenes();
+#endif
                 // Load the scene
                 AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
                     serverSceneInfo.sceneName,
@@ -424,7 +430,9 @@ namespace LiteNetLibManager
             }
 
             // Clear unused assets after new scene loaded
+#if !DISABLE_ADDRESSABLES
             AddressableAssetsManager.ReleaseAll();
+#endif
             await Resources.UnloadUnusedAssets();
 
             // If scene changed while loading, have to load the new one
@@ -448,8 +456,10 @@ namespace LiteNetLibManager
                     {
                         if (listOfLoaders[j].scenes != null)
                             TotalAdditiveScensCount += listOfLoaders[j].scenes.Length;
+#if !DISABLE_ADDRESSABLES
                         if (listOfLoaders[j].addressableScenes != null)
                             TotalAdditiveScensCount += listOfLoaders[j].addressableScenes.Length;
+#endif
                     }
                     Assets.onLoadAdditiveSceneStart.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                     for (int j = 0; j < listOfLoaders.Count; ++j)
@@ -593,11 +603,15 @@ namespace LiteNetLibManager
             _pendingRpcs.Clear();
 
             string activeSceneName = SceneManager.GetActiveScene().name;
+#if !DISABLE_ADDRESSABLES
             if (Assets.addressableOnlineScene.IsDataValid() && !Assets.addressableOnlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.addressableOnlineScene.GetServerSceneInfo(), true).Forget();
             }
-#if !EXCLUDE_PREFAB_REFS
+#else
+            if (false) { }
+#endif
+#if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
             else if (Assets.onlineScene.IsDataValid() && !Assets.onlineScene.IsSameSceneName(activeSceneName))
             {
                 LoadSceneRoutine(Assets.onlineScene.GetServerSceneInfo(), true).Forget();
@@ -619,17 +633,7 @@ namespace LiteNetLibManager
             ServerSceneInfo = null;
             Players.Clear();
             Assets.Clear();
-            string activeSceneName = SceneManager.GetActiveScene().name;
-            if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
-            {
-                LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
-            }
-#if !EXCLUDE_PREFAB_REFS
-            else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
-            {
-                LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
-            }
-#endif
+            LoadOfflineScene();
         }
 
         public override void OnStopClient()
@@ -640,20 +644,27 @@ namespace LiteNetLibManager
                 Players.Clear();
                 Assets.Clear();
                 if (loadOfflineSceneWhenClientStopped)
-                {
-                    string activeSceneName = SceneManager.GetActiveScene().name;
-                    if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
-                    {
-                        LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
-                    }
-#if !EXCLUDE_PREFAB_REFS
-                    else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
-                    {
-                        LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
-                    }
-#endif
-                }
+                    LoadOfflineScene();
             }
+        }
+
+        protected void LoadOfflineScene()
+        {
+            string activeSceneName = SceneManager.GetActiveScene().name;
+#if !DISABLE_ADDRESSABLES
+            if (Assets.addressableOfflineScene.IsDataValid() && !Assets.addressableOfflineScene.IsSameSceneName(activeSceneName))
+            {
+                LoadSceneRoutine(Assets.addressableOfflineScene.GetServerSceneInfo(), false).Forget();
+            }
+#else
+            if (false) { }
+#endif
+#if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
+            else if (Assets.offlineScene.IsDataValid() && !Assets.offlineScene.IsSameSceneName(activeSceneName))
+            {
+                LoadSceneRoutine(Assets.offlineScene.GetServerSceneInfo(), false).Forget();
+            }
+#endif
         }
 
         #region Send messages functions
@@ -1182,19 +1193,24 @@ namespace LiteNetLibManager
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId)
         {
+#if !DISABLE_ADDRESSABLES
             if (Assets.AddressablePlayerPrefab.IsDataValid())
                 return SpawnPlayer(connectionId, Assets.AddressablePlayerPrefab);
-#if !EXCLUDE_PREFAB_REFS
+#endif
+#if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
             if (Assets.PlayerPrefab != null)
                 return SpawnPlayer(connectionId, Assets.PlayerPrefab);
 #endif
             return null;
         }
 
+
+#if !DISABLE_ADDRESSABLES
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, AssetReferenceLiteNetLibIdentity addressablePrefab)
         {
             return SpawnPlayer(connectionId, addressablePrefab.HashAssetId);
         }
+#endif
 
         protected LiteNetLibIdentity SpawnPlayer(long connectionId, LiteNetLibIdentity prefab)
         {

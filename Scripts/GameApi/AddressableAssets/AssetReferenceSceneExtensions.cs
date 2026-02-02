@@ -1,3 +1,4 @@
+#if !DISABLE_ADDRESSABLES
 using Insthync.AddressableAssetTools;
 
 namespace LiteNetLibManager
@@ -20,3 +21,4 @@ namespace LiteNetLibManager
         }
     }
 }
+#endif
