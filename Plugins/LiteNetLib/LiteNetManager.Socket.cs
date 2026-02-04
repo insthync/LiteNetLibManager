@@ -11,11 +11,9 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLib
 {
-    public partial class NetManager
+    public partial class LiteNetManager
     {
-        private const int ReceivePollingTime = 500000; //0.5 second
-
-        private Socket _udpSocketv4;
+        protected Socket _udpSocketv4;
         private Socket _udpSocketv6;
         private Thread _receiveThread;
         private IPEndPoint _bufferEndPointv4;
@@ -37,6 +35,11 @@ namespace LiteNetLib
         // special case in iOS (and possibly android that should be resolved in unity)
         internal bool NotConnected;
 
+        /// <summary>
+        /// Poll timeout in microseconds. Increasing can slightly increase performance in cost of slow NetManager.Stop(Socket.Close)
+        /// </summary>
+        public int ReceivePollingTime = 50000; //0.05 second
+
         public short Ttl
         {
             get
@@ -55,7 +58,7 @@ namespace LiteNetLib
             }
         }
 
-        static NetManager()
+        static LiteNetManager()
         {
 #if DISABLE_IPV6
             IPv6Support = false;
@@ -93,19 +96,14 @@ namespace LiteNetLib
             return false;
         }
 
-        private void ManualReceive(Socket socket, EndPoint bufferEndPoint, int maxReceive)
+        private void ManualReceive(Socket socket, EndPoint bufferEndPoint)
         {
             //Reading data
             try
             {
-                int packetsReceived = 0;
-                while (socket.Available > 0)
-                {
-                    ReceiveFrom(socket, ref bufferEndPoint);
-                    packetsReceived++;
-                    if (packetsReceived == maxReceive)
-                        break;
-                }
+                int available = socket.Available;
+                while (available > 0)
+                    available -= ReceiveFrom(socket, ref bufferEndPoint);
             }
             catch (SocketException ex)
             {
@@ -134,7 +132,7 @@ namespace LiteNetLib
             var socketV6 = _udpSocketv6;
             var packet = PoolGetPacket(NetConstants.MaxPacketSize);
 
-            while (IsRunning)
+            while (_isRunning)
             {
                 try
                 {
@@ -214,13 +212,7 @@ namespace LiteNetLib
                         (address[26] << 16) +
                         (address[25] << 8) +
                         (address[24])));
-#if NETCOREAPP || NETSTANDARD2_1 || NETSTANDARD2_1_OR_GREATER
                     tempEndPoint.Address = new IPAddress(new ReadOnlySpan<byte>(address, 8, 16), scope);
-#else
-                    byte[] addrBuffer = new byte[16];
-                    Buffer.BlockCopy(address, 8, addrBuffer, 0, 16);
-                    tempEndPoint.Address = new IPAddress(addrBuffer, scope);
-#endif
                 }
                 else //IPv4
                 {
@@ -246,17 +238,18 @@ namespace LiteNetLib
             }
         }
 
-        private void ReceiveFrom(Socket s, ref EndPoint bufferEndPoint)
+        private int ReceiveFrom(Socket s, ref EndPoint bufferEndPoint)
         {
             var packet = PoolGetPacket(NetConstants.MaxPacketSize);
 #if NET8_0_OR_GREATER
             var sockAddr = s.AddressFamily == AddressFamily.InterNetwork ? _sockAddrCacheV4 : _sockAddrCacheV6;
-            packet.Size = s.ReceiveFrom(packet, SocketFlags.None, sockAddr);
+            packet.Size = s.ReceiveFrom(new Span<byte>(packet.RawData, 0, NetConstants.MaxPacketSize), SocketFlags.None, sockAddr);
             OnMessageReceived(packet, TryGetPeer(sockAddr, out var peer) ? peer : (IPEndPoint)bufferEndPoint.Create(sockAddr));
 #else
             packet.Size = s.ReceiveFrom(packet.RawData, 0, NetConstants.MaxPacketSize, SocketFlags.None, ref bufferEndPoint);
             OnMessageReceived(packet, (IPEndPoint)bufferEndPoint);
 #endif
+            return packet.Size;
         }
 
         private void ReceiveLogic()
@@ -267,7 +260,7 @@ namespace LiteNetLib
             var socketv4 = _udpSocketv4;
             var socketV6 = _udpSocketv6;
 
-            while (IsRunning)
+            while (_isRunning)
             {
                 //Reading data
                 try
@@ -352,7 +345,7 @@ namespace LiteNetLib
                 _pausedSocketFix = new PausedSocketFix(this, addressIPv4, addressIPv6, port, manualMode);
 #endif
 
-            IsRunning = true;
+            _isRunning = true;
             if (_manualMode)
             {
                 _bufferEndPointv4 = new IPEndPoint(IPAddress.Any, 0);
@@ -509,14 +502,12 @@ namespace LiteNetLib
             return result;
         }
 
-        internal int SendRaw(NetPacket packet, IPEndPoint remoteEndPoint)
-        {
-            return SendRaw(packet.RawData, 0, packet.Size, remoteEndPoint);
-        }
+        internal int SendRaw(NetPacket packet, IPEndPoint remoteEndPoint) =>
+            SendRaw(packet.RawData, 0, packet.Size, remoteEndPoint);
 
         internal int SendRaw(byte[] message, int start, int length, IPEndPoint remoteEndPoint)
         {
-            if (!IsRunning)
+            if (!_isRunning)
                 return 0;
 
             NetPacket expandedPacket = null;
@@ -529,6 +520,44 @@ namespace LiteNetLib
                 message = expandedPacket.RawData;
             }
 
+#if DEBUG || SIMULATE_NETWORK
+            if (HandleSimulateOutboundPacketLoss())
+            {
+                if (expandedPacket != null)
+                    PoolRecycle(expandedPacket);
+                return 0; // Simulate successful send to avoid triggering error handling
+            }
+
+            if (HandleSimulateOutboundLatency(message, start, length, remoteEndPoint))
+            {
+                if (expandedPacket != null)
+                    PoolRecycle(expandedPacket);
+                return length; // Simulate successful send
+            }
+#endif
+
+            return SendRawCoreWithCleanup(message, start, length, remoteEndPoint, expandedPacket);
+        }
+
+        private int SendRawCoreWithCleanup(byte[] message, int start, int length, IPEndPoint remoteEndPoint, NetPacket expandedPacket)
+        {
+            try
+            {
+                return SendRawCore(message, start, length, remoteEndPoint);
+            }
+            finally
+            {
+                if (expandedPacket != null)
+                    PoolRecycle(expandedPacket);
+            }
+        }
+
+        // Core socket sending logic without simulation - used by both SendRaw and delayed packet processing
+        internal int SendRawCore(byte[] message, int start, int length, IPEndPoint remoteEndPoint)
+        {
+            if (!_isRunning)
+                return 0;
+
             var socket = _udpSocketv4;
             if (remoteEndPoint.AddressFamily == AddressFamily.InterNetworkV6 && IPv6Support)
             {
@@ -540,7 +569,7 @@ namespace LiteNetLib
             int result;
             try
             {
-                if (UseNativeSockets && remoteEndPoint is NetPeer peer)
+                if (UseNativeSockets && remoteEndPoint is LiteNetPeer peer)
                 {
                     unsafe
                     {
@@ -573,7 +602,7 @@ namespace LiteNetLib
 
                     case SocketError.HostUnreachable:
                     case SocketError.NetworkUnreachable:
-                        if (DisconnectOnUnreachable && remoteEndPoint is NetPeer peer)
+                        if (DisconnectOnUnreachable && remoteEndPoint is LiteNetPeer peer)
                         {
                             DisconnectPeerForce(
                                 peer,
@@ -601,11 +630,6 @@ namespace LiteNetLib
                 NetDebug.WriteError($"[S] {ex}");
                 return 0;
             }
-            finally
-            {
-                if (expandedPacket != null)
-                    PoolRecycle(expandedPacket);
-            }
 
             if (result <= 0)
                 return 0;
@@ -619,15 +643,11 @@ namespace LiteNetLib
             return result;
         }
 
-        public bool SendBroadcast(NetDataWriter writer, int port)
-        {
-            return SendBroadcast(writer.Data, 0, writer.Length, port);
-        }
+        public bool SendBroadcast(NetDataWriter writer, int port) =>
+            SendBroadcast(writer.Data, 0, writer.Length, port);
 
-        public bool SendBroadcast(byte[] data, int port)
-        {
-            return SendBroadcast(data, 0, data.Length, port);
-        }
+        public bool SendBroadcast(byte[] data, int port) =>
+            SendBroadcast(data, 0, data.Length, port);
 
         public bool SendBroadcast(byte[] data, int start, int length, int port)
         {
@@ -694,14 +714,14 @@ namespace LiteNetLib
 
         private void CloseSocket()
         {
-            IsRunning = false;
+            _isRunning = false;
+            if (_receiveThread != null && _receiveThread != Thread.CurrentThread)
+                _receiveThread.Join();
+            _receiveThread = null;
             _udpSocketv4?.Close();
             _udpSocketv6?.Close();
             _udpSocketv4 = null;
             _udpSocketv6 = null;
-            if (_receiveThread != null && _receiveThread != Thread.CurrentThread)
-                _receiveThread.Join();
-            _receiveThread = null;
         }
     }
 }
