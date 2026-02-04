@@ -82,7 +82,7 @@ namespace LiteNetLibManager
         {
             if (IsClientStarted)
             {
-                Client.FirstPeer.Send(writer, dataChannel, deliveryMethod);
+                Client.FirstPeer.Send(writer.Data, 0, writer.Length, dataChannel, deliveryMethod);
                 return true;
             }
             return false;
