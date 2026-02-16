@@ -764,15 +764,13 @@ namespace LiteNetLibManager
                 // Don't hide, player own this one
                 return false;
             }
-            if (string.IsNullOrEmpty(SubChannelId) && string.IsNullOrEmpty(identity.SubChannelId))
+            if (!string.IsNullOrEmpty(SubChannelId) || !string.IsNullOrEmpty(identity.SubChannelId))
             {
-                // Don't hide, because sub-channelIDs aren't different
-                return false;
-            }
-            if (!string.Equals(SubChannelId, identity.SubChannelId))
-            {
-                // Hide because sub-channelIDs are different
-                return true;
+                if (!string.Equals(SubChannelId, identity.SubChannelId))
+                {
+                    // Hide because sub-channelIDs are different
+                    return true;
+                }
             }
             foreach (ForceHideDelegate func in ForceHideFunctions)
             {
