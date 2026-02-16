@@ -752,6 +752,18 @@ namespace LiteNetLibManager
             }
         }
 
+        public bool IsDifferSubChannelId(LiteNetLibIdentity identity)
+        {
+            if (identity == null)
+            {
+                // WTF?
+                return false;
+            }
+            if (string.IsNullOrEmpty(SubChannelId) && string.IsNullOrEmpty(identity.SubChannelId))
+                return false;
+            return !string.Equals(SubChannelId, identity.SubChannelId);
+        }
+
         public bool IsHideFrom(LiteNetLibIdentity identity)
         {
             if (identity == null)
@@ -764,13 +776,10 @@ namespace LiteNetLibManager
                 // Don't hide, player own this one
                 return false;
             }
-            if (!string.IsNullOrEmpty(SubChannelId) || !string.IsNullOrEmpty(identity.SubChannelId))
+            if (IsDifferSubChannelId(identity))
             {
-                if (!string.Equals(SubChannelId, identity.SubChannelId))
-                {
-                    // Hide because sub-channelIDs are different
-                    return true;
-                }
+                // Hide because sub-channelIDs are different
+                return true;
             }
             foreach (ForceHideDelegate func in ForceHideFunctions)
             {
