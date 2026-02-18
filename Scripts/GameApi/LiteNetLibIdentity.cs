@@ -97,7 +97,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// List of net functions from all behaviours (include children behaviours)
         /// </summary>
-        internal readonly Dictionary<int, LiteNetLibFunction> NetFunctions = new Dictionary<int, LiteNetLibFunction>();
+        internal readonly Dictionary<int, LiteNetLibRPC> RPCs = new Dictionary<int, LiteNetLibRPC>();
         /// <summary>
         /// List of networked objects which subscribed by this identity
         /// </summary>
@@ -463,33 +463,33 @@ namespace LiteNetLibManager
         }
         #endregion
 
-        #region NetFunction Functions
-        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
+        #region RPC Functions
+        internal LiteNetLibRPC ProcessRPC(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
-            return ProcessNetFunction(GetNetFunction(info), reader, hookCallback);
+            return ProcessRPC(GetRPC(info), reader, hookCallback);
         }
 
-        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibFunction netFunction, NetDataReader reader, bool hookCallback)
+        internal LiteNetLibRPC ProcessRPC(LiteNetLibRPC rpc, NetDataReader reader, bool hookCallback)
         {
-            if (netFunction == null)
+            if (rpc == null)
                 return null;
-            netFunction.DeserializeParameters(reader);
+            rpc.DeserializeParameters(reader);
             if (hookCallback)
-                netFunction.HookCallback();
-            return netFunction;
+                rpc.HookCallback();
+            return rpc;
         }
 
-        internal LiteNetLibFunction GetNetFunction(LiteNetLibElementInfo info)
+        internal LiteNetLibRPC GetRPC(LiteNetLibElementInfo info)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (!NetFunctions.TryGetValue(info.elementId, out LiteNetLibFunction netFunction))
+            if (!RPCs.TryGetValue(info.elementId, out LiteNetLibRPC rpc))
             {
                 if (Manager.LogError)
                     Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
                 return null;
             }
-            return netFunction;
+            return rpc;
         }
         #endregion
 
@@ -980,7 +980,7 @@ namespace LiteNetLibManager
             onSubscriberRemoved.RemoveAllListeners();
             onSubscriberRemoved = null;
             SyncElements.Clear();
-            NetFunctions.Clear();
+            RPCs.Clear();
             Subscribings.Clear();
             Subscribers.Clear();
             HideExceptions.Clear();

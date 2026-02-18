@@ -313,7 +313,7 @@ namespace LiteNetLibManager
                     pendingRpc = _pendingRpcs[i];
                     if (pendingRpc.info.objectId == objectId)
                     {
-                        identity.ProcessNetFunction(pendingRpc.info, pendingRpc.reader, true);
+                        identity.ProcessRPC(pendingRpc.info, pendingRpc.reader, true);
                         _pendingRpcs.RemoveAt(i);
                         i--;
                     }

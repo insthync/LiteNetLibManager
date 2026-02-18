@@ -291,13 +291,13 @@ namespace LiteNetLibManager
             Type[] tempParamTypes;
             foreach (MethodInfo methodInfo in methodInfos)
             {
-                tempFunctionId = MakeNetFunctionId(methodInfo);
+                tempFunctionId = MakeRPCId(methodInfo);
                 if (!s_CacheDyncnamicFunctionTypes.TryGetValue(tempFunctionId, out tempParamTypes))
                 {
                     tempParamTypes = methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
                     s_CacheDyncnamicFunctionTypes[tempFunctionId] = tempParamTypes;
                 }
-                RegisterRPC(ids, tempFunctionId, new LiteNetLibFunctionDynamic(tempParamTypes, this, methodInfo), canCallByEveryone);
+                RegisterRPC(ids, tempFunctionId, new LiteNetLibRPCDynamic(tempParamTypes, this, methodInfo), canCallByEveryone);
             }
         }
 
@@ -305,7 +305,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction(NetFunctionDelegate func, bool canCallByEveryone = false)
+        public void RegisterRPC(RPCDelegate func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -313,7 +313,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1>(RPCDelegate<T1> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -321,7 +321,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2>(RPCDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -329,7 +329,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -337,7 +337,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -345,7 +345,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -353,7 +353,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -361,7 +361,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -369,7 +369,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -377,7 +377,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
@@ -385,310 +385,310 @@ namespace LiteNetLibManager
         /// <summary>
         /// This is another synonym of `RegisterElasticRPC`
         /// </summary>
-        public void RegisterNetFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
+        public void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
             RegisterElasticRPC(func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC(NetFunctionDelegate func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC(RPCDelegate func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1>(RPCDelegate<T1> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2>(RPCDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
+        public void RegisterElasticRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC(NetFunctionDelegate func, bool canCallByEveryone = false)
+        public void RegisterServerRPC(RPCDelegate func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1>(RPCDelegate<T1> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2>(RPCDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
+        public void RegisterServerRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_serverRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC(NetFunctionDelegate func, bool canCallByEveryone = false)
+        public void RegisterAllRPC(RPCDelegate func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1>(RPCDelegate<T1> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2>(RPCDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
+        public void RegisterAllRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_allRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc(NetFunctionDelegate func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc(RPCDelegate func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1>(NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1>(RPCDelegate<T1> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2>(NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2>(RPCDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
 
-        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
+        public void RegisterTargetRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
             RegisterRPC(_targetRpcIds, func, canCallByEveryone);
         }
         #endregion
 
-        private void RegisterRPC(Dictionary<string, int> dict, NetFunctionDelegate func, bool canCallByEveryone = false)
+        private void RegisterRPC(Dictionary<string, int> dict, RPCDelegate func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1>(Dictionary<string, int> dict, NetFunctionDelegate<T1> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1>(Dictionary<string, int> dict, RPCDelegate<T1> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2>(Dictionary<string, int> dict, RPCDelegate<T1, T2> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3, T4>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3, T4>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3, T4> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3, T4>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3, T4, T5>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3, T4, T5>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3, T4, T5> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3, T4, T5>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3, T4, T5, T6>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3, T4, T5, T6>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3, T4, T5, T6> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3, T4, T5, T6>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7, T8>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Dictionary<string, int> dict, NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
+        private void RegisterRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Dictionary<string, int> dict, RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, bool canCallByEveryone = false)
         {
-            RegisterRPC(dict, MakeNetFunctionId(func.Method), new LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(func), canCallByEveryone);
+            RegisterRPC(dict, MakeRPCId(func.Method), new LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(func), canCallByEveryone);
         }
 
-        private void RegisterRPC(Dictionary<string, int> dict, string id, LiteNetLibFunction netFunction, bool canCallByEveryone)
+        private void RegisterRPC(Dictionary<string, int> dict, string id, LiteNetLibRPC rpc, bool canCallByEveryone)
         {
             if (dict.ContainsKey(id))
             {
@@ -697,349 +697,349 @@ namespace LiteNetLibManager
                 return;
             }
             int elementId = LiteNetLibIdentity.GetHashedId(id);
-            netFunction.Setup(this, elementId);
-            netFunction.CanCallByEveryone = canCallByEveryone;
-            Identity.NetFunctions[elementId] = netFunction;
+            rpc.Setup(this, elementId);
+            rpc.CanCallByEveryone = canCallByEveryone;
+            Identity.RPCs[elementId] = rpc;
             dict[id] = elementId;
         }
 
         #region Elastic RPC with receivers and parameters
-        public void RPC(NetFunctionDelegate func, FunctionReceivers receivers)
+        public void RPC(RPCDelegate func, RPCReceivers receivers)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, FunctionReceivers receivers, T1 param1)
+        public void RPC<T1>(RPCDelegate<T1> func, RPCReceivers receivers, T1 param1)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, FunctionReceivers receivers, T1 param1, T2 param2)
+        public void RPC<T1, T2>(RPCDelegate<T1, T2> func, RPCReceivers receivers, T1 param1, T2 param2)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region Elastic RPC with delivery method, receivers and parameters
-        public void RPC(NetFunctionDelegate func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers)
+        public void RPC(RPCDelegate func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1)
+        public void RPC<T1>(RPCDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2)
+        public void RPC<T1, T2>(RPCDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, receivers, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region All RPC or Server RPC with parameters
-        public void RPC(NetFunctionDelegate func)
+        public void RPC(RPCDelegate func)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, T1 param1)
+        public void RPC<T1>(RPCDelegate<T1> func, T1 param1)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, T1 param1, T2 param2)
+        public void RPC<T1, T2>(RPCDelegate<T1, T2> func, T1 param1, T2 param2)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, T1 param1, T2 param2, T3 param3)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, T1 param1, T2 param2, T3 param3, T4 param4)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region All RPC or Server RPC with delivery method and parameters
-        public void RPC(NetFunctionDelegate func, byte dataChannel, DeliveryMethod deliveryMethod)
+        public void RPC(RPCDelegate func, byte dataChannel, DeliveryMethod deliveryMethod)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1)
+        public void RPC<T1>(RPCDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2)
+        public void RPC<T1, T2>(RPCDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region Target RPC with parameters
-        public void RPC(NetFunctionDelegate func, long connectionId)
+        public void RPC(RPCDelegate func, long connectionId)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, long connectionId, T1 param1)
+        public void RPC<T1>(RPCDelegate<T1> func, long connectionId, T1 param1)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, long connectionId, T1 param1, T2 param2)
+        public void RPC<T1, T2>(RPCDelegate<T1, T2> func, long connectionId, T1 param1, T2 param2)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, long connectionId, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, long connectionId, T1 param1, T2 param2, T3 param3)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
             RPC(func.Method.Name, DefaultRpcChannelId, DeliveryMethod.ReliableOrdered, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
         #endregion
 
         #region Target RPC with delivery method and parameters
-        public void RPC(NetFunctionDelegate func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId)
+        public void RPC(RPCDelegate func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId);
         }
 
-        public void RPC<T1>(NetFunctionDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1)
+        public void RPC<T1>(RPCDelegate<T1> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1);
         }
 
-        public void RPC<T1, T2>(NetFunctionDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2)
+        public void RPC<T1, T2>(RPCDelegate<T1, T2> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2);
         }
 
-        public void RPC<T1, T2, T3>(NetFunctionDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3)
+        public void RPC<T1, T2, T3>(RPCDelegate<T1, T2, T3> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3);
         }
 
-        public void RPC<T1, T2, T3, T4>(NetFunctionDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4)
+        public void RPC<T1, T2, T3, T4>(RPCDelegate<T1, T2, T3, T4> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3, param4);
         }
 
-        public void RPC<T1, T2, T3, T4, T5>(NetFunctionDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
+        public void RPC<T1, T2, T3, T4, T5>(RPCDelegate<T1, T2, T3, T4, T5> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3, param4, param5);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
+        public void RPC<T1, T2, T3, T4, T5, T6>(RPCDelegate<T1, T2, T3, T4, T5, T6> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3, param4, param5, param6);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3, param4, param5, param6, param7);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3, param4, param5, param6, param7, param8);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9);
         }
 
-        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
+        public void RPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> func, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, T1 param1, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6, T7 param7, T8 param8, T9 param9, T10 param10)
         {
             RPC(func.Method.Name, dataChannel, deliveryMethod, connectionId, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10);
         }
@@ -1053,16 +1053,16 @@ namespace LiteNetLibManager
         /// <param name="deliveryMethod"></param>
         /// <param name="receivers"></param>
         /// <param name="parameters"></param>
-        public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameters)
+        public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, params object[] parameters)
         {
-            string id = MakeNetFunctionId(methodName);
+            string id = MakeRPCId(methodName);
             int elementId;
             switch (receivers)
             {
-                case FunctionReceivers.All:
+                case RPCReceivers.All:
                     if (_allRpcIds.TryGetValue(id, out elementId))
                     {
-                        Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
+                        Identity.RPCs[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
                     else
                     {
@@ -1070,10 +1070,10 @@ namespace LiteNetLibManager
                             Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, any rpc [{methodName}] not found.");
                     }
                     break;
-                case FunctionReceivers.Server:
+                case RPCReceivers.Server:
                     if (_serverRpcIds.TryGetValue(id, out elementId))
                     {
-                        Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
+                        Identity.RPCs[elementId].Call(dataChannel, deliveryMethod, receivers, parameters);
                     }
                     else
                     {
@@ -1097,15 +1097,15 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, params object[] parameters)
         {
-            string id = MakeNetFunctionId(methodName);
+            string id = MakeRPCId(methodName);
             int elementId;
             if (_allRpcIds.TryGetValue(id, out elementId))
             {
-                Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.All, parameters);
+                Identity.RPCs[elementId].Call(dataChannel, deliveryMethod, RPCReceivers.All, parameters);
             }
             else if (_serverRpcIds.TryGetValue(id, out elementId))
             {
-                Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, FunctionReceivers.Server, parameters);
+                Identity.RPCs[elementId].Call(dataChannel, deliveryMethod, RPCReceivers.Server, parameters);
             }
             else
             {
@@ -1124,11 +1124,11 @@ namespace LiteNetLibManager
         /// <param name="parameters"></param>
         public void RPC(string methodName, byte dataChannel, DeliveryMethod deliveryMethod, long connectionId, params object[] parameters)
         {
-            string id = MakeNetFunctionId(methodName);
+            string id = MakeRPCId(methodName);
             int elementId;
             if (_targetRpcIds.TryGetValue(id, out elementId))
             {
-                Identity.NetFunctions[elementId].Call(dataChannel, deliveryMethod, connectionId, parameters);
+                Identity.RPCs[elementId].Call(dataChannel, deliveryMethod, connectionId, parameters);
             }
             else
             {
@@ -1137,12 +1137,12 @@ namespace LiteNetLibManager
             }
         }
 
-        private string MakeNetFunctionId(MethodInfo methodInfo)
+        private string MakeRPCId(MethodInfo methodInfo)
         {
-            return MakeNetFunctionId(methodInfo.Name);
+            return MakeRPCId(methodInfo.Name);
         }
 
-        private string MakeNetFunctionId(string methodName)
+        private string MakeRPCId(string methodName)
         {
             using (var stringBuilder = ZString.CreateStringBuilder(true))
             {

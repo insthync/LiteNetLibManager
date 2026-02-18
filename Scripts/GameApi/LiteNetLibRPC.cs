@@ -5,14 +5,14 @@ using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
 {
-    public enum FunctionReceivers : byte
+    public enum RPCReceivers : byte
     {
         Target,
         All,
         Server,
     }
 
-    public class LiteNetLibFunction : LiteNetLibElement
+    public class LiteNetLibRPC : LiteNetLibElement
     {
         protected readonly static NetDataWriter s_ServerWriter = new NetDataWriter();
         protected readonly static NetDataWriter s_ClientWriter = new NetDataWriter();
@@ -21,25 +21,25 @@ namespace LiteNetLibManager
         public readonly object[] Parameters;
         public bool CanCallByEveryone { get; set; }
 
-        private NetFunctionDelegate _callback;
+        private RPCDelegate _callback;
 
-        protected LiteNetLibFunction() : this(0)
+        protected LiteNetLibRPC() : this(0)
         {
         }
 
-        protected LiteNetLibFunction(int parameterCount)
+        protected LiteNetLibRPC(int parameterCount)
         {
             Parameters = new object[parameterCount];
             ParameterTypes = new Type[parameterCount];
         }
 
-        protected LiteNetLibFunction(Type[] parameterTypes)
+        protected LiteNetLibRPC(Type[] parameterTypes)
         {
             Parameters = new object[parameterTypes.Length];
             ParameterTypes = parameterTypes;
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate callback) : this()
+        public LiteNetLibRPC(RPCDelegate callback) : this()
         {
             _callback = callback;
         }
@@ -54,7 +54,7 @@ namespace LiteNetLibManager
             _callback.Invoke();
         }
 
-        protected void SendCall(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, long targetConnectionId)
+        protected void SendCall(byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, long targetConnectionId)
         {
             LiteNetLibGameManager manager = Manager;
             LiteNetLibServer server = manager.Server;
@@ -63,7 +63,7 @@ namespace LiteNetLibManager
             {
                 switch (receivers)
                 {
-                    case FunctionReceivers.Target:
+                    case RPCReceivers.Target:
                         if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
                             // Prepare packet
@@ -73,7 +73,7 @@ namespace LiteNetLibManager
                             server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, s_ServerWriter);
                         }
                         break;
-                    case FunctionReceivers.All:
+                    case RPCReceivers.All:
                         // Send to all connections
                         foreach (long connectionId in manager.GetConnectionIds())
                         {
@@ -99,7 +99,7 @@ namespace LiteNetLibManager
                             HookCallback();
                         }
                         break;
-                    case FunctionReceivers.Server:
+                    case RPCReceivers.Server:
                         // Call server function at server
                         // So hook callback immediately to do the function at server
                         HookCallback();
@@ -127,7 +127,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void Call(byte dataChannel, DeliveryMethod deliveryMethod, FunctionReceivers receivers, params object[] parameterValues)
+        internal void Call(byte dataChannel, DeliveryMethod deliveryMethod, RPCReceivers receivers, params object[] parameterValues)
         {
             if (!CanBeCalled())
                 return;
@@ -142,10 +142,10 @@ namespace LiteNetLibManager
                 return;
 
             SetParameters(parameterValues);
-            SendCall(dataChannel, deliveryMethod, FunctionReceivers.Target, connectionId);
+            SendCall(dataChannel, deliveryMethod, RPCReceivers.Target, connectionId);
         }
 
-        internal void CallWithoutParametersSet(FunctionReceivers receivers)
+        internal void CallWithoutParametersSet(RPCReceivers receivers)
         {
             if (!CanBeCalled())
                 return;
@@ -158,13 +158,13 @@ namespace LiteNetLibManager
             if (!CanBeCalled())
                 return;
 
-            SendCall(0, DeliveryMethod.ReliableOrdered, FunctionReceivers.Target, connectionId);
+            SendCall(0, DeliveryMethod.ReliableOrdered, RPCReceivers.Target, connectionId);
         }
 
-        private void SerializeForClientSend(NetDataWriter writer, FunctionReceivers receivers, long connectionId)
+        private void SerializeForClientSend(NetDataWriter writer, RPCReceivers receivers, long connectionId)
         {
             writer.Put((byte)receivers);
-            if (receivers == FunctionReceivers.Target)
+            if (receivers == RPCReceivers.Target)
                 writer.PutPackedLong(connectionId);
             SerializeForSend(writer);
         }
@@ -205,7 +205,7 @@ namespace LiteNetLibManager
     }
 
     #region Implement for multiple parameter usages
-    public class LiteNetLibFunctionDynamic : LiteNetLibFunction
+    public class LiteNetLibRPCDynamic : LiteNetLibRPC
     {
         /// <summary>
         /// The class which contain the function
@@ -214,7 +214,7 @@ namespace LiteNetLibManager
 
         private MethodInfo _callback;
 
-        public LiteNetLibFunctionDynamic(Type[] parameterTypes, object instance, MethodInfo callback) : base(parameterTypes)
+        public LiteNetLibRPCDynamic(Type[] parameterTypes, object instance, MethodInfo callback) : base(parameterTypes)
         {
             _instance = instance;
             _callback = callback;
@@ -226,16 +226,16 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1> _callback;
+        private RPCDelegate<T1> _callback;
 
-        protected LiteNetLibFunction() : base(1)
+        protected LiteNetLibRPC() : base(1)
         {
             ParameterTypes[0] = typeof(T1);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1> callback) : this()
         {
             _callback = callback;
         }
@@ -246,17 +246,17 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2> _callback;
+        private RPCDelegate<T1, T2> _callback;
 
-        protected LiteNetLibFunction() : base(2)
+        protected LiteNetLibRPC() : base(2)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2> callback) : this()
         {
             _callback = callback;
         }
@@ -267,18 +267,18 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3> _callback;
+        private RPCDelegate<T1, T2, T3> _callback;
 
-        protected LiteNetLibFunction() : base(3)
+        protected LiteNetLibRPC() : base(3)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
             ParameterTypes[2] = typeof(T3);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3> callback) : this()
         {
             _callback = callback;
         }
@@ -289,11 +289,11 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3, T4> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3, T4> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3, T4> _callback;
+        private RPCDelegate<T1, T2, T3, T4> _callback;
 
-        protected LiteNetLibFunction() : base(4)
+        protected LiteNetLibRPC() : base(4)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -301,7 +301,7 @@ namespace LiteNetLibManager
             ParameterTypes[3] = typeof(T4);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3, T4> callback) : this()
         {
             _callback = callback;
         }
@@ -312,11 +312,11 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3, T4, T5> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3, T4, T5> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5> _callback;
+        private RPCDelegate<T1, T2, T3, T4, T5> _callback;
 
-        protected LiteNetLibFunction() : base(5)
+        protected LiteNetLibRPC() : base(5)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -325,7 +325,7 @@ namespace LiteNetLibManager
             ParameterTypes[4] = typeof(T5);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3, T4, T5> callback) : this()
         {
             _callback = callback;
         }
@@ -336,11 +336,11 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3, T4, T5, T6> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6> _callback;
+        private RPCDelegate<T1, T2, T3, T4, T5, T6> _callback;
 
-        protected LiteNetLibFunction() : base(6)
+        protected LiteNetLibRPC() : base(6)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -350,7 +350,7 @@ namespace LiteNetLibManager
             ParameterTypes[5] = typeof(T6);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3, T4, T5, T6> callback) : this()
         {
             _callback = callback;
         }
@@ -361,11 +361,11 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> _callback;
+        private RPCDelegate<T1, T2, T3, T4, T5, T6, T7> _callback;
 
-        protected LiteNetLibFunction() : base(7)
+        protected LiteNetLibRPC() : base(7)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -376,7 +376,7 @@ namespace LiteNetLibManager
             ParameterTypes[6] = typeof(T7);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3, T4, T5, T6, T7> callback) : this()
         {
             _callback = callback;
         }
@@ -387,11 +387,11 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7, T8> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> _callback;
+        private RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> _callback;
 
-        protected LiteNetLibFunction() : base(8)
+        protected LiteNetLibRPC() : base(8)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -403,7 +403,7 @@ namespace LiteNetLibManager
             ParameterTypes[7] = typeof(T8);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8> callback) : this()
         {
             _callback = callback;
         }
@@ -414,11 +414,11 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> _callback;
+        private RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> _callback;
 
-        protected LiteNetLibFunction() : base(9)
+        protected LiteNetLibRPC() : base(9)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -431,7 +431,7 @@ namespace LiteNetLibManager
             ParameterTypes[8] = typeof(T9);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9> callback) : this()
         {
             _callback = callback;
         }
@@ -442,11 +442,11 @@ namespace LiteNetLibManager
         }
     }
 
-    public class LiteNetLibFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : LiteNetLibFunction
+    public class LiteNetLibRPC<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : LiteNetLibRPC
     {
-        private NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> _callback;
+        private RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> _callback;
 
-        protected LiteNetLibFunction() : base(10)
+        protected LiteNetLibRPC() : base(10)
         {
             ParameterTypes[0] = typeof(T1);
             ParameterTypes[1] = typeof(T2);
@@ -460,7 +460,7 @@ namespace LiteNetLibManager
             ParameterTypes[9] = typeof(T10);
         }
 
-        public LiteNetLibFunction(NetFunctionDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback) : this()
+        public LiteNetLibRPC(RPCDelegate<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> callback) : this()
         {
             _callback = callback;
         }

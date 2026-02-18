@@ -913,40 +913,40 @@ namespace LiteNetLibManager
 
         protected virtual void HandleClientCallFunction(MessageHandlerData messageHandler)
         {
-            FunctionReceivers receivers = (FunctionReceivers)messageHandler.Reader.GetByte();
+            RPCReceivers receivers = (RPCReceivers)messageHandler.Reader.GetByte();
             long connectionId = -1;
-            if (receivers == FunctionReceivers.Target)
+            if (receivers == RPCReceivers.Target)
                 connectionId = messageHandler.Reader.GetPackedLong();
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
-                LiteNetLibFunction netFunction = identity.GetNetFunction(info);
-                if (netFunction == null)
+                LiteNetLibRPC rpc = identity.GetRPC(info);
+                if (rpc == null)
                 {
                     // There is no net function that player try to call (player may try to hack)
                     return;
                 }
-                if (!netFunction.CanCallByEveryone && messageHandler.ConnectionId != identity.ConnectionId)
+                if (!rpc.CanCallByEveryone && messageHandler.ConnectionId != identity.ConnectionId)
                 {
                     // The function not allowed anyone except owner client to call this net function
                     // And the client is also not the owner client
                     return;
                 }
-                if (receivers == FunctionReceivers.Server)
+                if (receivers == RPCReceivers.Server)
                 {
                     // Request from client to server, so hook callback at server immediately
-                    identity.ProcessNetFunction(netFunction, messageHandler.Reader, true);
+                    identity.ProcessRPC(rpc, messageHandler.Reader, true);
                 }
                 else
                 {
                     // Request from client to other clients, so hook callback later
-                    identity.ProcessNetFunction(netFunction, messageHandler.Reader, false);
+                    identity.ProcessRPC(rpc, messageHandler.Reader, false);
                     // Use call with out parameters set because parameters already set while process net function
-                    if (receivers == FunctionReceivers.Target)
-                        netFunction.CallWithoutParametersSet(connectionId);
+                    if (receivers == RPCReceivers.Target)
+                        rpc.CallWithoutParametersSet(connectionId);
                     else
-                        netFunction.CallWithoutParametersSet(receivers);
+                        rpc.CallWithoutParametersSet(receivers);
                 }
             }
         }
@@ -973,7 +973,7 @@ namespace LiteNetLibManager
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
             {
                 // All function from server will be processed (because it's always trust server)
-                identity.ProcessNetFunction(info, messageHandler.Reader, true);
+                identity.ProcessRPC(info, messageHandler.Reader, true);
             }
             else
             {
