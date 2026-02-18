@@ -67,7 +67,7 @@ namespace LiteNetLibManager
                         if (Identity.HasSubscriberOrIsOwning(targetConnectionId) && manager.ContainsConnectionId(targetConnectionId))
                         {
                             // Prepare packet
-                            TransportHandler.WritePacket(s_ServerWriter, GameMsgTypes.CallFunction);
+                            TransportHandler.WritePacket(s_ServerWriter, GameMsgTypes.RPC);
                             SerializeForSend(s_ServerWriter);
                             // Send function call message from server to target client by target connection Id
                             server.SendMessage(targetConnectionId, dataChannel, deliveryMethod, s_ServerWriter);
@@ -86,7 +86,7 @@ namespace LiteNetLibManager
                             else if (Identity.HasSubscriberOrIsOwning(connectionId))
                             {
                                 // Prepare packet
-                                TransportHandler.WritePacket(s_ServerWriter, GameMsgTypes.CallFunction);
+                                TransportHandler.WritePacket(s_ServerWriter, GameMsgTypes.RPC);
                                 SerializeForSend(s_ServerWriter);
                                 // Send message to subscribing clients
                                 server.SendMessage(connectionId, dataChannel, deliveryMethod, s_ServerWriter);
@@ -109,7 +109,7 @@ namespace LiteNetLibManager
             else if (manager.IsClientConnected)
             {
                 // Prepare packet
-                TransportHandler.WritePacket(s_ClientWriter, GameMsgTypes.CallFunction);
+                TransportHandler.WritePacket(s_ClientWriter, GameMsgTypes.RPC);
                 SerializeForClientSend(s_ClientWriter, receivers, targetConnectionId);
                 // Client send net function call to server
                 // Then the server will hook callback or forward message to other clients

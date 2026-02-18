@@ -4,9 +4,9 @@
     {
         public const ushort Request = 0;
         public const ushort Response = 1;
-        public const ushort CallFunction = 2;
-        public const ushort SyncStates = 3;
-        public const ushort SyncElement = 4;
+        public const ushort RPC = 2;
+        public const ushort SyncBaseLine = 3;
+        public const ushort SyncDelta = 4;
         public const ushort ServerError = 5;
         public const ushort ServerSceneChange = 6;
         public const ushort ServerSetObjectOwner = 7;

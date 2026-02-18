@@ -156,7 +156,7 @@ namespace LiteNetLibManager
                     if (syncElement.WillSyncFromServerUnreliably(tempPlayer, tick))
                     {
                         _syncElementWriter.Reset();
-                        _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncElement);
+                        _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncDelta);
                         WriteSyncElement(_syncElementWriter, syncElement);
                         ServerSendMessage(tempPlayer.ConnectionId, 0, DeliveryMethod.Unreliable, _syncElementWriter);
                     }
@@ -192,7 +192,7 @@ namespace LiteNetLibManager
                 if (syncElement.WillSyncFromOwnerClientUnreliably(tick))
                 {
                     _syncElementWriter.Reset();
-                    _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncElement);
+                    _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncDelta);
                     WriteSyncElement(_syncElementWriter, syncElement);
                     ClientSendMessage(0, DeliveryMethod.Unreliable, _syncElementWriter);
                 }
@@ -217,7 +217,7 @@ namespace LiteNetLibManager
                 if (statesCount == 0)
                     continue;
                 _gameStatesWriter.Reset();
-                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncStates);
+                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncBaseLine);
                 byte syncChannelId = syncingStatesByChannelId.Key;
                 int stateCount = WriteGameStateFromServer(_gameStatesWriter, player, syncingStatesByChannelId.Value);
                 if (stateCount > 0)
@@ -240,7 +240,7 @@ namespace LiteNetLibManager
                 if (statesCount == 0)
                     continue;
                 _gameStatesWriter.Reset();
-                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncStates);
+                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncBaseLine);
                 byte syncChannelId = syncingStatesByChannelId.Key;
                 int stateCount = WriteGameStateFromClient(_gameStatesWriter, syncChannelId, syncingStatesByChannelId.Value);
                 if (stateCount > 0)
@@ -532,15 +532,15 @@ namespace LiteNetLibManager
             RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientReady, HandleClientReadyRequest, HandleClientReadyResponse);
             RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest, HandleClientNotReadyResponse);
             // Server messages
-            RegisterServerMessage(GameMsgTypes.CallFunction, HandleClientCallFunction);
-            RegisterServerMessage(GameMsgTypes.SyncStates, HandleClientSyncStates);
-            RegisterServerMessage(GameMsgTypes.SyncElement, HandleClientSyncElement);
+            RegisterServerMessage(GameMsgTypes.RPC, HandleClientCallFunction);
+            RegisterServerMessage(GameMsgTypes.SyncBaseLine, HandleClientSyncStates);
+            RegisterServerMessage(GameMsgTypes.SyncDelta, HandleClientSyncElement);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
             RegisterServerMessage(GameMsgTypes.Pong, HandleClientPong);
             // Client messages
-            RegisterClientMessage(GameMsgTypes.CallFunction, HandleServerCallFunction);
-            RegisterClientMessage(GameMsgTypes.SyncStates, HandleServerSyncStates);
-            RegisterClientMessage(GameMsgTypes.SyncElement, HandleServerSyncElement);
+            RegisterClientMessage(GameMsgTypes.RPC, HandleServerCallFunction);
+            RegisterClientMessage(GameMsgTypes.SyncBaseLine, HandleServerSyncStates);
+            RegisterClientMessage(GameMsgTypes.SyncDelta, HandleServerSyncElement);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
