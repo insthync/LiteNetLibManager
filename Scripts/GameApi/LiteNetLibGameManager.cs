@@ -37,6 +37,7 @@ namespace LiteNetLibManager
         public bool doNotReadyOnSceneLoaded = false;
         public bool doNotDestroyOnSceneChanges = false;
         public bool loadOfflineSceneWhenClientStopped = true;
+        public float baseLineSyncInterval = 1f;
         public bool safeGameStatePacket = false;
 
         protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
@@ -93,11 +94,6 @@ namespace LiteNetLibManager
         }
 
         protected BaseInterestManager _defaultInterestManager;
-        protected readonly List<LiteNetLibSyncElement> _updatingClientSyncElements = new List<LiteNetLibSyncElement>();
-        protected readonly List<LiteNetLibSyncElement> _updatingServerSyncElements = new List<LiteNetLibSyncElement>();
-        protected NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
-        protected NetDataWriter _syncElementWriter = new NetDataWriter(true, 1024);
-        protected readonly List<PendingRpcData> _pendingRpcs = new List<PendingRpcData>();
 
         protected virtual void Awake()
         {
@@ -137,141 +133,6 @@ namespace LiteNetLibManager
                 SendClientPing();
                 _clientSendPingCountDown = pingDuration;
             }
-        }
-
-        private void ProceedServerGameStateSync(uint tick)
-        {
-            // Filter which elements can be synced
-            LiteNetLibPlayer tempPlayer;
-            foreach (long connectionId in Server.ConnectionIds)
-            {
-                if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
-                    continue;
-                if (_updatingServerSyncElements.Count == 0)
-                    continue;
-                foreach (LiteNetLibSyncElement syncElement in _updatingServerSyncElements)
-                {
-                    if (!syncElement.CanSyncFromServer(tempPlayer))
-                        continue;
-                    if (syncElement.WillSyncFromServerUnreliably(tempPlayer, tick))
-                    {
-                        _syncElementWriter.Reset();
-                        _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncDelta);
-                        WriteSyncElement(_syncElementWriter, syncElement);
-                        ServerSendMessage(tempPlayer.ConnectionId, 0, DeliveryMethod.Unreliable, _syncElementWriter);
-                    }
-                    if (syncElement.WillSyncFromServerReliably(tempPlayer, tick))
-                        tempPlayer.SyncingStates.AppendDataSyncState(syncElement);
-                }
-            }
-
-            foreach (long connectionId in Server.ConnectionIds)
-            {
-                if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
-                    continue;
-                SyncGameStateToClient(tempPlayer);
-            }
-
-            if (_updatingServerSyncElements.Count > 0)
-            {
-                for (int i = _updatingServerSyncElements.Count - 1; i >= 0; --i)
-                {
-                    _updatingServerSyncElements[i].Synced(tick);
-                }
-            }
-        }
-
-        private void ProceedClientGameStateSync(uint tick)
-        {
-            if (_updatingClientSyncElements.Count == 0)
-                return;
-            foreach (LiteNetLibSyncElement syncElement in _updatingClientSyncElements)
-            {
-                if (!syncElement.CanSyncFromOwnerClient())
-                    continue;
-                if (syncElement.WillSyncFromOwnerClientUnreliably(tick))
-                {
-                    _syncElementWriter.Reset();
-                    _syncElementWriter.PutPackedUShort(GameMsgTypes.SyncDelta);
-                    WriteSyncElement(_syncElementWriter, syncElement);
-                    ClientSendMessage(0, DeliveryMethod.Unreliable, _syncElementWriter);
-                }
-                if (syncElement.WillSyncFromOwnerClientReliably(tick))
-                    ClientSyncingStates.AppendDataSyncState(syncElement);
-            }
-            SyncGameStateToServer();
-            for (int i = _updatingClientSyncElements.Count - 1; i >= 0; --i)
-            {
-                _updatingClientSyncElements[i].Synced(tick);
-            }
-        }
-
-        private void SyncGameStateToClient(LiteNetLibPlayer player)
-        {
-            if (player.SyncingStates.States.Count == 0)
-                return;
-            foreach (var syncingStatesByChannelId in player.SyncingStates.States)
-            {
-                int statesCount = syncingStatesByChannelId.Value.Count;
-                // No states to be synced, skip
-                if (statesCount == 0)
-                    continue;
-                _gameStatesWriter.Reset();
-                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncBaseLine);
-                byte syncChannelId = syncingStatesByChannelId.Key;
-                int stateCount = WriteGameStateFromServer(_gameStatesWriter, player, syncingStatesByChannelId.Value);
-                if (stateCount > 0)
-                {
-                    // Send data to client
-                    ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
-                }
-                syncingStatesByChannelId.Value.Clear();
-            }
-        }
-
-        private void SyncGameStateToServer()
-        {
-            if (ClientSyncingStates.States.Count == 0)
-                return;
-            foreach (var syncingStatesByChannelId in ClientSyncingStates.States)
-            {
-                int statesCount = syncingStatesByChannelId.Value.Count;
-                // No states to be synced, skip
-                if (statesCount == 0)
-                    continue;
-                _gameStatesWriter.Reset();
-                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncBaseLine);
-                byte syncChannelId = syncingStatesByChannelId.Key;
-                int stateCount = WriteGameStateFromClient(_gameStatesWriter, syncChannelId, syncingStatesByChannelId.Value);
-                if (stateCount > 0)
-                {
-                    // Send data to client
-                    ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
-                }
-                syncingStatesByChannelId.Value.Clear();
-            }
-        }
-
-        internal void RegisterServerSyncElement(LiteNetLibSyncElement element)
-        {
-            if (!_updatingServerSyncElements.Contains(element))
-                _updatingServerSyncElements.Add(element);
-        }
-
-        internal void UnregisterServerSyncElement(LiteNetLibSyncElement element)
-        {
-            _updatingServerSyncElements.Remove(element);
-        }
-
-        internal void RegisterClientSyncElement(LiteNetLibSyncElement element)
-        {
-            if (!_updatingClientSyncElements.Contains(element))
-                _updatingClientSyncElements.Add(element);
-        }
-
-        internal void UnregisterClientSyncElement(LiteNetLibSyncElement element)
-        {
-            _updatingClientSyncElements.Remove(element);
         }
 
         public virtual uint PacketVersion()

@@ -3,7 +3,8 @@ namespace LiteNetLibManager
     public enum LiteNetLibSyncFieldStep : byte
     {
         None,
-        Syncing,
-        Confirming,
+        Delta1,
+        Delta2,
+        Delta3,
     }
 }

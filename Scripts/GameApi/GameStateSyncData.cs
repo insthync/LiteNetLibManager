@@ -4,20 +4,19 @@ namespace LiteNetLibManager
 {
     public class GameStateSyncData
     {
-        public const byte STATE_TYPE_NONE = 0;
-        public const byte STATE_TYPE_SPAWN = 1;
-        public const byte STATE_TYPE_SYNC = 2;
-        public const byte STATE_TYPE_DESTROY = 3;
-
-        public byte StateType = STATE_TYPE_NONE;
+        public LiteNetLibIdentity Identity;
+        public GameStateSyncType StateType = GameStateSyncType.None;
         public byte DestroyReasons = 0;
-        public readonly HashSet<LiteNetLibSyncElement> SyncElements = new HashSet<LiteNetLibSyncElement>();
+        public readonly HashSet<LiteNetLibSyncElement> SyncBaseLineElements = new HashSet<LiteNetLibSyncElement>();
+        public readonly HashSet<LiteNetLibSyncElement> SyncDeltaElements = new HashSet<LiteNetLibSyncElement>();
 
         public void Reset()
         {
-            StateType = STATE_TYPE_NONE;
+            Identity = null;
+            StateType = GameStateSyncType.None;
             DestroyReasons = 0;
-            SyncElements.Clear();
+            SyncBaseLineElements.Clear();
+            SyncDeltaElements.Clear();
         }
     }
 }

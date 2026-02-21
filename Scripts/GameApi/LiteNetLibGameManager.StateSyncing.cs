@@ -1,3 +1,4 @@
+using LiteNetLib;
 using LiteNetLib.Utils;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,6 +8,15 @@ namespace LiteNetLibManager
 {
     public partial class LiteNetLibGameManager
     {
+        private const ushort MAX_UNRELIABLE_PACKET_SIZE = 1200;
+        protected readonly List<LiteNetLibSyncElement> _updatingClientSyncElements = new List<LiteNetLibSyncElement>();
+        protected readonly List<LiteNetLibSyncElement> _updatingServerSyncElements = new List<LiteNetLibSyncElement>();
+        protected readonly NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
+        protected readonly NetDataWriter _syncElementWriter = new NetDataWriter(true, 1024);
+        protected readonly List<PendingRpcData> _pendingRpcs = new List<PendingRpcData>();
+        protected float _latestClientBaseLineSyncTime = 0f;
+        protected float _latestServerBaseLineSyncTime = 0f;
+
         protected virtual void HandleServerSyncStates(MessageHandlerData messageHandler)
         {
             if (IsServer)
@@ -124,53 +134,45 @@ namespace LiteNetLibManager
             writer.Put(stateCount);
             foreach (var syncingStatesByObjectId in syncingStatesByObjectIds)
             {
-                if (syncingStatesByObjectId.Value.StateType == GameStateSyncData.STATE_TYPE_NONE)
+                uint objectId = syncingStatesByObjectId.Key;
+                GameStateSyncData syncData = syncingStatesByObjectId.Value;
+                if (syncData.StateType == GameStateSyncType.None)
                     continue;
                 // Writer sync state
-                uint objectId = syncingStatesByObjectId.Key;
-                LiteNetLibIdentity identity;
-                switch (syncingStatesByObjectId.Value.StateType)
+                switch (syncData.StateType)
                 {
-                    case GameStateSyncData.STATE_TYPE_SPAWN:
+                    case GameStateSyncType.Spawn:
                         // NOTE: Temporary avoid null ref exception, will find cause of issues later
-                        if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
+                        writer.Put((byte)GameStateSyncType.Spawn);
+                        WriteSpawnGameState(writer, player, syncData, tick);
+                        // TODO: Move this to somewhere else
+                        if (player.ConnectionId == ClientConnectionId)
                         {
-                            writer.Put(GameStateSyncData.STATE_TYPE_SPAWN);
-                            WriteSpawnGameState(writer, player, identity, syncingStatesByObjectId.Value, tick);
-                            // TODO: Move this to somewhere else
-                            if (player.ConnectionId == ClientConnectionId)
-                            {
-                                // Simulate object spawning if it is a host
-                                identity.OnServerSubscribingAdded();
-                            }
-                            ++stateCount;
+                            // Simulate object spawning if it is a host
+                            syncData.Identity.OnServerSubscribingAdded();
                         }
+                        ++stateCount;
                         break;
-                    case GameStateSyncData.STATE_TYPE_SYNC:
-                        // NOTE: Temporary avoid null ref exception, will find cause of issues later
-                        if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
-                        {
-                            writer.Put(GameStateSyncData.STATE_TYPE_SYNC);
-                            WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value, tick);
-                            ++stateCount;
-                        }
-                        break;
-                    case GameStateSyncData.STATE_TYPE_DESTROY:
-                        writer.Put(GameStateSyncData.STATE_TYPE_DESTROY);
-                        WriteDestroyGameState(writer, objectId, syncingStatesByObjectId.Value);
+                    case GameStateSyncType.Destroy:
+                        writer.Put((byte)GameStateSyncType.Destroy);
+                        WriteDestroyGameState(writer, objectId, syncData.DestroyReasons);
                         // TODO: Move this to somewhere else
                         if (player.ConnectionId == ClientConnectionId)
                         {
                             // Simulate object destroying if it is a host
-                            // NOTE: Temporary avoid null ref exception, will find cause of issues later
-                            if (Assets.TryGetSpawnedObject(objectId, out identity) && identity != null && identity.transform != null)
-                                identity.OnServerSubscribingRemoved();
+                            syncData.Identity.OnServerSubscribingRemoved();
                         }
+                        ++stateCount;
+                        break;
+                    case GameStateSyncType.Data:
+                        // NOTE: Temporary avoid null ref exception, will find cause of issues later
+                        writer.Put((byte)GameStateSyncType.Data);
+                        WriteSyncGameState(writer, objectId, syncData.SyncBaseLineElements, tick);
                         ++stateCount;
                         break;
                 }
                 // Reset syncing state, so next time it won't being synced
-                syncingStatesByObjectId.Value.Reset();
+                syncData.Reset();
             }
             int posAfterWriteStates = writer.Length;
             writer.SetPosition(posBeforeWriteStateCount);
@@ -189,19 +191,20 @@ namespace LiteNetLibManager
             writer.Put(stateCount);
             foreach (var syncingStatesByObjectId in syncingStatesByObjectIds)
             {
-                if (syncingStatesByObjectId.Value.StateType == GameStateSyncData.STATE_TYPE_NONE)
+                uint objectId = syncingStatesByObjectId.Key;
+                GameStateSyncData syncData = syncingStatesByObjectId.Value;
+                if (syncData.StateType == GameStateSyncType.None)
                     continue;
                 // Writer sync state
-                uint objectId = syncingStatesByObjectId.Key;
                 switch (syncingStatesByObjectId.Value.StateType)
                 {
-                    case GameStateSyncData.STATE_TYPE_SYNC:
-                        WriteSyncGameState(writer, objectId, syncingStatesByObjectId.Value, tick);
+                    case GameStateSyncType.Data:
+                        WriteSyncGameState(writer, objectId, syncData.SyncBaseLineElements, tick);
                         ++stateCount;
                         break;
                 }
                 // Reset syncing state, so next time it won't being synced
-                syncingStatesByObjectId.Value.Reset();
+                syncData.Reset();
             }
             int posAfterWriteStates = writer.Length;
             writer.SetPosition(posBeforeWriteStateCount);
@@ -216,19 +219,19 @@ namespace LiteNetLibManager
             int stateCount = reader.GetInt();
             for (int i = 0; i < stateCount; ++i)
             {
-                byte stateType = reader.GetByte();
+                GameStateSyncType stateType = (GameStateSyncType)reader.GetByte();
                 switch (stateType)
                 {
-                    case GameStateSyncData.STATE_TYPE_SPAWN:
+                    case GameStateSyncType.Spawn:
                         if (!ReadSpawnGameState(reader, tick))
                             return;
                         break;
-                    case GameStateSyncData.STATE_TYPE_SYNC:
-                        if (!ReadSyncGameState(reader, tick))
+                    case GameStateSyncType.Destroy:
+                        if (!ReadDestroyGameState(reader))
                             return;
                         break;
-                    case GameStateSyncData.STATE_TYPE_DESTROY:
-                        if (!ReadDestroyGameState(reader))
+                    case GameStateSyncType.Data:
+                        if (!ReadSyncGameState(reader, tick))
                             return;
                         break;
                 }
@@ -246,8 +249,9 @@ namespace LiteNetLibManager
             }
         }
 
-        private void WriteSpawnGameState(NetDataWriter writer, LiteNetLibPlayer player, LiteNetLibIdentity identity, GameStateSyncData syncData, uint tick)
+        private void WriteSpawnGameState(NetDataWriter writer, LiteNetLibPlayer player, GameStateSyncData syncData, uint tick)
         {
+            LiteNetLibIdentity identity = syncData.Identity;
             writer.Put(identity.IsSceneObject);
             if (identity.IsSceneObject)
                 writer.PutPackedInt(identity.HashSceneObjectId);
@@ -261,15 +265,15 @@ namespace LiteNetLibManager
             writer.Put(identity.transform.eulerAngles.z);
             writer.PutPackedUInt(identity.ObjectId);
             writer.PutPackedLong(identity.ConnectionId);
-            syncData.SyncElements.Clear();
+            syncData.SyncBaseLineElements.Clear();
             foreach (LiteNetLibSyncElement syncElement in identity.SyncElements.Values)
             {
                 if (!syncElement.CanSyncFromServer(player))
                     continue;
-                syncData.SyncElements.Add(syncElement);
+                syncData.SyncBaseLineElements.Add(syncElement);
             }
-            WriteSyncElements(writer, syncData.SyncElements, tick, true);
-            syncData.SyncElements.Clear();
+            WriteSyncElements(writer, syncData.SyncBaseLineElements, tick, true);
+            syncData.SyncBaseLineElements.Clear();
         }
 
         private bool ReadSpawnGameState(NetDataReader reader, uint tick)
@@ -323,11 +327,11 @@ namespace LiteNetLibManager
             return false;
         }
 
-        private void WriteSyncGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData, uint tick)
+        private void WriteSyncGameState(NetDataWriter writer, uint objectId, HashSet<LiteNetLibSyncElement> syncElements, uint tick)
         {
             writer.PutPackedUInt(objectId);
-            WriteSyncElements(writer, syncData.SyncElements, tick, false);
-            syncData.SyncElements.Clear();
+            WriteSyncElements(writer, syncElements, tick, false);
+            syncElements.Clear();
         }
 
         private bool ReadSyncGameState(NetDataReader reader, uint tick)
@@ -338,10 +342,10 @@ namespace LiteNetLibManager
             return ReadSyncElements(reader, identity, tick, false);
         }
 
-        private void WriteDestroyGameState(NetDataWriter writer, uint objectId, GameStateSyncData syncData)
+        private void WriteDestroyGameState(NetDataWriter writer, uint objectId, byte destroyReasons)
         {
             writer.PutPackedUInt(objectId);
-            writer.Put(syncData.DestroyReasons);
+            writer.Put(destroyReasons);
         }
 
         private bool ReadDestroyGameState(NetDataReader reader)
@@ -439,6 +443,164 @@ namespace LiteNetLibManager
                 }
             }
             return true;
+        }
+
+        private void ProceedServerGameStateSync(uint tick)
+        {
+            LiteNetLibPlayer tempPlayer;
+
+            float currentTime = Time.unscaledTime;
+            bool syncBaseLine = currentTime - _latestServerBaseLineSyncTime > baseLineSyncInterval;
+            _latestServerBaseLineSyncTime = currentTime;
+
+            if (syncBaseLine && _updatingServerSyncElements.Count > 0)
+            {
+                // Filter which elements can be synced
+                foreach (long connectionId in Server.ConnectionIds)
+                {
+                    if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
+                        continue;
+
+                    foreach (LiteNetLibSyncElement syncElement in _updatingServerSyncElements)
+                    {
+                        if (!syncElement.CanSyncFromServer(tempPlayer))
+                            continue;
+                        if (syncBaseLine || !syncElement.CanSyncDelta())
+                            tempPlayer.SyncingStates.AppendDataSyncState(syncElement, true);
+                    }
+                }
+            }
+
+            foreach (long connectionId in Server.ConnectionIds)
+            {
+                if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
+                    continue;
+                SyncGameStateToClient(tempPlayer);
+                SyncDeltaDataToClient(tempPlayer);
+            }
+
+            if (_updatingServerSyncElements.Count > 0)
+            {
+                if (!syncBaseLine)
+                {
+
+                }
+                for (int i = _updatingServerSyncElements.Count - 1; i >= 0; --i)
+                {
+                    _updatingServerSyncElements[i].Synced(tick, syncBaseLine);
+                }
+            }
+        }
+
+        private void ProceedClientGameStateSync(uint tick)
+        {
+            // Client always sync baseline to server
+            if (_updatingClientSyncElements.Count == 0)
+                return;
+
+            foreach (LiteNetLibSyncElement syncElement in _updatingClientSyncElements)
+            {
+                if (!syncElement.CanSyncFromOwnerClient())
+                    continue;
+                ClientSyncingStates.AppendDataSyncState(syncElement, true);
+            }
+            SyncGameStateToServer();
+
+            for (int i = _updatingClientSyncElements.Count - 1; i >= 0; --i)
+            {
+                _updatingClientSyncElements[i].Synced(tick, true);
+            }
+        }
+
+        private void SyncGameStateToClient(LiteNetLibPlayer player)
+        {
+            if (player.SyncingStates.States.Count == 0)
+                return;
+            foreach (var syncingStatesByChannelId in player.SyncingStates.States)
+            {
+                int statesCount = syncingStatesByChannelId.Value.Count;
+                // No states to be synced, skip
+                if (statesCount == 0)
+                    continue;
+                _gameStatesWriter.Reset();
+                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncBaseLine);
+                byte syncChannelId = syncingStatesByChannelId.Key;
+                int stateCount = WriteGameStateFromServer(_gameStatesWriter, player, syncingStatesByChannelId.Value);
+                if (stateCount > 0)
+                {
+                    // Send data to client
+                    ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
+                }
+                syncingStatesByChannelId.Value.Clear();
+            }
+        }
+
+        private void SyncDeltaDataToClient(LiteNetLibPlayer player)
+        {
+            if (player.SyncingStates.States.Count == 0)
+                return;
+            foreach (var syncingStatesByChannelId in player.SyncingStates.States)
+            {
+                int statesCount = syncingStatesByChannelId.Value.Count;
+                // No states to be synced, skip
+                if (statesCount == 0)
+                    continue;
+                _gameStatesWriter.Reset();
+                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncDelta);
+                byte syncChannelId = syncingStatesByChannelId.Key;
+                int stateCount = WriteGameStateFromServer(_gameStatesWriter, player, syncingStatesByChannelId.Value);
+                if (stateCount > 0)
+                {
+                    // Send data to client
+                    ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.Unreliable, _gameStatesWriter);
+                }
+                syncingStatesByChannelId.Value.Clear();
+            }
+        }
+
+        private void SyncGameStateToServer()
+        {
+            if (ClientSyncingStates.States.Count == 0)
+                return;
+            foreach (var syncingStatesByChannelId in ClientSyncingStates.States)
+            {
+                int statesCount = syncingStatesByChannelId.Value.Count;
+                // No states to be synced, skip
+                if (statesCount == 0)
+                    continue;
+                _gameStatesWriter.Reset();
+                _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncBaseLine);
+                byte syncChannelId = syncingStatesByChannelId.Key;
+                int stateCount = WriteGameStateFromClient(_gameStatesWriter, syncChannelId, syncingStatesByChannelId.Value);
+                if (stateCount > 0)
+                {
+                    // Send data to server
+                    ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
+                }
+                syncingStatesByChannelId.Value.Clear();
+            }
+        }
+
+        internal void RegisterServerSyncElement(LiteNetLibSyncElement element)
+        {
+            if (!_updatingServerSyncElements.Contains(element))
+                _updatingServerSyncElements.Add(element);
+        }
+
+        internal void UnregisterServerSyncElement(LiteNetLibSyncElement element)
+        {
+            _updatingServerSyncElements.Remove(element);
+        }
+
+        internal void RegisterClientSyncElement(LiteNetLibSyncElement element)
+        {
+            if (!_updatingClientSyncElements.Contains(element))
+                _updatingClientSyncElements.Add(element);
+        }
+
+        internal void UnregisterClientSyncElement(LiteNetLibSyncElement element)
+        {
+            _updatingClientSyncElements.Remove(element);
         }
     }
 }

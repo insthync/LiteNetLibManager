@@ -16,27 +16,8 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal virtual bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
+        internal virtual bool CanSyncDelta()
         {
-            // Always sync reliably by default
-            return true;
-        }
-
-        internal virtual bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
-        {
-            // Always sync reliably by default
-            return false;
-        }
-
-        internal virtual bool WillSyncFromOwnerClientReliably(uint tick)
-        {
-            // Not be able to be sent from client by default
-            return false;
-        }
-
-        internal virtual bool WillSyncFromOwnerClientUnreliably(uint tick)
-        {
-            // Not be able to be sent from client by default
             return false;
         }
 
@@ -66,7 +47,7 @@ namespace LiteNetLibManager
                 Manager.UnregisterClientSyncElement(this);
         }
 
-        public virtual void Synced(uint tick)
+        public virtual void Synced(uint tick, bool isBaseLine)
         {
             UnregisterUpdating();
         }

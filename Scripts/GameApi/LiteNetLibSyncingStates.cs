@@ -38,19 +38,10 @@ namespace LiteNetLibManager
             byte channelId = identity.SyncChannelId;
             uint objectId = identity.ObjectId;
             var syncData = PrepareSyncStateData(channelId, objectId);
-            syncData.StateType = GameStateSyncData.STATE_TYPE_SPAWN;
-            syncData.SyncElements.Clear();
-        }
-
-        public void AppendDataSyncState(LiteNetLibSyncElement syncElement)
-        {
-            byte channelId = syncElement.SyncChannelId;
-            uint objectId = syncElement.ObjectId;
-            var syncData = PrepareSyncStateData(channelId, objectId);
-            if (syncData.StateType != GameStateSyncData.STATE_TYPE_NONE && syncData.StateType != GameStateSyncData.STATE_TYPE_SYNC)
-                return;
-            syncData.StateType = GameStateSyncData.STATE_TYPE_SYNC;
-            syncData.SyncElements.Add(syncElement);
+            syncData.Identity = identity;
+            syncData.StateType = GameStateSyncType.Spawn;
+            syncData.SyncBaseLineElements.Clear();
+            syncData.SyncDeltaElements.Clear();
         }
 
         public void AppendDestroySyncState(LiteNetLibIdentity identity, byte reasons)
@@ -58,9 +49,34 @@ namespace LiteNetLibManager
             byte channelId = identity.SyncChannelId;
             uint objectId = identity.ObjectId;
             var syncData = PrepareSyncStateData(channelId, objectId);
-            syncData.StateType = GameStateSyncData.STATE_TYPE_DESTROY;
-            syncData.SyncElements.Clear();
+            syncData.Identity = identity;
+            syncData.StateType = GameStateSyncType.Destroy;
+            syncData.SyncBaseLineElements.Clear();
+            syncData.SyncDeltaElements.Clear();
             syncData.DestroyReasons = reasons;
+        }
+
+        public void AppendDataSyncState(LiteNetLibSyncElement syncElement, bool syncBaseLine)
+        {
+            if (syncElement.Identity == null)
+            {
+                Logging.LogError("Unable to append data sync state, sync element's identity is null");
+                return;
+            }
+            byte channelId = syncElement.SyncChannelId;
+            uint objectId = syncElement.ObjectId;
+            var syncData = PrepareSyncStateData(channelId, objectId);
+            if (syncData.StateType == GameStateSyncType.Spawn && syncData.StateType == GameStateSyncType.Destroy)
+            {
+                // Unable to sync data, it is spawning or destroying
+                return;
+            }
+            syncData.Identity = syncElement.Identity;
+            syncData.StateType = GameStateSyncType.Data;
+            if (syncBaseLine)
+                syncData.SyncBaseLineElements.Add(syncElement);
+            else
+                syncData.SyncDeltaElements.Add(syncElement);
         }
 
         public void RemoveSyncState(LiteNetLibIdentity identity)

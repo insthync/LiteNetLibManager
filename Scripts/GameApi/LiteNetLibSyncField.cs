@@ -13,16 +13,6 @@ namespace LiteNetLibManager
         [NonSerialized]
         public LiteNetLibSyncFieldMode syncMode = LiteNetLibSyncFieldMode.ServerToClients;
         /// <summary>
-        /// When it will be synced after latest one
-        /// </summary>
-        [NonSerialized]
-        public float sendInterval = 0.1f;
-        /// <summary>
-        /// If this is `TRUE` it will sync unreliable every tick then sync reliable later by `sendInterval`
-        /// </summary>
-        [NonSerialized]
-        public bool sendUnreliableEveryTick = true;
-        /// <summary>
         /// If this is `TRUE` it will not sync to peers
         /// </summary>
         [NonSerialized]
@@ -30,7 +20,6 @@ namespace LiteNetLibManager
         public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
 
         protected bool _latestChangeSyncedFromOwner = false;
-        protected float _latestSendTime = 0f;
         protected uint _latestReceiveTick = 0;
         protected object _defaultValue;
 
@@ -85,40 +74,9 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal override sealed bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
+        internal override bool CanSyncDelta()
         {
-            if (doNotSync)
-                return false;
-            if (!sendUnreliableEveryTick && !IsReadyToSend())
-                return false;
-            return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
-        }
-
-        internal override sealed bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
-        {
-            if (doNotSync)
-                return false;
-            if (!IsReadyToSend())
-                return false;
-            return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
-        }
-
-        internal override sealed bool WillSyncFromOwnerClientUnreliably(uint tick)
-        {
-            if (doNotSync)
-                return false;
-            if (!sendUnreliableEveryTick && !IsReadyToSend())
-                return false;
-            return SyncFieldStep == LiteNetLibSyncFieldStep.Syncing;
-        }
-
-        internal override sealed bool WillSyncFromOwnerClientReliably(uint tick)
-        {
-            if (doNotSync)
-                return false;
-            if (!IsReadyToSend())
-                return false;
-            return SyncFieldStep == LiteNetLibSyncFieldStep.Confirming;
+            return true;
         }
 
         protected void ValueChangedState(bool latestChangeSyncedFromOwner)
@@ -126,40 +84,40 @@ namespace LiteNetLibManager
             _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
             if (Manager.IsServer)
             {
-                SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+                SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
             }
             else
             {
-                SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Confirming : LiteNetLibSyncFieldStep.Syncing;
+                SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
             }
             RegisterUpdating();
         }
 
-        public override void Synced(uint tick)
+        public override void Synced(uint tick, bool isBaseLine)
         {
+            if (isBaseLine)
+            {
+                SyncFieldStep = LiteNetLibSyncFieldStep.None;
+                UnregisterUpdating();
+                return;
+            }
+            // 3 Delta sync might be enough
             switch (SyncFieldStep)
             {
-                case LiteNetLibSyncFieldStep.Syncing:
-                    if (!sendUnreliableEveryTick && !IsReadyToSend())
-                        return;
-                    SyncFieldStep = LiteNetLibSyncFieldStep.Confirming;
+                case LiteNetLibSyncFieldStep.Delta1:
+                    SyncFieldStep = LiteNetLibSyncFieldStep.Delta2;
                     break;
-                case LiteNetLibSyncFieldStep.Confirming:
-                    if (!IsReadyToSend())
-                        return;
+                case LiteNetLibSyncFieldStep.Delta2:
+                    SyncFieldStep = LiteNetLibSyncFieldStep.Delta3;
+                    break;
+                case LiteNetLibSyncFieldStep.Delta3:
                     SyncFieldStep = LiteNetLibSyncFieldStep.None;
-                    _latestSendTime = Time.unscaledTime;
                     UnregisterUpdating();
                     break;
                 default:
                     UnregisterUpdating();
                     break;
             }
-        }
-
-        protected bool IsReadyToSend()
-        {
-            return _latestSendTime + sendInterval <= Time.unscaledTime;
         }
 
         internal override sealed void Reset()
