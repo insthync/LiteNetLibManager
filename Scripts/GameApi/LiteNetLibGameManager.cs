@@ -394,14 +394,13 @@ namespace LiteNetLibManager
             RegisterRequestToServer<EmptyMessage, EmptyMessage>(GameReqTypes.ClientNotReady, HandleClientNotReadyRequest, HandleClientNotReadyResponse);
             // Server messages
             RegisterServerMessage(GameMsgTypes.RPC, HandleClientCallFunction);
-            RegisterServerMessage(GameMsgTypes.SyncBaseLine, HandleClientSyncStates);
-            RegisterServerMessage(GameMsgTypes.SyncDelta, HandleClientSyncElement);
+            RegisterServerMessage(GameMsgTypes.SyncBaseLine, HandleClientSyncBaseLine);
             RegisterServerMessage(GameMsgTypes.Ping, HandleClientPing);
             RegisterServerMessage(GameMsgTypes.Pong, HandleClientPong);
             // Client messages
             RegisterClientMessage(GameMsgTypes.RPC, HandleServerCallFunction);
-            RegisterClientMessage(GameMsgTypes.SyncBaseLine, HandleServerSyncStates);
-            RegisterClientMessage(GameMsgTypes.SyncDelta, HandleServerSyncElement);
+            RegisterClientMessage(GameMsgTypes.SyncBaseLine, HandleServerSyncBaseLine);
+            RegisterClientMessage(GameMsgTypes.SyncDelta, HandleServerSyncDelta);
             RegisterClientMessage(GameMsgTypes.ServerError, HandleServerError);
             RegisterClientMessage(GameMsgTypes.ServerSceneChange, HandleServerSceneChange);
             RegisterClientMessage(GameMsgTypes.ServerSetObjectOwner, HandleServerSetObjectOwner);
