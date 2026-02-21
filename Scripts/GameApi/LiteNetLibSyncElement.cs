@@ -22,8 +22,8 @@ namespace LiteNetLibManager
         }
 
         internal abstract void Reset();
-        internal abstract void WriteSyncData(bool isState, uint tick, bool initial, NetDataWriter writer);
-        internal abstract void ReadSyncData(bool isState, uint tick, bool initial, NetDataReader reader);
+        internal abstract void WriteSyncData(uint tick, bool initial, NetDataWriter writer);
+        internal abstract void ReadSyncData(uint tick, bool initial, NetDataReader reader);
 
         public void RegisterUpdating()
         {

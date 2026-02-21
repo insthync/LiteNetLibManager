@@ -144,14 +144,14 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void WriteSyncData(bool isState, uint tick, bool initial, NetDataWriter writer)
+        internal override void WriteSyncData(uint tick, bool initial, NetDataWriter writer)
         {
             if (isDebug)
-                Logging.Log(LogTag, $"Write sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, isState {isState}, tick {tick}, initial {initial}, value {GetValue()}");
+                Logging.Log(LogTag, $"Write sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, tick {tick}, initial {initial}, value {GetValue()}");
             SerializeValue(writer);
         }
 
-        internal override void ReadSyncData(bool isState, uint tick, bool initial, NetDataReader reader)
+        internal override void ReadSyncData(uint tick, bool initial, NetDataReader reader)
         {
             object oldValue = GetValue();
             DeserializeValue(reader);
@@ -163,7 +163,7 @@ namespace LiteNetLibManager
             }
             _latestReceiveTick = tick;
             if (isDebug)
-                Logging.Log(LogTag, $"Read sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, isState {isState}, tick {tick}, initial {initial}, oldValue {oldValue}, newValue {GetValue()}");
+                Logging.Log(LogTag, $"Read sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, tick {tick}, initial {initial}, oldValue {oldValue}, newValue {GetValue()}");
             OnChange(initial, oldValue, GetValue());
             if (syncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
                 ValueChangedState(true);

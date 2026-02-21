@@ -53,7 +53,7 @@ namespace LiteNetLibManager
                 writer.Put(dataLength);
                 int posAfterWriteDataLength = writer.Length;
                 // Write sync data
-                syncElement.WriteSyncData(true, tick, initial, writer);
+                syncElement.WriteSyncData(tick, initial, writer);
                 dataLength = writer.Length - posAfterWriteDataLength;
                 // Put data length
                 int posAfterWriteData = writer.Length;
@@ -63,7 +63,7 @@ namespace LiteNetLibManager
             }
             else
             {
-                syncElement.WriteSyncData(true, tick, initial, writer);
+                syncElement.WriteSyncData(tick, initial, writer);
             }
         }
 
@@ -91,7 +91,7 @@ namespace LiteNetLibManager
                 {
                     try
                     {
-                        element.ReadSyncData(false, tick, false, reader);
+                        element.ReadSyncData(tick, false, reader);
                     }
                     catch
                     {
@@ -113,7 +113,7 @@ namespace LiteNetLibManager
                 {
                     try
                     {
-                        element.ReadSyncData(false, tick, false, reader);
+                        element.ReadSyncData(tick, false, reader);
                     }
                     catch
                     {
@@ -393,7 +393,7 @@ namespace LiteNetLibManager
                     {
                         try
                         {
-                            element.ReadSyncData(true, tick, initial, reader);
+                            element.ReadSyncData(tick, initial, reader);
                         }
                         catch
                         {
@@ -415,7 +415,7 @@ namespace LiteNetLibManager
                     {
                         try
                         {
-                            element.ReadSyncData(true, tick, initial, reader);
+                            element.ReadSyncData(tick, initial, reader);
                         }
                         catch
                         {
