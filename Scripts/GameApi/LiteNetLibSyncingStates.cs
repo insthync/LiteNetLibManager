@@ -40,8 +40,8 @@ namespace LiteNetLibManager
             var syncData = PrepareSyncStateData(channelId, objectId);
             syncData.Identity = identity;
             syncData.StateType = GameStateSyncType.Spawn;
-            syncData.SyncBaseLineElements.Clear();
-            syncData.SyncDeltaElements.Clear();
+            syncData.DestroyReasons = 0;
+            syncData.SyncElements.Clear();
         }
 
         public void AppendDestroySyncState(LiteNetLibIdentity identity, byte reasons)
@@ -51,12 +51,11 @@ namespace LiteNetLibManager
             var syncData = PrepareSyncStateData(channelId, objectId);
             syncData.Identity = identity;
             syncData.StateType = GameStateSyncType.Destroy;
-            syncData.SyncBaseLineElements.Clear();
-            syncData.SyncDeltaElements.Clear();
             syncData.DestroyReasons = reasons;
+            syncData.SyncElements.Clear();
         }
 
-        public void AppendDataSyncState(LiteNetLibSyncElement syncElement, bool syncBaseLine)
+        public void AppendDataSyncState(LiteNetLibSyncElement syncElement)
         {
             if (syncElement.Identity == null)
             {
@@ -66,17 +65,15 @@ namespace LiteNetLibManager
             byte channelId = syncElement.SyncChannelId;
             uint objectId = syncElement.ObjectId;
             var syncData = PrepareSyncStateData(channelId, objectId);
-            if (syncData.StateType == GameStateSyncType.Spawn && syncData.StateType == GameStateSyncType.Destroy)
+            if (syncData.StateType == GameStateSyncType.Spawn || syncData.StateType == GameStateSyncType.Destroy)
             {
                 // Unable to sync data, it is spawning or destroying
                 return;
             }
             syncData.Identity = syncElement.Identity;
             syncData.StateType = GameStateSyncType.Data;
-            if (syncBaseLine)
-                syncData.SyncBaseLineElements.Add(syncElement);
-            else
-                syncData.SyncDeltaElements.Add(syncElement);
+            syncData.DestroyReasons = 0;
+            syncData.SyncElements.Add(syncElement);
         }
 
         public void RemoveSyncState(LiteNetLibIdentity identity)
