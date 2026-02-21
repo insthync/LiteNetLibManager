@@ -28,7 +28,7 @@ namespace LiteNetLibManager
         {
             if (IsServer)
                 return;
-            ReadSyncElement(messageHandler.Reader);
+            // TODO: Reimplment this
         }
 
         protected virtual void HandleClientSyncStates(MessageHandlerData messageHandler)
@@ -38,7 +38,7 @@ namespace LiteNetLibManager
 
         protected virtual void HandleClientSyncElement(MessageHandlerData messageHandler)
         {
-            ReadSyncElement(messageHandler.Reader);
+            // TODO: Reimplment this
         }
 
         private void WriteSyncElement(NetDataWriter writer, LiteNetLibSyncElement syncElement, uint tick, bool initial)
@@ -65,69 +65,6 @@ namespace LiteNetLibManager
             {
                 syncElement.WriteSyncData(tick, initial, writer);
             }
-        }
-
-        private void WriteSyncElement(NetDataWriter writer, LiteNetLibSyncElement syncElement)
-        {
-            uint tick = Tick;
-            writer.PutPackedUInt(tick);
-            writer.PutPackedUInt(syncElement.ObjectId);
-            WriteSyncElement(writer, syncElement, tick, false);
-        }
-
-        private bool ReadSyncElement(NetDataReader reader)
-        {
-            uint tick = reader.GetPackedUInt();
-            uint objectId = reader.GetPackedUInt();
-            if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
-                return false;
-            int elementId = reader.GetPackedInt();
-            if (safeGameStatePacket)
-            {
-                int dataLength = reader.GetInt();
-                int positionBeforeRead = reader.Position;
-
-                if (identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
-                {
-                    try
-                    {
-                        element.ReadSyncData(tick, false, reader);
-                    }
-                    catch
-                    {
-                        if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, sync element not found.");
-                        reader.SetPosition(positionBeforeRead);
-                        reader.SkipBytes(dataLength);
-                    }
-                }
-                else
-                {
-                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, sync element not found.");
-                    reader.SetPosition(positionBeforeRead);
-                    reader.SkipBytes(dataLength);
-                }
-            }
-            else
-            {
-                if (identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
-                {
-                    try
-                    {
-                        element.ReadSyncData(tick, false, reader);
-                    }
-                    catch
-                    {
-                        if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found.");
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found.");
-                    return false;
-                }
-            }
-            return true;
         }
 
         private ushort WriteGameStateFromServer(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> syncingStatesByObjectIds)
@@ -529,6 +466,8 @@ namespace LiteNetLibManager
 
             _gameStatesWriter.Reset();
             _gameStatesWriter.PutPackedUShort(GameMsgTypes.SyncDelta);
+            uint tick = Tick;
+            _gameStatesWriter.PutPackedUInt(tick);
             int tempLastPosition;
             int posBeforeWriteObjectLength = _gameStatesWriter.Length;
             ushort objectLength = 0;
@@ -554,7 +493,7 @@ namespace LiteNetLibManager
                 foreach (LiteNetLibSyncElement syncElement in syncData.SyncElements)
                 {
                     tempLastPosition = _gameStatesWriter.Length;
-                    WriteSyncElement(_gameStatesWriter, syncElement);
+                    WriteSyncElement(_gameStatesWriter, syncElement, tick, false);
                     bool isOverflow = _gameStatesWriter.Length > MAX_UNRELIABLE_PACKET_SIZE;
                     if (isOverflow)
                     {
@@ -577,7 +516,7 @@ namespace LiteNetLibManager
                         elementLength = 1;
                         _gameStatesWriter.Put(elementLength);
                         posAfterWriteElementLength = _gameStatesWriter.Length;
-                        WriteSyncElement(_gameStatesWriter, syncElement);
+                        WriteSyncElement(_gameStatesWriter, syncElement, tick, false);
                     }
                     else
                     {
