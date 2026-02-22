@@ -16,7 +16,7 @@ namespace LiteNetLibManager
         {
             if (syncElement.Identity == null)
             {
-                Logging.LogError("Unable to append data sync state, sync element's identity is null");
+                Logging.LogError("Unable to append delta data sync state, sync element's identity is null");
                 return;
             }
             uint objectId = syncElement.ObjectId;

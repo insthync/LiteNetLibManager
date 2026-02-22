@@ -112,10 +112,6 @@ namespace LiteNetLibManager
                     break;
                 case LiteNetLibSyncFieldStep.Delta3:
                     SyncFieldStep = LiteNetLibSyncFieldStep.None;
-                    UnregisterUpdating();
-                    break;
-                default:
-                    UnregisterUpdating();
                     break;
             }
         }

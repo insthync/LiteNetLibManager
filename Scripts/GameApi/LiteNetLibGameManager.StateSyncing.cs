@@ -14,7 +14,6 @@ namespace LiteNetLibManager
         protected readonly NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
         protected readonly NetDataWriter _syncElementWriter = new NetDataWriter(true, 1024);
         protected readonly List<PendingRpcData> _pendingRpcs = new List<PendingRpcData>();
-        protected float _latestClientBaseLineSyncTime = 0f;
         protected float _latestServerBaseLineSyncTime = 0f;
 
         protected virtual void HandleServerSyncBaseLine(MessageHandlerData messageHandler)
@@ -146,7 +145,7 @@ namespace LiteNetLibManager
                         writer.Put((byte)GameStateSyncType.Destroy);
                         WriteDestroyGameState(writer, objectId, syncData.DestroyReasons);
                         // TODO: Move this to somewhere else
-                        if (player.ConnectionId == ClientConnectionId)
+                        if (player.ConnectionId == ClientConnectionId && syncData.Identity != null)
                         {
                             // Simulate object destroying if it is a host
                             syncData.Identity.OnServerSubscribingRemoved();
@@ -154,7 +153,6 @@ namespace LiteNetLibManager
                         ++stateCount;
                         break;
                     case GameStateSyncType.Data:
-                        // NOTE: Temporary avoid null ref exception, will find cause of issues later
                         if (syncData.SyncElements.Count > 0)
                         {
                             writer.Put((byte)GameStateSyncType.Data);
@@ -398,16 +396,17 @@ namespace LiteNetLibManager
 
             float currentTime = Time.unscaledTime;
             bool syncBaseLine = currentTime - _latestServerBaseLineSyncTime > baseLineSyncInterval;
-            _latestServerBaseLineSyncTime = currentTime;
+            if (syncBaseLine)
+                _latestServerBaseLineSyncTime = currentTime;
 
-            if (syncBaseLine && _updatingServerSyncElements.Count > 0)
+            if (_updatingServerSyncElements.Count > 0)
             {
                 // Filter which elements can be synced
-                foreach (long connectionId in Server.ConnectionIds)
+                foreach (var playerKvp in Players)
                 {
-                    if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
+                    tempPlayer = playerKvp.Value;
+                    if (!tempPlayer.IsReady)
                         continue;
-
                     foreach (LiteNetLibSyncElement syncElement in _updatingServerSyncElements)
                     {
                         if (!syncElement.CanSyncFromServer(tempPlayer))
@@ -420,9 +419,10 @@ namespace LiteNetLibManager
                 }
             }
 
-            foreach (long connectionId in Server.ConnectionIds)
+            foreach (var playerKvp in Players)
             {
-                if (!Players.TryGetValue(connectionId, out tempPlayer) || !tempPlayer.IsReady)
+                tempPlayer = playerKvp.Value;
+                if (!tempPlayer.IsReady)
                     continue;
                 SyncGameStateToClient(tempPlayer);
                 if (!syncBaseLine)
@@ -586,26 +586,26 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void RegisterServerSyncElement(LiteNetLibSyncElement element)
+        internal void RegisterServerSyncElement(LiteNetLibSyncElement syncElement)
         {
-            if (!_updatingServerSyncElements.Contains(element))
-                _updatingServerSyncElements.Add(element);
+            if (!_updatingServerSyncElements.Contains(syncElement))
+                _updatingServerSyncElements.Add(syncElement);
         }
 
-        internal void UnregisterServerSyncElement(LiteNetLibSyncElement element)
+        internal void UnregisterServerSyncElement(LiteNetLibSyncElement syncElement)
         {
-            _updatingServerSyncElements.Remove(element);
+            _updatingServerSyncElements.Remove(syncElement);
         }
 
-        internal void RegisterClientSyncElement(LiteNetLibSyncElement element)
+        internal void RegisterClientSyncElement(LiteNetLibSyncElement syncElement)
         {
-            if (!_updatingClientSyncElements.Contains(element))
-                _updatingClientSyncElements.Add(element);
+            if (!_updatingClientSyncElements.Contains(syncElement))
+                _updatingClientSyncElements.Add(syncElement);
         }
 
-        internal void UnregisterClientSyncElement(LiteNetLibSyncElement element)
+        internal void UnregisterClientSyncElement(LiteNetLibSyncElement syncElement)
         {
-            _updatingClientSyncElements.Remove(element);
+            _updatingClientSyncElements.Remove(syncElement);
         }
     }
 }

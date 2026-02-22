@@ -59,7 +59,7 @@ namespace LiteNetLibManager
         {
             if (syncElement.Identity == null)
             {
-                Logging.LogError("Unable to append data sync state, sync element's identity is null");
+                Logging.LogError("Unable to append base-line data sync state, sync element's identity is null");
                 return;
             }
             byte channelId = syncElement.SyncChannelId;
