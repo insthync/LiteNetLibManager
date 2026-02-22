@@ -6,7 +6,7 @@ namespace LiteNetLibManager
     {
         public abstract byte ElementType { get; }
 
-        internal virtual bool CanSyncFromServer(LiteNetLibPlayer player)
+        internal virtual bool CanSyncFromServer(LiteNetLibPlayer player, bool isBaseLine)
         {
             return Identity.Subscribers.Contains(player.ConnectionId);
         }

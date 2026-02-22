@@ -8,7 +8,7 @@ namespace LiteNetLibManager
 {
     public partial class LiteNetLibGameManager
     {
-        private const ushort MAX_UNRELIABLE_PACKET_SIZE = 1200;
+        private const ushort MAX_UNRELIABLE_PACKET_SIZE = 1023;
         protected readonly List<LiteNetLibSyncElement> _updatingClientSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly List<LiteNetLibSyncElement> _updatingServerSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
@@ -279,7 +279,7 @@ namespace LiteNetLibManager
             syncData.SyncElements.Clear();
             foreach (LiteNetLibSyncElement syncElement in identity.SyncElements.Values)
             {
-                if (!syncElement.CanSyncFromServer(player))
+                if (!syncElement.CanSyncFromServer(player, true))
                     continue;
                 syncData.SyncElements.Add(syncElement);
             }
@@ -409,7 +409,7 @@ namespace LiteNetLibManager
                         continue;
                     foreach (LiteNetLibSyncElement syncElement in _updatingServerSyncElements)
                     {
-                        if (!syncElement.CanSyncFromServer(tempPlayer))
+                        if (!syncElement.CanSyncFromServer(tempPlayer, syncBaseLine))
                             continue;
                         if (syncBaseLine || !syncElement.CanSyncDelta())
                             tempPlayer.SyncingStates.AppendDataSyncState(syncElement);
@@ -580,7 +580,7 @@ namespace LiteNetLibManager
                 if (stateCount > 0)
                 {
                     // Send data to server
-                    ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
+                    ClientSendMessage(syncChannelId, DeliveryMethod.ReliableUnordered, _gameStatesWriter);
                 }
                 syncingStatesByChannelId.Value.Clear();
             }

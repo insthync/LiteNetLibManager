@@ -53,7 +53,7 @@ namespace LiteNetLibManager
             return CanSync(IsServer, IsOwnerClient);
         }
 
-        internal override sealed bool CanSyncFromServer(LiteNetLibPlayer player)
+        internal override sealed bool CanSyncFromServer(LiteNetLibPlayer player, bool isBaseLine)
         {
             bool isOwner = ConnectionId == player.ConnectionId;
             if (_latestChangeSyncedFromOwner && isOwner)
@@ -61,7 +61,7 @@ namespace LiteNetLibManager
                 // If value was synced from owner client, then don't sync back to the client
                 return false;
             }
-            return SyncFieldStep != LiteNetLibSyncFieldStep.None && CanSync(IsServer, isOwner) && base.CanSyncFromServer(player);
+            return (isBaseLine || SyncFieldStep != LiteNetLibSyncFieldStep.None) && CanSync(IsServer, isOwner) && base.CanSyncFromServer(player, isBaseLine);
         }
 
         internal override sealed bool CanSyncFromOwnerClient()
@@ -74,21 +74,33 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal override bool CanSyncDelta()
+        internal override sealed bool CanSyncDelta()
         {
             return true;
+        }
+
+        protected virtual bool BaseLineOnly()
+        {
+            return false;
         }
 
         protected void ValueChangedState(bool latestChangeSyncedFromOwner)
         {
             _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
-            if (Manager.IsServer)
+            if (BaseLineOnly())
             {
-                SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
+                SyncFieldStep = LiteNetLibSyncFieldStep.None;
             }
             else
             {
-                SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
+                if (Manager.IsServer)
+                {
+                    SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
+                }
+                else
+                {
+                    SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
+                }
             }
             RegisterUpdating();
         }
@@ -703,6 +715,15 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldString : LiteNetLibSyncField<string>
     {
+        // Acutally can be 1024 - 1 (unreliable header) - 2 (packet type) - 4 (tick) - 2 (object length) - 4 (object ID) - 2 (element length)
+        // But simply just use 1000
+        public const ushort MAX_LENGTH_FOR_UNRELIABLE_PACKET = 1000;
+
+        protected override bool BaseLineOnly()
+        {
+            return _value.Length > MAX_LENGTH_FOR_UNRELIABLE_PACKET;
+        }
+
         internal override void DeserializeValue(NetDataReader reader)
         {
             _value = reader.GetString();
