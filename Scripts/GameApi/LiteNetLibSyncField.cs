@@ -61,7 +61,7 @@ namespace LiteNetLibManager
                 // If value was synced from owner client, then don't sync back to the client
                 return false;
             }
-            return CanSync(IsServer, isOwner) && base.CanSyncFromServer(player);
+            return SyncFieldStep != LiteNetLibSyncFieldStep.None && CanSync(IsServer, isOwner) && base.CanSyncFromServer(player);
         }
 
         internal override sealed bool CanSyncFromOwnerClient()
