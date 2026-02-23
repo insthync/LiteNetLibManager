@@ -60,7 +60,7 @@ namespace LiteNetLibManager
         private bool doNotDestroyWhenDisconnect = false;
         [SerializeField, Tooltip("If this is > 0, it will get instance from pooling system")]
         private int poolingSize = 0;
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         [SerializeField]
         private bool forceRenderingOffWhileHidding = true;
         [SerializeField]
