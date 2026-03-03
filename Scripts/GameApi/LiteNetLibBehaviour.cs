@@ -13,7 +13,7 @@ namespace LiteNetLibManager
     {
         public const string TAG_NULL = "<NULL_B>";
 
-        private class CacheFunctions
+        public class CacheFunctions
         {
             public readonly List<MethodInfo> Functions = new List<MethodInfo>();
             public readonly List<MethodInfo> FunctionsCanCallByEveryone = new List<MethodInfo>();
@@ -180,13 +180,21 @@ namespace LiteNetLibManager
             CacheRpcs<TargetRpcAttribute>(_targetRpcIds, s_CacheTargetRpcs);
         }
 
-        private void CacheElements(Dictionary<string, List<FieldInfo>> cacheDict)
+        public static void CacheElementsAndRpcs(Type baseType)
         {
-            Type baseType = GetType();
+            GetCachedElements(baseType, s_CacheSyncElements, out _);
+            GetCachedRpcs<ElasticRpcAttribute>(baseType, string.Empty, s_CacheElasticRpcs, out _);
+            GetCachedRpcs<ServerRpcAttribute>(baseType, string.Empty, s_CacheServerRpcs, out _);
+            GetCachedRpcs<AllRpcAttribute>(baseType, string.Empty, s_CacheAllRpcs, out _);
+            GetCachedRpcs<TargetRpcAttribute>(baseType, string.Empty, s_CacheTargetRpcs, out _);
+        }
+
+        public static void GetCachedElements(Type baseType, Dictionary<string, List<FieldInfo>> cacheDict, out List<FieldInfo> syncElementFieldInfos)
+        {
             string typeName = baseType.FullName;
 
             // Find sync elements
-            if (!cacheDict.TryGetValue(typeName, out List<FieldInfo> syncElementFieldInfos))
+            if (!cacheDict.TryGetValue(typeName, out syncElementFieldInfos))
             {
                 syncElementFieldInfos = new List<FieldInfo>();
                 HashSet<string> tempLookupNames = new HashSet<string>();
@@ -213,10 +221,13 @@ namespace LiteNetLibManager
                 tempLookupType = null;
                 cacheDict.Add(typeName, syncElementFieldInfos);
             }
+        }
 
+        private void CacheElements(Dictionary<string, List<FieldInfo>> cacheDict)
+        {
+            GetCachedElements(GetType(), cacheDict, out List<FieldInfo> syncElementFieldInfos);
             if (syncElementFieldInfos.Count == 0)
                 return;
-
             // Setup sync elements
             foreach (FieldInfo syncElementFieldInfo in syncElementFieldInfos)
             {
@@ -229,20 +240,19 @@ namespace LiteNetLibManager
             }
         }
 
-        private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<string, CacheFunctions> cacheDict)
+        public static void GetCachedRpcs<RpcType>(Type baseType, string logTag, Dictionary<string, CacheFunctions> cacheDict, out CacheFunctions cacheFunctions)
             where RpcType : RpcAttribute
         {
-            Type baseType = GetType();
             string typeName = baseType.FullName;
 
-            if (!cacheDict.TryGetValue(typeName, out CacheFunctions cacheFunctions))
+            if (!cacheDict.TryGetValue(typeName, out cacheFunctions))
             {
                 cacheFunctions = new CacheFunctions();
                 HashSet<string> tempLookupNames = new HashSet<string>();
                 MethodInfo[] tempLookupMethods;
                 Type tempLookupType = baseType;
                 RpcType tempAttribute;
-
+                bool writeErrorLog = !string.IsNullOrWhiteSpace(logTag);
                 while (tempLookupType != null && tempLookupType != typeof(LiteNetLibBehaviour))
                 {
                     tempLookupMethods = tempLookupType.GetMethods(
@@ -259,8 +269,8 @@ namespace LiteNetLibManager
 
                         if (lookupMethod.ReturnType != typeof(void))
                         {
-                            if (Manager.LogError)
-                                Logging.LogError(LogTag, $"Cannot register RPC [{lookupMethod.Name}] return type must be void.");
+                            if (writeErrorLog)
+                                Logging.LogError(logTag, $"Cannot register RPC [{lookupMethod.Name}] return type must be void.");
                             continue;
                         }
 
@@ -277,7 +287,13 @@ namespace LiteNetLibManager
 
                 cacheDict.Add(typeName, cacheFunctions);
             }
+        }
 
+        private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<string, CacheFunctions> cacheDict)
+            where RpcType : RpcAttribute
+        {
+            Type baseType = GetType();
+            GetCachedRpcs<RpcType>(baseType, Manager.LogError ? LogTag : string.Empty, cacheDict, out CacheFunctions cacheFunctions);
             SetupRpcs(ids, cacheFunctions.Functions, false);
             SetupRpcs(ids, cacheFunctions.FunctionsCanCallByEveryone, true);
         }
