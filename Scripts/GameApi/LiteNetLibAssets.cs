@@ -277,7 +277,6 @@ namespace LiteNetLibManager
 
             queue = new Queue<LiteNetLibIdentity>();
             LiteNetLibIdentity tempInstance;
-            int poolingSize = Mathf.Max(prefab.PoolingSize, 1);
             for (int i = 0; i < prefab.PoolingSize; ++i)
             {
                 tempInstance = Instantiate(prefab);
