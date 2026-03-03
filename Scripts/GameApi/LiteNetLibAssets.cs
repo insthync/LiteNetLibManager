@@ -265,23 +265,19 @@ namespace LiteNetLibManager
             if (disablePooling)
                 return;
 
-            if (!GuidToPrefabs.ContainsKey(hashAssetId))
+            if (!GuidToPrefabs.TryGetValue(hashAssetId, out LiteNetLibIdentity prefab))
             {
                 Debug.LogWarning($"Cannot init prefab: {hashAssetId}, can't find the registered prefab.");
                 return;
             }
 
             // Already init pool for the prefab
-            if (PooledObjects.ContainsKey(hashAssetId))
+            if (PooledObjects.TryGetValue(hashAssetId, out Queue<LiteNetLibIdentity> queue))
                 return;
 
-            LiteNetLibIdentity prefab = GuidToPrefabs[hashAssetId];
-            // Don't create an instance for this prefab, if pooling size < 0
-            if (prefab.PoolingSize <= 0)
-                return;
-
-            Queue<LiteNetLibIdentity> queue = new Queue<LiteNetLibIdentity>();
+            queue = new Queue<LiteNetLibIdentity>();
             LiteNetLibIdentity tempInstance;
+            int poolingSize = Mathf.Max(prefab.PoolingSize, 1);
             for (int i = 0; i < prefab.PoolingSize; ++i)
             {
                 tempInstance = Instantiate(prefab);
@@ -299,20 +295,21 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity GetObjectInstance(int hashAssetId, Vector3 position, Quaternion rotation)
         {
-            if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects[hashAssetId].Count > 0)
+            if (PooledObjects.TryGetValue(hashAssetId, out Queue<LiteNetLibIdentity> pool) && pool.Count > 0)
             {
                 // Get pooled instance
-                LiteNetLibIdentity instance = PooledObjects[hashAssetId].Dequeue();
+                LiteNetLibIdentity instance = pool.Dequeue();
                 instance.OnGetInstance();
                 instance.transform.position = position;
                 instance.transform.rotation = rotation;
                 return instance;
             }
 
-            if (GuidToPrefabs.ContainsKey(hashAssetId))
+            if (GuidToPrefabs.TryGetValue(hashAssetId, out LiteNetLibIdentity prefab))
             {
                 // Create a new instance
-                LiteNetLibIdentity instance = Instantiate(GuidToPrefabs[hashAssetId], position, rotation);
+                LiteNetLibIdentity instance = Instantiate(prefab, position, rotation);
+                instance.IsPooledInstance = true;
                 instance.gameObject.SetActive(false);
                 return instance;
             }
