@@ -26,31 +26,45 @@ namespace LiteNetLibManager
             get { return _behaviourIndex; }
         }
 
-        private static readonly Dictionary<string, List<FieldInfo>> s_CacheSyncElements = new Dictionary<string, List<FieldInfo>>();
-        private static readonly Dictionary<string, CacheFunctions> s_CacheElasticRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, CacheFunctions> s_CacheTargetRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, CacheFunctions> s_CacheAllRpcs = new Dictionary<string, CacheFunctions>();
-        private static readonly Dictionary<string, CacheFunctions> s_CacheServerRpcs = new Dictionary<string, CacheFunctions>();
+        private static readonly Dictionary<RuntimeTypeHandle, List<FieldInfo>> s_CacheSyncElements = new Dictionary<RuntimeTypeHandle, List<FieldInfo>>();
+        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheElasticRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
+        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheTargetRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
+        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheAllRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
+        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheServerRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
         private static readonly Dictionary<string, Type[]> s_CacheDyncnamicFunctionTypes = new Dictionary<string, Type[]>();
 
         private readonly Dictionary<string, int> _targetRpcIds = new Dictionary<string, int>();
         private readonly Dictionary<string, int> _allRpcIds = new Dictionary<string, int>();
         private readonly Dictionary<string, int> _serverRpcIds = new Dictionary<string, int>();
 
-        private bool _isFoundIdentity;
         private LiteNetLibIdentity _identity;
         public LiteNetLibIdentity Identity
         {
             get
             {
-                if (!_isFoundIdentity)
-                {
+                if (this == null)
+                    return null;
+                if (_identity == null)
                     _identity = GetComponent<LiteNetLibIdentity>();
-                    if (_identity == null)
-                        _identity = GetComponentInParent<LiteNetLibIdentity>();
-                    _isFoundIdentity = _identity != null;
-                }
+                if (_identity == null)
+                    _identity = GetComponentInParent<LiteNetLibIdentity>();
                 return _identity;
+            }
+        }
+
+        private static readonly Dictionary<RuntimeTypeHandle, string> s_CacheTypeFullNames = new Dictionary<RuntimeTypeHandle, string>();
+        public string TypeFullName
+        {
+            get
+            {
+                Type type = GetType();
+                if (!s_CacheTypeFullNames.TryGetValue(type.TypeHandle, out string typeFullName))
+                {
+                    typeFullName = type.FullName;
+                    s_CacheTypeFullNames[type.TypeHandle] = typeFullName;
+                }
+                ;
+                return typeFullName;
             }
         }
 
@@ -189,12 +203,12 @@ namespace LiteNetLibManager
             GetCachedRpcs<TargetRpcAttribute>(baseType, string.Empty, s_CacheTargetRpcs, out _);
         }
 
-        public static void GetCachedElements(Type baseType, Dictionary<string, List<FieldInfo>> cacheDict, out List<FieldInfo> syncElementFieldInfos)
+        public static void GetCachedElements(Type baseType, Dictionary<RuntimeTypeHandle, List<FieldInfo>> cacheDict, out List<FieldInfo> syncElementFieldInfos)
         {
-            string typeName = baseType.FullName;
+            RuntimeTypeHandle typeHandle = baseType.TypeHandle;
 
             // Find sync elements
-            if (!cacheDict.TryGetValue(typeName, out syncElementFieldInfos))
+            if (!cacheDict.TryGetValue(typeHandle, out syncElementFieldInfos))
             {
                 syncElementFieldInfos = new List<FieldInfo>();
                 HashSet<string> tempLookupNames = new HashSet<string>();
@@ -219,11 +233,11 @@ namespace LiteNetLibManager
                 }
                 tempLookupFields = null;
                 tempLookupType = null;
-                cacheDict.Add(typeName, syncElementFieldInfos);
+                cacheDict.Add(typeHandle, syncElementFieldInfos);
             }
         }
 
-        private void CacheElements(Dictionary<string, List<FieldInfo>> cacheDict)
+        private void CacheElements(Dictionary<RuntimeTypeHandle, List<FieldInfo>> cacheDict)
         {
             GetCachedElements(GetType(), cacheDict, out List<FieldInfo> syncElementFieldInfos);
             if (syncElementFieldInfos.Count == 0)
@@ -240,12 +254,12 @@ namespace LiteNetLibManager
             }
         }
 
-        public static void GetCachedRpcs<RpcType>(Type baseType, string logTag, Dictionary<string, CacheFunctions> cacheDict, out CacheFunctions cacheFunctions)
+        public static void GetCachedRpcs<RpcType>(Type baseType, string logTag, Dictionary<RuntimeTypeHandle, CacheFunctions> cacheDict, out CacheFunctions cacheFunctions)
             where RpcType : RpcAttribute
         {
-            string typeName = baseType.FullName;
+            RuntimeTypeHandle typeHandle = baseType.TypeHandle;
 
-            if (!cacheDict.TryGetValue(typeName, out cacheFunctions))
+            if (!cacheDict.TryGetValue(typeHandle, out cacheFunctions))
             {
                 cacheFunctions = new CacheFunctions();
                 HashSet<string> tempLookupNames = new HashSet<string>();
@@ -285,11 +299,11 @@ namespace LiteNetLibManager
                     tempLookupType = tempLookupType.BaseType;
                 }
 
-                cacheDict.Add(typeName, cacheFunctions);
+                cacheDict.Add(typeHandle, cacheFunctions);
             }
         }
 
-        private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<string, CacheFunctions> cacheDict)
+        private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<RuntimeTypeHandle, CacheFunctions> cacheDict)
             where RpcType : RpcAttribute
         {
             Type baseType = GetType();
@@ -709,7 +723,7 @@ namespace LiteNetLibManager
             if (dict.ContainsKey(id))
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, $"[{GetType().FullName}] Cannot register rpc with existed id [{id}].");
+                    Logging.LogError(LogTag, $"[{TypeFullName}] Cannot register rpc with existed id [{id}].");
                 return;
             }
             int elementId = LiteNetLibIdentity.GetHashedId(id);
@@ -1083,7 +1097,7 @@ namespace LiteNetLibManager
                     else
                     {
                         if (Manager.LogError)
-                            Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, any rpc [{methodName}] not found.");
+                            Logging.LogError(LogTag, $"[{TypeFullName}] cannot call rpc, any rpc [{methodName}] not found.");
                     }
                     break;
                 case FunctionReceivers.Server:
@@ -1094,12 +1108,12 @@ namespace LiteNetLibManager
                     else
                     {
                         if (Manager.LogError)
-                            Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, any rpc [{methodName}] not found.");
+                            Logging.LogError(LogTag, $"[{TypeFullName}] cannot call rpc, any rpc [{methodName}] not found.");
                     }
                     break;
                 default:
                     if (Manager.LogError)
-                        Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, rpc [{methodName}] receives must be `All` or `Server`.");
+                        Logging.LogError(LogTag, $"[{TypeFullName}] cannot call rpc, rpc [{methodName}] receives must be `All` or `Server`.");
                     break;
             }
         }
@@ -1126,7 +1140,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, client or server rpc [{methodName}] not found.");
+                    Logging.LogError(LogTag, $"[{TypeFullName}] cannot call rpc, client or server rpc [{methodName}] not found.");
             }
         }
 
@@ -1149,7 +1163,7 @@ namespace LiteNetLibManager
             else
             {
                 if (Manager.LogError)
-                    Logging.LogError(LogTag, $"[{GetType().FullName}] cannot call rpc, target rpc [{methodName}] not found.");
+                    Logging.LogError(LogTag, $"[{TypeFullName}] cannot call rpc, target rpc [{methodName}] not found.");
             }
         }
 
@@ -1162,7 +1176,7 @@ namespace LiteNetLibManager
         {
             using (var stringBuilder = ZString.CreateStringBuilder(true))
             {
-                stringBuilder.Append(GetType().FullName);
+                stringBuilder.Append(TypeFullName);
                 stringBuilder.Append('_');
                 stringBuilder.Append(_behaviourIndex);
                 stringBuilder.Append('_');
@@ -1180,7 +1194,7 @@ namespace LiteNetLibManager
         {
             using (var stringBuilder = ZString.CreateStringBuilder(true))
             {
-                stringBuilder.Append(GetType().FullName);
+                stringBuilder.Append(TypeFullName);
                 stringBuilder.Append('_');
                 stringBuilder.Append(_behaviourIndex);
                 stringBuilder.Append('_');
