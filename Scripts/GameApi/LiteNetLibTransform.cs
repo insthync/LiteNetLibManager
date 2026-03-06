@@ -139,6 +139,29 @@ namespace LiteNetLibManager
             }
         }
 
+        public class SyncTransforms : SortedList<uint, TransformData>, INetSerializable
+        {
+            public void Serialize(NetDataWriter writer)
+            {
+                writer.Put(Count);
+                foreach (var entry in this)
+                {
+                    entry.Value.Serialize(writer);
+                }
+            }
+
+            public void Deserialize(NetDataReader reader)
+            {
+                Clear();
+                int count = reader.GetInt();
+                for (int i = 0; i < count; ++i)
+                {
+                    TransformData entry = reader.Get<TransformData>();
+                    Add(entry.Tick, entry);
+                }
+            }
+        }
+
         [Header("Sync Settings")]
         [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
         [FormerlySerializedAs("ownerClientCanSendTransform")]
@@ -172,7 +195,7 @@ namespace LiteNetLibManager
         private float _startInterpTime;
         private float _endInterpTime;
 
-        private SortedList<uint, TransformData> _syncBuffers = new SortedList<uint, TransformData>();
+        private SyncTransforms _syncBuffers = new SyncTransforms();
         private SortedList<uint, TransformData> _interpBuffers = new SortedList<uint, TransformData>();
 
         private LogicUpdater _logicUpdater = null;
@@ -257,17 +280,17 @@ namespace LiteNetLibManager
             if (!syncByOwnerClient && IsServer)
             {
                 StoreSyncBuffer(transformData);
-                RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers.Values.ToArray());
+                RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers);
             }
             else if (syncByOwnerClient && IsOwnedByServer)
             {
                 StoreSyncBuffer(transformData);
-                RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers.Values.ToArray());
+                RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers);
             }
             else if (syncByOwnerClient && IsOwnerClient)
             {
                 StoreSyncBuffer(transformData);
-                RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers.Values.ToArray());
+                RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers);
             }
         }
 
@@ -355,7 +378,7 @@ namespace LiteNetLibManager
         }
 
         [ServerRpc]
-        private void OwnerSyncTransform(TransformData[] data)
+        private void OwnerSyncTransform(SyncTransforms data)
         {
             if (!syncByOwnerClient && IsServer)
                 return;
@@ -375,7 +398,7 @@ namespace LiteNetLibManager
         }
 
         [AllRpc]
-        private void ServerSyncTransform(TransformData[] data)
+        private void ServerSyncTransform(SyncTransforms data)
         {
             if (IsServer)
                 return;
@@ -393,18 +416,18 @@ namespace LiteNetLibManager
             }
         }
 
-        private void StoreInterpolateBuffers(TransformData[] data, int maxBuffers = 3)
+        private void StoreInterpolateBuffers(SyncTransforms data, int maxBuffers = 3)
         {
             foreach (var entry in data)
             {
-                if (_interpBuffers.ContainsKey(entry.Tick))
+                if (_interpBuffers.ContainsKey(entry.Key))
                     continue;
-                if (entry.Extra != null)
+                if (entry.Value.Extra != null)
                 {
-                    s_ExtraReader.SetSource(entry.Extra);
-                    onReadInterpBuffer?.Invoke(s_ExtraReader, entry.Tick);
+                    s_ExtraReader.SetSource(entry.Value.Extra);
+                    onReadInterpBuffer?.Invoke(s_ExtraReader, entry.Key);
                 }
-                _interpBuffers.Add(entry.Tick, entry);
+                _interpBuffers.Add(entry.Key, entry.Value);
             }
             // Prune old ticks (keep last N)
             while (_interpBuffers.Count > maxBuffers)
