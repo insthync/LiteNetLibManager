@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace LiteNetLibManager
 {
@@ -35,8 +36,9 @@ namespace LiteNetLibManager
         public AssetReferenceScene addressableOnlineScene;
         #endregion
 #endif
-
-        public UnityEvent onInitialize = new UnityEvent();
+        [FormerlySerializedAs("onInitialize")]
+        public UnityEvent onInitializeStart = new UnityEvent();
+        public UnityEvent onInitializeFinish = new UnityEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneFinish = new LiteNetLibLoadSceneEvent();
@@ -98,11 +100,13 @@ namespace LiteNetLibManager
 
         public async UniTask Initialize()
         {
-            if (onInitialize != null)
-                onInitialize.Invoke();
+            if (onInitializeStart != null)
+                onInitializeStart.Invoke();
             await RegisterPrefabs();
             RegisterSpawnPoints();
             RegisterSceneObjects();
+            if (onInitializeFinish != null)
+                onInitializeFinish.Invoke();
         }
 
         public void Clear(bool doNotResetObjectId = false)
