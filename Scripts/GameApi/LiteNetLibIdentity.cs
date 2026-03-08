@@ -986,6 +986,7 @@ namespace LiteNetLibManager
             onSubscriberRemoved = null;
             onServerSubscribingAdded = null;
             onServerSubscribingRemoved = null;
+            overrideSetTransform = null;
             SyncElements.Clear();
             NetFunctions.Clear();
             Subscribings.Clear();
