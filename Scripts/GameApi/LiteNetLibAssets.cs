@@ -338,6 +338,7 @@ namespace LiteNetLibManager
             }
             else
             {
+                instance.OnPushBack();
                 instance.gameObject.SetActive(false);
                 queue.Enqueue(instance);
             }

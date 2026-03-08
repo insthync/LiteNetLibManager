@@ -6,6 +6,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
+using UnityEngine.Events;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -66,7 +68,8 @@ namespace LiteNetLibManager
         private bool muteAudioSourceWhileHidding = true;
 #endif
 
-        public System.Action onGetInstance;
+        public UnityEvent onGetInstance = new UnityEvent();
+        public UnityEvent onPushBack = new UnityEvent();
         public ConnectionEventDelegate onSubscriberAdded;
         public ConnectionEventDelegate onSubscriberRemoved;
         public System.Action onServerSubscribingAdded;
@@ -952,7 +955,12 @@ namespace LiteNetLibManager
         internal void OnGetInstance()
         {
             ResetSyncData();
-            onGetInstance?.Invoke();
+            onGetInstance.Invoke();
+        }
+
+        internal void OnPushBack()
+        {
+            onPushBack.Invoke();
         }
 
         internal void ResetSyncData()
@@ -981,7 +989,10 @@ namespace LiteNetLibManager
             {
                 syncElement.UnregisterUpdating();
             }
+            onGetInstance?.RemoveAllListeners();
             onGetInstance = null;
+            onPushBack?.RemoveAllListeners();
+            onPushBack = null;
             onSubscriberAdded = null;
             onSubscriberRemoved = null;
             onServerSubscribingAdded = null;
