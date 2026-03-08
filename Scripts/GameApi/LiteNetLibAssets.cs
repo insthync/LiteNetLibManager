@@ -11,7 +11,7 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibAssets : MonoBehaviour
     {
-        public const string TAG_NULL = "<NULL_A>";
+        public const string TAG_NULL = "A?";
         private static int s_spawnPositionCounter = 0;
 
         public bool playerSpawnRandomly;
@@ -80,9 +80,7 @@ namespace LiteNetLibManager
                     stringBuilder.Append('.');
                     if (this != null)
                     {
-                        stringBuilder.Append('<');
                         stringBuilder.Append('A');
-                        stringBuilder.Append('>');
                     }
                     else
                     {

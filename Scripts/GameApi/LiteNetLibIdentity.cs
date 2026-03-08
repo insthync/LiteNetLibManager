@@ -17,7 +17,7 @@ namespace LiteNetLibManager
     [DisallowMultipleComponent]
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
-        public const string TAG_NULL = "<NULL_I>";
+        public const string TAG_NULL = "I?";
 
         public static uint HighestObjectId { get; private set; }
         /// <summary>
@@ -184,7 +184,6 @@ namespace LiteNetLibManager
         public bool IsPooledInstance { get; internal set; } = false;
         public LiteNetLibGameManager Manager { get; internal set; }
 
-        private string _logTag;
         public string LogTag
         {
             get
@@ -202,10 +201,9 @@ namespace LiteNetLibManager
                     stringBuilder.Append('.');
                     if (this != null)
                     {
-                        stringBuilder.Append(name);
-                        stringBuilder.Append('<');
                         stringBuilder.Append('I');
-                        stringBuilder.Append('>');
+                        stringBuilder.Append('_');
+                        stringBuilder.Append(name);
                     }
                     else
                     {

@@ -11,7 +11,7 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibManager : MonoBehaviour
     {
-        public const string TAG_NULL = "<NULL_M>";
+        public const string TAG_NULL = "M?";
         public LiteNetLibClient Client { get; protected set; }
         public LiteNetLibServer Server { get; protected set; }
         public bool IsServer { get; private set; }
@@ -69,12 +69,11 @@ namespace LiteNetLibManager
                 {
                     if (this != null)
                     {
-                        stringBuilder.Append(name);
-                        stringBuilder.Append('<');
                         stringBuilder.Append('M');
                         stringBuilder.Append('_');
                         stringBuilder.Append(GetType().Name);
-                        stringBuilder.Append('>');
+                        stringBuilder.Append('_');
+                        stringBuilder.Append(name);
                     }
                     else
                     {

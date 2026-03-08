@@ -112,12 +112,11 @@ namespace LiteNetLibManager
                         stringBuilder.Append(LiteNetLibBehaviour.TAG_NULL);
                     }
                     stringBuilder.Append('.');
-                    stringBuilder.Append(logTagName);
-                    stringBuilder.Append('<');
                     stringBuilder.Append('E');
                     stringBuilder.Append('_');
                     stringBuilder.Append(GetType().Name);
-                    stringBuilder.Append('>');
+                    stringBuilder.Append('_');
+                    stringBuilder.Append(logTagName);
                     return stringBuilder.ToString();
                 }
             }

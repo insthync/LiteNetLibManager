@@ -11,7 +11,7 @@ namespace LiteNetLibManager
 {
     public partial class LiteNetLibBehaviour : MonoBehaviour
     {
-        public const string TAG_NULL = "<NULL_B>";
+        public const string TAG_NULL = "B?";
 
         public class CacheFunctions
         {
@@ -165,12 +165,11 @@ namespace LiteNetLibManager
                     stringBuilder.Append('.');
                     if (this != null)
                     {
-                        stringBuilder.Append(name);
-                        stringBuilder.Append('<');
                         stringBuilder.Append('B');
                         stringBuilder.Append('_');
                         stringBuilder.Append(GetType().Name);
-                        stringBuilder.Append('>');
+                        stringBuilder.Append('_');
+                        stringBuilder.Append(name);
                     }
                     else
                     {
