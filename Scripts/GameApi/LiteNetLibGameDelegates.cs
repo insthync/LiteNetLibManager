@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace LiteNetLibManager
 {
     public delegate void NetFunctionDelegate();
@@ -25,4 +27,5 @@ namespace LiteNetLibManager
     /// <param name="fromThis"></param>
     /// <returns></returns>
     public delegate bool ForceHideDelegate(LiteNetLibIdentity mustHideThis, LiteNetLibIdentity fromThis);
+    public delegate void SetTransformDelegate(Vector3 position, Quaternion rotation);
 }

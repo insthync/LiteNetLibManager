@@ -4,7 +4,6 @@ using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Events;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 #if UNITY_EDITOR
@@ -67,12 +66,12 @@ namespace LiteNetLibManager
         private bool muteAudioSourceWhileHidding = true;
 #endif
 
-        [Header("Events")]
-        public UnityEvent onGetInstance = new UnityEvent();
-        public LiteNetLibConnectionIdEvent onSubscriberAdded = new LiteNetLibConnectionIdEvent();
-        public LiteNetLibConnectionIdEvent onSubscriberRemoved = new LiteNetLibConnectionIdEvent();
-        public UnityEvent onServerSubscribingAdded = new UnityEvent();
-        public UnityEvent onServerSubscribingRemoved = new UnityEvent();
+        public System.Action onGetInstance;
+        public ConnectionEventDelegate onSubscriberAdded;
+        public ConnectionEventDelegate onSubscriberRemoved;
+        public System.Action onServerSubscribingAdded;
+        public System.Action onServerSubscribingRemoved;
+        public SetTransformDelegate overrideSetTransform;
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -965,18 +964,28 @@ namespace LiteNetLibManager
             }
         }
 
+        internal void SetTransform(Vector3 position, Quaternion rotation)
+        {
+            if (overrideSetTransform != null)
+            {
+                overrideSetTransform.Invoke(position, rotation);
+                return;
+            }
+            transform.position = position;
+            transform.rotation = rotation;
+        }
+
         private void OnDestroy()
         {
             foreach (LiteNetLibSyncElement syncElement in SyncElements.Values)
             {
                 syncElement.UnregisterUpdating();
             }
-            onGetInstance.RemoveAllListeners();
             onGetInstance = null;
-            onSubscriberAdded.RemoveAllListeners();
             onSubscriberAdded = null;
-            onSubscriberRemoved.RemoveAllListeners();
             onSubscriberRemoved = null;
+            onServerSubscribingAdded = null;
+            onServerSubscribingRemoved = null;
             SyncElements.Clear();
             NetFunctions.Clear();
             Subscribings.Clear();

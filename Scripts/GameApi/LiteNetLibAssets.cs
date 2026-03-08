@@ -303,8 +303,7 @@ namespace LiteNetLibManager
                 // Get pooled instance
                 LiteNetLibIdentity instance = pool.Dequeue();
                 instance.OnGetInstance();
-                instance.transform.position = position;
-                instance.transform.rotation = rotation;
+                instance.SetTransform(position, rotation);
                 return instance;
             }
 

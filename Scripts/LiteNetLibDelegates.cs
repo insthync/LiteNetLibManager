@@ -14,6 +14,7 @@ namespace LiteNetLibManager
     public delegate void ResponseDelegate<TResponse>(ResponseHandlerData responseHandler, AckResponseCode responseCode, TResponse response)
         where TResponse : INetSerializable;
     public delegate void LogicUpdateDelegate(LogicUpdater updater);
+    public delegate void ConnectionEventDelegate(long connectionId);
 
     public static class DelegateExtensions
     {
