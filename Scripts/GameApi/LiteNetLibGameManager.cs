@@ -496,7 +496,7 @@ namespace LiteNetLibManager
             await UniTask.Yield();
             if (LogDev) Logging.Log(LogTag, $"Loaded Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} -> Assets.Initialize()");
             await Assets.Initialize();
-            Assets.InitPoolingObjects();
+            Assets.InitPoolingQueues();
             if (IsClient)
             {
                 // If it is host (both client and server) wait for client connection id before proceed server scene load
@@ -1036,7 +1036,7 @@ namespace LiteNetLibManager
             if (string.IsNullOrWhiteSpace(serverSceneInfo.sceneName) || activeSceneName.Equals(serverSceneInfo.sceneName))
             {
                 await Assets.Initialize();
-                Assets.InitPoolingObjects();
+                Assets.InitPoolingQueues();
                 OnClientOnlineSceneLoaded();
                 if (!doNotReadyOnSceneLoaded)
                 {

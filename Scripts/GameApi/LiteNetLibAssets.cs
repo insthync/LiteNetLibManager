@@ -51,6 +51,7 @@ namespace LiteNetLibManager
         public LiteNetLibIdentityEvent onObjectSpawn = new LiteNetLibIdentityEvent();
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;
+        public bool limitByPoolingSize = true;
 
         internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
@@ -247,7 +248,7 @@ namespace LiteNetLibManager
             PooledObjects.Clear();
         }
 
-        public void InitPoolingObjects()
+        public void InitPoolingQueues()
         {
             // No pooling
             if (disablePooling)
@@ -255,25 +256,25 @@ namespace LiteNetLibManager
 
             foreach (int hashAssetId in GuidToPrefabs.Keys)
             {
-                InitPoolingObject(hashAssetId);
+                GetOrInitPoolingQueue(hashAssetId);
             }
         }
 
-        public void InitPoolingObject(int hashAssetId)
+        public Queue<LiteNetLibIdentity> GetOrInitPoolingQueue(int hashAssetId)
         {
             // No pooling
             if (disablePooling)
-                return;
+                return null;
+
+            // Already init pool for the prefab
+            if (PooledObjects.TryGetValue(hashAssetId, out Queue<LiteNetLibIdentity> queue))
+                return queue;
 
             if (!GuidToPrefabs.TryGetValue(hashAssetId, out LiteNetLibIdentity prefab))
             {
                 Debug.LogWarning($"Cannot init prefab: {hashAssetId}, can't find the registered prefab.");
-                return;
+                return null;
             }
-
-            // Already init pool for the prefab
-            if (PooledObjects.TryGetValue(hashAssetId, out Queue<LiteNetLibIdentity> queue))
-                return;
 
             queue = new Queue<LiteNetLibIdentity>();
             LiteNetLibIdentity tempInstance;
@@ -285,6 +286,7 @@ namespace LiteNetLibManager
                 queue.Enqueue(tempInstance);
             }
             PooledObjects[hashAssetId] = queue;
+            return queue;
         }
 
         public LiteNetLibIdentity GetObjectInstance(int hashAssetId)
@@ -328,13 +330,8 @@ namespace LiteNetLibManager
                 Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance is not pooled instance.");
                 return;
             }
-            Queue<LiteNetLibIdentity> queue;
-            if (!PooledObjects.TryGetValue(instance.HashAssetId, out queue))
-            {
-                Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance's prefab does not initailized yet.");
-                return;
-            }
-            if (queue.Count >= instance.PoolingSize)
+            Queue<LiteNetLibIdentity> queue = GetOrInitPoolingQueue(instance.HashAssetId);
+            if (queue == null || (limitByPoolingSize && queue.Count >= instance.PoolingSize))
             {
                 Destroy(instance.gameObject);
             }
