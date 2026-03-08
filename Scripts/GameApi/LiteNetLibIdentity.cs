@@ -651,7 +651,7 @@ namespace LiteNetLibManager
         {
             if (Subscribers.Add(connectionId))
             {
-                onSubscriberAdded.Invoke(connectionId);
+                onSubscriberAdded?.Invoke(connectionId);
                 return true;
             }
             return false;
@@ -661,7 +661,7 @@ namespace LiteNetLibManager
         {
             if (Subscribers.Remove(connectionId))
             {
-                onSubscriberRemoved.Invoke(connectionId);
+                onSubscriberRemoved?.Invoke(connectionId);
                 return true;
             }
             return false;
@@ -815,7 +815,7 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnServerSubscribingAdded();
             }
-            onServerSubscribingAdded.Invoke();
+            onServerSubscribingAdded?.Invoke();
 #if !UNITY_SERVER
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
@@ -840,7 +840,7 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnServerSubscribingRemoved();
             }
-            onServerSubscribingRemoved.Invoke();
+            onServerSubscribingRemoved?.Invoke();
 #if !UNITY_SERVER
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
@@ -952,7 +952,7 @@ namespace LiteNetLibManager
         internal void OnGetInstance()
         {
             ResetSyncData();
-            onGetInstance.Invoke();
+            onGetInstance?.Invoke();
         }
 
         internal void ResetSyncData()
@@ -968,7 +968,7 @@ namespace LiteNetLibManager
         {
             if (overrideSetTransform != null)
             {
-                overrideSetTransform.Invoke(position, rotation);
+                overrideSetTransform?.Invoke(position, rotation);
                 return;
             }
             transform.position = position;
