@@ -97,6 +97,7 @@ namespace LiteNetLibManager
             _serverEventQueue.Clear();
             Server = new NetManager(new LiteNetLibTransportServerEventListener(this, ConnectKey, _serverEventQueue, _serverPeers));
             Server.ChannelsCount = _serverDataChannelsCount;
+            Server.AllowPeerAddressChange = true;
             return Server.Start(port);
         }
 
