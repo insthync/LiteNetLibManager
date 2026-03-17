@@ -1,6 +1,5 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +7,7 @@ namespace LiteNetLibManager
 {
     public partial class LiteNetLibGameManager
     {
-        private const ushort MAX_UNRELIABLE_PACKET_SIZE = 1023; // 1024 - 1 (unreliable header)
+        public const ushort MAX_UNRELIABLE_PACKET_SIZE = 1023; // 1024 - 1 (unreliable header)
         protected readonly List<LiteNetLibSyncElement> _updatingClientSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly List<LiteNetLibSyncElement> _updatingServerSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
