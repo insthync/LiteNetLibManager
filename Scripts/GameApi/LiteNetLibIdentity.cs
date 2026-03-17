@@ -538,12 +538,12 @@ namespace LiteNetLibManager
             IsSceneObject = isSceneObject;
             AssignObjectId();
 
+            byte loopCounter;
             if (!IsSetupBehaviours)
             {
                 // Setup behaviours index, we will use this as reference for network functions
                 // NOTE: Maximum network behaviour for a identity is 255 (included children)
                 Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
-                byte loopCounter;
                 for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
                     Behaviours[loopCounter].Setup(loopCounter);
@@ -565,15 +565,15 @@ namespace LiteNetLibManager
             Manager.InterestManager.NotifyNewObject(this);
 
             // Initialized, tell behaviours
-            for (int i = 0; i < Behaviours.Length; ++i)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                Behaviours[i].OnIdentityInitialize();
+                Behaviours[loopCounter].OnIdentityInitialize();
             }
         }
 
         internal void OnSetOwnerClient(bool isOwnerClient)
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
@@ -582,7 +582,7 @@ namespace LiteNetLibManager
 
         internal void InitTransform(Vector3 position, Quaternion rotation)
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].InitTransform(position, rotation);
@@ -591,7 +591,7 @@ namespace LiteNetLibManager
 
         internal void OnStartServer()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnStartServer();
@@ -600,7 +600,7 @@ namespace LiteNetLibManager
 
         internal void OnStartClient()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnStartClient();
@@ -609,7 +609,7 @@ namespace LiteNetLibManager
 
         internal void OnStartOwnerClient()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnStartOwnerClient();
@@ -813,7 +813,7 @@ namespace LiteNetLibManager
 
         public void OnServerSubscribingAdded()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnServerSubscribingAdded();
@@ -838,7 +838,7 @@ namespace LiteNetLibManager
 
         public void OnServerSubscribingRemoved()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnServerSubscribingRemoved();
@@ -924,7 +924,7 @@ namespace LiteNetLibManager
 
         internal void OnNetworkDestroy(byte reasons)
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnNetworkDestroy(reasons);
@@ -1006,9 +1006,10 @@ namespace LiteNetLibManager
             if (Behaviours != null)
             {
                 // `Behaviours` can be null because it is not setup yet.
-                for (int i = 0; i < Behaviours.Length; ++i)
+                byte loopCounter;
+                for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
-                    Behaviours[i].OnIdentityDestroy();
+                    Behaviours[loopCounter].OnIdentityDestroy();
                 }
             }
 #if !UNITY_SERVER
