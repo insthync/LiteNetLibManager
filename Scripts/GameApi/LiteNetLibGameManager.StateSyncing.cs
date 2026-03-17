@@ -76,7 +76,7 @@ namespace LiteNetLibManager
                     }
                     catch
                     {
-                        if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, sync element not found.");
+                        if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, error occurs while reading.");
                         reader.SetPosition(positionBeforeRead);
                         reader.SkipBytes(dataLength);
                     }
