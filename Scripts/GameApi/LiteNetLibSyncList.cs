@@ -25,11 +25,6 @@ namespace LiteNetLibManager
         {
             return IsServer;
         }
-
-        internal override sealed bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
-        {
-            return !forOwnerOnly || ConnectionId == player.ConnectionId;
-        }
     }
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
@@ -213,7 +208,7 @@ namespace LiteNetLibManager
             PrepareOperation(LiteNetLibSyncListOp.Dirty, index, this[index], this[index]);
         }
 
-        public override void Synced(uint tick)
+        public override void Synced(uint tick, bool isBaseLine)
         {
             _operationEntries.Clear();
             UnregisterUpdating();
@@ -313,7 +308,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void WriteSyncData(bool isState, uint tick, bool initial, NetDataWriter writer)
+        internal override void WriteSyncData(uint tick, bool initial, NetDataWriter writer)
         {
             if (initial)
             {
@@ -338,7 +333,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal override void ReadSyncData(bool isState, uint tick, bool initial, NetDataReader reader)
+        internal override void ReadSyncData(uint tick, bool initial, NetDataReader reader)
         {
             if (initial)
             {

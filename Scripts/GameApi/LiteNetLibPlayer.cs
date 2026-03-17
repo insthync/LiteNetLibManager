@@ -13,6 +13,7 @@ namespace LiteNetLibManager
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
         internal readonly LiteNetLibSyncingStates SyncingStates = new LiteNetLibSyncingStates();
+        internal readonly LiteNetLibSyncingDeltaStates SyncingDeltaStates = new LiteNetLibSyncingDeltaStates();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {

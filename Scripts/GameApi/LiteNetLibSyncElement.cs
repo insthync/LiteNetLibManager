@@ -6,7 +6,7 @@ namespace LiteNetLibManager
     {
         public abstract byte ElementType { get; }
 
-        internal virtual bool CanSyncFromServer(LiteNetLibPlayer player)
+        internal virtual bool CanSyncFromServer(LiteNetLibPlayer player, bool isBaseLine)
         {
             return Identity.Subscribers.Contains(player.ConnectionId);
         }
@@ -16,33 +16,14 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal virtual bool WillSyncFromServerReliably(LiteNetLibPlayer player, uint tick)
+        internal virtual bool CanSyncDelta()
         {
-            // Always sync reliably by default
-            return true;
-        }
-
-        internal virtual bool WillSyncFromServerUnreliably(LiteNetLibPlayer player, uint tick)
-        {
-            // Always sync reliably by default
-            return false;
-        }
-
-        internal virtual bool WillSyncFromOwnerClientReliably(uint tick)
-        {
-            // Not be able to be sent from client by default
-            return false;
-        }
-
-        internal virtual bool WillSyncFromOwnerClientUnreliably(uint tick)
-        {
-            // Not be able to be sent from client by default
             return false;
         }
 
         internal abstract void Reset();
-        internal abstract void WriteSyncData(bool isState, uint tick, bool initial, NetDataWriter writer);
-        internal abstract void ReadSyncData(bool isState, uint tick, bool initial, NetDataReader reader);
+        internal abstract void WriteSyncData(uint tick, bool initial, NetDataWriter writer);
+        internal abstract void ReadSyncData(uint tick, bool initial, NetDataReader reader);
 
         public void RegisterUpdating()
         {
@@ -66,7 +47,7 @@ namespace LiteNetLibManager
                 Manager.UnregisterClientSyncElement(this);
         }
 
-        public virtual void Synced(uint tick)
+        public virtual void Synced(uint tick, bool isBaseLine)
         {
             UnregisterUpdating();
         }
