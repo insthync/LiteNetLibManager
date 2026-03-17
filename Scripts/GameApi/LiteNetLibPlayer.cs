@@ -110,7 +110,7 @@ namespace LiteNetLibManager
             return SpawnedObjects.Values;
         }
 
-        public IEnumerable<uint> GetSubscribingObjectIds()
+        public HashSet<uint> GetSubscribingObjectIds()
         {
             return Subscribings;
         }
