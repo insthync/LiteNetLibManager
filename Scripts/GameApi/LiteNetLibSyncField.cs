@@ -17,10 +17,13 @@ namespace LiteNetLibManager
         /// </summary>
         [NonSerialized]
         public bool doNotSync = false;
-        public LiteNetLibSyncFieldStep SyncFieldStep { get; protected set; } = LiteNetLibSyncFieldStep.None;
+        [NonSerialized]
+        [Range(0, 50)]
+        public byte redundancyCount = 2;
 
         protected bool _latestChangeSyncedFromOwner = false;
         protected uint _latestReceiveTick = 0;
+        protected byte _currentRedundancy = 0;
         protected object _defaultValue;
 
         public abstract Type GetFieldType();
@@ -61,7 +64,7 @@ namespace LiteNetLibManager
                 // If value was synced from owner client, then don't sync back to the client
                 return false;
             }
-            return (isBaseLine || SyncFieldStep != LiteNetLibSyncFieldStep.None) && CanSync(IsServer, isOwner) && base.CanSyncFromServer(player, isBaseLine);
+            return (isBaseLine || _currentRedundancy > 0) && CanSync(IsServer, isOwner) && base.CanSyncFromServer(player, isBaseLine);
         }
 
         internal override sealed bool CanSyncFromOwnerClient()
@@ -89,17 +92,23 @@ namespace LiteNetLibManager
             _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
             if (BaseLineOnly())
             {
-                SyncFieldStep = LiteNetLibSyncFieldStep.None;
+                _currentRedundancy = 1;
             }
             else
             {
                 if (Manager.IsServer)
                 {
-                    SyncFieldStep = Manager.ServerTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
+                    // Send at least 1 time, if it is reliable only it will send only 1 time
+                    _currentRedundancy = 1;
+                    if (!Manager.ServerTransport.IsReliableOnly)
+                        _currentRedundancy += redundancyCount;
                 }
                 else
                 {
-                    SyncFieldStep = Manager.ClientTransport.IsReliableOnly ? LiteNetLibSyncFieldStep.Delta3 : LiteNetLibSyncFieldStep.Delta1;
+                    // Send at least 1 time, if it is reliable only it will send only 1 time
+                    _currentRedundancy = 1;
+                    if (!Manager.ClientTransport.IsReliableOnly)
+                        _currentRedundancy += redundancyCount;
                 }
             }
             RegisterUpdating();
@@ -109,23 +118,12 @@ namespace LiteNetLibManager
         {
             if (isBaseLine)
             {
-                SyncFieldStep = LiteNetLibSyncFieldStep.None;
+                _currentRedundancy = 0;
                 UnregisterUpdating();
                 return;
             }
-            // 3 Delta sync might be enough
-            switch (SyncFieldStep)
-            {
-                case LiteNetLibSyncFieldStep.Delta1:
-                    SyncFieldStep = LiteNetLibSyncFieldStep.Delta2;
-                    break;
-                case LiteNetLibSyncFieldStep.Delta2:
-                    SyncFieldStep = LiteNetLibSyncFieldStep.Delta3;
-                    break;
-                case LiteNetLibSyncFieldStep.Delta3:
-                    SyncFieldStep = LiteNetLibSyncFieldStep.None;
-                    break;
-            }
+            if (_currentRedundancy > 0)
+                _currentRedundancy--;
         }
 
         internal override sealed void Reset()
