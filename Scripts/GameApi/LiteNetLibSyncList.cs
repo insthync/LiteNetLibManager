@@ -39,8 +39,8 @@ namespace LiteNetLibManager
         public delegate void OnOperationDelegate(LiteNetLibSyncListOp op, int itemIndex, TType oldItem, TType newItem);
         public OnOperationDelegate onOperation;
 
-        protected readonly List<TType> _list = new List<TType>();
-        protected readonly List<OperationEntry> _operationEntries = new List<OperationEntry>();
+        protected List<TType> _list = new List<TType>();
+        protected List<OperationEntry> _operationEntries = new List<OperationEntry>();
 
         public TType this[int index]
         {
