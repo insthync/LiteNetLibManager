@@ -76,14 +76,14 @@ namespace LiteNetLibManager
                     }
                     catch
                     {
-                        if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, error occurs while reading.");
+                        if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, error occurs while reading: {identity.ObjectId} {elementId}.");
                         reader.SetPosition(positionBeforeRead);
                         reader.SkipBytes(dataLength);
                     }
                 }
                 else
                 {
-                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, sync element not found.");
+                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read game state properly, sync element not found: {identity.ObjectId} {elementId}.");
                     reader.SetPosition(positionBeforeRead);
                     reader.SkipBytes(dataLength);
                 }
@@ -98,13 +98,13 @@ namespace LiteNetLibManager
                     }
                     catch
                     {
-                        if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found.");
+                        if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found: {identity.ObjectId} {elementId}.");
                         return false;
                     }
                 }
                 else
                 {
-                    if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found.");
+                    if (LogError) Logging.LogError(LogTag, $"Unable to read game state properly, sync element not found: {identity.ObjectId} {elementId}.");
                     return false;
                 }
             }
@@ -236,7 +236,7 @@ namespace LiteNetLibManager
                 uint objectId = reader.GetPackedUInt();
                 if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
                 {
-                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, identity not found.");
+                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, identity not found: {objectId}.");
                     continue;
                 }
                 ushort elementLength = reader.GetUShort();
