@@ -474,7 +474,7 @@ namespace LiteNetLibManager
                 if (stateCount > 0)
                 {
                     // Send data to client
-                    ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableUnordered, _gameStatesWriter);
+                    ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
                 }
                 syncingStatesByChannelId.Value.Clear();
             }
@@ -579,7 +579,7 @@ namespace LiteNetLibManager
                 if (stateCount > 0)
                 {
                     // Send data to server
-                    ClientSendMessage(syncChannelId, DeliveryMethod.ReliableUnordered, _gameStatesWriter);
+                    ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
                 }
                 syncingStatesByChannelId.Value.Clear();
             }
