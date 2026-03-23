@@ -514,7 +514,7 @@ namespace LiteNetLibManager
                 {
                     tempLastPosition = _gameStatesWriter.Length;
                     WriteSyncElement(_gameStatesWriter, syncElement, tick, false);
-                    bool isOverflow = _gameStatesWriter.Length > MAX_UNRELIABLE_PACKET_SIZE;
+                    bool isOverflow = _gameStatesWriter.Length >= MAX_UNRELIABLE_PACKET_SIZE;
                     if (isOverflow)
                     {
                         // Set length of objects
@@ -526,7 +526,19 @@ namespace LiteNetLibManager
                         // Set position where it is not overflowed
                         _gameStatesWriter.SetPosition(tempLastPosition);
                         // Send data to client
-                        ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        try
+                        {
+#endif
+                            ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        }
+                        catch (TooBigPacketException ex)
+                        {
+                            Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
+                            throw ex;
+                        }
+#endif
 
                         // Reset data and write data for overflowed element
                         objectLength = 1;
@@ -559,7 +571,19 @@ namespace LiteNetLibManager
             _gameStatesWriter.Put(objectLength);
             _gameStatesWriter.SetPosition(tempLastPosition);
             // Send data to client
-            ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            try
+            {
+#endif
+                ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            }
+            catch (TooBigPacketException ex)
+            {
+                Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
+                throw ex;
+            }
+#endif
         }
 
         private void SyncGameStateToServer()
