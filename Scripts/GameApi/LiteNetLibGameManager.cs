@@ -240,6 +240,7 @@ namespace LiteNetLibManager
             LoadedAdditiveScenesCount = 0;
             TotalAdditiveScensCount = 0;
 
+            bool sceneLoaded = false;
             if (LogDev) Logging.Log(LogTag, $"Loading Scene: {serverSceneInfo.isAddressable} {serverSceneInfo.sceneName} is online: {isOnline}");
             Assets.onLoadSceneStart.Invoke(serverSceneInfo.sceneName, false, isOnline, 0f);
 #if !DISABLE_ADDRESSABLES
@@ -266,7 +267,11 @@ namespace LiteNetLibManager
                     float percentageComplete = addressableAsyncOp.GetDownloadStatus().Percent;
                     Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, percentageComplete);
                 }
-                await addressableAsyncOp.Result.ActivateAsync();
+                if (addressableAsyncOp.Status == AsyncOperationStatus.Succeeded)
+                {
+                    await addressableAsyncOp.Result.ActivateAsync();
+                    sceneLoaded = true;
+                }
             }
             else
 #endif
@@ -274,19 +279,23 @@ namespace LiteNetLibManager
 #if !DISABLE_ADDRESSABLES
                 await AddressableAssetsManager.UnloadAddressableScenes();
 #endif
-                // Load the scene
-                AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
-                    serverSceneInfo.sceneName,
-                    new LoadSceneParameters(LoadSceneMode.Single));
-                if (asyncOp != null)
-                    asyncOp.allowSceneActivation = false;
-                // Wait until scene loaded
-                while (asyncOp != null && !asyncOp.isDone)
+                if (SceneUtility.GetBuildIndexByScenePath(serverSceneInfo.sceneName) >= 0)
                 {
-                    await UniTask.Yield();
-                    Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.progress);
-                    if (asyncOp.progress >= 0.9f)
-                        asyncOp.allowSceneActivation = true;
+                    // Load the scene
+                    AsyncOperation asyncOp = SceneManager.LoadSceneAsync(
+                        serverSceneInfo.sceneName,
+                        new LoadSceneParameters(LoadSceneMode.Single));
+                    if (asyncOp != null)
+                        asyncOp.allowSceneActivation = false;
+                    // Wait until scene loaded
+                    while (asyncOp != null && !asyncOp.isDone)
+                    {
+                        await UniTask.Yield();
+                        Assets.onLoadSceneProgress.Invoke(serverSceneInfo.sceneName, false, isOnline, asyncOp.progress);
+                        if (asyncOp.progress >= 0.9f)
+                            asyncOp.allowSceneActivation = true;
+                    }
+                    sceneLoaded = true;
                 }
             }
 
@@ -298,6 +307,14 @@ namespace LiteNetLibManager
 
             // If scene changed while loading, have to load the new one
             LoadingServerScenes.RemoveAt(0);
+            if (!sceneLoaded)
+            {
+                // Fail to load a scene
+                Logging.LogError($"Unable to load a scene `isAddressable`: {serverSceneInfo.isAddressable}, `addressableKey`: {serverSceneInfo.addressableKey}, `sceneName`: {serverSceneInfo.sceneName}, `isOnline`: {isOnline}");
+                Assets.onLoadSceneFail.Invoke();
+                return;
+            }
+
             if (LoadingServerScenes.Count <= 0)
             {
                 // Spawn additive scenes

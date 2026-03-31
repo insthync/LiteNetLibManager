@@ -42,6 +42,7 @@ namespace LiteNetLibManager
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneFinish = new LiteNetLibLoadSceneEvent();
+        public UnityEvent onLoadSceneFail = new UnityEvent();
         public UnityEvent onSceneFileSizeRetrieving = new UnityEvent();
         public AddressableAssetFileSizeEvent onSceneFileSizeRetrieved = new AddressableAssetFileSizeEvent();
         public UnityEvent onSceneDepsDownloading = new UnityEvent();
