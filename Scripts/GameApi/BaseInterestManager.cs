@@ -15,6 +15,7 @@ namespace LiteNetLibManager
             Manager = manager;
         }
 
+        public abstract void UpdateInterestManagementImmediate();
         public abstract void UpdateInterestManagement(float deltaTime);
 
         public void NotifyNewObject(LiteNetLibIdentity newObject)

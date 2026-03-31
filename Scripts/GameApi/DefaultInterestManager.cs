@@ -16,6 +16,12 @@ namespace LiteNetLibManager
             _updateCountDown = updateInterval;
         }
 
+        public override void UpdateInterestManagementImmediate()
+        {
+            _updateCountDown = 0f;
+            UpdateInterestManagement(0f);
+        }
+
         public override void UpdateInterestManagement(float deltaTime)
         {
             _updateCountDown -= deltaTime;
