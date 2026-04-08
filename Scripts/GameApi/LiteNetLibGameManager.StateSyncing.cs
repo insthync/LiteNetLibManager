@@ -502,10 +502,14 @@ namespace LiteNetLibManager
                 if (syncData.SyncElements.Count == 0)
                     continue;
 
-                ++objectLength;
                 bool isOverflow = _gameStatesWriter.Length + 4 /*int*/ + 2 /*short*/ > MAX_UNRELIABLE_PACKET_SIZE;
                 if (isOverflow)
                 {
+                    // Set length of objects
+                    tempLastPosition = _gameStatesWriter.Length;
+                    _gameStatesWriter.SetPosition(posBeforeWriteObjectLength);
+                    _gameStatesWriter.Put(objectLength);
+                    _gameStatesWriter.SetPosition(tempLastPosition);
                     // Send data to client before writing data of current object, because it is overflowing
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     try
@@ -521,7 +525,9 @@ namespace LiteNetLibManager
                     }
 #endif
                     _gameStatesWriter.SetPosition(posAfterWriteObjectLength);
+                    objectLength = 0;
                 }
+                ++objectLength;
                 _gameStatesWriter.PutPackedUInt(objectId);
 
                 int posBeforeWriteElementLength = _gameStatesWriter.Length;
