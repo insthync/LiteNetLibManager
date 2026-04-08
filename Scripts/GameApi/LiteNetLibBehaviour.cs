@@ -26,11 +26,12 @@ namespace LiteNetLibManager
             get { return _behaviourIndex; }
         }
 
-        private static readonly Dictionary<RuntimeTypeHandle, List<FieldInfo>> s_CacheSyncElements = new Dictionary<RuntimeTypeHandle, List<FieldInfo>>();
-        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheElasticRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
-        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheTargetRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
-        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheAllRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
-        private static readonly Dictionary<RuntimeTypeHandle, CacheFunctions> s_CacheServerRpcs = new Dictionary<RuntimeTypeHandle, CacheFunctions>();
+        // NOTE: Use `Type` not `RuntimeTypeHandle` as the key because `RuntimeTypeHandle` comparison is slower than `Type` reference comparison, and `Type` is already cached by the runtime, so it won't cause additional memory usage.
+        private static readonly Dictionary<Type, List<FieldInfo>> s_CacheSyncElements = new Dictionary<Type, List<FieldInfo>>();
+        private static readonly Dictionary<Type, CacheFunctions> s_CacheElasticRpcs = new Dictionary<Type, CacheFunctions>();
+        private static readonly Dictionary<Type, CacheFunctions> s_CacheTargetRpcs = new Dictionary<Type, CacheFunctions>();
+        private static readonly Dictionary<Type, CacheFunctions> s_CacheAllRpcs = new Dictionary<Type, CacheFunctions>();
+        private static readonly Dictionary<Type, CacheFunctions> s_CacheServerRpcs = new Dictionary<Type, CacheFunctions>();
         private static readonly Dictionary<string, Type[]> s_CacheDyncnamicFunctionTypes = new Dictionary<string, Type[]>();
 
         private readonly Dictionary<string, int> _targetRpcIds = new Dictionary<string, int>();
@@ -52,18 +53,17 @@ namespace LiteNetLibManager
             }
         }
 
-        private static readonly Dictionary<RuntimeTypeHandle, string> s_CacheTypeFullNames = new Dictionary<RuntimeTypeHandle, string>();
+        private static readonly Dictionary<Type, string> s_CacheTypeFullNames = new Dictionary<Type, string>();
         public string TypeFullName
         {
             get
             {
                 Type type = GetType();
-                if (!s_CacheTypeFullNames.TryGetValue(type.TypeHandle, out string typeFullName))
+                if (!s_CacheTypeFullNames.TryGetValue(type, out string typeFullName))
                 {
                     typeFullName = type.FullName;
-                    s_CacheTypeFullNames[type.TypeHandle] = typeFullName;
+                    s_CacheTypeFullNames[type] = typeFullName;
                 }
-                ;
                 return typeFullName;
             }
         }
@@ -202,9 +202,9 @@ namespace LiteNetLibManager
             GetCachedRpcs<TargetRpcAttribute>(baseType, string.Empty, s_CacheTargetRpcs, out _);
         }
 
-        public static void GetCachedElements(Type baseType, Dictionary<RuntimeTypeHandle, List<FieldInfo>> cacheDict, out List<FieldInfo> syncElementFieldInfos)
+        public static void GetCachedElements(Type baseType, Dictionary<Type, List<FieldInfo>> cacheDict, out List<FieldInfo> syncElementFieldInfos)
         {
-            RuntimeTypeHandle typeHandle = baseType.TypeHandle;
+            Type typeHandle = baseType;
 
             // Find sync elements
             if (!cacheDict.TryGetValue(typeHandle, out syncElementFieldInfos))
@@ -236,7 +236,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void CacheElements(Dictionary<RuntimeTypeHandle, List<FieldInfo>> cacheDict)
+        private void CacheElements(Dictionary<Type, List<FieldInfo>> cacheDict)
         {
             GetCachedElements(GetType(), cacheDict, out List<FieldInfo> syncElementFieldInfos);
             if (syncElementFieldInfos.Count == 0)
@@ -253,10 +253,10 @@ namespace LiteNetLibManager
             }
         }
 
-        public static void GetCachedRpcs<RpcType>(Type baseType, string logTag, Dictionary<RuntimeTypeHandle, CacheFunctions> cacheDict, out CacheFunctions cacheFunctions)
+        public static void GetCachedRpcs<RpcType>(Type baseType, string logTag, Dictionary<Type, CacheFunctions> cacheDict, out CacheFunctions cacheFunctions)
             where RpcType : RpcAttribute
         {
-            RuntimeTypeHandle typeHandle = baseType.TypeHandle;
+            Type typeHandle = baseType;
 
             if (!cacheDict.TryGetValue(typeHandle, out cacheFunctions))
             {
@@ -302,7 +302,7 @@ namespace LiteNetLibManager
             }
         }
 
-        private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<RuntimeTypeHandle, CacheFunctions> cacheDict)
+        private void CacheRpcs<RpcType>(Dictionary<string, int> ids, Dictionary<Type, CacheFunctions> cacheDict)
             where RpcType : RpcAttribute
         {
             Type baseType = GetType();
