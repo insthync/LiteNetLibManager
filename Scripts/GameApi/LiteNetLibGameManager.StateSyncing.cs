@@ -503,6 +503,25 @@ namespace LiteNetLibManager
                     continue;
 
                 ++objectLength;
+                bool isOverflow = _gameStatesWriter.Length + 4 /*int*/ + 2 /*short*/ > MAX_UNRELIABLE_PACKET_SIZE;
+                if (isOverflow)
+                {
+                    // Send data to client before writing data of current object, because it is overflowing
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    try
+                    {
+#endif
+                        ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    }
+                    catch (TooBigPacketException ex)
+                    {
+                        Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
+                        throw ex;
+                    }
+#endif
+                    _gameStatesWriter.SetPosition(posAfterWriteObjectLength);
+                }
                 _gameStatesWriter.PutPackedUInt(objectId);
 
                 int posBeforeWriteElementLength = _gameStatesWriter.Length;
@@ -514,7 +533,7 @@ namespace LiteNetLibManager
                 {
                     tempLastPosition = _gameStatesWriter.Length;
                     WriteSyncElement(_gameStatesWriter, syncElement, tick, false);
-                    bool isOverflow = _gameStatesWriter.Length >= MAX_UNRELIABLE_PACKET_SIZE;
+                    isOverflow = _gameStatesWriter.Length > MAX_UNRELIABLE_PACKET_SIZE;
                     if (isOverflow)
                     {
                         // Set length of objects
