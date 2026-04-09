@@ -596,9 +596,9 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public IEnumerable<LiteNetLibIdentity> GetSceneObjects()
+        public Dictionary<int, LiteNetLibIdentity>.Enumerator GetSceneObjects()
         {
-            return SceneObjects.Values;
+            return SceneObjects.GetEnumerator();
         }
 
         public bool ContainsSpawnedObject(uint objectId)
@@ -623,9 +623,9 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public IEnumerable<LiteNetLibIdentity> GetSpawnedObjects()
+        public Dictionary<uint, LiteNetLibIdentity>.Enumerator GetSpawnedObjects()
         {
-            return SpawnedObjects.Values;
+            return SpawnedObjects.GetEnumerator();
         }
 
         public static void ResetSpawnPositionCounter()

@@ -40,7 +40,7 @@ namespace LiteNetLibManager
         public float baseLineSyncInterval = 1f;
         public bool safeGameStatePacket = false;
 
-        protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
+        internal protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
         private double _clientSendPingCountDown;
         private double _serverSendPingCountDown;
@@ -155,9 +155,9 @@ namespace LiteNetLibManager
             return Players[connectionId];
         }
 
-        public IEnumerable<LiteNetLibPlayer> GetPlayers()
+        public Dictionary<long, LiteNetLibPlayer>.Enumerator GetPlayers()
         {
-            return Players.Values;
+            return Players.GetEnumerator();
         }
 
         public int PlayersCount

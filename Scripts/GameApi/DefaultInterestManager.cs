@@ -29,23 +29,26 @@ namespace LiteNetLibManager
                 return;
             _updateCountDown = updateInterval;
             HashSet<uint> subscribings = new HashSet<uint>();
-            foreach (LiteNetLibPlayer player in Manager.GetPlayers())
+            foreach (KeyValuePair<long, LiteNetLibPlayer> playerKvp in Manager.Players)
             {
+                LiteNetLibPlayer player = playerKvp.Value;
                 if (!player.IsReady)
                 {
                     // Don't subscribe if player not ready
                     continue;
                 }
-                foreach (LiteNetLibIdentity playerObject in player.GetSpawnedObjects())
+                foreach (KeyValuePair<uint, LiteNetLibIdentity> playerObjKvp in player.SpawnedObjects)
                 {
+                    LiteNetLibIdentity playerObj = playerObjKvp.Value;
                     // Update subscribing list, it will unsubscribe objects which is not in this list
                     subscribings.Clear();
-                    foreach (LiteNetLibIdentity spawnedObject in Manager.Assets.GetSpawnedObjects())
+                    foreach (KeyValuePair<uint, LiteNetLibIdentity> spawnedKvp in Manager.Assets.SpawnedObjects)
                     {
-                        if (ShouldSubscribe(playerObject, spawnedObject))
-                            subscribings.Add(spawnedObject.ObjectId);
+                        LiteNetLibIdentity spawnedObj = spawnedKvp.Value;
+                        if (ShouldSubscribe(playerObj, spawnedObj))
+                            subscribings.Add(spawnedObj.ObjectId);
                     }
-                    playerObject.UpdateSubscribings(subscribings);
+                    playerObj.UpdateSubscribings(subscribings);
                 }
             }
         }

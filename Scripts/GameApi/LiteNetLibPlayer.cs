@@ -22,14 +22,19 @@ namespace LiteNetLibManager
             RttCalculator = new RttCalculator();
         }
 
-        internal bool IsSubscribing(uint objectId)
+        public bool IsSubscribing(uint objectId)
         {
             return Subscribings.Contains(objectId);
         }
 
-        internal int CountSubscribing()
+        public HashSet<uint>.Enumerator GetSubscribingObjectIds()
         {
-            return Subscribings.Count;
+            return Subscribings.GetEnumerator();
+        }
+
+        public int SubscribingsCount
+        {
+            get { return Subscribings.Count; }
         }
 
         internal void Subscribe(uint objectId)
@@ -105,14 +110,9 @@ namespace LiteNetLibManager
             return SpawnedObjects[objectId];
         }
 
-        public IEnumerable<LiteNetLibIdentity> GetSpawnedObjects()
+        public Dictionary<uint, LiteNetLibIdentity>.Enumerator GetSpawnedObjects()
         {
-            return SpawnedObjects.Values;
-        }
-
-        public HashSet<uint> GetSubscribingObjectIds()
-        {
-            return Subscribings;
+            return SpawnedObjects.GetEnumerator();
         }
 
         public int SpawnedObjectsCount

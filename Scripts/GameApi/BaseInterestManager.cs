@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace LiteNetLibManager
 {
@@ -28,24 +29,26 @@ namespace LiteNetLibManager
             // Subscribe old objects, if it should
             if (newObject.ConnectionId >= 0 && newObject.Player.IsReady)
             {
-                foreach (LiteNetLibIdentity target in Manager.Assets.GetSpawnedObjects())
+                foreach (KeyValuePair<uint, LiteNetLibIdentity> spawnedObjKvp in Manager.Assets.SpawnedObjects)
                 {
                     // Subscribe, it may subscribe or may not, up to how subscribe function implemented
-                    Subscribe(newObject, target);
+                    Subscribe(newObject, spawnedObjKvp.Value);
                 }
             }
             // Notify to other players
-            foreach (LiteNetLibPlayer player in Manager.GetPlayers())
+            foreach (KeyValuePair<long, LiteNetLibPlayer> playerKvp in Manager.Players)
             {
+                LiteNetLibPlayer player = playerKvp.Value;
                 if (!player.IsReady || player.ConnectionId == newObject.ConnectionId)
                 {
                     // Don't subscribe if player not ready or the object is owned by the player
                     continue;
                 }
-                foreach (LiteNetLibIdentity subscriber in player.GetSpawnedObjects())
+                foreach (KeyValuePair<uint, LiteNetLibIdentity> playerObjKvp in player.SpawnedObjects)
                 {
+                    LiteNetLibIdentity playerObj = playerObjKvp.Value;
                     // Subscribe, it may subscribe or may not, up to how subscribe function implemented
-                    Subscribe(subscriber, newObject);
+                    Subscribe(playerObj, newObject);
                 }
             }
         }
