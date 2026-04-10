@@ -189,6 +189,15 @@ namespace LiteNetLibManager
             }
         }
 
+        public void MarkAsChanged()
+        {
+            if (IsSpawned && CanSync())
+            {
+                OnChange(false, _value, _value);
+                ValueChangedState(false);
+            }
+        }
+
         protected virtual bool IsValueChanged(TType oldValue, TType newValue)
         {
             if (GetFieldType().IsArray)
@@ -276,6 +285,23 @@ namespace LiteNetLibManager
         internal override void DeserializeValue(NetDataReader reader)
         {
             _value = reader.Get<TType>();
+        }
+
+        internal override void SerializeValue(NetDataWriter writer)
+        {
+            writer.Put(_value);
+        }
+    }
+
+    [Serializable]
+    public abstract class SyncFieldNetSerializableClass<TType> : LiteNetLibSyncField<TType>
+        where TType : class, INetSerializable
+    {
+        public abstract TType Construct();
+
+        internal override void DeserializeValue(NetDataReader reader)
+        {
+            _value = reader.Get(Construct);
         }
 
         internal override void SerializeValue(NetDataWriter writer)
