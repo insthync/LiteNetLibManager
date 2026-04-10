@@ -244,7 +244,8 @@ namespace LiteNetLibManager
             _latestReceiveTick = tick;
             if (isDebug)
                 Logging.Log(LogTag, $"Read sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, tick {tick}, initial {initial}, oldValue {oldValue}, newValue {Value}");
-            OnChange(initial, oldValue, Value);
+            if (initial || IsValueChanged(oldValue, Value))
+                OnChange(initial, oldValue, Value);
             if (syncMode == LiteNetLibSyncFieldMode.ClientMulticast && IsServer)
                 ValueChangedState(true);
         }
