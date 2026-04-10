@@ -178,6 +178,11 @@ namespace LiteNetLibManager
             {
                 _value.Deserialize(reader);
             }
+
+            protected override bool IsValueChanged(SyncTransforms oldValue, SyncTransforms newValue)
+            {
+                return true;
+            }
         }
 
         [Header("Sync Settings")]
@@ -224,6 +229,16 @@ namespace LiteNetLibManager
         private uint _interpTick;
         public uint InitialInterpTick { get; private set; }
         public uint RenderTick => _interpTick - interpolationTicks;
+
+        private void Awake()
+        {
+            _syncBuffers.onChange += OnSyncBuffersChanged;
+        }
+
+        private void OnDestroy()
+        {
+            _syncBuffers.onChange -= OnSyncBuffersChanged;
+        }
 
         public override void OnIdentityInitialize()
         {
@@ -417,17 +432,20 @@ namespace LiteNetLibManager
                     _interpTick = InitialInterpTick = interpTick;
             }
             // Sync to other clients immediately
-            RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
+            foreach (var entry in data)
+            {
+                StoreSyncBuffer(_syncBuffers.Value, entry.Value);
+            }
+            _syncBuffers.MarkAsChanged();
         }
 
-        [AllRpc]
-        private void ServerSyncTransform(SyncTransforms data)
+        private void OnSyncBuffersChanged(bool initial, SyncTransforms oldValue, SyncTransforms newValue)
         {
             if (IsServer)
                 return;
             if (syncByOwnerClient && IsOwnerClient)
                 return;
-            StoreInterpolateBuffers(data, 30);
+            StoreInterpolateBuffers(newValue, 30);
             if (_interpBuffers.Count > 0)
             {
                 uint interpTick = _interpBuffers.Keys[_interpBuffers.Count - 1];
