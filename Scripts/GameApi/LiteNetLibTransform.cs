@@ -200,8 +200,6 @@ namespace LiteNetLibManager
         [Tooltip("If distance between current frame and previous frame is greater than this value, then it will determine that changes occurs and will sync transform later")]
         [Min(0.01f)]
         public float scaleThreshold = 0.1f;
-        [Tooltip("Keep alive ticks before it is stop syncing (after has no changes)")]
-        public int keepAliveTicks = 10;
         [Tooltip("Ticks for interpolation")]
         [Min(1)]
         public uint interpolationTicks = 2;
@@ -299,9 +297,8 @@ namespace LiteNetLibManager
                 Vector3.Distance(transform.position, transformData.Position) > positionThreshold ||
                 Vector3.Angle(transform.forward, Quaternion.Euler(transformData.EulerAngles) * Vector3.forward) > eulerAnglesThreshold ||
                 Vector3.Distance(transform.localScale, transformData.Scale) > scaleThreshold;
-            bool keepAlive = updater.LocalTick - transformData.Tick <= keepAliveTicks;
 
-            if (!changed && !keepAlive)
+            if (!changed)
                 return;
 
             if (changed)
