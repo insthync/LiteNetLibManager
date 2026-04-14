@@ -895,31 +895,17 @@ namespace LiteNetLibManager
 
         public void NetworkDestroy()
         {
-            if (!IsServer)
+            if (IsDestroyed)
                 return;
-
-            DestroyFromAssets();
+            if (Manager.Assets.NetworkDestroy(this, DestroyObjectReasons.RequestedToDestroy))
+                IsDestroyed = true;
         }
 
         public void NetworkDestroy(float delay)
         {
             if (!IsServer)
                 return;
-            InternalNetworkDestroy(delay).Forget();
-        }
-
-        private async UniTaskVoid InternalNetworkDestroy(float delay)
-        {
-            if (delay < 0)
-                return;
-            await UniTask.Delay((int)(1000 * delay));
-            DestroyFromAssets();
-        }
-
-        private void DestroyFromAssets()
-        {
-            if (!IsDestroyed && Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy))
-                IsDestroyed = true;
+            Invoke(nameof(NetworkDestroy), delay);
         }
 
         internal void OnNetworkDestroy(byte reasons)
