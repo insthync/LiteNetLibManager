@@ -618,5 +618,178 @@ namespace LiteNetLibManager
             if (LogInfo) Logging.Log(LogTag, "OnStopHost");
         }
         #endregion
+
+        #region Test functions
+#if UNITY_EDITOR
+
+        [ContextMenu("Test Client Disconnect - ConnectionFailed")]
+        public void TestClientDisconnect_ConnectionFailed()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.ConnectionFailed,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - Timeout")]
+        public void TestClientDisconnect_Timeout()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.Timeout,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - HostUnreachable")]
+        public void TestClientDisconnect_HostUnreachable()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.HostUnreachable,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - NetworkUnreachable")]
+        public void TestClientDisconnect_NetworkUnreachable()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.NetworkUnreachable,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - RemoteConnectionClose")]
+        public void TestClientDisconnect_RemoteConnectionClose()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.RemoteConnectionClose,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - DisconnectPeerCalled")]
+        public void TestClientDisconnect_DisconnectPeerCalled()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.DisconnectPeerCalled,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - ConnectionRejected")]
+        public void TestClientDisconnect_ConnectionRejected()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.ConnectionRejected,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - InvalidProtocol")]
+        public void TestClientDisconnect_InvalidProtocol()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.InvalidProtocol,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - UnknownHost")]
+        public void TestClientDisconnect_UnknownHost()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.UnknownHost,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - Reconnect")]
+        public void TestClientDisconnect_Reconnect()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.Reconnect,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - PeerToPeerConnection")]
+        public void TestClientDisconnect_PeerToPeerConnection()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.PeerToPeerConnection,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - PeerNotFound")]
+        public void TestClientDisconnect_PeerNotFound()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.PeerNotFound,
+                },
+            });
+        }
+#endif
+        #endregion
     }
 }
