@@ -26,7 +26,7 @@ namespace LiteNetLib
             _channels = new BaseChannel[netManager.ChannelsCount * NetConstants.ChannelTypeCount];
         }
 
-        internal NetPeer(NetManager netManager, ConnectionRequest request, int id) : base(netManager, request, id)
+        internal NetPeer(NetManager netManager, LiteConnectionRequest request, int id) : base(netManager, request, id)
         {
             _channels = new BaseChannel[netManager.ChannelsCount * NetConstants.ChannelTypeCount];
         }
@@ -194,6 +194,14 @@ namespace LiteNetLib
                       (byte) (ordered ? DeliveryMethod.ReliableOrdered : DeliveryMethod.ReliableUnordered);
             return ((ReliableChannel)_channels[idx])?.PacketsInQueue ?? 0;
         }
+
+        /// <summary>
+        /// Returns packets count in queue for reliable channel 0
+        /// </summary>
+        /// <param name="ordered">type of channel ReliableOrdered or ReliableUnordered</param>
+        /// <returns>packets count in channel queue</returns>
+        public new int GetPacketsCountInReliableQueue(bool ordered) =>
+            GetPacketsCountInReliableQueue(0, ordered);
 
         protected override void UpdateChannels()
         {

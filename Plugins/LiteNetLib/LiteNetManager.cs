@@ -78,7 +78,7 @@ namespace LiteNetLib
         private NetEvent _netEventPoolHead;
         private readonly ILiteNetEventListener _netEventListener;
 
-        private readonly Dictionary<IPEndPoint, ConnectionRequest> _requestsDict = new Dictionary<IPEndPoint, ConnectionRequest>();
+        private readonly Dictionary<IPEndPoint, LiteConnectionRequest> _requestsDict = new Dictionary<IPEndPoint, LiteConnectionRequest>();
 
         private long _connectedPeersCount;
         private readonly PacketLayerBase _extraPacketLayer;
@@ -269,6 +269,20 @@ namespace LiteNetLib
         /// </summary>
         public int ConnectedPeersCount => (int)Interlocked.Read(ref _connectedPeersCount);
 
+        /// <summary>
+        /// Maximum packets that can be received per one ManualReceive (PollEvents when started using StartInManualMode)
+        /// 0 - infinite - but this can cause some big delays there is too many incoming packets
+        /// </summary>
+        public int MaxPacketPerManualReceive = 256;
+
+        /// <summary>
+        /// Gets the additional size in bytes required by the active <see cref="PacketLayerBase"/>.
+        /// </summary>
+        /// <remarks>
+        /// This value is used by <see cref="NetManager"/> to calculate the available MTU for user data. <br/>
+        /// If a packet layer is active (e.g., for encryption or CRC), this returns the overhead added to every packet.
+        /// Returns 0 if no packet layer is assigned.
+        /// </remarks>
         public int ExtraPacketSizeForLayer => _extraPacketLayer?.ExtraPacketSizeForLayer ?? 0;
 
         /// <summary>
@@ -301,6 +315,21 @@ namespace LiteNetLib
             NetPacket eventData) =>
             DisconnectPeer(peer, reason, socketErrorCode, true, null, 0, 0, eventData);
 
+        /// <summary>
+        /// Disconnects a peer and handles internal state cleanup.
+        /// </summary>
+        /// <param name="peer">The peer to disconnect.</param>
+        /// <param name="reason">The reason for disconnection provided to the event listener.</param>
+        /// <param name="socketErrorCode">The error code from the underlying socket, if any.</param>
+        /// <param name="force">
+        /// If <see langword="true"/>, immediately sets state to <see cref="ConnectionState.Disconnected"/> without sending a notification. <br/>
+        /// If <see langword="false"/>, sends unreliable disconnect packets until <see cref="DisconnectTimeout"/> and sets state to <see cref="ConnectionState.ShutdownRequested"/>.
+        /// Peer will linger until <see cref="DisconnectTimeout"/> to ignore late-arriving packets from the old session.
+        /// </param>
+        /// <param name="data">Optional custom data to include in the disconnect packet.</param>
+        /// <param name="start">Offset in the <paramref name="data"/> array.</param>
+        /// <param name="count">Number of bytes to send from the <paramref name="data"/> array.</param>
+        /// <param name="eventData">Internal packet data associated with the disconnect event.</param>
         private void DisconnectPeer(
             LiteNetPeer peer,
             DisconnectReason reason,
@@ -331,7 +360,7 @@ namespace LiteNetLib
             SocketError errorCode = 0,
             int latency = 0,
             DisconnectReason disconnectReason = DisconnectReason.ConnectionFailed,
-            ConnectionRequest connectionRequest = null,
+            LiteConnectionRequest connectionRequest = null,
             DeliveryMethod deliveryMethod = DeliveryMethod.Unreliable,
             byte channelNumber = 0,
             NetPacket readerSource = null,
@@ -562,9 +591,12 @@ namespace LiteNetLib
 
 
         /// <summary>
-        /// Update and send logic. Use this only when NetManager started in manual mode
+        /// Updates internal peer states, handles timeouts, processes NTP requests and sends buffered packets.
         /// </summary>
-        /// <param name="elapsedMilliseconds">elapsed milliseconds since last update call</param>
+        /// <param name="elapsedMilliseconds">Time passed since the last update frame.</param>
+        /// <remarks>
+        /// Must be called continuously from the main loop if <see cref="_manualMode"/> was set to <see langword="true"/>.
+        /// </remarks>
         public void ManualUpdate(float elapsedMilliseconds)
         {
             if (!_manualMode)
@@ -589,14 +621,17 @@ namespace LiteNetLib
             new LiteNetPeer(this, remoteEndPoint, id, connectNum, connectData);
 
         //accept
-        protected virtual LiteNetPeer CreateIncomingPeer(ConnectionRequest request, int id) =>
+        protected virtual LiteNetPeer CreateIncomingPeer(LiteConnectionRequest request, int id) =>
             new LiteNetPeer(this, request, id);
 
         //reject
         protected virtual LiteNetPeer CreateRejectPeer(IPEndPoint remoteEndPoint, int id) =>
             new LiteNetPeer(this, remoteEndPoint, id);
 
-        internal LiteNetPeer OnConnectionSolved(ConnectionRequest request, byte[] rejectData, int start, int length)
+        protected virtual LiteConnectionRequest CreateConnectionRequest(IPEndPoint remoteEndPoint, NetConnectRequestPacket requestPacket) =>
+            new LiteConnectionRequest(remoteEndPoint, requestPacket, this);
+
+        internal LiteNetPeer OnConnectionSolved(LiteConnectionRequest request, byte[] rejectData, int start, int length)
         {
             LiteNetPeer netPeer = null;
 
@@ -688,7 +723,7 @@ namespace LiteNetLib
                 NetDebug.Write($"ConnectRequest Id: {connRequest.ConnectionTime}, EP: {remoteEndPoint}");
             }
 
-            ConnectionRequest req;
+            LiteConnectionRequest req;
             lock (_requestsDict)
             {
                 if (_requestsDict.TryGetValue(remoteEndPoint, out req))
@@ -696,7 +731,7 @@ namespace LiteNetLib
                     req.UpdateRequest(connRequest);
                     return;
                 }
-                req = new ConnectionRequest(remoteEndPoint, connRequest, this);
+                req = CreateConnectionRequest(remoteEndPoint, connRequest);
                 _requestsDict.Add(remoteEndPoint, req);
             }
             NetDebug.Write($"[NM] Creating request event: {connRequest.ConnectionTime}");
@@ -1275,9 +1310,11 @@ namespace LiteNetLib
             _updateTriggerEvent.Set();
 
         /// <summary>
-        /// Receive" pending events. Call this in game update code
-        /// In Manual mode it will call also socket Receive (which can be slow)
+        /// Synchronizes arrived events from the background thread to your main-thread/<see cref="INetEventListener"/>
         /// </summary>
+        /// <remarks>
+        /// Must be called continuously from the main loop if <see cref="_manualMode"/> was set to <see langword="true"/> to receive data from the UDP sockets.
+        /// </remarks>
         public void PollEvents()
         {
             if (_manualMode)
