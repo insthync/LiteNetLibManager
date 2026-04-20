@@ -815,7 +815,7 @@ namespace LiteNetLibManager
             return true;
         }
 
-        public void SetIsHide(object setter,  bool isHide)
+        public void SetIsHide(object setter, bool isHide)
         {
             if (isHide)
                 HideObjects.Add(setter);
