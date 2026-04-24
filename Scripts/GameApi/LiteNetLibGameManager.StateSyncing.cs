@@ -518,7 +518,7 @@ namespace LiteNetLibManager
                     {
                         ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
                     }
-                    catch (TooBigPacketException ex)
+                    catch (TooBigPacketException)
                     {
                         Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
                     }
