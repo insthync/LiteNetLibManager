@@ -915,6 +915,8 @@ namespace LiteNetLibManager
 
         public void NetworkDestroy(float delay)
         {
+            if (delay < 0f)
+                return;
             if (!IsServer)
                 return;
             Invoke(nameof(NetworkDestroy), delay);
