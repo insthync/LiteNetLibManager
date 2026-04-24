@@ -130,15 +130,18 @@ namespace LiteNetLibManager
                 {
                     case GameStateSyncType.Spawn:
                         // NOTE: Temporary avoid null ref exception, will find cause of issues later
-                        writer.Put((byte)GameStateSyncType.Spawn);
-                        WriteSpawnGameState(writer, player, syncData, tick);
-                        // TODO: Move this to somewhere else
-                        if (player.ConnectionId == ClientConnectionId)
+                        if (syncData.Identity != null)
                         {
-                            // Simulate object spawning if it is a host
-                            syncData.Identity.OnServerSubscribingAdded();
+                            writer.Put((byte)GameStateSyncType.Spawn);
+                            WriteSpawnGameState(writer, player, syncData, tick);
+                            // TODO: Move this to somewhere else
+                            if (player.ConnectionId == ClientConnectionId)
+                            {
+                                // Simulate object spawning if it is a host
+                                syncData.Identity.OnServerSubscribingAdded();
+                            }
+                            ++stateCount;
                         }
-                        ++stateCount;
                         break;
                     case GameStateSyncType.Destroy:
                         writer.Put((byte)GameStateSyncType.Destroy);
@@ -511,19 +514,14 @@ namespace LiteNetLibManager
                     _gameStatesWriter.Put(objectLength);
                     _gameStatesWriter.SetPosition(tempLastPosition);
                     // Send data to client before writing data of current object, because it is overflowing
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     try
                     {
-#endif
                         ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     }
                     catch (TooBigPacketException ex)
                     {
                         Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
-                        throw ex;
                     }
-#endif
                     _gameStatesWriter.SetPosition(posAfterWriteObjectLength);
                     objectLength = 0;
                 }
@@ -551,19 +549,14 @@ namespace LiteNetLibManager
                         // Set position where it is not overflowed
                         _gameStatesWriter.SetPosition(tempLastPosition);
                         // Send data to client
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         try
                         {
-#endif
                             ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         }
-                        catch (TooBigPacketException ex)
+                        catch (TooBigPacketException)
                         {
                             Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
-                            throw ex;
                         }
-#endif
 
                         // Reset data and write data for overflowed element
                         objectLength = 1;
@@ -596,19 +589,14 @@ namespace LiteNetLibManager
             _gameStatesWriter.Put(objectLength);
             _gameStatesWriter.SetPosition(tempLastPosition);
             // Send data to client
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             try
             {
-#endif
                 ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             }
-            catch (TooBigPacketException ex)
+            catch (TooBigPacketException)
             {
                 Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
-                throw ex;
             }
-#endif
         }
 
         private void SyncGameStateToServer()
