@@ -55,12 +55,14 @@ namespace LiteNetLibManager
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;
         public bool limitByPoolingSize = true;
+        public bool manuallyApplyOwnerChanges = false;
 
         internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
         internal readonly Dictionary<int, LiteNetLibIdentity> SceneObjects = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly Dictionary<uint, long> ChangingOwnerObjects = new Dictionary<uint, long>();
 
         public LiteNetLibGameManager Manager { get; private set; }
 
@@ -115,6 +117,7 @@ namespace LiteNetLibManager
             SpawnPoints.Clear();
             SceneObjects.Clear();
             GuidToPrefabs.Clear();
+            ChangingOwnerObjects.Clear();
             ResetSpawnPositionCounter();
             if (!doNotResetObjectId)
                 LiteNetLibIdentity.ResetObjectId();
@@ -521,18 +524,38 @@ namespace LiteNetLibManager
                 Destroy(instance.gameObject);
         }
 
-        public bool SetObjectOwner(uint objectId, long connectionId)
+        public void SetObjectOwner(uint objectId, long connectionId)
+        {
+            if (manuallyApplyOwnerChanges)
+            {
+                ChangingOwnerObjects[objectId] = connectionId;
+            }
+            else
+            {
+                SetObjectOwnerImmediately(objectId, connectionId);
+            }
+        }
+
+        public void ApplyOwnerChanges()
+        {
+            foreach (KeyValuePair<uint, long> kvp in ChangingOwnerObjects)
+            {
+                SetObjectOwnerImmediately(kvp.Key, kvp.Value);
+            }
+            ChangingOwnerObjects.Clear();
+        }
+
+        public void SetObjectOwnerImmediately(uint objectId, long connectionId)
         {
             if (!Manager.IsNetworkActive)
             {
                 Logging.LogWarning(LogTag, "SetObjectOwner - Network is not active cannot set object owner");
-                return false;
+                return;
             }
-            LiteNetLibIdentity spawnedObject;
-            if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
+            if (SpawnedObjects.TryGetValue(objectId, out LiteNetLibIdentity spawnedObject))
             {
                 if (spawnedObject.ConnectionId == connectionId)
-                    return false;
+                    return;
 
                 // If this is server, send message to clients to set object owner
                 if (Manager.IsServer)
@@ -556,12 +579,12 @@ namespace LiteNetLibManager
                 spawnedObject.ConnectionId = connectionId;
                 // Call set owner client event
                 spawnedObject.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
-                return true;
+                return;
             }
             else if (Manager.LogWarn)
+            {
                 Logging.LogWarning(LogTag, $"SetObjectOwner - Object Id: {objectId} is not spawned.");
-
-            return false;
+            }
         }
 
         public Vector3 GetPlayerSpawnPosition()
