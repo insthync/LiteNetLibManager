@@ -87,7 +87,7 @@ namespace LiteNetLibManager
             {
                 if (SpawnedObjects[objectId].DoNotDestroyWhenDisconnect)
                 {
-                    SpawnedObjects[objectId].ConnectionId = -1;
+                    SpawnedObjects[objectId].SetOwnerClient(-1);
                     continue;
                 }
                 Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
