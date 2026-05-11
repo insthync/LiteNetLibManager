@@ -99,7 +99,7 @@ namespace LiteNetLibManager
                     writer.Put(Scale.z);
 
                 byte extraLength = 0;
-                if (Extra != null)
+                if (Extra != null && Extra.Length > 0)
                 {
                     extraLength = (byte)Extra.Length;
                     writer.Put(extraLength);
