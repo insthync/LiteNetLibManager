@@ -199,9 +199,9 @@ namespace LiteNetLibManager
                     reader.SkipBytes(dataLength);
                     continue;
                 }
-                ushort elementLength = reader.GetUShort();
+                ushort elementCount = reader.GetUShort();
                 bool readFailed = false;
-                for (ushort j = 0; j < elementLength; ++j)
+                for (ushort j = 0; j < elementCount; ++j)
                 {
                     if (!ReadSyncElement(reader, identity, tick, false))
                     {
@@ -211,7 +211,7 @@ namespace LiteNetLibManager
                 }
                 if (readFailed)
                 {
-                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, identity: {objectId}, , skipping: {dataLength} bytes.");
+                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, identity: {objectId}, skipping: {dataLength} bytes.");
                     reader.SetPosition(positionBeforeRead);
                     reader.SkipBytes(dataLength);
                     continue;
@@ -491,19 +491,24 @@ namespace LiteNetLibManager
                         Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
                     }
                     _gameStatesWriter.SetPosition(posAfterWriteObjectCount);
+                    // Reset object count after overflowed
                     objectCount = 0;
                 }
+                // Starting data writing for a new object
                 ++objectCount;
                 _gameStatesWriter.PutPackedUInt(objectId);
 
-                int posBeforeWriteDataLength = _gameStatesWriter.Length;
                 ushort dataLength = 0;
+                ushort elementCount = 0;
+
+                // Reserve position for data length
+                int posBeforeWriteDataLength = _gameStatesWriter.Length;
                 _gameStatesWriter.Put(dataLength);
                 int posAfterWriteDataLength = _gameStatesWriter.Length;
 
+                // Reserve position for element count
                 int posBeforeWriteElementLength = _gameStatesWriter.Length;
-                ushort elementLength = 0;
-                _gameStatesWriter.Put(elementLength);
+                _gameStatesWriter.Put(elementCount);
                 int posAfterWriteElementLength = _gameStatesWriter.Length;
 
                 foreach (LiteNetLibSyncElement syncElement in syncData.SyncElements)
@@ -515,21 +520,24 @@ namespace LiteNetLibManager
                     if (isOverflow)
                     {
                         // Did not any element for this object yet
-                        if (elementLength == 0)
+                        if (elementCount == 0)
                             --objectCount;
+
                         // Set length of objects
                         _gameStatesWriter.SetPosition(posBeforeWriteObjectCount);
                         _gameStatesWriter.Put(objectCount);
+
                         // Set length of data
-                        // Put data length
                         _gameStatesWriter.SetPosition(posBeforeWriteDataLength);
                         dataLength = (ushort)(tempLastPosition - posAfterWriteDataLength);
                         _gameStatesWriter.Put(dataLength);
+
                         // Set length of elements
                         _gameStatesWriter.SetPosition(posBeforeWriteElementLength);
-                        _gameStatesWriter.Put(elementLength);
-                        _gameStatesWriter.SetPosition(tempLastPosition);
+                        _gameStatesWriter.Put(elementCount);
+
                         // Send data to client
+                        _gameStatesWriter.SetPosition(tempLastPosition);
                         try
                         {
                             ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
@@ -541,42 +549,51 @@ namespace LiteNetLibManager
 
                         // Reset data and write data for overflowed element
                         objectCount = 1;
+                        dataLength = 0;
+                        elementCount = 0;
+
                         _gameStatesWriter.SetPosition(posAfterWriteObjectCount);
                         _gameStatesWriter.PutPackedUInt(objectId);
-                        // Write data length
+
+                        // Reserve position for data length
                         posBeforeWriteDataLength = _gameStatesWriter.Length;
-                        dataLength = 0;
                         _gameStatesWriter.Put(dataLength);
                         posAfterWriteDataLength = _gameStatesWriter.Length;
-                        // Write element length
+
+                        // Reserve position for element count
                         posBeforeWriteElementLength = _gameStatesWriter.Length;
-                        elementLength = 0;
-                        _gameStatesWriter.Put(elementLength);
+                        _gameStatesWriter.Put(elementCount);
                         posAfterWriteElementLength = _gameStatesWriter.Length;
+
+                        // Continue writing overflowed data
                         WriteSyncElement(_gameStatesWriter, syncElement, tick, false);
                     }
                     // Update written element count
-                    ++elementLength;
+                    ++elementCount;
                 }
                 tempLastPosition = _gameStatesWriter.Length;
+
                 // Set length of data
                 _gameStatesWriter.SetPosition(posBeforeWriteDataLength);
                 dataLength = (ushort)(tempLastPosition - posAfterWriteDataLength);
                 _gameStatesWriter.Put(dataLength);
+
                 // Set length of elements
                 _gameStatesWriter.SetPosition(posBeforeWriteElementLength);
-                _gameStatesWriter.Put(elementLength);
+                _gameStatesWriter.Put(elementCount);
+
                 _gameStatesWriter.SetPosition(tempLastPosition);
 
                 syncData.SyncElements.Clear();
             }
-            player.SyncingDeltaStates.Clear();
+
             // Set length of objects
             tempLastPosition = _gameStatesWriter.Length;
             _gameStatesWriter.SetPosition(posBeforeWriteObjectCount);
             _gameStatesWriter.Put(objectCount);
-            _gameStatesWriter.SetPosition(tempLastPosition);
+
             // Send data to client
+            _gameStatesWriter.SetPosition(tempLastPosition);
             try
             {
                 ServerSendMessage(player.ConnectionId, 0, DeliveryMethod.Unreliable, _gameStatesWriter);
@@ -585,6 +602,9 @@ namespace LiteNetLibManager
             {
                 Logging.LogError(LogTag, $"Too Big Packet {_gameStatesWriter.Length}");
             }
+
+            // Clear written data
+            player.SyncingDeltaStates.Clear();
         }
 
         private void SyncGameStateToServer()
