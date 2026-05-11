@@ -67,20 +67,15 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal override sealed bool CanSyncDelta()
+        internal override bool CanSyncDelta()
         {
             return true;
-        }
-
-        protected virtual bool BaseLineOnly()
-        {
-            return false;
         }
 
         protected void ValueChangedState(bool latestChangeSyncedFromOwner)
         {
             _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
-            if (BaseLineOnly())
+            if (!CanSyncDelta())
             {
                 _currentRedundancy = 0;
             }
@@ -690,9 +685,9 @@ namespace LiteNetLibManager
         // But simply just use 1000
         public const ushort MAX_LENGTH_FOR_UNRELIABLE_PACKET = 1000;
 
-        protected override bool BaseLineOnly()
+        internal override bool CanSyncDelta()
         {
-            return _value.Length > MAX_LENGTH_FOR_UNRELIABLE_PACKET;
+            return _value.Length <= MAX_LENGTH_FOR_UNRELIABLE_PACKET;
         }
 
         internal override void DeserializeValue(NetDataReader reader)
