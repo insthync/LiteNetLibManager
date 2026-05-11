@@ -38,7 +38,6 @@ namespace LiteNetLibManager
         public bool doNotDestroyOnSceneChanges = false;
         public bool loadOfflineSceneWhenClientStopped = true;
         public float baseLineSyncInterval = 1f;
-        public bool safeGameStatePacket = false;
 
         internal protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
