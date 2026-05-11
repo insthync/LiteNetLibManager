@@ -473,11 +473,11 @@ namespace LiteNetLibManager
                 if (syncData.SyncElements.Count == 0)
                     continue;
 
-                bool isOverflow = _gameStatesWriter.Length + 4 /*int (object ID)*/ + 2 /*short (data length) */ + 2 /*short (element count) */ > MAX_UNRELIABLE_PACKET_SIZE;
+                tempLastPosition = _gameStatesWriter.Length;
+                bool isOverflow = tempLastPosition + 4 /*int (object ID)*/ + 2 /*short (data length) */ + 2 /*short (element count) */ > MAX_UNRELIABLE_PACKET_SIZE;
                 if (isOverflow)
                 {
                     // Set length of objects
-                    tempLastPosition = _gameStatesWriter.Length;
                     _gameStatesWriter.SetPosition(posBeforeWriteObjectCount);
                     _gameStatesWriter.Put(objectCount);
                     _gameStatesWriter.SetPosition(tempLastPosition);
@@ -514,6 +514,9 @@ namespace LiteNetLibManager
                     isOverflow = writtenPosition > MAX_UNRELIABLE_PACKET_SIZE;
                     if (isOverflow)
                     {
+                        // Did not any element for this object yet
+                        if (elementLength == 0)
+                            --objectCount;
                         // Set length of objects
                         _gameStatesWriter.SetPosition(posBeforeWriteObjectCount);
                         _gameStatesWriter.Put(objectCount);
@@ -552,11 +555,8 @@ namespace LiteNetLibManager
                         posAfterWriteElementLength = _gameStatesWriter.Length;
                         WriteSyncElement(_gameStatesWriter, syncElement, tick, false);
                     }
-                    else
-                    {
-                        // Not overflow, continue next writing
-                        elementLength++;
-                    }
+                    // Update written element count
+                    ++elementLength;
                 }
                 tempLastPosition = _gameStatesWriter.Length;
                 // Set length of data
