@@ -112,16 +112,18 @@ namespace LiteNetLibManager
         {
             bool hasChanges = false;
             AssetReferenceLiteNetLibIdentity tempRef;
-            for (int i = 0; i < addressablePrefabs.Count; ++i)
+            if (addressablePrefabs != null && addressablePrefabs.Count > 0)
             {
-                tempRef = addressablePrefabs[i];
-                if (tempRef != null && tempRef.ValidateHashAssetID())
+                for (int i = 0; i < addressablePrefabs.Count; ++i)
                 {
-                    addressablePrefabs[i] = tempRef;
-                    hasChanges |= true;
+                    tempRef = addressablePrefabs[i];
+                    if (tempRef != null && tempRef.ValidateHashAssetID())
+                    {
+                        addressablePrefabs[i] = tempRef;
+                        hasChanges |= true;
+                    }
                 }
             }
-
             return hasChanges;
         }
 #endif
