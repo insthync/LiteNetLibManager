@@ -172,7 +172,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterPrefab - prefab is null.");
                 return null;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab: {prefab.AssetId}, hash: {prefab.HashAssetId}, name: {prefab.name}");
             GuidToPrefabs[prefab.HashAssetId] = prefab;
             return prefab;
         }
@@ -184,7 +184,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterPrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab: {prefab.HashAssetId}");
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
@@ -196,9 +196,19 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - prefab is null.");
                 return null;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
             LiteNetLibIdentity prefab = await addressablePrefab.GetOrLoadAssetAsync<LiteNetLibIdentity>();
-            GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
+            if (prefab == null)
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - loaded prefab is null.");
+                return null;
+            }
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab: {prefab.AssetId}, hash: {prefab.HashAssetId}, name: {prefab.name}");
+            if (addressablePrefab.HashAssetId != prefab.HashAssetId)
+            {
+                Logging.LogError(LogTag, "Invalid addressable prefab hash asset ID: {0}, must be: {1}, name: {2}", addressablePrefab.HashAssetId, prefab.HashAssetId, prefab.name);
+                addressablePrefab.HashAssetId = prefab.HashAssetId;
+            }
+            GuidToPrefabs[prefab.HashAssetId] = prefab;
             return prefab;
         }
 #endif
@@ -211,7 +221,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterAddressablePrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab: {addressablePrefab.HashAssetId}");
             return GuidToPrefabs.Remove(addressablePrefab.HashAssetId);
         }
 #endif

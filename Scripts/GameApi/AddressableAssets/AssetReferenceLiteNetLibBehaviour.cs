@@ -19,42 +19,19 @@ namespace LiteNetLibManager
         {
             if (behaviour == null)
             {
+                Debug.LogWarning($"[AssetReferenceLiteNetLibBehaviour] Cannot find behaviour, so set `hashAssetId` to 0");
                 hashAssetId = 0;
-                Debug.LogWarning($"[AssetReferenceLiteNetLibBehaviour] Cannot find behaviour, so set `hashAssetId` to `0`");
                 return;
             }
             LiteNetLibIdentity identity = behaviour.GetComponentInParent<LiteNetLibIdentity>();
             if (identity == null)
             {
+                Debug.LogWarning($"[AssetReferenceLiteNetLibBehaviour] Cannot find identity, so set `hashAssetId` to 0");
                 hashAssetId = 0;
-                Debug.LogWarning($"[AssetReferenceLiteNetLibBehaviour] Cannot find identity, so set `hashAssetId` to `0`");
                 return;
             }
+            Debug.Log($"[AssetReferenceLiteNetLibBehaviour] Set `hashAssetId` to {hashAssetId}, name: {behaviour.name}");
             hashAssetId = identity.HashAssetId;
-            Debug.Log($"[AssetReferenceLiteNetLibBehaviour] Set `hashAssetId` to `{hashAssetId}`, name: {behaviour.name}");
-        }
-#endif
-
-#if UNITY_EDITOR
-        public override bool SetEditorAsset(Object value)
-        {
-            if (!base.SetEditorAsset(value))
-            {
-                return false;
-            }
-
-            if ((value is GameObject gameObject) && gameObject.TryGetComponent(out LiteNetLibIdentity identity))
-            {
-                hashAssetId = identity.GetComponent<LiteNetLibIdentity>().HashAssetId;
-                Debug.Log($"[AssetReferenceLiteNetLibBehaviour] Set `hashAssetId` to `{hashAssetId}` when set editor asset: `{value.name}`");
-                return true;
-            }
-            else
-            {
-                hashAssetId = 0;
-                Debug.LogWarning($"[AssetReferenceLiteNetLibBehaviour] Cannot find behaviour or not proper object's type, so set `hashAssetId` to `0`");
-                return false;
-            }
         }
 #endif
 

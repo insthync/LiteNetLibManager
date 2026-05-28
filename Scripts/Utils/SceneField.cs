@@ -3,7 +3,7 @@
 namespace LiteNetLibManager
 {
     [System.Serializable]
-    public struct SceneField
+    public class SceneField
     {
 #if UNITY_EDITOR
         [SerializeField]
@@ -34,6 +34,31 @@ namespace LiteNetLibManager
         public bool IsSet()
         {
             return !string.IsNullOrEmpty(sceneName);
+        }
+
+        public bool Validate()
+        {
+#if UNITY_EDITOR
+            if (sceneAsset != null)
+            {
+                if (!string.Equals(sceneName, sceneAsset.name))
+                {
+                    Debug.LogWarning($"Scene name '{sceneName}' does not match the name of the assigned scene asset '{sceneAsset.name}. Updating scene name to match the asset name.");
+                    sceneName = sceneAsset.name;
+                    return true;
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(sceneName))
+                {
+                    Debug.LogWarning($"Scene name '{sceneName}' is set but no scene asset is assigned. Clearing scene name.");
+                    sceneName = string.Empty;
+                    return true;
+                }
+            }
+#endif
+            return false;
         }
     }
 

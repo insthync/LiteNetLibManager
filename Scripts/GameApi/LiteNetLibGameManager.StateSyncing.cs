@@ -289,6 +289,11 @@ namespace LiteNetLibManager
                     Quaternion.Euler(angleX, angleY, angleZ),
                     objectId, connectionId);
             }
+            if (identity == null)
+            {
+                if (LogError) Logging.LogError(LogTag, $"Unable to spawn object for spawn game state, isSceneObject: {isSceneObject}, hashSceneObjectId: {hashSceneObjectId}, hashAssetId: {hashAssetId}, objectId: {objectId}.");
+                return false;
+            }
             if (ReadSyncElements(reader, identity, tick, true))
             {
                 // Proceed pending RPCs
