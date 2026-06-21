@@ -871,10 +871,12 @@ namespace LiteNetLibManager
             // Reset renderers/audio sources
             foreach (Renderer renderer in _hiddingRenderers)
             {
+                if (renderer == null) continue;
                 renderer.forceRenderingOff = false;
             }
             foreach (AudioSource audioSource in _hiddingAudioSources)
             {
+                if (audioSource == null) continue;
                 audioSource.mute = false;
             }
             _hiddingRenderers.Clear();
@@ -896,10 +898,12 @@ namespace LiteNetLibManager
             // Reset renderers/audio sources
             foreach (Renderer renderer in _hiddingRenderers)
             {
+                if (renderer == null) continue;
                 renderer.forceRenderingOff = false;
             }
             foreach (AudioSource audioSource in _hiddingAudioSources)
             {
+                if (audioSource == null) continue;
                 audioSource.mute = false;
             }
             _hiddingRenderers.Clear();
