@@ -45,6 +45,7 @@ namespace LiteNetLibManager
         [MenuItem("Tools/LiteNetLibManager/Assign Asset IDs")]
         public static void AssignAssetIDs()
         {
+            Dictionary<string, GameObject> hashedAssetIDs = new Dictionary<string, GameObject>();
             string[] guids = AssetDatabase.FindAssets("t:Prefab");
             foreach (string guid in guids)
             {
@@ -59,7 +60,15 @@ namespace LiteNetLibManager
                     string newAssetId = identity.AssetId;
                     if (!string.Equals(assetId, newAssetId))
                     {
-                        Debug.Log($"Assigned Asset ID {newAssetId} (from {assetId}) to prefab {prefab.name} at path {path}");
+                        Debug.Log($"Assigned Asset ID {newAssetId} (from {assetId}) to prefab {prefab.name} at path {path}", prefab);
+                    }
+                    if (hashedAssetIDs.ContainsKey(newAssetId))
+                    {
+                        Debug.LogError($"Key collision is occurs {newAssetId}, please fix it manually", prefab);
+                    }
+                    else
+                    {
+                        hashedAssetIDs.Add(newAssetId, prefab);
                     }
                 }
             }
