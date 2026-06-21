@@ -218,6 +218,7 @@ namespace LiteNetLibManager
         {
             _list.Clear();
             _operationEntries.Clear();
+            UnregisterUpdating();
         }
 
         protected void PrepareOperation(LiteNetLibSyncListOp operation, int index, TType oldItem, TType newItem)

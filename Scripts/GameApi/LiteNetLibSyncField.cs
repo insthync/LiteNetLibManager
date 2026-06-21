@@ -271,6 +271,10 @@ namespace LiteNetLibManager
         internal override sealed void Reset()
         {
             Value = _defaultValue;
+            _latestChangeSyncedFromOwner = false;
+            _latestReceiveTick = 0;
+            _currentRedundancy = 0;
+            UnregisterUpdating();
         }
     }
 

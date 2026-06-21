@@ -963,6 +963,7 @@ namespace LiteNetLibManager
             {
                 Behaviours[loopCounter].OnNetworkDestroy(reasons);
             }
+            ResetSyncElements();
             if (Manager.IsServer)
             {
                 // If this is server, send message to clients to destroy object
@@ -988,7 +989,7 @@ namespace LiteNetLibManager
 
         internal void OnGetInstance()
         {
-            ResetSyncData();
+            ResetSyncElements();
             onGetInstance.Invoke();
         }
 
@@ -997,7 +998,7 @@ namespace LiteNetLibManager
             onPushBack.Invoke();
         }
 
-        internal void ResetSyncData()
+        internal void ResetSyncElements()
         {
             // Clear/reset syncing data
             foreach (LiteNetLibSyncElement field in SyncElements.Values)
