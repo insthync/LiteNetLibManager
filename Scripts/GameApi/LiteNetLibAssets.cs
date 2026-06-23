@@ -1,6 +1,7 @@
 ﻿using Cysharp.Text;
 using Cysharp.Threading.Tasks;
 using Insthync.AddressableAssetTools;
+using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -394,7 +395,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, int sceneObjectId, Vector3 position, Quaternion rotation, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, int sceneObjectId, Vector3 position, Quaternion rotation, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -412,6 +413,8 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, true, objectId, connectionId);
             identity.InitTransform(position, rotation);
+            if (initialReader != null)
+                Manager.ReadSyncElements(initialReader, identity, initialTick, true);
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (Manager.IsServer)
                 identity.OnStartServer();
@@ -425,17 +428,28 @@ namespace LiteNetLibManager
             return identity;
         }
 
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
         {
             if (gameObject == null)
             {
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - gameObject is null.");
                 return null;
             }
-            return NetworkSpawn(gameObject.GetComponent<LiteNetLibIdentity>(), objectId, connectionId);
+            return NetworkSpawn(gameObject.GetComponent<LiteNetLibIdentity>(), objectId, connectionId, initialReader, initialTick);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, uint objectId = 0, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
+        {
+            if (!GuidToPrefabs.ContainsKey(hashAssetId))
+            {
+                if (Manager.LogWarn)
+                    Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
+                return null;
+            }
+            return NetworkSpawn(GetObjectInstance(hashAssetId, position, rotation), objectId, connectionId, initialReader, initialTick);
+        }
+
+        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, uint objectId = 0, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
         {
             if (identity == null)
             {
@@ -446,6 +460,8 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(identity.transform.position, identity.transform.rotation);
+            if (initialReader != null)
+                Manager.ReadSyncElements(initialReader, identity, initialTick, true);
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (Manager.IsServer)
                 identity.OnStartServer();
@@ -457,17 +473,6 @@ namespace LiteNetLibManager
                 onObjectSpawn.Invoke(identity);
 
             return identity;
-        }
-
-        public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
-        {
-            if (!GuidToPrefabs.ContainsKey(hashAssetId))
-            {
-                if (Manager.LogWarn)
-                    Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
-                return null;
-            }
-            return NetworkSpawn(GetObjectInstance(hashAssetId, position, rotation), objectId, connectionId);
         }
 
         public bool NetworkDestroy(GameObject gameObject, byte reasons)

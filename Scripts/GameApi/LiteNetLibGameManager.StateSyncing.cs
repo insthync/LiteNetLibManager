@@ -294,47 +294,44 @@ namespace LiteNetLibManager
                 if (LogError) Logging.LogError(LogTag, $"Unable to spawn object for spawn game state, isSceneObject: {isSceneObject}, hashSceneObjectId: {hashSceneObjectId}, hashAssetId: {hashAssetId}, objectId: {objectId}.");
                 return false;
             }
-            if (ReadSyncElements(reader, identity, tick, true))
+            // Proceed pending RPCs
+            PendingRpcData pendingRpc;
+            for (int i = 0; i < _pendingRpcs.Count; ++i)
             {
-                // Proceed pending RPCs
-                PendingRpcData pendingRpc;
-                for (int i = 0; i < _pendingRpcs.Count; ++i)
+                pendingRpc = _pendingRpcs[i];
+                if (pendingRpc.info.objectId == objectId)
                 {
-                    pendingRpc = _pendingRpcs[i];
-                    if (pendingRpc.info.objectId == objectId)
-                    {
-                        identity.ProcessRPC(pendingRpc.info, pendingRpc.reader, true);
-                        _pendingRpcs.RemoveAt(i);
-                        i--;
-                    }
+                    identity.ProcessRPC(pendingRpc.info, pendingRpc.reader, true);
+                    _pendingRpcs.RemoveAt(i);
+                    i--;
                 }
-                return true;
             }
-            return false;
+            return true;
         }
 
-        private void WriteSyncGameState(NetDataWriter writer, uint objectId, HashSet<LiteNetLibSyncElement> syncElements, uint tick)
+        internal void WriteSyncGameState(NetDataWriter writer, uint objectId, HashSet<LiteNetLibSyncElement> syncElements, uint tick)
         {
             writer.PutPackedUInt(objectId);
             WriteSyncElements(writer, syncElements, tick, false);
             syncElements.Clear();
         }
 
-        private bool ReadSyncGameState(NetDataReader reader, uint tick)
+        internal bool ReadSyncGameState(NetDataReader reader, uint tick)
         {
             uint objectId = reader.GetPackedUInt();
             if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
                 return false;
-            return ReadSyncElements(reader, identity, tick, false);
+            ReadSyncElements(reader, identity, tick, false);
+            return true;
         }
 
-        private void WriteDestroyGameState(NetDataWriter writer, uint objectId, byte destroyReasons)
+        internal void WriteDestroyGameState(NetDataWriter writer, uint objectId, byte destroyReasons)
         {
             writer.PutPackedUInt(objectId);
             writer.Put(destroyReasons);
         }
 
-        private bool ReadDestroyGameState(NetDataReader reader)
+        internal bool ReadDestroyGameState(NetDataReader reader)
         {
             uint objectId = reader.GetPackedUInt();
             byte destroyReasons = reader.GetByte();
@@ -342,7 +339,7 @@ namespace LiteNetLibManager
             return true;
         }
 
-        private void WriteSyncElements(NetDataWriter writer, HashSet<LiteNetLibSyncElement> elements, uint tick, bool initial)
+        internal void WriteSyncElements(NetDataWriter writer, HashSet<LiteNetLibSyncElement> elements, uint tick, bool initial)
         {
             writer.PutPackedInt(elements.Count);
             if (elements.Count == 0)
@@ -353,16 +350,15 @@ namespace LiteNetLibManager
             }
         }
 
-        private bool ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, uint tick, bool initial)
+        internal void ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, uint tick, bool initial)
         {
             int elementsCount = reader.GetPackedInt();
             if (elementsCount == 0)
-                return true;
+                return;
             for (int i = 0; i < elementsCount; ++i)
             {
                 ReadSyncElement(reader, identity, tick, initial);
             }
-            return true;
         }
 
         private void ProceedServerGameStateSync(uint tick)
