@@ -962,6 +962,7 @@ namespace LiteNetLibManager
 
         internal void OnNetworkDestroy(byte reasons)
         {
+            IsSpawned = false;
             byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
@@ -988,7 +989,6 @@ namespace LiteNetLibManager
             // Clear data
             Subscribings.Clear();
             Subscribers.Clear();
-            IsSpawned = false;
         }
 
         internal void OnGetInstance()
