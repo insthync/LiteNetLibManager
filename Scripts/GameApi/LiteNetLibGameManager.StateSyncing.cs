@@ -280,14 +280,14 @@ namespace LiteNetLibManager
                 identity = Assets.NetworkSpawnScene(objectId, hashSceneObjectId,
                     new Vector3(positionX, positionY, positionZ),
                     Quaternion.Euler(angleX, angleY, angleZ),
-                    connectionId);
+                    connectionId, reader, tick);
             }
             else
             {
                 identity = Assets.NetworkSpawn(hashAssetId,
                     new Vector3(positionX, positionY, positionZ),
                     Quaternion.Euler(angleX, angleY, angleZ),
-                    objectId, connectionId);
+                    objectId, connectionId, reader, tick);
             }
             if (identity == null)
             {
