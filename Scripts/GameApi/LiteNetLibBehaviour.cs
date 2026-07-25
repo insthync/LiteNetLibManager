@@ -48,10 +48,13 @@ namespace LiteNetLibManager
                     return null;
                 if (_identity == null)
                 {
-                    int currentFrame = Time.frameCount;
-                    if (_lastGetIdentityFrame >= currentFrame)
-                        return _identity;
-                    _lastGetIdentityFrame = currentFrame;
+                    if (Application.isPlaying)
+                    {
+                        int currentFrame = Time.frameCount;
+                        if (_lastGetIdentityFrame >= currentFrame)
+                            return _identity;
+                        _lastGetIdentityFrame = currentFrame;
+                    }
                     _identity = GetComponent<LiteNetLibIdentity>();
                     if (_identity == null)
                         _identity = GetComponentInParent<LiteNetLibIdentity>();
