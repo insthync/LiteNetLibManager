@@ -723,6 +723,11 @@ namespace LiteNetLibManager
             return connectionId == ConnectionId || HasSubscriber(connectionId);
         }
 
+        public HashSet<long>.Enumerator GetSubscribers()
+        {
+            return Subscribers.GetEnumerator();
+        }
+
         public void AddSubscribing(uint subscribing)
         {
             Subscribings.Add(subscribing);
@@ -788,6 +793,11 @@ namespace LiteNetLibManager
                     continue;
                 AddSubscribing(newSubscribing);
             }
+        }
+
+        public HashSet<uint>.Enumerator GetSubscribings()
+        {
+            return Subscribings.GetEnumerator();
         }
 
         public bool IsDifferSubChannelId(LiteNetLibIdentity identity)
