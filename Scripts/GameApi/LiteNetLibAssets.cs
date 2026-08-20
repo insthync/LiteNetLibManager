@@ -66,6 +66,7 @@ namespace LiteNetLibManager
         internal readonly Dictionary<uint, long> ChangingOwnerObjects = new Dictionary<uint, long>();
 
         public LiteNetLibGameManager Manager { get; private set; }
+        public bool IsInitialized { get; private set; } = false;
 
         public string LogTag
         {
@@ -102,17 +103,20 @@ namespace LiteNetLibManager
 
         public async UniTask Initialize()
         {
+            IsInitialized = false;
             if (onInitializeStart != null)
                 onInitializeStart.Invoke();
             await RegisterPrefabs();
             RegisterSpawnPoints();
             RegisterSceneObjects();
+            IsInitialized = true;
             if (onInitializeFinish != null)
                 onInitializeFinish.Invoke();
         }
 
         public void Clear(bool doNotResetObjectId = false)
         {
+            IsInitialized = false;
             ClearSpawnedObjects();
             ClearPooledObjects();
             SpawnPoints.Clear();
