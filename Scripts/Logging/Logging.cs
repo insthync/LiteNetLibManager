@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace LiteNetLibManager
 {
@@ -34,7 +33,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsErrorLoggerDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogError(string.Format($"[{tag}] {message}", args));
@@ -42,7 +41,7 @@ namespace LiteNetLibManager
                     Debug.LogError($"[{tag}] {message}");
                 return;
             }
-            LogManager.GetErrorLogger(tag).LogError(message, args);
+            LogManager.GetLogger(tag).LogError(message, args);
         }
 
         public static void LogWarning(string tag, object message)
@@ -54,7 +53,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsWarningLoggerDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogWarning(string.Format($"[{tag}] {message}", args));
@@ -62,19 +61,19 @@ namespace LiteNetLibManager
                     Debug.LogWarning($"[{tag}] {message}");
                 return;
             }
-            LogManager.GetWarningLogger(tag).LogWarning(message, args);
+            LogManager.GetLogger(tag).LogWarning(message, args);
         }
 
         public static void LogException(string tag, System.Exception ex)
         {
             if (ex == null)
                 return;
-            if (LogManager.IsErrorLoggerDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 Debug.LogError($"[{tag}] {ex}");
                 return;
             }
-            LogManager.GetErrorLogger(tag).LogError(ex.ToString());
+            LogManager.GetLogger(tag).LogError(ex.ToString());
         }
 
         public static void Log(object message)
@@ -106,7 +105,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsErrorLoggerDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogError(string.Format($"{message}", args));
@@ -114,7 +113,7 @@ namespace LiteNetLibManager
                     Debug.LogError($"{message}");
                 return;
             }
-            LogManager.ErrorLogger.LogError(message, args);
+            LogManager.Logger.LogError(message, args);
         }
 
         public static void LogWarning(object message)
@@ -126,7 +125,7 @@ namespace LiteNetLibManager
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            if (LogManager.IsWarningLoggerDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 if (args.Length > 0)
                     Debug.LogWarning(string.Format($"{message}", args));
@@ -134,19 +133,19 @@ namespace LiteNetLibManager
                     Debug.LogWarning($"{message}");
                 return;
             }
-            LogManager.WarningLogger.LogWarning(message, args);
+            LogManager.Logger.LogWarning(message, args);
         }
 
         public static void LogException(System.Exception ex)
         {
             if (ex == null)
                 return;
-            if (LogManager.IsErrorLoggerDisposed)
+            if (LogManager.IsLoggerDisposed)
             {
                 Debug.LogError($"{ex}");
                 return;
             }
-            LogManager.ErrorLogger.LogError(ex.ToString());
+            LogManager.Logger.LogError(ex.ToString());
         }
     }
 }

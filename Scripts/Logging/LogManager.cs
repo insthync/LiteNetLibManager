@@ -1,8 +1,4 @@
-﻿using Cysharp.Text;
-using Microsoft.Extensions.Logging;
-using System.Buffers;
-using System.Collections.Generic;
-using ZLogger;
+﻿using System.Collections.Generic;
 
 namespace LiteNetLibManager
 {
@@ -27,7 +23,7 @@ namespace LiteNetLibManager
             _loggerByTypes.Clear();
             _loggerByTags.Clear();
             _loggerFactory = loggerFactory;
-            _defaultLogger = loggerFactory.CreateLogger("No Tag");
+            _defaultLogger = loggerFactory.CreateLogger("N/A");
 
             UnityEngine.Application.quitting += () =>
             {
@@ -59,100 +55,28 @@ namespace LiteNetLibManager
 
     public static partial class LogManager
     {
-        public static LoggerManager DefaultLoggerManager { get; set; }
-        public static LoggerManager WarningLoggerManager { get; set; }
-        public static LoggerManager ErrorLoggerManager { get; set; }
+        public static LoggerManager LoggerManager { get; set; }
 
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Initialize()
         {
-            // Standard LoggerFactory does not work on IL2CPP,
-            // But you can use ZLogger's UnityLoggerFactory instead,
-            // it works on IL2CPP, all platforms(includes mobile).
-            DefaultLoggerManager = new LoggerManager(UnityLoggerFactory.Create(builder =>
-            {
-                // or more configuration, you can use builder.AddFilter
-                builder.SetMinimumLevel(LogLevel.Trace);
-
-                // AddZLoggerUnityDebug is only available for Unity, it send log to UnityEngine.Debug.Log.
-                // LogLevels are translate to
-                // * Trace/Debug/Information -> LogType.Log
-                // * Warning/Critical -> LogType.Warning
-                // * Error without Exception -> LogType.Error
-                // * Error with Exception -> LogException
-                builder.AddZLoggerUnityDebug(options =>
-                {
-                    options.PrefixFormatter = PrefixFormatterConfigure;
-                });
-            }));
-
-            DefaultLoggerManager.Logger.LogInformation("===== Logger Initialized =====");
+            LoggerManager = new LoggerManager(new DefaultLoggerFactory(null));
+            LoggerManager.Logger.LogInformation("===== Logger Initialized =====");
         }
 
-        public static void PrefixFormatterConfigure(IBufferWriter<byte> writer, LogInfo info)
-        {
-            switch (info.LogLevel)
-            {
-                case LogLevel.Trace:
-                case LogLevel.Debug:
-                case LogLevel.Information:
-                    ZString.Utf8Format(writer, " INFO {0} [{1}] - ", info.CategoryName, info.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-                    break;
-                case LogLevel.Warning:
-                case LogLevel.Critical:
-                    ZString.Utf8Format(writer, " WARN {0} [{1}] - ", info.CategoryName, info.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-                    break;
-                case LogLevel.Error:
-                    ZString.Utf8Format(writer, "ERROR {0} [{1}] - ", info.CategoryName, info.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-                    break;
-            }
-        }
+        public static bool IsLoggerDisposed => LoggerManager.IsDisposed;
 
-        public static bool IsLoggerDisposed => DefaultLoggerManager.IsDisposed;
-        public static bool IsWarningLoggerDisposed => WarningLoggerManager != null ? WarningLoggerManager.IsDisposed : IsLoggerDisposed;
-        public static bool IsErrorLoggerDisposed => ErrorLoggerManager != null ? ErrorLoggerManager.IsDisposed : IsLoggerDisposed;
-
-        public static ILogger Logger => DefaultLoggerManager.Logger;
-        public static ILogger WarningLogger => WarningLoggerManager != null ? WarningLoggerManager.Logger : Logger;
-        public static ILogger ErrorLogger => ErrorLoggerManager != null ? ErrorLoggerManager.Logger : Logger;
+        public static ILogger Logger => LoggerManager.Logger;
 
         public static ILogger<T> GetLogger<T>() where T : class
         {
-            return DefaultLoggerManager.GetLogger<T>();
+            return LoggerManager.GetLogger<T>();
         }
 
         public static ILogger GetLogger(string tag)
         {
-            return DefaultLoggerManager.GetLogger(tag);
-        }
-
-        public static ILogger<T> GetWarningLogger<T>() where T : class
-        {
-            if (WarningLoggerManager == null)
-                return GetLogger<T>();
-            return WarningLoggerManager.GetLogger<T>();
-        }
-
-        public static ILogger GetWarningLogger(string tag)
-        {
-            if (WarningLoggerManager == null)
-                return GetLogger(tag);
-            return WarningLoggerManager.GetLogger(tag);
-        }
-
-        public static ILogger<T> GetErrorLogger<T>() where T : class
-        {
-            if (ErrorLoggerManager == null)
-                return GetLogger<T>();
-            return ErrorLoggerManager.GetLogger<T>();
-        }
-
-        public static ILogger GetErrorLogger(string tag)
-        {
-            if (ErrorLoggerManager == null)
-                return GetLogger(tag);
-            return ErrorLoggerManager.GetLogger(tag);
+            return LoggerManager.GetLogger(tag);
         }
     }
 }
