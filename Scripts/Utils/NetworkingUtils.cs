@@ -3,7 +3,7 @@ using System.Net.Sockets;
 
 namespace LiteNetLibManager.Utils
 {
-    public class Networking
+    public static class NetworkingUtils
     {
         public static int GetFreePort()
         {
