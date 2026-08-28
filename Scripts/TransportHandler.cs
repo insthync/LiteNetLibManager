@@ -75,7 +75,16 @@ namespace LiteNetLibManager
             }
             if (!_messageHandlers.ContainsKey(messageType))
                 return;
-            _messageHandlers[messageType].Invoke(new MessageHandlerData(messageType, this, connectionId, reader));
+            try
+            {
+                _messageHandlers[messageType].Invoke(new MessageHandlerData(messageType, this, connectionId, reader));
+            }
+            catch (System.Exception ex)
+            {
+                // A malformed packet or a handler error must not kill the receive loop, drop this message only
+                Logging.LogError(LogTag, $"Error occuring while proceed message {messageType} from connection {connectionId}");
+                Logging.LogException(LogTag, ex);
+            }
         }
 
         public static void WritePacket(
