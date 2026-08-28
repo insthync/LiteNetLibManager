@@ -258,6 +258,13 @@ namespace LiteNetLibManager
                 if (syncElement == null)
                     continue;
                 int syncElementId = LiteNetLibIdentity.GetHashedId(MakeSyncElementId(syncElementFieldInfo));
+                if (Identity.SyncElements.TryGetValue(syncElementId, out LiteNetLibSyncElement existedElement) && !ReferenceEquals(existedElement, syncElement))
+                {
+                    // 32-bit hash collision between two different sync element ids, do not silently overwrite the existed one
+                    if (Manager.LogError)
+                        Logging.LogError(LogTag, $"[{TypeFullName}] Hash collision while registering sync element [{syncElementFieldInfo.Name}]: hashed id [{syncElementId}] already registered. This sync element will not sync, rename the field or the behaviour type.");
+                    continue;
+                }
                 syncElement.Setup(this, syncElementId);
                 Identity.SyncElements[syncElementId] = syncElement;
             }
@@ -736,6 +743,13 @@ namespace LiteNetLibManager
                 return;
             }
             int elementId = LiteNetLibIdentity.GetHashedId(id);
+            if (Identity.RPCs.TryGetValue(elementId, out LiteNetLibRPC existedRpc) && !ReferenceEquals(existedRpc, rpc))
+            {
+                // 32-bit hash collision between two different rpc ids, do not silently overwrite the existed one
+                if (Manager.LogError)
+                    Logging.LogError(LogTag, $"[{TypeFullName}] Hash collision while registering rpc [{id}]: hashed id [{elementId}] already registered. This rpc will not work, rename the method or the behaviour type.");
+                return;
+            }
             rpc.Setup(this, elementId);
             rpc.CanCallByEveryone = canCallByEveryone;
             Identity.RPCs[elementId] = rpc;
