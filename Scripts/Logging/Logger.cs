@@ -28,5 +28,20 @@ namespace LiteNetLibManager
         {
             _logger.LogWarning(message, args);
         }
+
+        public void LogInformationQuiet(string message, params object[] args)
+        {
+            _logger.LogInformationQuiet(message, args);
+        }
+
+        public void LogErrorQuiet(string message, params object[] args)
+        {
+            _logger.LogErrorQuiet(message, args);
+        }
+
+        public void LogWarningQuiet(string message, params object[] args)
+        {
+            _logger.LogWarningQuiet(message, args);
+        }
     }
 }
