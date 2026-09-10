@@ -129,5 +129,32 @@ namespace LiteNetLibManager
             }
             WriteToFile(_warnWriter, text);
         }
+
+        public void LogInformationQuiet(string message, params object[] args)
+        {
+            var builder = new Utf16ValueStringBuilder(false);
+            builder.AppendFormat(" INFO {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
+            builder.AppendFormat(message, args);
+            string text = builder.ToString();
+            WriteToFile(_infoWriter, text);
+        }
+
+        public void LogErrorQuiet(string message, params object[] args)
+        {
+            var builder = new Utf16ValueStringBuilder(false);
+            builder.AppendFormat("ERROR {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
+            builder.AppendFormat(message, args);
+            string text = builder.ToString();
+            WriteToFile(_errorWriter, text);
+        }
+
+        public void LogWarningQuiet(string message, params object[] args)
+        {
+            var builder = new Utf16ValueStringBuilder(false);
+            builder.AppendFormat(" WARN {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
+            builder.AppendFormat(message, args);
+            string text = builder.ToString();
+            WriteToFile(_warnWriter, text);
+        }
     }
 }

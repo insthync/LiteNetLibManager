@@ -147,5 +147,77 @@ namespace LiteNetLibManager
             }
             LogManager.Logger.LogError(ex.ToString());
         }
+
+        public static void LogQuiet(object message)
+        {
+            Log(message.ToString());
+        }
+
+        public static void LogQuiet(string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+            if (LogManager.IsLoggerDisposed)
+            {
+                if (args.Length > 0)
+                    Debug.Log(string.Format($"{message}", args));
+                else
+                    Debug.Log($"{message}");
+                return;
+            }
+            LogManager.Logger.LogInformationQuiet(message, args);
+        }
+
+        public static void LogErrorQuiet(object message)
+        {
+            LogError(message.ToString());
+        }
+
+        public static void LogErrorQuiet(string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+            if (LogManager.IsLoggerDisposed)
+            {
+                if (args.Length > 0)
+                    Debug.LogError(string.Format($"{message}", args));
+                else
+                    Debug.LogError($"{message}");
+                return;
+            }
+            LogManager.Logger.LogErrorQuiet(message, args);
+        }
+
+        public static void LogWarningQuiet(object message)
+        {
+            LogWarning(message.ToString());
+        }
+
+        public static void LogWarningQuiet(string message, params object[] args)
+        {
+            if (string.IsNullOrEmpty(message))
+                return;
+            if (LogManager.IsLoggerDisposed)
+            {
+                if (args.Length > 0)
+                    Debug.LogWarning(string.Format($"{message}", args));
+                else
+                    Debug.LogWarning($"{message}");
+                return;
+            }
+            LogManager.Logger.LogWarningQuiet(message, args);
+        }
+
+        public static void LogExceptionQuiet(System.Exception ex)
+        {
+            if (ex == null)
+                return;
+            if (LogManager.IsLoggerDisposed)
+            {
+                Debug.LogError($"{ex}");
+                return;
+            }
+            LogManager.Logger.LogErrorQuiet(ex.ToString());
+        }
     }
 }
