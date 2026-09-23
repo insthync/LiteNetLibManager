@@ -71,7 +71,10 @@ namespace LiteNetLibManager
         {
             var builder = new Utf16ValueStringBuilder(false);
             builder.AppendFormat(" INFO {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-            builder.AppendFormat(message, args);
+            if (args.Length > 0)
+                builder.Append(string.Format(message, args));
+            else
+                builder.Append(message);
             string text = builder.ToString();
             bool debugging = _infoWriter == null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -92,7 +95,10 @@ namespace LiteNetLibManager
         {
             var builder = new Utf16ValueStringBuilder(false);
             builder.AppendFormat("ERROR {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-            builder.AppendFormat(message, args);
+            if (args.Length > 0)
+                builder.Append(string.Format(message, args));
+            else
+                builder.Append(message);
             string text = builder.ToString();
             bool debugging = _warnWriter == null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -113,7 +119,10 @@ namespace LiteNetLibManager
         {
             var builder = new Utf16ValueStringBuilder(false);
             builder.AppendFormat(" WARN {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-            builder.AppendFormat(message, args);
+            if (args.Length > 0)
+                builder.Append(string.Format(message, args));
+            else
+                builder.Append(message);
             string text = builder.ToString();
             bool debugging = _warnWriter == null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -134,7 +143,10 @@ namespace LiteNetLibManager
         {
             var builder = new Utf16ValueStringBuilder(false);
             builder.AppendFormat(" INFO {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-            builder.AppendFormat(message, args);
+            if (args.Length > 0)
+                builder.Append(string.Format(message, args));
+            else
+                builder.Append(message);
             string text = builder.ToString();
             WriteToFile(_infoWriter, text);
         }
@@ -143,7 +155,10 @@ namespace LiteNetLibManager
         {
             var builder = new Utf16ValueStringBuilder(false);
             builder.AppendFormat("ERROR {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-            builder.AppendFormat(message, args);
+            if (args.Length > 0)
+                builder.Append(string.Format(message, args));
+            else
+                builder.Append(message);
             string text = builder.ToString();
             WriteToFile(_errorWriter, text);
         }
@@ -152,7 +167,10 @@ namespace LiteNetLibManager
         {
             var builder = new Utf16ValueStringBuilder(false);
             builder.AppendFormat(" WARN {0} [{1}] - ", _categoryName, DateTime.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"));
-            builder.AppendFormat(message, args);
+            if (args.Length > 0)
+                builder.Append(string.Format(message, args));
+            else
+                builder.Append(message);
             string text = builder.ToString();
             WriteToFile(_warnWriter, text);
         }
