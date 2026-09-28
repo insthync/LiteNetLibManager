@@ -39,6 +39,7 @@ namespace LiteNetLibManager
             public Vector3 EulerAngles;
             public Vector3 Scale;
             public byte[] Extra;
+            internal bool OwnsExtraBuffer;
 
             public void Deserialize(NetDataReader reader)
             {
@@ -61,6 +62,7 @@ namespace LiteNetLibManager
                     !SyncData.HasFlag(SyncTransformState.ScaleZ) ? 0f : reader.GetFloat());
 
                 Extra = null;
+                OwnsExtraBuffer = false;
                 byte extraLength = reader.GetByte();
                 if (extraLength > 0)
                 {
@@ -227,6 +229,7 @@ namespace LiteNetLibManager
         private float _endInterpTime;
 
         private readonly SyncTransforms _clientSyncBuffers = new SyncTransforms();
+        private readonly List<byte[]> _freeExtraBuffers = new List<byte[]>(4);
         private readonly SyncTransformsField _syncBuffers = new SyncTransformsField()
         {
             syncMode = LiteNetLibSyncFieldMode.ServerToClients,
@@ -277,6 +280,8 @@ namespace LiteNetLibManager
 
         private void ResetBuffersAndStates()
         {
+            ReleaseExtraBuffers(_clientSyncBuffers);
+            ReleaseExtraBuffers(_syncBuffers.Value);
             _clientSyncBuffers.Clear();
             _syncBuffers.Value.Clear();
             _interpBuffers.Clear();
@@ -508,12 +513,16 @@ namespace LiteNetLibManager
             {
                 if (_interpBuffers.ContainsKey(entry.Key))
                     continue;
-                if (entry.Value.Extra != null)
+                TransformData buffered = entry.Value;
+                if (buffered.Extra != null)
                 {
-                    s_ExtraReader.SetSource(entry.Value.Extra);
+                    s_ExtraReader.SetSource(buffered.Extra);
                     onReadInterpBuffer?.Invoke(s_ExtraReader, entry.Key);
                 }
-                _interpBuffers.Add(entry.Key, entry.Value);
+                // Extra is consumed by the callback and may belong to a reused outgoing buffer.
+                buffered.Extra = null;
+                buffered.OwnsExtraBuffer = false;
+                _interpBuffers.Add(entry.Key, buffered);
             }
             // Prune old ticks (keep last N)
             while (_interpBuffers.Count > maxBuffers)
@@ -529,14 +538,54 @@ namespace LiteNetLibManager
                 s_ExtraWriter.Reset();
                 onWriteSyncBuffer?.Invoke(s_ExtraWriter, entry.Tick);
                 if (s_ExtraWriter.Length > 0)
-                    entry.Extra = s_ExtraWriter.CopyData();
+                {
+                    if (s_ExtraWriter.Length > byte.MaxValue)
+                        throw new System.ArgumentOutOfRangeException(nameof(entry.Extra), "Transform extra data cannot exceed 255 bytes.");
+                    byte[] extra = RentExtraBuffer(s_ExtraWriter.Length);
+                    System.Buffer.BlockCopy(s_ExtraWriter.Data, 0, extra, 0, extra.Length);
+                    entry.Extra = extra;
+                    entry.OwnsExtraBuffer = true;
+                }
+                else if (entry.OwnsExtraBuffer && entry.Extra != null)
+                {
+                    // A host can relay its own transform; the two histories need separate buffers.
+                    byte[] extra = RentExtraBuffer(entry.Extra.Length);
+                    System.Buffer.BlockCopy(entry.Extra, 0, extra, 0, extra.Length);
+                    entry.Extra = extra;
+                }
                 buffers.Add(entry.Tick, entry);
             }
             // Prune old ticks (keep last N)
             while (buffers.Count > maxBuffers)
             {
+                ReleaseExtraBuffer(buffers.Values[0]);
                 buffers.RemoveAt(0);
             }
+        }
+
+        private byte[] RentExtraBuffer(int length)
+        {
+            for (int i = _freeExtraBuffers.Count - 1; i >= 0; --i)
+            {
+                if (_freeExtraBuffers[i].Length != length)
+                    continue;
+                byte[] result = _freeExtraBuffers[i];
+                _freeExtraBuffers.RemoveAt(i);
+                return result;
+            }
+            return new byte[length];
+        }
+
+        private void ReleaseExtraBuffers(SortedList<uint, TransformData> buffers)
+        {
+            foreach (var entry in buffers)
+                ReleaseExtraBuffer(entry.Value);
+        }
+
+        private void ReleaseExtraBuffer(TransformData data)
+        {
+            if (data.OwnsExtraBuffer && data.Extra != null && _freeExtraBuffers.Count < 4)
+                _freeExtraBuffers.Add(data.Extra);
         }
     }
 }

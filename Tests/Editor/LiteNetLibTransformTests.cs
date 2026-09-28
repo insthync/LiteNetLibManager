@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using LiteNetLib.Utils;
 using NUnit.Framework;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace LiteNetLibManager.Tests
@@ -9,6 +10,9 @@ namespace LiteNetLibManager.Tests
     public class LiteNetLibTransformTests
     {
         private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+        private delegate void StoreSyncBufferDelegate(LiteNetLibTransform networkTransform,
+            SortedList<uint, LiteNetLibTransform.TransformData> buffers,
+            LiteNetLibTransform.TransformData data, int maxBuffers);
 
         [Test]
         public void SingleReceivedSample_ReachesItsFinalPose()
@@ -119,6 +123,48 @@ namespace LiteNetLibManager.Tests
             var received = new LiteNetLibTransform.TransformData();
             received.Deserialize(new NetDataReader(writer.CopyData()));
             Assert.AreEqual(byte.MaxValue, received.Extra.Length);
+        }
+
+        [Test]
+        public void OutgoingExtraBuffers_AreReusedWithoutSteadyAllocations()
+        {
+            var gameObject = new GameObject("transform extra buffers");
+            try
+            {
+                var networkTransform = gameObject.AddComponent<LiteNetLibTransform>();
+                networkTransform.onWriteSyncBuffer += (writer, tick) => writer.Put((byte)tick);
+                var buffers = new SortedList<uint, LiteNetLibTransform.TransformData>();
+                var method = typeof(LiteNetLibTransform).GetMethod("StoreSyncBuffer", PrivateInstance);
+                var store = (StoreSyncBufferDelegate)System.Delegate.CreateDelegate(
+                    typeof(StoreSyncBufferDelegate), method);
+
+                for (uint tick = 1; tick <= 3; ++tick)
+                    store(networkTransform, buffers, new LiteNetLibTransform.TransformData { Tick = tick }, 3);
+                byte[] recycled = buffers[1].Extra;
+                store(networkTransform, buffers, new LiteNetLibTransform.TransformData { Tick = 4 }, 3);
+                store(networkTransform, buffers, new LiteNetLibTransform.TransformData { Tick = 5 }, 3);
+                Assert.AreSame(recycled, buffers[5].Extra);
+                for (uint tick = 3; tick <= 5; ++tick)
+                    Assert.AreEqual((byte)tick, buffers[tick].Extra[0]);
+
+                for (uint tick = 6; tick < 64; ++tick)
+                    store(networkTransform, buffers, new LiteNetLibTransform.TransformData { Tick = tick }, 3);
+                using (var recorder = ProfilerRecorder.StartNew(
+                    ProfilerCategory.Internal, "GC.Alloc", 1,
+                    ProfilerRecorderOptions.SumAllSamplesInFrame |
+                    ProfilerRecorderOptions.CollectOnlyOnCurrentThread))
+                {
+                    for (uint tick = 64; tick < 320; ++tick)
+                        store(networkTransform, buffers, new LiteNetLibTransform.TransformData { Tick = tick }, 3);
+                    recorder.Stop();
+                    long allocations = recorder.Count == 0 ? 0 : recorder.GetSample(0).Count;
+                    Assert.Zero(allocations, $"Outgoing transform extras allocated {allocations} times");
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
         }
     }
 }
