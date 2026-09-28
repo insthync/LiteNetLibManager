@@ -15,7 +15,10 @@ namespace LiteNetLib.Utils
         public static void PutValue(this NetDataWriter writer, Type type, object value)
         {
             if (type.IsEnum)
+            {
                 type = type.GetEnumUnderlyingType();
+                value = Convert.ChangeType(value, type);
+            }
 
             if (WriterRegistry.TryGetWriter(type, out Action<NetDataWriter, object> writeFunc))
             {

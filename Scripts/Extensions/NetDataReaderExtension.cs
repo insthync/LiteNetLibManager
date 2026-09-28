@@ -14,12 +14,17 @@ namespace LiteNetLib.Utils
 
         public static object GetValue(this NetDataReader reader, Type type)
         {
+            Type enumType = null;
             if (type.IsEnum)
+            {
+                enumType = type;
                 type = type.GetEnumUnderlyingType();
+            }
 
             if (ReaderRegistry.TryGetReader(type, out Func<NetDataReader, object> readerFunc))
             {
-                return readerFunc(reader);
+                object value = readerFunc(reader);
+                return enumType == null ? value : Enum.ToObject(enumType, value);
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

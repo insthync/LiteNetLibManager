@@ -59,6 +59,21 @@ namespace LiteNetLibManager.Tests
         }
 
         [Test]
+        public void PackedUShort_RoundTripsIncludingExtremes()
+        {
+            _writer.PutPackedUShort(ushort.MinValue);
+            _writer.PutPackedUShort(240);
+            _writer.PutPackedUShort(241);
+            _writer.PutPackedUShort(ushort.MaxValue);
+            _reader.SetSource(_writer.CopyData());
+            Assert.AreEqual(ushort.MinValue, _reader.GetPackedUShort());
+            Assert.AreEqual((ushort)240, _reader.GetPackedUShort());
+            Assert.AreEqual((ushort)241, _reader.GetPackedUShort());
+            Assert.AreEqual(ushort.MaxValue, _reader.GetPackedUShort());
+            Assert.IsTrue(_reader.EndOfData);
+        }
+
+        [Test]
         public void PackedInt_RoundTripsIncludingExtremes()
         {
             _writer.Reset();
