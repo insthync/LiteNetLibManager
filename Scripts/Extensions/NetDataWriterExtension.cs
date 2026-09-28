@@ -9,6 +9,13 @@ namespace LiteNetLib.Utils
     {
         public static void PutValue<TType>(this NetDataWriter writer, TType value)
         {
+            if (BuiltInValueCodec<TType>.Writer != null &&
+                WriterRegistry.TryGetWriter(typeof(TType), out Action<NetDataWriter, object> registeredWriter) &&
+                registeredWriter == BuiltInValueCodec<TType>.BoxedWriter)
+            {
+                BuiltInValueCodec<TType>.Writer(writer, value);
+                return;
+            }
             writer.PutValue(typeof(TType), value);
         }
 
@@ -132,9 +139,9 @@ namespace LiteNetLib.Utils
             }
             NetDataCollectionLimits.ValidateWriteCount(list.Count);
             writer.Put(list.Count);
-            foreach (var value in list)
+            for (int i = 0; i < list.Count; ++i)
             {
-                writer.PutValue(value);
+                writer.PutValue(list[i]);
             }
         }
 
@@ -147,10 +154,23 @@ namespace LiteNetLib.Utils
             }
             NetDataCollectionLimits.ValidateWriteCount(dict.Count);
             writer.Put(dict.Count);
-            foreach (var keyValuePair in dict)
+            // Dictionary<TKey, TValue> has a struct enumerator. Enumerating through
+            // IDictionary<TKey, TValue> boxes it once per packet.
+            if (dict is Dictionary<TKey, TValue> concreteDictionary)
             {
-                writer.PutValue(keyValuePair.Key);
-                writer.PutValue(keyValuePair.Value);
+                foreach (var pair in concreteDictionary)
+                {
+                    writer.PutValue(pair.Key);
+                    writer.PutValue(pair.Value);
+                }
+            }
+            else
+            {
+                foreach (var pair in dict)
+                {
+                    writer.PutValue(pair.Key);
+                    writer.PutValue(pair.Value);
+                }
             }
         }
 

@@ -9,6 +9,10 @@ namespace LiteNetLib.Utils
     {
         public static TType GetValue<TType>(this NetDataReader reader)
         {
+            if (BuiltInValueCodec<TType>.Reader != null &&
+                ReaderRegistry.TryGetReader(typeof(TType), out Func<NetDataReader, object> registeredReader) &&
+                registeredReader == BuiltInValueCodec<TType>.BoxedReader)
+                return BuiltInValueCodec<TType>.Reader(reader);
             return (TType)GetValue(reader, typeof(TType));
         }
 
