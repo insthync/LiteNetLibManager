@@ -1174,6 +1174,12 @@ namespace LiteNetLibManager
                 Identity.RPCs.TryGetValue(elementId, out LiteNetLibRPC rpc) ? rpc : null;
         }
 
+        protected void RegisterServerRpc(string methodName, LiteNetLibRPC rpc,
+            bool canCallByEveryone = false)
+        {
+            RegisterRPC(_serverRpcIds, MakeRPCId(methodName), rpc, canCallByEveryone);
+        }
+
         /// <summary>
         /// Call function at target client by connection id
         /// </summary>

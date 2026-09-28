@@ -175,7 +175,7 @@ namespace LiteNetLibManager
             SerializeParameters(writer);
         }
 
-        public void DeserializeParameters(NetDataReader reader)
+        public virtual void DeserializeParameters(NetDataReader reader)
         {
             if (Parameters == null || Parameters.Length == 0)
                 return;
@@ -189,7 +189,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public void SerializeParameters(NetDataWriter writer)
+        public virtual void SerializeParameters(NetDataWriter writer)
         {
             if (Parameters == null || Parameters.Length == 0)
                 return;

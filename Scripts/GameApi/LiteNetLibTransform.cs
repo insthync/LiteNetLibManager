@@ -230,6 +230,24 @@ namespace LiteNetLibManager
             }
         }
 
+        private sealed class TransformSyncRpc : LiteNetLibRPC<SyncTransforms>
+        {
+            private readonly SyncTransforms _received = new SyncTransforms();
+
+            public TransformSyncRpc(RPCDelegate<SyncTransforms> callback) : base(callback) { }
+
+            public override void DeserializeParameters(NetDataReader reader)
+            {
+                _received.DeserializeReusable(reader);
+                Parameters[0] = _received;
+            }
+
+            public override void SerializeParameters(NetDataWriter writer)
+            {
+                ((SyncTransforms)Parameters[0]).Serialize(writer);
+            }
+        }
+
         [Header("Sync Settings")]
         [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
         [FormerlySerializedAs("ownerClientCanSendTransform")]
@@ -279,6 +297,11 @@ namespace LiteNetLibManager
         private void Awake()
         {
             _syncBuffers.onChange += OnSyncBuffersChanged;
+        }
+
+        public override void OnSetup()
+        {
+            RegisterServerRpc(nameof(OwnerSyncTransform), new TransformSyncRpc(OwnerSyncTransform));
         }
 
         private void OnDestroy()
@@ -503,7 +526,6 @@ namespace LiteNetLibManager
             onInterpolate?.Invoke(fromData, toData, interpolationTime);
         }
 
-        [ServerRpc]
         private void OwnerSyncTransform(SyncTransforms data)
         {
             if (!syncByOwnerClient && IsServer)
@@ -585,12 +607,13 @@ namespace LiteNetLibManager
                     entry.Extra = extra;
                     entry.OwnsExtraBuffer = true;
                 }
-                else if (entry.OwnsExtraBuffer && entry.Extra != null)
+                else if (entry.Extra != null)
                 {
-                    // A host can relay its own transform; the two histories need separate buffers.
+                    // Incoming RPC buffers are reused, so outgoing history needs its own copy.
                     byte[] extra = RentExtraBuffer(entry.Extra.Length);
                     System.Buffer.BlockCopy(entry.Extra, 0, extra, 0, extra.Length);
                     entry.Extra = extra;
+                    entry.OwnsExtraBuffer = true;
                 }
                 buffers.Add(entry.Tick, entry);
             }

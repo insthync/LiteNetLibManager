@@ -189,8 +189,8 @@ namespace LiteNetLibManager.Tests
                 networkTransform.Setup(0);
                 networkTransform.OnIdentityInitialize();
 
-                var cachedRpc = typeof(LiteNetLibTransform).GetField("_ownerSyncRpc", PrivateInstance)
-                    .GetValue(networkTransform);
+                var cachedRpc = (LiteNetLibRPC)typeof(LiteNetLibTransform)
+                    .GetField("_ownerSyncRpc", PrivateInstance).GetValue(networkTransform);
                 var parameters = (object[])typeof(LiteNetLibTransform)
                     .GetField("_ownerSyncRpcParameters", PrivateInstance).GetValue(networkTransform);
                 var buffers = typeof(LiteNetLibTransform)
@@ -198,6 +198,61 @@ namespace LiteNetLibManager.Tests
                 Assert.IsNotNull(cachedRpc);
                 Assert.AreEqual(1, parameters.Length);
                 Assert.AreSame(buffers, parameters[0]);
+                Assert.AreEqual(LiteNetLibIdentity.GetHashedId(
+                    $"{typeof(LiteNetLibTransform).FullName}_0_OwnerSyncTransform"), cachedRpc.ElementId);
+
+                var outgoing = (LiteNetLibTransform.SyncTransforms)buffers;
+                outgoing.Add(5, new LiteNetLibTransform.TransformData
+                {
+                    Tick = 5,
+                    SyncData = LiteNetLibTransform.SyncTransformState.PositionX,
+                    Position = new Vector3(5f, 0f, 0f),
+                    Extra = new byte[] { 1, 2, 3 },
+                });
+                var expected = new NetDataWriter();
+                var actual = new NetDataWriter();
+                outgoing.Serialize(expected);
+                cachedRpc.Parameters[0] = outgoing;
+                cachedRpc.SerializeParameters(actual);
+                CollectionAssert.AreEqual(expected.CopyData(), actual.CopyData(),
+                    "The specialized RPC must preserve the transform wire format");
+
+                var reader = new NetDataReader(actual.CopyData());
+                cachedRpc.DeserializeParameters(reader);
+                var received = (LiteNetLibTransform.SyncTransforms)cachedRpc.Parameters[0];
+                Assert.AreNotSame(outgoing, received);
+                Assert.AreEqual(5f, received[5].Position.x);
+                CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, received[5].Extra);
+
+                networkTransform.syncByOwnerClient = true;
+                manager.UseServerTransportForTest(new RecordingGameTransport());
+                manager.EnableServerForTest();
+                typeof(LiteNetLibRPC).GetMethod("HookCallback", PrivateInstance)
+                    .Invoke(cachedRpc, null);
+                var interpolationBuffers = (SortedList<uint, LiteNetLibTransform.TransformData>)
+                    typeof(LiteNetLibTransform).GetField("_interpBuffers", PrivateInstance)
+                        .GetValue(networkTransform);
+                Assert.AreEqual(5f, interpolationBuffers[5].Position.x);
+
+                for (int i = 0; i < 64; ++i)
+                {
+                    reader.SetPosition(0);
+                    cachedRpc.DeserializeParameters(reader);
+                }
+                using (var recorder = ProfilerRecorder.StartNew(
+                    ProfilerCategory.Internal, "GC.Alloc", 1,
+                    ProfilerRecorderOptions.SumAllSamplesInFrame |
+                    ProfilerRecorderOptions.CollectOnlyOnCurrentThread))
+                {
+                    for (int i = 0; i < 256; ++i)
+                    {
+                        reader.SetPosition(0);
+                        cachedRpc.DeserializeParameters(reader);
+                    }
+                    recorder.Stop();
+                    long allocations = recorder.Count == 0 ? 0 : recorder.GetSample(0).Count;
+                    Assert.Zero(allocations, $"Owner transform RPC reads allocated {allocations} times");
+                }
             }
             finally
             {
