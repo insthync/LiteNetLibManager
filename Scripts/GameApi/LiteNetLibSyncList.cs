@@ -25,6 +25,18 @@ namespace LiteNetLibManager
         {
             return IsServer;
         }
+
+        internal override bool CanSyncFromServer(LiteNetLibPlayer player, bool isBaseLine)
+        {
+            return CanSendQueuedToClient(player) && base.CanSyncFromServer(player, isBaseLine);
+        }
+
+        internal override bool CanSendQueuedToClient(LiteNetLibPlayer player)
+        {
+            return !forOwnerOnly || ConnectionId == player.ConnectionId;
+        }
+
+        internal abstract void WriteFullStateAsOperations(NetDataWriter writer);
     }
 
     public class LiteNetLibSyncList<TType> : LiteNetLibSyncList, IList<TType>
@@ -331,6 +343,17 @@ namespace LiteNetLibManager
                 {
                     SerializeOperation(writer, _operationEntries[i]);
                 }
+            }
+        }
+
+        internal override void WriteFullStateAsOperations(NetDataWriter writer)
+        {
+            writer.PutPackedInt(Count + 1);
+            writer.Put((byte)LiteNetLibSyncListOp.Clear);
+            for (int i = 0; i < Count; ++i)
+            {
+                writer.Put((byte)LiteNetLibSyncListOp.Add);
+                SerializeValueForAddOrInsert(i, writer, _list[i]);
             }
         }
 

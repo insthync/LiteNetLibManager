@@ -24,6 +24,49 @@ namespace LiteNetLibManager.Tests
         private const int Iterations = 256;
         private delegate ushort WriteServerState(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> states);
 
+        private static void AssertListStatePacket(RecordingGameTransport.SentPacket sent, int elementId,
+            bool spawn, long ownerId, bool fullResync, params int[] values)
+        {
+            var reader = new NetDataReader(sent.Data);
+            Assert.AreEqual(GameMsgTypes.SyncBaseLine, reader.GetPackedUShort());
+            reader.GetPackedUInt(); // tick
+            Assert.AreEqual(1, reader.GetUShort());
+            Assert.AreEqual(spawn ? GameStateSyncType.Spawn : GameStateSyncType.Data, (GameStateSyncType)reader.GetByte());
+            if (spawn)
+            {
+                Assert.IsFalse(reader.GetBool());
+                reader.GetPackedInt(); // asset ID
+                for (int i = 0; i < 6; ++i)
+                    reader.GetFloat(); // position and rotation
+            }
+            Assert.AreEqual(42u, reader.GetPackedUInt());
+            if (spawn)
+                Assert.AreEqual(ownerId, reader.GetPackedLong());
+            Assert.AreEqual(values.Length > 0 ? 1 : 0, reader.GetPackedInt());
+            if (values.Length > 0)
+            {
+                Assert.AreEqual(elementId, reader.GetPackedInt());
+                if (spawn)
+                {
+                    Assert.AreEqual(values.Length, reader.GetPackedInt());
+                    foreach (int value in values)
+                        Assert.AreEqual(value, reader.GetPackedInt());
+                }
+                else
+                {
+                    Assert.AreEqual(values.Length + (fullResync ? 1 : 0), reader.GetPackedInt());
+                    if (fullResync)
+                        Assert.AreEqual(LiteNetLibSyncListOp.Clear, (LiteNetLibSyncListOp)reader.GetByte());
+                    foreach (int value in values)
+                    {
+                        Assert.AreEqual(LiteNetLibSyncListOp.Add, (LiteNetLibSyncListOp)reader.GetByte());
+                        Assert.AreEqual(value, reader.GetPackedInt());
+                    }
+                }
+            }
+            Assert.IsTrue(reader.EndOfData);
+        }
+
         private static long AllocationCount(Action action)
         {
             for (int i = 0; i < 32; ++i)
@@ -93,6 +136,8 @@ namespace LiteNetLibManager.Tests
             var first = states.PrepareSyncStateData(1, 42);
             first.StateType = GameStateSyncType.Destroy;
             first.DestroyReasons = 7;
+            var list = new SyncListInt();
+            first.MarkFullListSync(list);
             states.ClearChannel(1);
 
             Assert.IsEmpty(states.States[1]);
@@ -101,6 +146,7 @@ namespace LiteNetLibManager.Tests
             Assert.AreEqual(GameStateSyncType.None, recycled.StateType);
             Assert.Zero(recycled.DestroyReasons);
             Assert.IsEmpty(recycled.SyncElements);
+            Assert.IsFalse(recycled.ShouldSyncFullList(list));
 
             states.Clear();
             Assert.IsEmpty(states.States);
@@ -485,6 +531,219 @@ namespace LiteNetLibManager.Tests
                 Assert.IsTrue(behaviour.value.CanSyncFromOwnerClient());
                 behaviour.value.doNotSync = true;
                 Assert.IsFalse(behaviour.value.CanSyncFromOwnerClient());
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void OwnerOnlyList_FiltersSpawnAndUpdateRecipients(bool forOwnerOnly)
+        {
+            var managerObject = new GameObject("owner list manager");
+            var entityObject = new GameObject("owner list entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                var owner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                var observer = new LiteNetLibPlayer(manager, 2) { IsReady = true };
+                manager.AddPlayerForTest(owner);
+                manager.AddPlayerForTest(observer);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerListBehaviour>();
+                behaviour.items.forOwnerOnly = forOwnerOnly;
+                behaviour.items.Add(17);
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+                observer.Subscribe(42);
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                syncMethod.Invoke(manager, new object[] { 1u });
+
+                Assert.AreEqual(2, transport.Packets.Count);
+                foreach (var sent in transport.Packets)
+                {
+                    Assert.AreEqual(DeliveryMethod.ReliableOrdered, sent.DeliveryMethod);
+                    if (forOwnerOnly && sent.ConnectionId == 2)
+                        AssertListStatePacket(sent, behaviour.items.ElementId, true, 1, false);
+                    else
+                        AssertListStatePacket(sent, behaviour.items.ElementId, true, 1, false, 17);
+                }
+
+                transport.Packets.Clear();
+                behaviour.items.Add(29);
+                syncMethod.Invoke(manager, new object[] { 2u });
+                Assert.AreEqual(forOwnerOnly ? 1 : 2, transport.Packets.Count);
+                foreach (var sent in transport.Packets)
+                {
+                    if (forOwnerOnly)
+                        Assert.AreEqual(1, sent.ConnectionId);
+                    AssertListStatePacket(sent, behaviour.items.ElementId, false, 1, false, 29);
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        [Test]
+        public void OwnerOnlyList_FiltersAnUpdateQueuedBeforeFlagChanged()
+        {
+            var managerObject = new GameObject("queued owner list manager");
+            var entityObject = new GameObject("queued owner list entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                var owner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                var observer = new LiteNetLibPlayer(manager, 2) { IsReady = true };
+                manager.AddPlayerForTest(owner);
+                manager.AddPlayerForTest(observer);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerListBehaviour>();
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+                observer.Subscribe(42);
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                syncMethod.Invoke(manager, new object[] { 1u });
+                transport.Packets.Clear();
+
+                behaviour.items.Add(29);
+                owner.SyncingStates.AppendDataSyncState(behaviour.items);
+                observer.SyncingStates.AppendDataSyncState(behaviour.items);
+                behaviour.items.forOwnerOnly = true;
+                syncMethod.Invoke(manager, new object[] { 2u });
+
+                Assert.AreEqual(1, transport.Packets.Count);
+                Assert.AreEqual(1, transport.Packets[0].ConnectionId);
+                AssertListStatePacket(transport.Packets[0], behaviour.items.ElementId, false, 1, false, 29);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void OwnerOnlyList_TransfersCurrentContentsToNewOwner(bool newOwnerSpawnPending)
+        {
+            var managerObject = new GameObject("transfer owner list manager");
+            var entityObject = new GameObject("transfer owner list entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                manager.ActivateServerForTest();
+                var previousOwner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                var newOwner = new LiteNetLibPlayer(manager, 2) { IsReady = true };
+                manager.AddPlayerForTest(previousOwner);
+                manager.AddPlayerForTest(newOwner);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerListBehaviour>();
+                behaviour.items.forOwnerOnly = true;
+                behaviour.items.Add(17);
+                behaviour.items.Add(29);
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+                newOwner.Subscribe(42);
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (!newOwnerSpawnPending)
+                    syncMethod.Invoke(manager, new object[] { 1u });
+                transport.Packets.Clear();
+
+                manager.Assets.SetObjectOwnerImmediately(42, 2);
+                syncMethod.Invoke(manager, new object[] { 2u });
+
+                int newOwnerStatePackets = 0;
+                foreach (var sent in transport.Packets)
+                {
+                    var reader = new NetDataReader(sent.Data);
+                    if (reader.GetPackedUShort() != GameMsgTypes.SyncBaseLine)
+                        continue;
+                    if (sent.ConnectionId == 2)
+                    {
+                        ++newOwnerStatePackets;
+                        AssertListStatePacket(sent, behaviour.items.ElementId, newOwnerSpawnPending, 2,
+                            !newOwnerSpawnPending, 17, 29);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(1, sent.ConnectionId);
+                        AssertListStatePacket(sent, behaviour.items.ElementId, true, 2, false);
+                    }
+                }
+                Assert.AreEqual(1, newOwnerStatePackets);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        [Test]
+        public void OwnerOnlyList_RapidTransfersDiscardIntermediateFullState()
+        {
+            var managerObject = new GameObject("rapid owner list manager");
+            var entityObject = new GameObject("rapid owner list entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                manager.ActivateServerForTest();
+                var firstOwner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                var secondOwner = new LiteNetLibPlayer(manager, 2) { IsReady = true };
+                var thirdOwner = new LiteNetLibPlayer(manager, 3) { IsReady = true };
+                manager.AddPlayerForTest(firstOwner);
+                manager.AddPlayerForTest(secondOwner);
+                manager.AddPlayerForTest(thirdOwner);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerListBehaviour>();
+                behaviour.items.forOwnerOnly = true;
+                behaviour.items.Add(17);
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+                secondOwner.Subscribe(42);
+                thirdOwner.Subscribe(42);
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                syncMethod.Invoke(manager, new object[] { 1u });
+                transport.Packets.Clear();
+
+                firstOwner.SyncingStates.AppendDataSyncState(behaviour.items);
+                manager.Assets.SetObjectOwnerImmediately(42, 2);
+                manager.Assets.SetObjectOwnerImmediately(42, 3);
+                syncMethod.Invoke(manager, new object[] { 2u });
+
+                int statePackets = 0;
+                foreach (var sent in transport.Packets)
+                {
+                    var reader = new NetDataReader(sent.Data);
+                    if (reader.GetPackedUShort() != GameMsgTypes.SyncBaseLine)
+                        continue;
+                    ++statePackets;
+                    Assert.AreEqual(3, sent.ConnectionId);
+                    AssertListStatePacket(sent, behaviour.items.ElementId, false, 3, true, 17);
+                }
+                Assert.AreEqual(1, statePackets);
             }
             finally
             {
@@ -964,6 +1223,11 @@ namespace LiteNetLibManager.Tests
     public class OwnerSyncBehaviour : LiteNetLibBehaviour
     {
         public SyncFieldInt value = new SyncFieldInt();
+    }
+
+    public class OwnerListBehaviour : LiteNetLibBehaviour
+    {
+        public SyncListInt items = new SyncListInt();
     }
 
     public class RecordingGameTransport : ITransport

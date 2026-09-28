@@ -173,6 +173,26 @@ namespace LiteNetLibManager.Tests
             CollectionAssert.AreEqual(new[] { 1, 2, 3 }, target.Snapshot());
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void FullStateAsOperations_ReplacesPreviousOwnerContents(bool emptySource)
+        {
+            if (!emptySource)
+            {
+                _list.AddOp(17);
+                _list.AddOp(29);
+            }
+            var target = new TestIntSyncList();
+            target.AddOp(99);
+            target.Synced(0, false);
+
+            var writer = new NetDataWriter();
+            _list.WriteFullStateAsOperations(writer);
+            target.ReadSyncData(1, false, new NetDataReader(writer.CopyData()));
+
+            CollectionAssert.AreEqual(emptySource ? new int[0] : new[] { 17, 29 }, target.Snapshot());
+        }
+
         [Test]
         public void DeltaSync_RoundTripsOperations()
         {

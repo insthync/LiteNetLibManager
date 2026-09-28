@@ -75,6 +75,7 @@ namespace LiteNetLibManager
             syncData.StateType = GameStateSyncType.Spawn;
             syncData.DestroyReasons = 0;
             syncData.SyncElements.Clear();
+            syncData.ResetFullListSync();
         }
 
         public void AppendDestroySyncState(LiteNetLibIdentity identity, byte reasons)
@@ -86,6 +87,7 @@ namespace LiteNetLibManager
             syncData.StateType = GameStateSyncType.Destroy;
             syncData.DestroyReasons = reasons;
             syncData.SyncElements.Clear();
+            syncData.ResetFullListSync();
         }
 
         public void AppendDataSyncState(LiteNetLibSyncElement syncElement)
@@ -107,6 +109,17 @@ namespace LiteNetLibManager
             syncData.StateType = GameStateSyncType.Data;
             syncData.DestroyReasons = 0;
             syncData.SyncElements.Add(syncElement);
+        }
+
+        internal void AppendFullListSyncState(LiteNetLibSyncList syncList)
+        {
+            AppendDataSyncState(syncList);
+            if (_states.TryGetValue(syncList.SyncChannelId, out var channelStates) &&
+                channelStates.TryGetValue(syncList.ObjectId, out var syncData) &&
+                syncData.StateType == GameStateSyncType.Data && syncData.SyncElements.Contains(syncList))
+            {
+                syncData.MarkFullListSync(syncList);
+            }
         }
 
         public void RemoveSyncState(LiteNetLibIdentity identity)

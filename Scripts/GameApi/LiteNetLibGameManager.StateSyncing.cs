@@ -80,11 +80,14 @@ namespace LiteNetLibManager
             ReadGameStateFromClient(messageHandler.Reader);
         }
 
-        private void WriteSyncElement(NetDataWriter writer, LiteNetLibSyncElement syncElement, uint tick, bool initial)
+        private void WriteSyncElement(NetDataWriter writer, LiteNetLibSyncElement syncElement, uint tick, bool initial, bool fullListSync = false)
         {
             // Write element info
             writer.PutPackedInt(syncElement.ElementId);
-            syncElement.WriteSyncData(tick, initial, writer);
+            if (fullListSync && syncElement is LiteNetLibSyncList syncList)
+                syncList.WriteFullStateAsOperations(writer);
+            else
+                syncElement.WriteSyncData(tick, initial, writer);
         }
 
         private bool ReadSyncElement(NetDataReader reader, LiteNetLibIdentity identity, uint tick, bool initial)
@@ -175,7 +178,8 @@ namespace LiteNetLibManager
                             writer.PutPackedUInt(objectId);
                             writer.PutPackedInt(_sendableServerSyncElements.Count);
                             foreach (LiteNetLibSyncElement syncElement in _sendableServerSyncElements)
-                                WriteSyncElement(writer, syncElement, tick, false);
+                                WriteSyncElement(writer, syncElement, tick, false,
+                                    syncElement is LiteNetLibSyncList syncList && syncData.ShouldSyncFullList(syncList));
                             ++stateCount;
                         }
                         break;
@@ -756,23 +760,33 @@ namespace LiteNetLibManager
         {
             foreach (LiteNetLibSyncElement element in identity.SyncElements.Values)
             {
-                if (!(element is LiteNetLibSyncField field) || field.syncMode != LiteNetLibSyncFieldMode.ServerToOwnerClient)
+                LiteNetLibSyncField field = element as LiteNetLibSyncField;
+                LiteNetLibSyncList syncList = element as LiteNetLibSyncList;
+                if ((field == null || field.syncMode != LiteNetLibSyncFieldMode.ServerToOwnerClient) &&
+                    (syncList == null || !syncList.forOwnerOnly))
                     continue;
 
                 if (previousOwner != null)
                 {
-                    if (previousOwner.SyncingStates.States.TryGetValue(field.SyncChannelId, out Dictionary<uint, GameStateSyncData> channelStates) &&
+                    if (previousOwner.SyncingStates.States.TryGetValue(element.SyncChannelId, out Dictionary<uint, GameStateSyncData> channelStates) &&
                         channelStates.TryGetValue(identity.ObjectId, out GameStateSyncData baselineState) &&
                         baselineState.StateType == GameStateSyncType.Data)
                     {
-                        baselineState.SyncElements.Remove(field);
+                        baselineState.SyncElements.Remove(element);
+                        if (syncList != null)
+                            baselineState.RemoveFullListSync(syncList);
                     }
                     if (previousOwner.SyncingDeltaStates.States.TryGetValue(identity.ObjectId, out GameStateSyncData deltaState))
-                        deltaState.SyncElements.Remove(field);
+                        deltaState.SyncElements.Remove(element);
                 }
 
-                if (newOwner != null && field.CanSendQueuedToClient(newOwner) && newOwner.IsReady && identity.IsSpawned && identity.HasSubscriber(newOwner.ConnectionId))
-                    newOwner.SyncingStates.AppendDataSyncState(field);
+                if (newOwner != null && element.CanSendQueuedToClient(newOwner) && newOwner.IsReady && identity.IsSpawned && identity.HasSubscriber(newOwner.ConnectionId))
+                {
+                    if (syncList != null)
+                        newOwner.SyncingStates.AppendFullListSyncState(syncList);
+                    else
+                        newOwner.SyncingStates.AppendDataSyncState(field);
+                }
             }
         }
 
