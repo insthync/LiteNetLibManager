@@ -28,36 +28,47 @@ namespace LiteNetLibManager
 
         public abstract Type GetFieldType();
 
-        protected bool CanSync(bool isServer, bool isOwnerClient)
+        protected bool CanSync()
         {
             switch (syncMode)
             {
                 case LiteNetLibSyncFieldMode.ServerToClients:
-                    return isServer;
+                    return IsServer;
                 case LiteNetLibSyncFieldMode.ServerToOwnerClient:
-                    return isServer;
+                    return IsServer;
                 case LiteNetLibSyncFieldMode.ClientMulticast:
-                    return isOwnerClient || isServer;
+                    return IsOwnerClient || IsServer;
             }
             return false;
-        }
-
-        protected bool CanSync()
-        {
-            return CanSync(IsServer, IsOwnerClient);
         }
 
         internal override sealed bool CanSyncFromServer(LiteNetLibPlayer player, bool isBaseLine)
         {
             bool isOwner = ConnectionId == player.ConnectionId;
-            if (syncMode == LiteNetLibSyncFieldMode.ServerToOwnerClient && !isOwner)
+            bool canSync = false;
+            switch (syncMode)
+            {
+                case LiteNetLibSyncFieldMode.ServerToClients:
+                    canSync = IsServer;
+                    break;
+                case LiteNetLibSyncFieldMode.ServerToOwnerClient:
+                    canSync = isOwner && IsServer;
+                    break;
+                case LiteNetLibSyncFieldMode.ClientMulticast:
+                    canSync = isOwner || IsServer;
+                    break;
+            }
+            if (!canSync)
+            {
+                // Can not sync to the client
                 return false;
+            }
             if (_latestChangeSyncedFromOwner && isOwner)
             {
                 // If value was synced from owner client, then don't sync back to the client
                 return false;
             }
-            return (isBaseLine || _currentRedundancy > 0) && CanSync(IsServer, isOwner) && base.CanSyncFromServer(player, isBaseLine);
+            return (isBaseLine || _currentRedundancy > 0) && base.CanSyncFromServer(player, isBaseLine);
         }
 
         internal override sealed bool CanSyncFromOwnerClient()
