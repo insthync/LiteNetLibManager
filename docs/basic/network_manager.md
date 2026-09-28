@@ -1,73 +1,30 @@
-# LiteNetLibGameManager
+# Game manager
 
-`LiteNetLibGameManager` is the core controlling component of a multiplayer game. To get started, create an empty `GameObject` in your starting Scene, and add the `LiteNetLibGameManager` component. The newly added `LiteNetLibGameManager` component looks like this:
+Add `LiteNetLibGameManager` to a GameObject in the starting scene. Its required `LiteNetLibAssets` component stores the scene and prefab references. Register the same network prefabs on server and clients so incoming spawns resolve to the same asset.
 
-![Added Manager](../images/added_manager.png)
+## Configure a session
 
-`LiteNetLibGameManager` configs:
-- `Connect Key`, is key for validate connections. When connect, client have to send the key to server to validate, if it's valid client will able to connect to server
-- `Network Address`, address for client to connect to server
-- `Network Port`, port for server or host to serve and for client to connect to server
-- `Max Connections`, maximum amount of connections / players allowed
-- `Transport Factory`, reference to transport factory component which use for create transport layer networking system
-- `Update Server Time Duration`, duration to update current server time to clients
-- `Do Not Enter Game On Connect`, if this is `TRUE` it will not enter game (not change scene to the server's scene) when connected to server, so developer have to call `LiteNetLibGameManager.SendClientEnterGame()` function to enter game, you can know client connection status from `LiteNetLibGameManager.IsClientConnected`, `LiteNetLibGameManager.OnClientConnected()` and `LiteNetLibGameManager.OnClientDisconnected()`
-- `Do Not Destroy On Scene Changes`, if this is `TRUE` the `GameObject` which the manager added to will not be destroyed when changed to offline scene
+On the manager, set `networkAddress` and `networkPort` for the connection, `maxConnections` for server capacity, and `updateFps` for the logic update rate. Set `TransportFactory` to a `BaseTransportFactory` component if you need a specific transport. `useWebSocket` chooses the included WebSocket transport when no compatible custom factory is selected. The LiteNetLib transport's connection key belongs to its factory, not to the manager. See [transports](../advanced/custom_transport_layer.md).
 
-You can add `LiteNetLibManagerUI` as viewed in the `Game` view which display simple buttons for connections
+Game settings include `packetVersion` (checked by the default enter-game handler), `pingDuration`, and `baseLineSyncInterval`. The following switches change the automatic flow:
 
-![Added Manager UI](../images/added_manager_ui.png)
+- `doNotEnterGameOnConnect`: call `SendClientEnterGame()` yourself after connecting.
+- `doNotReadyOnSceneLoaded`: call `SendClientReady()` yourself after loading the online scene.
+- `doNotDestroyOnSceneChanges`: keep the manager GameObject when returning to the offline scene; it already survives online scene loading.
+- `loadOfflineSceneWhenClientStopped`: control whether stopping a client loads the offline scene.
 
-![In-Game Manager UI](../images/ingame_manager_ui.png)
+On `LiteNetLibAssets`, set `offlineScene` and `onlineScene` (or their addressable equivalents). Set `playerPrefab` for automatic player spawning and add runtime network prefabs to `spawnablePrefabs`. `playerSpawnRandomly` selects random rather than ordered spawn points.
 
-*The `LiteNetLibManagerUI`, as viewed in the `Game` view*
+## Start and stop
 
-When you're writing your scripts for connections, you'll have to call following functions:
-- `LiteNetLibGameManager.StartServer()` to start game as server only
-- `LiteNetLibGameManager.StartClient()` to start game as client only
-- `LiteNetLibGameManager.StartHost()` to start game as host which start both server and client
-- `LiteNetLibGameManager.StopServer()`, to stop when running as server
-- `LiteNetLibGameManager.StopClient()`, to stop when running as client
-- `LiteNetLibGameManager.StopHost()`, to stop when running as host. It will stop both server and client, so you can use this to stop when running as server or client too
+Call `StartServer()` for a dedicated server, `StartClient()` or `StartClient(address, port)` for a client, and `StartHost()` for a server and client in one process. These start methods return `bool`. Call `StopServer()`, `StopClient()`, or `StopHost()` to stop them.
 
-There are following event functions that overrideable:
-- `LiteNetLibGameManager.OnPeerNetworkError()`, Called on the server when a network error occurs for a client connection.
-- `LiteNetLibGameManager.OnPeerConnected()`, Called on the server when a new client connects.
-- `LiteNetLibGameManager.OnPeerDisconnected()`, Called on the server when a client disconnects.
-- `LiteNetLibGameManager.OnClientNetworkError()`, Called on clients when a network error occurs.
-- `LiteNetLibGameManager.OnClientConnected()`, Called on the client when connected to a server.
-- `LiteNetLibGameManager.OnClientDisconnected()`, Called on clients when disconnected from a server.
-- `LiteNetLibGameManager.OnStartClient()`, This is a hook that is invoked when the client is started.
-- `LiteNetLibGameManager.OnStartHost()`, This hook is invoked when a host is started.
-- `LiteNetLibGameManager.OnStartServer()`, This hook is invoked when a server is started.
-- `LiteNetLibGameManager.OnStopClient()`, This hook is called when a client is stopped.
-- `LiteNetLibGameManager.OnStopHost()`, This hook is called when a host is stopped.
-- `LiteNetLibGameManager.OnStopServer()`, This hook is called when a server is stopped.
+Override manager callbacks as needed: `OnPeerConnected(long connectionId)`, `OnPeerDisconnected(long connectionId, DisconnectReason reason, SocketError socketError)`, `OnClientConnected()`, `OnClientDisconnected(DisconnectReason reason, SocketError socketError, byte[] data)`, `OnStartServer()`, `OnStartClient(LiteNetLibClient client)`, and their matching stop callbacks. The manager also exposes server and client network error callbacks. Preserve base behavior when overriding a callback that has game-manager logic.
 
-## Scene Management
+## Scenes and players
 
-When you add `LiteNetLibGameManager` to `GameObject` it will add `LiteNetLibAssets` to the same `GameObject` too, you can use this component to manage scenes and spawning objects
+The enter-game response carries the server scene. After loading it, the client sends a ready request unless automatic ready is disabled. The server marks the player ready and calls `SpawnPlayer`, which uses the configured player prefab when available. The [connection workflow](../how_does_it_work/part002.md) describes the sequence.
 
-![In-Game Manager UI](../images/added_assets.png)
+To send custom ready data, override `SerializeClientReadyData(NetDataWriter writer)` on the client and `DeserializeClientReadyData(uint requestId, long connectionId, NetDataReader reader, LiteNetLibIdentity playerIdentity)` on the server. The latter returns `UniTask<bool>`. For data sent before scene loading, use `SerializeEnterGameData` and `DeserializeEnterGameData` instead. Keep the client and server serializers in the same order.
 
-You can set following config for scene management:
-- `Offline Scene`, is scene which will changed to when client disconnected from server
-- `Online Scene`, is scene which will changed to when client connected to server
-
-You can request all clients to change scene to the same scene as server by function `LiteNetLibGameManager.ServerSceneChange()` while the game running as server or host
-
-When change scene it uses `SceneManager.LoadSceneAsync()` function and there are following events that you can use to show scene load states:
-- `On Load Scene Start(sceneName, isOnlineScene, progress)`, you can use this event to show loading screen
-- `On Load Scene Progress(sceneName, isOnlineScene, progress)`, you can use this event to update loading progress
-- `On Load Scene Finish(sceneName, isOnlineScene, progress)`, you can use this event to hide loading screen
-
-## Spawn Management
-
-In `LiteNetLibAssets` you can set following configs for spawn management:
-- `Player Spawn Randomly`, if this is `TRUE` players will be spawned to random `LiteNetLibSpawnPoint`, if this is `FALSE` it will be spawned by order of `LiteNetLibSpawnPoint`
-- `Player Prefab`, this is reference to `LiteNetLibIdentity` which will be spawned when player connect and enter game as player character, you should set the character here
-- `Spawnable Prefabs`, this is reference to an `LiteNetLibIdentity` that will be spawned while gameplay at server side, you can set an player character, non player character or bullets here
-
-When player connected to the server and changed scene to server scene it will send client ready message to server to spawn player. If you want to changes how to spawn player, you may make `Player Prfab` empty then override `LiteNetLibGameManager.DeserializeClientReadyExtra()` function to spawn player, if you want to write more data which required to spawn player you can override `LiteNetLibGameManager.SerializeClientReadyExtra()` function then data you write it will be read in `LiteNetLibGameManager.DeserializeClientReadyExtra()` function
-
-You can spawn objects that set in `Spawnable Prefabs` by function `LiteNetLibAssets.NetworkSpawn()` and destroy by function `LiteNetLibAssets.NetworkDestroy()`
+Call `ServerSceneChange(ServerSceneInfo serverSceneInfo)` on the server to load a new scene and notify clients. `LiteNetLibAssets` exposes scene load start, progress, finish, and failure events. To create a registered object during play, use `LiteNetLibAssets.NetworkSpawn(...)` on the server; use `NetworkDestroy(..., byte reasons)` to remove it. See the [object lifecycle](../how_does_it_work/part003.md) and [state sync guide](../testing/state_sync_layout_results_2026-09-28.md).

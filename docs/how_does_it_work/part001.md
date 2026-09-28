@@ -1,62 +1,53 @@
-# How does it work - Part 1
+# How it works, part 1: transport and messages
 
-In this part, I will explains about `LiteNetLibManager` it won't include `LiteNetLibGameManager` yet.
+`LiteNetLibManager` starts and stops the server, client, or host, polls the selected `ITransport`, and routes messages by numeric type. It does not spawn game objects or synchronize state by itself. `LiteNetLibGameManager` adds those features in [part 2](part002.md).
 
-About `LiteNetLibManager` it's just a manager which manage connections, send and receive networking messages. It's not doing something special and won't help you to make multiplayer game easier yet.
+Register handlers in `RegisterMessages()`, which runs while the manager initializes, before normal connection traffic. A handler receives `MessageHandlerData`; `Reader` reads the payload and `ConnectionId` identifies the sending connection on the server.
 
-So whats you can do with `LiteNetLibManager` are:
+```csharp
+using LiteNetLib;
+using LiteNetLibManager;
+using UnityEngine;
 
-* Start server and wait an clients to connect.
-* Start client and connect to server.
-* Send messages from server to clients and clients to server.
-* Register networking message for server and clients, Registering with ID and function which will be called when receive message with the ID.
-
-`LiteNetLibManager` itself does not registered with any networking message, developers can register networking messages after start server or start client.
-
-```
-// client message register example
-StartClient();
-if (IsClientConnected)
+public sealed class ExampleManager : global::LiteNetLibManager.LiteNetLibManager
 {
-    RegisterClientMessage(0, ReceiveFromServer_0);
-}
-void ReceiveFromServer_0(LiteNetLibMessageHandler messageHandler)
-{
-    Debug.Log("Receive: " + messageHandler.reader.GetInt() + " from server");
-}
+    private const ushort ExampleMessage = 11;
 
-// Server message register example
-StartServer();
-if (IsServer)
-{
-    RegisterServerMessage(0, ReceiveFromClient_0);
-}
-void ReceiveFromClient_0(LiteNetLibMessageHandler messageHandler)
-{
-    Debug.Log("Receive: " + messageHandler.reader.GetInt() + " from " + messageHandler.connectionId);
-}
-```
+    protected override void RegisterMessages()
+    {
+        base.RegisterMessages();
+        RegisterServerMessage(ExampleMessage, ReceiveFromClient);
+        RegisterClientMessage(ExampleMessage, ReceiveFromServer);
+    }
 
-For classes which derived from `LiteNetLibManager`, they should register messages in override functions:`RegisterClientMessages()`, `RegisterServerMessages()`.
+    private void ReceiveFromClient(MessageHandlerData message)
+    {
+        int value = message.Reader.GetInt();
+        Debug.Log("From " + message.ConnectionId + ": " + value);
+    }
 
-```
-protected override void RegisterClientMessages()
-{
-    RegisterClientMessage(0, ReceiveFromServer_0);
-}
+    private void ReceiveFromServer(MessageHandlerData message)
+    {
+        int value = message.Reader.GetInt();
+        Debug.Log("From server: " + value);
+    }
 
-protected override void RegisterServerMessages()
-{
-    RegisterServerMessage(0, ReceiveFromClient_0);
+    public void SendValueToServer(int value)
+    {
+        if (IsClientConnected)
+            ClientSendPacket(0, DeliveryMethod.ReliableOrdered,
+                ExampleMessage, writer => writer.Put(value));
+    }
+
+    public void SendValueToClient(long connectionId, int value)
+    {
+        if (IsServer)
+            ServerSendPacket(connectionId, 0, DeliveryMethod.ReliableOrdered,
+                ExampleMessage, writer => writer.Put(value));
+    }
 }
 ```
 
-* * *
+The example uses type 11. When extending `LiteNetLibGameManager`, call `base.RegisterMessages()` and use an ID above `GameMsgTypes.Highest` (currently 10) to avoid its built-in messages. Use the same type and payload order on both peers. `RegisterServerMessage` handles client-to-server packets; `RegisterClientMessage` handles server-to-client packets.
 
-## Server workflow
-
-When server started it will waiting for connecting clients and also waiting for incoming messages from clients. When any client connected, server will generate connection ID (By Transport class). So server can know messages sent from which client and can send messages to target client.
-
-## Client workflow
-
-When client started and connected to server, it will waiting for incoming messages from server. That is it.
+The transport assigns a connection ID when a client connects. The server uses it to address a particular client. Clients wait for the connection before sending packets. For game sessions, enter-game and ready requests, see [part 2](part002.md).

@@ -1,61 +1,29 @@
-# How does it work - Part 3
+# How it works, part 3: object lifecycle
 
-In this part I will explains how networking objects will be spawned, will be destroyed, will subscribing and unsubscribing by players. Only server can manage an networking objects then it will sync networking objects to clients.
+A network object has a `LiteNetLibIdentity` and optional `LiteNetLibBehaviour` components. It can be a scene object with a matching scene ID on each peer or a runtime prefab registered in `LiteNetLibAssets.spawnablePrefabs` on both peers. The server creates and removes authoritative objects; clients resolve incoming scene or asset IDs and apply state.
 
-## About networking object
+## Spawn and subscription
 
-Networking object is game object which attached `LiteNetLibIdentity`. Networking object itself won't have any syncing data and functionality. Developer you to create behaviour class which derived from `LiteNetLibBehaviour` to add Sync Field, Sync List and Net Function.
+Call `LiteNetLibAssets.NetworkSpawn(...)` on the server for a runtime object. The identity receives a runtime object ID and owner connection ID. The server's `BaseInterestManager` decides which ready players should subscribe. The included `DefaultInterestManager` updates subscriptions by visibility and distance; it also keeps an owned player's objects subscribed.
 
-Networking object which created in the editor will be **Scene networking object** which will be spawned immediately when server started and loaded scene. its object ID will be defined while editing the scene.
+A new subscription queues `GameStateSyncType.Spawn` for that player. In the next reliable ordered `GameMsgTypes.SyncBaseLine` packet, the spawn contains the scene or asset ID, transform, object ID, owner ID, and initial sync elements allowed for that player. The client resolves or activates the matching object, applies its initial state, and invokes its lifecycle callbacks. `ServerToOwnerClient` fields are included only for the subscribed owner.
 
-To make networking object be able to creating at runtime, developer have to make it as prefab and add to `LiteNetLibAssets(The component which attached to the same game object with LiteNetLibGameManager)` → `spawnablePrefabs` field. Or register prefab with `RegisterPrefab()` function after server or client started and loaded scene.
+```text
+Server spawns object -> interest manager adds subscription
+  -> per-player Spawn state -> reliable SyncBaseLine
+  -> client resolves identity and reads allowed initial elements
+```
 
-## About networking object subscribing
+Scene objects use the same spawn state type as runtime prefabs; the record says whether it names a scene object or an asset. The [state sync guide](../testing/state_sync_layout_results_2026-09-28.md) explains element IDs and compatibility when layouts differ.
 
-An networking objects can be subscribed or unsubscribed by player (`LiteNetLibPlayer`) to sync data to subscribed players. Subcribing will be managed by server, its conditions to subscribe/unsubscribe can be defined to behaviour classes (Classes which derived from `LiteNetLibBehaviour`) by override function `ShouldAddSubscriber()` function which will return `true` if object should add player as subscriber and `OnRebuildSubscribers()` function which will add players that should be subscriber to `subscribers` hashset and return `true` if there is any player that can subscribing networking object.
+## Updates and removal
 
-When player subscribing the object, server will send spawn message to the client and when player unsubscribing the object, server will send destroy message to the client.
+The server queues changed fields and list operations for subscribed players. Field values can travel in `SyncDelta` or `SyncBaseLine`; list operations use the reliable baseline. When an object is destroyed or a player unsubscribes, the server queues `GameStateSyncType.Destroy` in the baseline with an object ID and reason. `DestroyObjectReasons.RequestedToDestroy` means the object was removed; `RemovedFromSubscribing` means that player should stop seeing it. The client removes or deactivates its matching object.
 
-## Spawn networking object workflow
+```text
+Field/list change -> eligible subscribed players -> Data state
+Destroy/unsubscribe -> affected players -> Destroy state
+Client receives -> find object by ID -> apply change or remove it
+```
 
-When `NetworkSpawn()` function called at server, it will prepare object data such as object ID, connection ID, type of object (is scene object or not).
-
-Then when the object was added to player(`LiteNetLibPlayer`)'s subscribing list, server will send `ServerSpawnObject (Id = 5)` to client with data including with Sync Field, Sync List data.
-
-After that when client receive the message, client will spawn the networking object and set included data.
-
-![](../images/seq_spawn-and-add-subscriber-to-networking-object.png)
-
-## Spawn scene networking object workflow
-
-When client or server started and loaded scene it will deactivate scene networking objects. Then server spawn scene networking objects and activate them later. 
-
-Then when the object was added to player(`LiteNetLibPlayer`)'s subscribing list, server will send `ServerSpawnSceneObject (Id = 4)` to client with data including with Sync Field, Sync List data.
-
-After that when client receive the message, client will activate the scene networking object and set included data.
-
-![](../images/seq_spawn-scene-networking-object.png)
-
-## Destroy networking object workflow
-
-When `NetworkDestroy()` function called at server, then the object will be destroyed, and it will send `ServerDestroyObject (Id = 6)` message with object ID and reason: (`RequestedToDestroy (Id = 0`) to client.
-
-Then when client receive the message, client will destroy the object from the scene. Except that the object is scene object, it will be deactivated.
-
-![](../images/seq_destroy-networking-object.png)
-
-## Add object to player subscribing list workflow
-
-When the networking object was added to player subscribing list, server will send spawn message with including data to client.
-
-Then when client receive the message, client will spawn the object and set included data.
-
-![](../images/seq_subscribe-networking-object.png)
-
-## Remove object from player subscribing list work flow
-
-When the networking object was removed from player subscribing list, server will send `ServerDestroyObject (Id = 6)` with object ID and reason: (`RemovedFromSubscribing (Id = 1`) to client.
-
-Then when client receive the message, client will destroy the object from the scene. Except that the object is scene object, it will be deactivated.
-
-![](../images/seq_unsubscribe-networking-object.png)
+Use `LiteNetLibAssets.NetworkDestroy(..., byte reasons)` for an explicit server removal. To customize who sees an object, implement a `BaseInterestManager` or adjust identity visibility settings; old behaviour-level subscription hooks no longer exist. See [identity and behaviour](../basic/network_object.md) for current hooks.

@@ -1,29 +1,19 @@
-# Custom Transport Layer
+# Transport layers
 
-This library will use `LiteNetLib` for transport layer by default, If you want to change it to other, you have to write your own transport based on `LiteNetLibManager.ITransport` interface with its factory based on `LiteNetLibManager.BaseTransportFactory` to make it easily to switch manager's transport layer
+`LiteNetLibManager` builds an `ITransport` through a `BaseTransportFactory`. By default it uses `LiteNetLibTransportFactory`. Add another factory component and assign it to the manager's `TransportFactory` to select it.
 
-### How To Change Transport Layer
+The included choices are:
 
-Add factory component to any game object or the same game object which network manager attached, then drag added factory component to network manager -> `Transport Factory`.
+| Factory | Client and server behavior |
+| --- | --- |
+| `LiteNetLibTransportFactory` | LiteNetLib transport; configure its `connectKey` for connection validation |
+| `WebSocketTransportFactory` | WebSocket transport, with optional secure mode and certificate settings |
+| `MixTransportFactory` | LiteNetLib and WebSocket listeners on different server ports |
 
-![Change Transport](../images/change_transport.png)
+If `useWebSocket` is enabled without a compatible factory, the manager creates a `WebSocketTransportFactory`. WebGL clients require a WebSocket compatible factory; the manager selects one when needed.
 
-### ENet Transport Layer
+## Mix transport
 
-You can get ENet Transport from (https://github.com/insthync/LiteNetLibManager_ENET)
+`MixTransportFactory` starts LiteNetLib at `networkPort` and WebSocket at `networkPort + webSocketPortOffset`. Its default offset is 100. A mix client uses LiteNetLib unless `ShouldUseWebSocket` is true or the platform is WebGL. Set the same base port and offset on server and client. The mix server allocates half of `maxConnections` to each listener, so choose a capacity that fits both.
 
-### KCP Transport Layer
-
-You can get KCP Transport from (https://github.com/insthync/LiteNetLibManager_KCP)
-
-### WebSocket Transport Layer
-
-This transport layer is included with the project, developer can set `Use Web Socket` to `TRUE` to use `WebSocket` as transport layer, WebGL client will be forced to use `WebSocket`.
-
-### Mix Transport Layer
-
-This transport layer is included with the project, it's mix of `LiteNetLib` and `WebSocket`. it will run `LiteNetLib` and `WebSocket` at same as the server but difference port, WebSocket port offset can be set at its factory (`MixTransportFactory` component). it will use `WebSocket` when game running for `WebGL` client, for other platforms it will use `LiteNetLib` as transport layer.
-
-![Mix Transport Configs](../images/mix_transport_configs.png)
-
-From the image above, `Web Socket Port Offset` is `100`, `Network Port` is `7770` when server running it will run `LiteNetLib` server at port `7770` and run `WebSocket` server at port `7870` at same time.
+For a different transport, implement `ITransport` and create a `BaseTransportFactory` whose `Build()` returns your implementation. Assign the factory before the manager initializes. Match client and server packet framing, channels, and delivery behavior. See [part 1](../how_does_it_work/part001.md) for message routing.

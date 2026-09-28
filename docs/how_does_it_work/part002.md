@@ -1,51 +1,33 @@
-# How does it work - Part 2
+# How it works, part 2: connection and ready flow
 
-In this part I will explains about how `LiteNetLibGameManager` server and client connect together, whats server do when client connect and whats client do when receives response from server.
+`LiteNetLibGameManager` extends `LiteNetLibManager` with requests, scene loading, player readiness, objects, RPCs, and state synchronization. The game request IDs (`GameReqTypes`) are carried inside the request/response message types (`GameMsgTypes.Request` and `Response`); they are not separate top-level packet IDs.
 
-`LiteNetLibGameManager` is a class which derived from `LiteNetLibManager` extends functionality to manage networking object spawn and destroy, subscribe and unsubscribe spawned networking object for specific client, sync scene to be the same with server, sync networking object data (SyncField, SyncList) to be the same with server and call networking function from client to server and from server to clients.
+## Join sequence
 
-## Connection workflow
+1. The server accepts a transport connection, assigns a connection ID, and creates a `LiteNetLibPlayer`.
+2. The client's `OnClientConnected()` sends `SendClientEnterGame()` unless `doNotEnterGameOnConnect` is true. The request contains the packet version and any bytes written by `SerializeEnterGameData`.
+3. The server's `DeserializeEnterGameData` checks the request. The default implementation compares packet versions. On success, the enter-game response contains the connection ID and current `ServerSceneInfo`.
+4. The client stores `ClientConnectionId` and loads or initializes the server scene. On later server scene changes, `GameMsgTypes.ServerSceneChange` carries the new scene information.
+5. After the online scene is ready, the client sends `SendClientReady()` unless `doNotReadyOnSceneLoaded` is true. The server calls `SetPlayerReady`, which marks the player ready, spawns the player prefab when configured, and invokes `DeserializeClientReadyData`.
+6. The interest manager subscribes the ready player to eligible objects. Spawn state is queued for delivery to that client.
 
-When client connect to server, the server will generate connection ID and create `LiteNetLibPlayer` object for the client to manage subscribing networking objects later. And client also send `EnterGame(Id = 0)`  message to server.
-
-Then after server recieve `EnterGame(Id = 0)`  message from client, server will send EnterGame (Id = 0) message back with generated connection ID. And also send `ServerSceneChange(Id = 13)`  message with `ServerSceneName` to tell client which scene it must load.
-
-Then the client will receive `EnterGame(Id = 0)`  message with connection ID, it will set connection ID to `ClientConnectionId` which will be used later with networking objects. And will receive `ServerSceneChange(Id = 13)`  message with scene name then client will load that scene. So client's scene will be the same scene with server.
-
-After the scene loaded, client will send `ClientReady(Id = 1)` message to server with some extra data which developer can define an extra data in classes which derived from `LiteNetLibGameManager` by override `SerializeClientReadyExtra()` function.
-
-```
-public class ExtendedGameManager : LiteNetLibGameManager
-{
-    public string playerName = "Mike";
-    public virtual void SerializeClientReadyExtra(NetDataWriter writer)
-    {
-        writer.Put(playerName);
-    }
-}
+```text
+Client                         Server
+  |---- transport connect ------>|
+  |---- EnterGame request ------->| validate version/custom data
+  |<--- EnterGame response -------| connection ID + scene info
+  | load/initialize online scene  |
+  |---- ClientReady request ----->| mark ready, spawn player
+  |<--- subscribed spawn state ---| object IDs + initial state
 ```
 
-Then when server receive `ClientReady(Id = 1)` message from client it will set player's state to ready. After that, it will spawn player's networking object, if the prefab was defined to attached `LiteNetLibAssets` component → `playerPrefab` field. And read an extra data (Which written in `SerializeClientReadyExtra()`) in `DeserializeClientReadyExtra()` function. So developer have to override `DeserializeClientReadyExtra()` to read an extra data.
+The built-in top-level message IDs include `Request = 0`, `Response = 1`, `RPC = 2`, `SyncBaseLine = 3`, `SyncDelta = 4`, and `ServerSceneChange = 6`. `GameReqTypes.EnterGame = 0` and `ClientReady = 1` identify requests within the request message. See [part 1](part001.md) when registering custom packet IDs.
 
-```
-public class ExtendedGameManager : LiteNetLibGameManager
-{
-    public string playerName = "Mike";
-    public override void SerializeClientReadyExtra(NetDataWriter writer)
-    {
-        writer.Put(playerName);
-    }
+## Custom join data
 
-    public override void DeserializeClientReadyExtra(LiteNetLibIdentity playerIdentity, long connectionId, NetDataReader reader)
-    {
-        var playerCharacter = playerIdentity.GetComponent<PlayerCharacter>();
-        playerCharacter.Name = reader.GetString();
-    }
-}
-```
+Override the matching writer and reader on your game manager:
 
-Then server will add subscribing networking objects to player and add player as subscriber to networking objects and send spawn networking object messages to subscribing clients.
+- `SerializeEnterGameData(NetDataWriter writer)` on the client and `DeserializeEnterGameData(uint requestId, long connectionId, EnterGameRequestMessage request, NetDataReader reader)` on the server. The reader returns `UniTask<bool>`; if overriding it, preserve version validation as needed.
+- `SerializeClientReadyData(NetDataWriter writer)` on the client and `DeserializeClientReadyData(uint requestId, long connectionId, NetDataReader reader, LiteNetLibIdentity playerIdentity)` on the server. The reader returns `UniTask<bool>`; `playerIdentity` comes from `SpawnPlayer` and may be null when no player prefab is configured.
 
-* * *
-
-![](../images/seq_client-connect-to-server.png)
+Write and read the custom fields in the same order. Keep the automatic enter-game and ready flags aligned with your UI flow. For objects and subscriptions after ready, continue to [part 3](part003.md).

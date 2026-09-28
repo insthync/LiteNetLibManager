@@ -1,104 +1,70 @@
-# Net Function (RPC)
+# RPCs
 
-`RPC` is way to perform actions across the network. 
+An RPC calls a registered `LiteNetLibBehaviour` method across the connection. Declare the method with an attribute or register a delegate in `OnSetup()`. Keep method names, parameter types, and behaviour layouts compatible between server and clients.
 
-There are 4 types of RPCs:
-- ServerRpc, it will be called from client to do something at server.
-- AllRpc, it will be called from server to do something at server and all clients.
-- TargetRpc, it will be called from server or client to do something at target client by connection ID.
-- ElasticRpc/NetFunction, it can be any RPC up to how you call set receivers type when call it with `RPC()` or `CallNetFunction()` functions.
+| Attribute | Destination |
+| --- | --- |
+| `[ServerRpc]` | Server |
+| `[AllRpc]` | Server and eligible subscribed clients |
+| `[TargetRpc]` | One eligible target client |
+| `[ElasticRpc]` | Chosen at the call site with `RPCReceivers` |
 
-## Declaring RPC functions
+`[NetFunction]` is an alias for `[ElasticRpc]`. For manual registration use `RegisterServerRPC`, `RegisterAllRPC`, `RegisterTargetRPC`, or `RegisterElasticRPC`. `RegisterNetFunction` is an alias for elastic registration.
 
-### Declaring RPC functions by attributes
-
-To declare `RPC` functions you can use attributes (`[ServerRpc]`, `[AllRpc]`, `[TargetRpc]`, `[ElasticRpc]`, `[NetFunction]`).
-
-```
+```csharp
 using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
+
+public sealed class CombatMessages : LiteNetLibBehaviour
+{
+    [ServerRpc]
+    private void RequestShot(int bulletType)
+    {
+        // Validate and process the request on the server.
+    }
+
+    [AllRpc]
+    private void ShowShot(int bulletType)
+    {
+        // Show a server-approved effect.
+    }
+
+    [TargetRpc]
+    private void ShowNotice(int noticeId)
+    {
+        // Show an effect on one target client.
+    }
+
     [ElasticRpc]
-    private void Shoot(int bulletType)
+    private void SendFlexible(int value)
     {
-        // Received `bulletType` to do anything
-    }
-}
-```
-
-### Declaring RPC functions by functions
-
-Or use register functions (`RegisterElasticRPC`, `RegisterElasticRPC`, `RegisterElasticRPC`, `RegisterElasticRPC`, `RegisterNetFunction`) which you should do it in overrided `OnSetup()` function like this:
-
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    public override void OnSetup() {
-        base.OnSetup();
-        RegisterElasticRPC<int>(Shoot);
+        // Called at the destination selected below.
     }
 
-    private void Shoot(int bulletType)
+    public void Shoot(int bulletType)
     {
-        // Received `bulletType` to do anything
-    }
-}
-```
-
-## Calling RPC functions
-
-Then you can call `RPC` by `RPC()` or `CallNetFunction()` functions it to invoke callback with parameters on target like this:
-
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    public override void OnSetup() {
-        base.OnSetup();
-        RegisterNetFunction<int>(Shoot);
+        if (IsOwnerClient)
+            RPC(RequestShot, bulletType);
     }
 
-    private void Shoot(int bulletType)
+    public void BroadcastShot(int bulletType)
     {
-        // Received `bulletType` to do anything
+        if (IsServer)
+            RPC(ShowShot, bulletType);
     }
 
-    public void DoShoot(int bulletType)
+    public void Notify(long connectionId, int noticeId)
     {
-        // Call Shoot at server
-        CallNetFunction(Shoot, FunctionReceivers.Server, bulletType);
+        if (IsServer)
+            RPC(ShowNotice, connectionId, noticeId);
+    }
+
+    public void SendToServer(int value)
+    {
+        RPC(SendFlexible, RPCReceivers.Server, value);
     }
 }
 ```
 
-To call `ServerRpc` or `ClientRpc`, you can use `RPC()` function by set function which you want to call to first parameter following with parameters values to later parameters like this:
+The no-receiver overload chooses the destination registered for `ServerRpc` or `AllRpc`. For `TargetRpc`, pass the target connection ID. For an elastic RPC, pass `RPCReceivers.Server`, `All`, or `Target` as appropriate; a target also needs a connection ID. `RPC` overloads can specify a data channel and `DeliveryMethod`.
 
-```
-public void CallShootAll(int bulletType)
-{
-    RPC(Shoot, bulletType);
-}
-```
-
-To call `TargetRpc` it's similar but you have to set target connection ID to second paramter like this:
-
-```
-public void CallShootAtOwnerClient(int bulletType)
-{
-    RPC(Shoot, ConnectionId, bulletType);
-}
-```
-
-For elastic RPCs if you use `RPC()` function it will call all RPC by default, if you want to change receivers target you have to set receivers target to second parameter like this:
-
-```
-public void CallShootAll(int bulletType)
-{
-    RPC(Shoot, FunctionReceivers.All, bulletType);
-}
-
-public void CallShootAtServer(int bulletType)
-{
-    RPC(Shoot, FunctionReceivers.Server, bulletType);
-}
-```
-
-**A word `NetFunction` had the same meaning with `ElasticRPC` and do the same thing, so: `[NetFunction]` == `[ElasticRpc]`, `RegisterNetFunction()` == `RegisterElasticRPC()` and `CallNetFunction()` == `RPC()`**
+The RPC send path checks caller ownership or server authority, and recipients must be eligible for the object. Validate client-supplied values inside server RPCs before changing authoritative game state. See [identity and behaviour](network_object.md) for ownership and the [object lifecycle](../how_does_it_work/part003.md) for subscriptions.

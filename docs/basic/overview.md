@@ -1,10 +1,12 @@
 # Overview
 
-LiteNetLibManager is high level networking library based on LiteNetLib (https://github.com/RevenantX/LiteNetLib) for Unity3D (https://unity3d.com) which handles many of the common tasks that are required for multiplayer games. It is a server authoritative system, although it allows one of the participants to be a client and the server at the same time (host), so no dedicated server process is required, It provides:
+The library separates transport from game state:
 
-- LiteNetLibGameManager component for network message management, spawn management, scene management
-- LiteNetLibIdentity component for networked game objects
-- LiteNetLibBehaviour component for networked scripts
-- LiteNetLibSyncField/LiteNetLibSyncList for automatic synchronization of script variables
-- LiteNetLibNetFunction for make remote procedure calls (RPCs)
-- Support for placing networked objects in Unity scenes
+- `LiteNetLibManager` starts a server, client, or host and routes registered messages.
+- `LiteNetLibGameManager` handles enter-game and ready requests, scene changes, spawned objects, RPCs, and state updates.
+- `LiteNetLibAssets` stores scenes, the player prefab, and spawnable prefabs.
+- `LiteNetLibIdentity` identifies a scene object or registered prefab across peers.
+- `LiteNetLibBehaviour` provides object callbacks, RPC registration, sync fields, and sync lists.
+- `BaseInterestManager` determines which players subscribe to each object.
+
+The server assigns network object IDs and decides which subscribers receive their state. A host runs both server and client in one process. For setup and examples, continue with the [game manager](network_manager.md), [identity and behaviour](network_object.md), and [state sync guide](../testing/state_sync_layout_results_2026-09-28.md).

@@ -1,111 +1,70 @@
-## Sync Field
+# Sync fields and lists
 
-`LiteNetLibSyncField` will automatic sync data from server to clients, it must be defined in class which inherit from `LiteNetLibBehaviour` like this:
+Declare sync elements as fields on a `LiteNetLibBehaviour`. The identity discovers them during setup. Use a concrete type such as `SyncFieldInt` or `SyncListInt` for Unity serialization, and configure callbacks or modes in `OnSetup()`.
 
-```
+```csharp
 using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    private LiteNetLibSyncField<int> hp = new LiteNetLibSyncField<int>();
-    private LiteNetLibSyncField<int> mp = new LiteNetLibSyncField<int>();
-}
-```
+using UnityEngine;
 
-You also able to set configs when declare it like this:
+public sealed class CharacterState : LiteNetLibBehaviour
+{
+    [SerializeField] private SyncFieldInt health = new SyncFieldInt();
+    [SerializeField] private SyncFieldInt privateScore = new SyncFieldInt();
+    [SerializeField] private SyncListInt itemIds = new SyncListInt();
 
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    private LiteNetLibSyncField<int> hp = new LiteNetLibSyncField<int>() {
-        syncMode = LiteNetLibSyncFieldMode.ServerToClients,
-    };
-    private LiteNetLibSyncField<int> mp = new LiteNetLibSyncField<int>() {
-        syncMode = LiteNetLibSyncFieldMode.ServerToClients,
-    };
-}
-```
+    public int Health => health.Value;
 
-About configs there are:
-
-- `syncMode` controls who may change a field and which subscribers receive it. `ServerToClients` is the default server-authoritative mode. `ServerToOwnerClient` sends initial and later field values only to the subscribed owner. `ClientMulticast` allows an owner client to send a value to the server for forwarding to subscribed clients. See the [state sync guide](../testing/state_sync_layout_results_2026-09-28.md#owner-only-fields-and-list-limitation).
-- `onChange(bool initial, TType oldValue, TType newValue)` runs when an initial value is applied or a value changes. It can also run on the server when server code changes a field.
-
-
-Now it's supported with following types:
-
-```
-bool, bool[], byte, char, double, double[], float, float[], int, int[], long, long[], sbyte, short, short[], string, uint, uint[], ulong, ulong[], ushort, ushort[], Color, Quaternion, Vector2, Vector2Int, Vector3, Vector3Int, Vector4
-```
-
-But you can make it support other type by implement `INetSerializable` interface like this:
-
-```
-using LiteNetLib.Utils;
-public struct CharacterStats : INetSerializable {
-    public int atk;
-    public int def;
-
-    // Implement interface
-    public void Deserialize(NetDataReader reader)
+    public override void OnSetup()
     {
-        atk = reader.GetInt();
-        def = reader.GetInt();
+        privateScore.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+        health.onChange += OnHealthChanged;
+        itemIds.onOperation += OnItemOperation;
     }
 
-    public void Serialize(NetDataWriter writer)
+    public void SetHealth(int value)
     {
-        writer.Put(atk);
-        writer.Put(def);
+        if (IsServer)
+            health.Value = value;
+    }
+
+    public void AddItem(int itemId)
+    {
+        if (IsServer)
+            itemIds.Add(itemId);
+    }
+
+    private void OnHealthChanged(bool initial, int oldValue, int newValue)
+    {
+        // Update a display when the value arrives.
+    }
+
+    private void OnItemOperation(LiteNetLibSyncListOp op, int index, int oldItem, int newItem)
+    {
+        // Update a display when a list operation arrives.
     }
 }
 ```
 
-Then you can use it like this
+## Field modes
 
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    private LiteNetLibSyncField<CharacterStats> hp = new LiteNetLibSyncField<CharacterStats>();
-}
-```
+| `syncMode` | Writer | Subscribers that receive server state |
+| --- | --- | --- |
+| `ServerToClients` (default) | Server | All subscribed clients |
+| `ServerToOwnerClient` | Server | Only the subscribed owner client |
+| `ClientMulticast` | Owner client | The owner sends to the server, which forwards to other subscribed clients |
 
-## Sync List
+`ServerToOwnerClient` applies to the initial spawn state and later reliable or unreliable updates. Other subscribers can still receive the object and its public fields. Set a field's mode on both peers before the spawn is read, for example in `OnSetup()`. The `onChange(bool initial, T oldValue, T newValue)` callback runs when an initial value is applied or a value changes; it may also run during a local server change.
 
-`LiteNetLibSyncList` will automatic sync list data from server to clients, it must be defined in class which inherit from `LiteNetLibBehaviour` like this:
+For a custom struct implementing `INetSerializable`, use `SyncFieldNetSerializableStruct<T>`. Custom reference types can derive from `SyncFieldNetSerializableClass<T>` and implement `Construct()`. Both peers must serialize fields in the same order.
 
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    [SerializeField]
-    private LiteNetLibSyncList<int> itemIds = new LiteNetLibSyncList<int>();
-}
-```
+## Lists
 
-You also able to set configs when declare it like this:
+`LiteNetLibSyncList<T>` is server controlled after spawn. Initial contents arrive with `AddInitial` operations; later changes arrive as reliable list operations. `onOperation(LiteNetLibSyncListOp op, int index, T oldItem, T newItem)` runs on receipt and for local server changes.
 
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    [SerializeField]
-    private LiteNetLibSyncList<int> itemIds = new LiteNetLibSyncList<int>() { 
-        forOwnerOnly = false,
-    };
-}
-```
+The list API exposes `forOwnerOnly`, but the current send path does not use it to restrict recipients. Do not put private data in a list solely because `forOwnerOnly` is true.
 
-About configs there are:
+## Delivery and layout
 
-- `forOwnerOnly` is present on the list API, but the current send path does not read it. Do not use it to restrict delivery to the owner; see the [state sync guide](../testing/state_sync_layout_results_2026-09-28.md#owner-only-fields-and-list-limitation).
-- `onOperation(LiteNetLibSyncListOp op, int itemIndex, TType oldItem, TType newItem)` runs for list operations on clients and when server code changes a list.
+Spawns and list operations use reliable ordered baseline state. Eligible field changes can use an unreliable delta, with a reliable baseline at the configured interval or when a delta is too large. Keep behaviour types, discovery order, and synced field names consistent between server and client. An unknown element can be skipped safely when its serialized payload is well formed, but a mismatched known field type is not a compatible schema.
 
-Its supported types is like as `LiteNetLibSyncField` and also able to create custom types like it too, so you can do like this
-
-```
-using LiteNetLibManager;
-public class CustomNetBehaviour : LiteNetLibBehaviour {
-    private LiteNetLibSyncList<CharacterStats> stats = new LiteNetLibSyncList<CharacterStats>();
-}
-```
-
-## How does it work?
-
-The manager sends spawn, destroy, and list operations through reliable ordered baseline messages. Eligible field changes can use unreliable delta messages, with a reliable baseline when the interval is reached or an element is too large for an unreliable packet. See the [state sync guide and tested layout results](../testing/state_sync_layout_results_2026-09-28.md) for the setup example and full workflow.
+See the [state sync guide](../testing/state_sync_layout_results_2026-09-28.md) for the full workflow and [Editor results](../testing/editor_test_results_2026-09-28.md) for the tested owner-only and layout cases.
