@@ -93,8 +93,7 @@ namespace LiteNetLibManager
         {
             if (IsClientStarted)
             {
-                _client.ClientSend(writer);
-                return true;
+                return _client.ClientSend(writer);
             }
             return false;
         }

@@ -56,6 +56,8 @@ namespace LiteNetLibManager
         private CancellationToken _cancellationToken;
         private CancellationTokenSource _connectTokenSource;
         private CancellationToken _connectCancellationToken;
+        private readonly ConcurrentQueue<byte[]> _sendQueue = new ConcurrentQueue<byte[]>();
+        private int _sending;
 #endif
         private readonly ConcurrentQueue<TransportEventData> _clientEventQueue;
 
@@ -111,6 +113,7 @@ namespace LiteNetLibManager
                 CancelConnection();
                 _socket?.Dispose();
                 _socket = null;
+                return;
             }
             Receive();
         }
@@ -170,6 +173,10 @@ namespace LiteNetLibManager
                         }
                     }
                 }
+            }
+            catch (OperationCanceledException) when (_cancellationToken.IsCancellationRequested)
+            {
+                // Closing the connection cancels the pending receive.
             }
             catch (Exception ex)
             {
@@ -313,10 +320,54 @@ namespace LiteNetLibManager
 #if UNITY_WEBGL && !UNITY_EDITOR
             SocketSend_LnlM(_wsNativeInstance, writer.Data, writer.Length);
 #else
-            _socket?.SendAsync(new ArraySegment<byte>(writer.Data, 0, writer.Length), WebSocketMessageType.Binary, true, _cancellationToken);
+            if (_cancellationToken.IsCancellationRequested)
+                return false;
+            // The caller reuses its writer immediately after this method returns.
+            _sendQueue.Enqueue(writer.CopyData());
+            StartSendLoop();
 #endif
             return true;
         }
+
+#if !UNITY_WEBGL || UNITY_EDITOR
+        private void StartSendLoop()
+        {
+            if (Interlocked.CompareExchange(ref _sending, 1, 0) == 0)
+                SendQueuedMessages().Forget();
+        }
+
+        private async UniTask SendQueuedMessages()
+        {
+            try
+            {
+                await UniTask.SwitchToThreadPool();
+                while (_sendQueue.TryDequeue(out byte[] data))
+                {
+                    ClientWebSocket socket = _socket;
+                    if (socket == null || socket.State != WebSocketState.Open || _cancellationToken.IsCancellationRequested)
+                        break;
+                    await socket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, true, _cancellationToken);
+                }
+            }
+            catch (OperationCanceledException) when (_cancellationToken.IsCancellationRequested)
+            {
+                // Closing the connection cancels the active send.
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[WebSocketClient] Unable to send to {_url}, {ex.Message}\n{ex.StackTrace}");
+                _socket_OnError(ex.Message);
+                CancelConnection();
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _sending, 0);
+                // A producer can enqueue after the final dequeue while _sending is still 1.
+                if (!_sendQueue.IsEmpty && !_cancellationToken.IsCancellationRequested && IsOpen)
+                    StartSendLoop();
+            }
+        }
+#endif
 
         public bool IsOpen
         {
