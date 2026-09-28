@@ -4,19 +4,52 @@ namespace LiteNetLibManager
 {
     public class LiteNetLibSyncingStates
     {
+        private const int MaxCachedStates = 1024;
+        private const int MaxCachedChannels = 32;
         private readonly Dictionary<byte, Dictionary<uint, GameStateSyncData>> _states = new Dictionary<byte, Dictionary<uint, GameStateSyncData>>();
+        private readonly Stack<GameStateSyncData> _cachedStates = new Stack<GameStateSyncData>();
+        private readonly Stack<Dictionary<uint, GameStateSyncData>> _cachedChannels = new Stack<Dictionary<uint, GameStateSyncData>>();
         public Dictionary<byte, Dictionary<uint, GameStateSyncData>> States => _states;
 
         public void Clear()
         {
+            foreach (var collection in _states.Values)
+                RecycleCollection(collection);
             _states.Clear();
+        }
+
+        public void ClearChannel(byte channelId)
+        {
+            if (!_states.TryGetValue(channelId, out var collection))
+                return;
+            foreach (var state in collection.Values)
+                RecycleState(state);
+            collection.Clear();
+        }
+
+        private void RecycleState(GameStateSyncData state)
+        {
+            state.Reset();
+            if (_cachedStates.Count < MaxCachedStates)
+                _cachedStates.Push(state);
+        }
+
+        private void RecycleCollection(Dictionary<uint, GameStateSyncData> collection)
+        {
+            foreach (var state in collection.Values)
+                RecycleState(state);
+            collection.Clear();
+            if (_cachedChannels.Count < MaxCachedChannels)
+                _cachedChannels.Push(collection);
         }
 
         public Dictionary<uint, GameStateSyncData> PrepareSyncStateCollection(byte channelId)
         {
             if (!_states.TryGetValue(channelId, out var collectionByObjectId))
             {
-                collectionByObjectId = new Dictionary<uint, GameStateSyncData>();
+                collectionByObjectId = _cachedChannels.Count > 0
+                    ? _cachedChannels.Pop()
+                    : new Dictionary<uint, GameStateSyncData>();
                 _states[channelId] = collectionByObjectId;
             }
             return collectionByObjectId;
@@ -27,7 +60,7 @@ namespace LiteNetLibManager
             var collectionByObjectId = PrepareSyncStateCollection(channelId);
             if (!collectionByObjectId.TryGetValue(objectId, out var syncData))
             {
-                syncData = new GameStateSyncData();
+                syncData = _cachedStates.Count > 0 ? _cachedStates.Pop() : new GameStateSyncData();
                 collectionByObjectId[objectId] = syncData;
             }
             return syncData;
@@ -80,8 +113,16 @@ namespace LiteNetLibManager
         {
             byte channelId = identity.SyncChannelId;
             uint objectId = identity.ObjectId;
-            var collectionByObjectId = PrepareSyncStateCollection(channelId);
+            if (!_states.TryGetValue(channelId, out var collectionByObjectId) ||
+                !collectionByObjectId.TryGetValue(objectId, out var state))
+                return;
             collectionByObjectId.Remove(objectId);
+            RecycleState(state);
+            if (collectionByObjectId.Count == 0)
+            {
+                _states.Remove(channelId);
+                RecycleCollection(collectionByObjectId);
+            }
         }
     }
 }

@@ -192,11 +192,16 @@ namespace LiteNetLibManager
                 uint objectId = reader.GetPackedUInt();
                 ushort dataLength = reader.GetUShort();
                 int positionBeforeRead = reader.Position;
+                if (dataLength < sizeof(ushort) || dataLength > reader.AvailableBytes)
+                {
+                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, invalid data length: {dataLength} for identity: {objectId}.");
+                    return;
+                }
+                int positionAfterRead = positionBeforeRead + dataLength;
                 if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
                 {
                     if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, identity not found: {objectId}, skipping: {dataLength} bytes.");
-                    reader.SetPosition(positionBeforeRead);
-                    reader.SkipBytes(dataLength);
+                    reader.SetPosition(positionAfterRead);
                     continue;
                 }
                 ushort elementCount = reader.GetUShort();
@@ -212,10 +217,15 @@ namespace LiteNetLibManager
                 if (readFailed)
                 {
                     if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, identity: {objectId}, skipping: {dataLength} bytes.");
-                    reader.SetPosition(positionBeforeRead);
-                    reader.SkipBytes(dataLength);
+                    reader.SetPosition(positionAfterRead);
                     continue;
                 }
+                if (reader.Position > positionAfterRead)
+                {
+                    if (LogWarn) Logging.LogWarning(LogTag, $"Unable to read delta game state properly, identity: {objectId} exceeded its data length: {dataLength} bytes.");
+                    return;
+                }
+                reader.SetPosition(positionAfterRead);
             }
         }
 
@@ -448,7 +458,7 @@ namespace LiteNetLibManager
                     // Send data to client
                     ServerSendMessage(player.ConnectionId, syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
                 }
-                syncingStatesByChannelId.Value.Clear();
+                player.SyncingStates.ClearChannel(syncChannelId);
             }
         }
 
@@ -627,7 +637,7 @@ namespace LiteNetLibManager
                     // Send data to server
                     ClientSendMessage(syncChannelId, DeliveryMethod.ReliableOrdered, _gameStatesWriter);
                 }
-                syncingStatesByChannelId.Value.Clear();
+                ClientSyncingStates.ClearChannel(syncChannelId);
             }
         }
 

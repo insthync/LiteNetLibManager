@@ -1,5 +1,6 @@
 ﻿using LiteNetLib.Utils;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LiteNetLibManager
@@ -200,7 +201,7 @@ namespace LiteNetLibManager
                 // For array type, we always consider it is changed, because we don't want to compare each element of the array which may cause performance issue
                 return true;
             }
-            return oldValue == null || !oldValue.Equals(newValue);
+            return !EqualityComparer<TType>.Default.Equals(oldValue, newValue);
         }
 
         public override sealed Type GetFieldType()
@@ -251,7 +252,7 @@ namespace LiteNetLibManager
             if (type.IsArray)
                 _value = (TType)reader.GetArrayObject(type.GetElementType());
             else
-                _value = (TType)reader.GetValue(type);
+                _value = reader.GetValue<TType>();
         }
 
         internal virtual void SerializeValue(NetDataWriter writer)
@@ -260,7 +261,7 @@ namespace LiteNetLibManager
             if (type.IsArray)
                 writer.PutArrayObject(type.GetElementType(), Value);
             else
-                writer.PutValue(type, Value);
+                writer.PutValue(Value);
         }
 
         public override string ToString()
