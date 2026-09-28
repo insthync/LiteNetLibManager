@@ -28,6 +28,8 @@ namespace LiteNetLibManager
         {
             public LiteNetLibElementInfo info;
             public NetDataReader reader;
+            internal int payloadLength;
+            internal double expiresAt;
         }
 
         [Header("Game manager configs")]
@@ -123,6 +125,7 @@ namespace LiteNetLibManager
 
         protected override void OnClientUpdate(LogicUpdater updater)
         {
+            PruneExpiredPendingRpcs(Time.realtimeSinceStartupAsDouble);
             if (!IsServer)
                 ProceedClientGameStateSync(updater.LocalTick);
             // Send ping from client
@@ -226,6 +229,7 @@ namespace LiteNetLibManager
 
             if (isOnline)
             {
+                ClearPendingRpcs();
                 foreach (LiteNetLibPlayer player in Players.Values)
                 {
                     player.IsReady = false;
@@ -460,7 +464,7 @@ namespace LiteNetLibManager
             RttCalculator.Reset();
             _updatingClientSyncElements.Clear();
             _updatingServerSyncElements.Clear();
-            _pendingRpcs.Clear();
+            ClearPendingRpcs();
 
             if (!doNotEnterGameOnConnect)
                 SendClientEnterGame();
@@ -476,7 +480,7 @@ namespace LiteNetLibManager
             RttCalculator.Reset();
             _updatingClientSyncElements.Clear();
             _updatingServerSyncElements.Clear();
-            _pendingRpcs.Clear();
+            ClearPendingRpcs();
 
             string activeSceneName = SceneManager.GetActiveScene().name;
 #if !DISABLE_ADDRESSABLES
@@ -506,6 +510,7 @@ namespace LiteNetLibManager
         public override void OnStopServer()
         {
             base.OnStopServer();
+            ClearPendingRpcs();
             ServerSceneInfo = null;
             Players.Clear();
             Assets.Clear();
@@ -515,6 +520,7 @@ namespace LiteNetLibManager
         public override void OnStopClient()
         {
             base.OnStopClient();
+            ClearPendingRpcs();
             if (!IsServer)
             {
                 Players.Clear();
@@ -854,13 +860,7 @@ namespace LiteNetLibManager
             else
             {
                 // No spawned entity yet, store to pending collection, then processs later when it was spawned
-                byte[] pendingRpcData = new byte[messageHandler.Reader.AvailableBytes];
-                Buffer.BlockCopy(messageHandler.Reader.RawData, messageHandler.Reader.Position, pendingRpcData, 0, messageHandler.Reader.AvailableBytes);
-                _pendingRpcs.Add(new PendingRpcData()
-                {
-                    info = info,
-                    reader = new NetDataReader(pendingRpcData),
-                });
+                QueuePendingRpc(info, messageHandler.Reader, Time.realtimeSinceStartupAsDouble);
             }
         }
 

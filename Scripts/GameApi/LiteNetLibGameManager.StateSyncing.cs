@@ -1,5 +1,6 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,12 +9,56 @@ namespace LiteNetLibManager
     public partial class LiteNetLibGameManager
     {
         public const ushort MAX_UNRELIABLE_PACKET_SIZE = 1023; // 1024 - 1 (unreliable header)
+        protected const int MaxPendingRpcCount = 256;
+        protected const int MaxPendingRpcBytes = 1024 * 1024;
+        protected const double PendingRpcLifetimeSeconds = 120.0;
         protected readonly List<LiteNetLibSyncElement> _updatingClientSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly List<LiteNetLibSyncElement> _updatingServerSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
         protected readonly NetDataWriter _syncElementWriter = new NetDataWriter(true, 1024);
         protected readonly List<PendingRpcData> _pendingRpcs = new List<PendingRpcData>();
+        protected int _pendingRpcBytes;
         protected float _latestServerBaseLineSyncTime = 0f;
+
+        protected void QueuePendingRpc(LiteNetLibElementInfo info, NetDataReader reader, double now)
+        {
+            PruneExpiredPendingRpcs(now);
+            int payloadLength = reader.AvailableBytes;
+            if (payloadLength > MaxPendingRpcBytes)
+                return;
+
+            while (_pendingRpcs.Count >= MaxPendingRpcCount || _pendingRpcBytes > MaxPendingRpcBytes - payloadLength)
+                RemovePendingRpcAt(0);
+
+            byte[] payload = new byte[payloadLength];
+            Buffer.BlockCopy(reader.RawData, reader.Position, payload, 0, payloadLength);
+            _pendingRpcs.Add(new PendingRpcData
+            {
+                info = info,
+                reader = new NetDataReader(payload),
+                payloadLength = payloadLength,
+                expiresAt = now + PendingRpcLifetimeSeconds,
+            });
+            _pendingRpcBytes += payloadLength;
+        }
+
+        protected void PruneExpiredPendingRpcs(double now)
+        {
+            while (_pendingRpcs.Count > 0 && _pendingRpcs[0].expiresAt <= now)
+                RemovePendingRpcAt(0);
+        }
+
+        private void RemovePendingRpcAt(int index)
+        {
+            _pendingRpcBytes -= _pendingRpcs[index].payloadLength;
+            _pendingRpcs.RemoveAt(index);
+        }
+
+        private void ClearPendingRpcs()
+        {
+            _pendingRpcs.Clear();
+            _pendingRpcBytes = 0;
+        }
 
         protected virtual void HandleServerSyncBaseLine(MessageHandlerData messageHandler)
         {
@@ -311,9 +356,9 @@ namespace LiteNetLibManager
                 pendingRpc = _pendingRpcs[i];
                 if (pendingRpc.info.objectId == objectId)
                 {
-                    identity.ProcessRPC(pendingRpc.info, pendingRpc.reader, true);
-                    _pendingRpcs.RemoveAt(i);
+                    RemovePendingRpcAt(i);
                     i--;
+                    identity.ProcessRPC(pendingRpc.info, pendingRpc.reader, true);
                 }
             }
             return true;

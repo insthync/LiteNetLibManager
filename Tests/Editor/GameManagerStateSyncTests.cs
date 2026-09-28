@@ -170,6 +170,74 @@ namespace LiteNetLibManager.Tests
         }
 
         [Test]
+        public void PendingRpcs_AreCopiedAndBoundedByCountAndBytes()
+        {
+            var gameObject = new GameObject("pending RPC queue test");
+            try
+            {
+                var manager = gameObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                manager.currentLogLevel = (ELogLevel)byte.MaxValue;
+                manager.loadOfflineSceneWhenClientStopped = false;
+                byte[] payload = { 7 };
+                for (uint objectId = 1; objectId <= manager.PendingRpcCountLimit + 1; ++objectId)
+                    manager.QueueRpcForTest(objectId, payload, 10);
+
+                payload[0] = 9;
+                Assert.AreEqual(manager.PendingRpcCountLimit, manager.PendingRpcCount);
+                Assert.AreEqual(manager.PendingRpcCountLimit, manager.PendingRpcBytes);
+                Assert.AreEqual(2u, manager.OldestPendingRpcObjectId);
+                Assert.AreEqual(7, manager.OldestPendingRpcFirstByte);
+
+                manager.OnStopClient();
+                Assert.Zero(manager.PendingRpcCount);
+                Assert.Zero(manager.PendingRpcBytes);
+
+                byte[] largePayload = new byte[manager.PendingRpcByteLimit / 4];
+                for (uint objectId = 1; objectId <= 5; ++objectId)
+                    manager.QueueRpcForTest(objectId, largePayload, 20);
+
+                Assert.AreEqual(4, manager.PendingRpcCount);
+                Assert.AreEqual(manager.PendingRpcByteLimit, manager.PendingRpcBytes);
+                Assert.AreEqual(2u, manager.OldestPendingRpcObjectId);
+
+                manager.QueueRpcForTest(6, new byte[manager.PendingRpcByteLimit + 1], 20);
+                Assert.AreEqual(4, manager.PendingRpcCount);
+                Assert.AreEqual(manager.PendingRpcByteLimit, manager.PendingRpcBytes);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void PendingRpcs_ExpireWithoutAnObjectSpawn()
+        {
+            var gameObject = new GameObject("pending RPC expiration test");
+            try
+            {
+                var manager = gameObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                manager.QueueRpcForTest(1, new byte[3], 100);
+                manager.QueueRpcForTest(2, new byte[5], 101);
+
+                manager.PruneRpcQueueForTest(100 + manager.PendingRpcLifetime);
+                Assert.AreEqual(1, manager.PendingRpcCount);
+                Assert.AreEqual(5, manager.PendingRpcBytes);
+                Assert.AreEqual(2u, manager.OldestPendingRpcObjectId);
+
+                manager.PruneRpcQueueForTest(101 + manager.PendingRpcLifetime);
+                Assert.Zero(manager.PendingRpcCount);
+                Assert.Zero(manager.PendingRpcBytes);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
         public void GenericSyncField_NullToNullIsNotAChange()
         {
             var field = new ComparableStringField();
@@ -244,6 +312,24 @@ namespace LiteNetLibManager.Tests
 
     public class GameManagerHarness : LiteNetLibGameManager
     {
+        public int PendingRpcCountLimit => MaxPendingRpcCount;
+        public int PendingRpcByteLimit => MaxPendingRpcBytes;
+        public double PendingRpcLifetime => PendingRpcLifetimeSeconds;
+        public int PendingRpcCount => _pendingRpcs.Count;
+        public int PendingRpcBytes => _pendingRpcBytes;
+        public uint OldestPendingRpcObjectId => _pendingRpcs[0].info.objectId;
+        public byte OldestPendingRpcFirstByte => _pendingRpcs[0].reader.RawData[0];
+
+        public void QueueRpcForTest(uint objectId, byte[] payload, double now)
+        {
+            QueuePendingRpc(new LiteNetLibElementInfo { objectId = objectId }, new NetDataReader(payload), now);
+        }
+
+        public void PruneRpcQueueForTest(double now)
+        {
+            PruneExpiredPendingRpcs(now);
+        }
+
         public void InitializeForTest()
         {
             _logicUpdater = new LogicUpdater();
