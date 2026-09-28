@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using LiteNetLib;
 using LiteNetLib.Utils;
 using NUnit.Framework;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace LiteNetLibManager.Tests
 {
@@ -231,6 +233,90 @@ namespace LiteNetLibManager.Tests
         }
 
         [Test]
+        public void BaselineReader_StopsWhenAnElementIsUnknown()
+        {
+            var managerObject = new GameObject("baseline read manager");
+            var entityObject = new GameObject("baseline read entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                manager.currentLogLevel = (ELogLevel)byte.MaxValue;
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<StateReadBehaviour>();
+                typeof(LiteNetLibBehaviour).GetField("_identity", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(behaviour, identity);
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42));
+
+                var writer = new NetDataWriter();
+                writer.PutPackedUInt(1); // tick
+                writer.Put((ushort)2); // two object states
+                writer.Put((byte)GameStateSyncType.Data);
+                writer.PutPackedUInt(42);
+                writer.PutPackedInt(2);
+                writer.PutPackedInt(int.MaxValue); // unknown element
+                writer.PutPackedInt(behaviour.value.ElementId);
+                writer.PutPackedInt(7);
+                writer.Put((byte)GameStateSyncType.Data);
+                writer.PutPackedUInt(42);
+                writer.PutPackedInt(1);
+                writer.PutPackedInt(behaviour.value.ElementId);
+                writer.PutPackedInt(99);
+
+                var reader = new NetDataReader(writer.CopyData());
+                typeof(LiteNetLibGameManager).GetMethod("ReadGameStateFromServer", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, new object[] { reader });
+
+                Assert.Zero(behaviour.value.Value);
+                Assert.Greater(reader.AvailableBytes, 0, "The reader must stop at the unknown element");
+
+                var truncated = new NetDataWriter();
+                truncated.PutPackedUInt(42);
+                truncated.PutPackedInt(1);
+                truncated.Put((byte)251); // packed ID requires four more bytes
+                var truncatedReader = new NetDataReader(truncated.CopyData());
+                var readSyncState = typeof(LiteNetLibGameManager).GetMethod("ReadSyncGameState", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.IsFalse((bool)readSyncState.Invoke(manager, new object[] { truncatedReader, 2u }));
+                Assert.Zero(behaviour.value.Value);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        [Test]
+        public void InitialSyncFailure_RollsBackTheSpawnedObject()
+        {
+            var managerObject = new GameObject("initial sync manager");
+            var entityObject = new GameObject("initial sync entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                manager.currentLogLevel = (ELogLevel)byte.MaxValue;
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<StateReadBehaviour>();
+                typeof(LiteNetLibBehaviour).GetField("_identity", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(behaviour, identity);
+                var writer = new NetDataWriter();
+                writer.PutPackedInt(1);
+                writer.PutPackedInt(int.MaxValue); // unknown initial element
+
+                LogAssert.Expect(LogType.Error, new Regex("Destroy may not be called from edit mode"));
+                Assert.IsNull(manager.Assets.NetworkSpawn(identity, 43, -1, new NetDataReader(writer.CopyData()), 1));
+                Assert.IsFalse(manager.Assets.SpawnedObjects.ContainsKey(43));
+                Assert.IsFalse(identity.IsSpawned);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        [Test]
         public void DeltaReader_RejectsAnInvalidLengthWithoutMovingPastThePacket()
         {
             var gameObject = new GameObject("delta reader test");
@@ -439,6 +525,8 @@ namespace LiteNetLibManager.Tests
         {
             _logicUpdater = new LogicUpdater();
             Assets = GetComponent<LiteNetLibAssets>();
+            typeof(LiteNetLibAssets).GetProperty("Manager").SetValue(Assets, this);
+            InterestManager = GetComponent<DefaultInterestManager>() ?? gameObject.AddComponent<DefaultInterestManager>();
         }
         protected override void OnDestroy() { }
     }
@@ -446,6 +534,11 @@ namespace LiteNetLibManager.Tests
     public class ComparableStringField : LiteNetLibSyncField<string>
     {
         public bool HasChanged(string oldValue, string newValue) => IsValueChanged(oldValue, newValue);
+    }
+
+    public class StateReadBehaviour : LiteNetLibBehaviour
+    {
+        public LiteNetLibSyncField<int> value = new LiteNetLibSyncField<int>();
     }
 
     public class RecordingGameTransport : ITransport

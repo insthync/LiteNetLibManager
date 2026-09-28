@@ -417,8 +417,11 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, true, objectId, connectionId);
             identity.InitTransform(position, rotation);
-            if (initialReader != null)
-                Manager.ReadSyncElements(initialReader, identity, initialTick, true);
+            if (initialReader != null && !Manager.ReadSyncElements(initialReader, identity, initialTick, true))
+            {
+                NetworkDestroy(identity, DestroyObjectReasons.RequestedToDestroy);
+                return null;
+            }
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (Manager.IsServer)
                 identity.OnStartServer();
@@ -464,8 +467,11 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(identity.transform.position, identity.transform.rotation);
-            if (initialReader != null)
-                Manager.ReadSyncElements(initialReader, identity, initialTick, true);
+            if (initialReader != null && !Manager.ReadSyncElements(initialReader, identity, initialTick, true))
+            {
+                NetworkDestroy(identity, DestroyObjectReasons.RequestedToDestroy);
+                return null;
+            }
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (Manager.IsServer)
                 identity.OnStartServer();

@@ -88,7 +88,16 @@ namespace LiteNetLibManager
 
         private bool ReadSyncElement(NetDataReader reader, LiteNetLibIdentity identity, uint tick, bool initial)
         {
-            int elementId = reader.GetPackedInt();
+            int elementId;
+            try
+            {
+                elementId = reader.GetPackedInt();
+            }
+            catch (Exception ex)
+            {
+                if (LogError) Logging.LogError(LogTag, $"Unable to read sync element ID for identity: {identity.ObjectId}. {ex.Message}");
+                return false;
+            }
             if (identity.TryGetSyncElement(elementId, out LiteNetLibSyncElement element))
             {
                 try
@@ -376,8 +385,7 @@ namespace LiteNetLibManager
             uint objectId = reader.GetPackedUInt();
             if (!Assets.TryGetSpawnedObject(objectId, out LiteNetLibIdentity identity))
                 return false;
-            ReadSyncElements(reader, identity, tick, false);
-            return true;
+            return ReadSyncElements(reader, identity, tick, false);
         }
 
         internal void WriteDestroyGameState(NetDataWriter writer, uint objectId, byte destroyReasons)
@@ -405,15 +413,31 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, uint tick, bool initial)
+        internal bool ReadSyncElements(NetDataReader reader, LiteNetLibIdentity identity, uint tick, bool initial)
         {
-            int elementsCount = reader.GetPackedInt();
+            int elementsCount;
+            try
+            {
+                elementsCount = reader.GetPackedInt();
+            }
+            catch (Exception ex)
+            {
+                if (LogError) Logging.LogError(LogTag, $"Unable to read sync element count for identity: {identity.ObjectId}. {ex.Message}");
+                return false;
+            }
+            if (elementsCount < 0 || elementsCount > reader.AvailableBytes)
+            {
+                if (LogError) Logging.LogError(LogTag, $"Invalid sync element count: {elementsCount} for identity: {identity.ObjectId}.");
+                return false;
+            }
             if (elementsCount == 0)
-                return;
+                return true;
             for (int i = 0; i < elementsCount; ++i)
             {
-                ReadSyncElement(reader, identity, tick, initial);
+                if (!ReadSyncElement(reader, identity, tick, initial))
+                    return false;
             }
+            return true;
         }
 
         private void ProceedServerGameStateSync(uint tick)
