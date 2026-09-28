@@ -295,5 +295,35 @@ namespace LiteNetLibManager.Tests
             CollectionAssert.IsEmpty(Reader(writer).GetDictionary<int, int>());
             Assert.AreEqual(4, writer.Length);
         }
+
+        [TestCase(-1)]
+        [TestCase(65536)]
+        [TestCase(int.MaxValue)]
+        public void CollectionReaders_RejectInvalidCountsBeforeAllocating(int count)
+        {
+            var writer = new NetDataWriter();
+            writer.Put(count);
+            byte[] packet = writer.CopyData();
+
+            Assert.Throws<InvalidOperationException>(() => new NetDataReader(packet).GetArrayExtension<int>());
+            Assert.Throws<InvalidOperationException>(() => new NetDataReader(packet).GetArrayObject(typeof(int)));
+            Assert.Throws<InvalidOperationException>(() => new NetDataReader(packet).GetList<int>());
+            Assert.Throws<InvalidOperationException>(() => new NetDataReader(packet).GetDictionary<int, int>());
+        }
+
+        [Test]
+        public void CollectionWriters_RejectCountsBeyondReaderLimit()
+        {
+            var writer = new NetDataWriter();
+            byte[] oversized = new byte[65536];
+            Assert.Throws<ArgumentOutOfRangeException>(() => writer.PutArrayExtension(oversized));
+            Assert.Throws<ArgumentOutOfRangeException>(() => writer.PutArrayObject(typeof(byte), oversized));
+            Assert.Throws<ArgumentOutOfRangeException>(() => writer.PutList((IList<byte>)oversized));
+            var oversizedDictionary = new Dictionary<int, int>(65536);
+            for (int i = 0; i < 65536; ++i)
+                oversizedDictionary.Add(i, i);
+            Assert.Throws<ArgumentOutOfRangeException>(() => writer.PutDictionary(oversizedDictionary));
+            Assert.AreEqual(0, writer.Length);
+        }
     }
 }

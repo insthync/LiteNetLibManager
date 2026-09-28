@@ -99,6 +99,7 @@ namespace LiteNetLib.Utils
                 writer.Put(0);
                 return;
             }
+            NetDataCollectionLimits.ValidateWriteCount(array.Length);
             writer.Put(array.Length);
             foreach (TValue value in array)
             {
@@ -114,6 +115,7 @@ namespace LiteNetLib.Utils
                 return;
             }
             Array castedArray = array as Array;
+            NetDataCollectionLimits.ValidateWriteCount(castedArray.Length);
             writer.Put(castedArray.Length);
             foreach (object value in castedArray)
             {
@@ -128,6 +130,7 @@ namespace LiteNetLib.Utils
                 writer.Put(0);
                 return;
             }
+            NetDataCollectionLimits.ValidateWriteCount(list.Count);
             writer.Put(list.Count);
             foreach (var value in list)
             {
@@ -142,6 +145,7 @@ namespace LiteNetLib.Utils
                 writer.Put(0);
                 return;
             }
+            NetDataCollectionLimits.ValidateWriteCount(dict.Count);
             writer.Put(dict.Count);
             foreach (var keyValuePair in dict)
             {

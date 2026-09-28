@@ -81,7 +81,7 @@ namespace LiteNetLib.Utils
 
         public static TValue[] GetArrayExtension<TValue>(this NetDataReader reader)
         {
-            int count = reader.GetInt();
+            int count = NetDataCollectionLimits.ReadCount(reader);
             TValue[] result = new TValue[count];
             for (int i = 0; i < count; ++i)
             {
@@ -92,7 +92,7 @@ namespace LiteNetLib.Utils
 
         public static object GetArrayObject(this NetDataReader reader, Type type)
         {
-            int count = reader.GetInt();
+            int count = NetDataCollectionLimits.ReadCount(reader);
             Array array = Array.CreateInstance(type, count);
             for (int i = 0; i < count; ++i)
             {
@@ -103,7 +103,7 @@ namespace LiteNetLib.Utils
 
         public static List<TValue> GetList<TValue>(this NetDataReader reader)
         {
-            int count = reader.GetInt();
+            int count = NetDataCollectionLimits.ReadCount(reader);
             List<TValue> result = new List<TValue>();
             for (int i = 0; i < count; ++i)
             {
@@ -114,7 +114,7 @@ namespace LiteNetLib.Utils
 
         public static Dictionary<TKey, TValue> GetDictionary<TKey, TValue>(this NetDataReader reader)
         {
-            int count = reader.GetInt();
+            int count = NetDataCollectionLimits.ReadCount(reader);
             Dictionary<TKey, TValue> result = new Dictionary<TKey, TValue>();
             for (int i = 0; i < count; ++i)
             {
