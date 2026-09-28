@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using NUnit.Framework;
 using Unity.Profiling;
@@ -123,6 +124,105 @@ namespace LiteNetLibManager.Tests
                 Assert.IsTrue(reader.EndOfData);
                 Assert.AreEqual(GameStateSyncType.None, destroy.StateType);
                 Assert.AreEqual(GameStateSyncType.None, emptyData.StateType);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void OversizedDeltaElement_IsSentReliablyInstead()
+        {
+            var gameObject = new GameObject("oversized delta test");
+            try
+            {
+                var manager = gameObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                gameObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = gameObject.AddComponent<LiteNetLibBehaviour>();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                var field = new LiteNetLibSyncField<string> { Value = new string('x', 1200) };
+                typeof(LiteNetLibElement).GetMethod("Setup", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(field, new object[] { behaviour, 123 });
+                var player = new LiteNetLibPlayer(manager, 1);
+                player.SyncingDeltaStates.AppendDataSyncState(field);
+
+                typeof(LiteNetLibGameManager).GetMethod("SyncDeltaDataToClient", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, new object[] { player });
+
+                Assert.IsEmpty(transport.Packets);
+                Assert.IsEmpty(player.SyncingDeltaStates.States);
+                Assert.IsTrue(player.SyncingStates.States[0][0].SyncElements.Contains(field));
+
+                typeof(LiteNetLibGameManager).GetMethod("SyncGameStateToClient", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, new object[] { player });
+
+                Assert.AreEqual(1, transport.Packets.Count);
+                Assert.AreEqual(DeliveryMethod.ReliableOrdered, transport.Packets[0].DeliveryMethod);
+                var packet = new NetDataReader(transport.Packets[0].Data);
+                Assert.AreEqual(GameMsgTypes.SyncBaseLine, packet.GetPackedUShort());
+                packet.GetPackedUInt(); // tick
+                Assert.AreEqual(1, packet.GetUShort());
+                Assert.AreEqual(GameStateSyncType.Data, (GameStateSyncType)packet.GetByte());
+                Assert.AreEqual(0u, packet.GetPackedUInt());
+                Assert.AreEqual(1, packet.GetPackedInt());
+                Assert.AreEqual(123, packet.GetPackedInt());
+                Assert.AreEqual(field.Value, packet.GetValue<string>());
+                Assert.IsTrue(packet.EndOfData);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void DeltaElementsThatFit_AreSplitIntoValidUnreliablePackets()
+        {
+            var gameObject = new GameObject("split delta test");
+            try
+            {
+                var manager = gameObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                gameObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = gameObject.AddComponent<LiteNetLibBehaviour>();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                var player = new LiteNetLibPlayer(manager, 1);
+                var values = new[] { new string('a', 1000), new string('b', 600), new string('c', 600) };
+                for (int i = 0; i < values.Length; ++i)
+                {
+                    var field = new LiteNetLibSyncField<string> { Value = values[i] };
+                    typeof(LiteNetLibElement).GetMethod("Setup", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(field, new object[] { behaviour, i + 1 });
+                    player.SyncingDeltaStates.AppendDataSyncState(field);
+                }
+
+                typeof(LiteNetLibGameManager).GetMethod("SyncDeltaDataToClient", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, new object[] { player });
+
+                Assert.AreEqual(3, transport.Packets.Count);
+                Assert.IsEmpty(player.SyncingDeltaStates.States);
+                Assert.IsEmpty(player.SyncingStates.States);
+                var received = new HashSet<string>();
+                foreach (var sent in transport.Packets)
+                {
+                    Assert.AreEqual(DeliveryMethod.Unreliable, sent.DeliveryMethod);
+                    Assert.LessOrEqual(sent.Data.Length, LiteNetLibGameManager.MAX_UNRELIABLE_PACKET_SIZE);
+                    var packet = new NetDataReader(sent.Data);
+                    Assert.AreEqual(GameMsgTypes.SyncDelta, packet.GetPackedUShort());
+                    packet.GetPackedUInt(); // tick
+                    Assert.AreEqual(1, packet.GetUShort());
+                    Assert.AreEqual(0u, packet.GetPackedUInt());
+                    Assert.Greater(packet.GetUShort(), 0); // object payload length
+                    Assert.AreEqual(1, packet.GetUShort());
+                    packet.GetPackedInt(); // element ID
+                    received.Add(packet.GetValue<string>());
+                    Assert.IsTrue(packet.EndOfData);
+                }
+                CollectionAssert.AreEquivalent(values, received);
             }
             finally
             {
@@ -312,6 +412,11 @@ namespace LiteNetLibManager.Tests
 
     public class GameManagerHarness : LiteNetLibGameManager
     {
+        public void UseServerTransportForTest(ITransport transport)
+        {
+            Server = new LiteNetLibServer(this) { Transport = transport };
+        }
+
         public int PendingRpcCountLimit => MaxPendingRpcCount;
         public int PendingRpcByteLimit => MaxPendingRpcBytes;
         public double PendingRpcLifetime => PendingRpcLifetimeSeconds;
@@ -341,5 +446,38 @@ namespace LiteNetLibManager.Tests
     public class ComparableStringField : LiteNetLibSyncField<string>
     {
         public bool HasChanged(string oldValue, string newValue) => IsValueChanged(oldValue, newValue);
+    }
+
+    public class RecordingGameTransport : ITransport
+    {
+        public struct SentPacket
+        {
+            public DeliveryMethod DeliveryMethod;
+            public byte[] Data;
+        }
+
+        public readonly List<SentPacket> Packets = new List<SentPacket>();
+        public int ServerPeersCount => 0;
+        public int ServerMaxConnections => 0;
+        public bool IsClientStarted => false;
+        public bool IsServerStarted => true;
+        public bool HasImplementedPing => false;
+        public bool IsReliableOnly => false;
+        public bool StartClient(string address, int port) => false;
+        public bool ClientSend(byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer) => false;
+        public bool ClientReceive(out TransportEventData eventData) { eventData = default; return false; }
+        public void StopClient() { }
+        public bool StartServer(int port, int maxConnections) => false;
+        public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
+        {
+            Packets.Add(new SentPacket { DeliveryMethod = deliveryMethod, Data = writer.CopyData() });
+            return true;
+        }
+        public bool ServerReceive(out TransportEventData eventData) { eventData = default; return false; }
+        public bool ServerDisconnect(long connectionId) => false;
+        public void StopServer() { }
+        public void Destroy() { }
+        public long GetClientRtt() => 0;
+        public long GetServerRtt(long connectionId) => 0;
     }
 }
