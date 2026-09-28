@@ -1,6 +1,6 @@
 # Game state syncing: usage, workflow, and layout results
 
-This guide describes the current `LiteNetLibGameManager` state sync path. The [Editor test results](editor_test_results_2026-09-28.md) record the 2026-09-28 run (91 passed, 0 failed); the layout matrix below comes from four cases in that run.
+This guide describes the current `LiteNetLibGameManager` state sync path. The [Editor test results](editor_test_results_2026-09-28.md) record the 2026-09-28 run (94 passed, 0 failed); the layout matrix below comes from four cases in that run.
 
 ## How to use it
 
@@ -67,7 +67,9 @@ Call `SetHealth` and `AddItem` on the spawned server object. These methods guard
 
 ### Owner-only fields and list limitation
 
-`ServerToOwnerClient` now includes its field only in the subscribed owner's initial spawn state and sends later reliable or unreliable updates only to that owner. Other subscribers still receive the object spawn and any other fields they are allowed to see. The [four owner-recipient test cases](editor_test_results_2026-09-28.md#gamemanagerstatesynctests-20) cover both delivery paths and compare this mode with `ServerToClients`.
+`ServerToOwnerClient` includes its field only in the subscribed owner's initial spawn state and sends later reliable or unreliable updates only to that owner. Other subscribers still receive the object spawn and any other fields they are allowed to see. The [four owner-recipient test cases](editor_test_results_2026-09-28.md#gamemanagerstatesynctests-23) cover both delivery paths and compare this mode with `ServerToClients`.
+
+When the server changes an object's owner, it queues the current owner-only field values for the new owner if that client already has the object. If the new owner's spawn is still pending, that spawn carries the values instead. The server also removes unsent owner-only updates queued for the previous owner. Three [owner-transfer test cases](editor_test_results_2026-09-28.md#gamemanagerstatesynctests-23) cover both spawn states and rapid transfers before the next sync tick.
 
 The list send path still does not read `forOwnerOnly`. Do not rely on `forOwnerOnly = true` to keep list data private in this version.
 
