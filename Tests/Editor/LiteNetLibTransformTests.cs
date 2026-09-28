@@ -104,5 +104,21 @@ namespace LiteNetLibManager.Tests
             Assert.IsTrue(field.Value.ContainsKey(10));
             Assert.AreEqual(10f, field.Value[10].Position.x);
         }
+
+        [Test]
+        public void ExtraData_RejectsLengthsThatDoNotFitOnTheWire()
+        {
+            var writer = new NetDataWriter();
+            var data = new LiteNetLibTransform.TransformData { Extra = new byte[256] };
+
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => data.Serialize(writer));
+            Assert.Zero(writer.Length, "An invalid sample must not leave a partial packet");
+
+            data.Extra = new byte[byte.MaxValue];
+            data.Serialize(writer);
+            var received = new LiteNetLibTransform.TransformData();
+            received.Deserialize(new NetDataReader(writer.CopyData()));
+            Assert.AreEqual(byte.MaxValue, received.Extra.Length);
+        }
     }
 }

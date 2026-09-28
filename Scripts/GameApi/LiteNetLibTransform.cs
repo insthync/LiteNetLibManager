@@ -74,6 +74,9 @@ namespace LiteNetLibManager
 
             public void Serialize(NetDataWriter writer)
             {
+                if (Extra != null && Extra.Length > byte.MaxValue)
+                    throw new System.ArgumentOutOfRangeException(nameof(Extra), "Transform extra data cannot exceed 255 bytes.");
+
                 writer.PutPackedUInt(Tick);
                 writer.PutPackedUInt((uint)SyncData);
 
