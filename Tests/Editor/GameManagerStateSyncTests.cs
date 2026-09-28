@@ -416,6 +416,83 @@ namespace LiteNetLibManager.Tests
             }
         }
 
+        [Test]
+        public void DoNotSyncField_StaysLocalDuringSpawnAndQueuedUpdates()
+        {
+            var managerObject = new GameObject("local field manager");
+            var entityObject = new GameObject("local field entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                var owner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                manager.AddPlayerForTest(owner);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerSyncBehaviour>();
+                behaviour.value.doNotSync = true;
+                behaviour.value.Value = 17;
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                syncMethod.Invoke(manager, new object[] { 1u });
+                Assert.AreEqual(1, transport.Packets.Count);
+                var reader = new NetDataReader(transport.Packets[0].Data);
+                Assert.AreEqual(GameMsgTypes.SyncBaseLine, reader.GetPackedUShort());
+                reader.GetPackedUInt();
+                Assert.AreEqual(1, reader.GetUShort());
+                Assert.AreEqual(GameStateSyncType.Spawn, (GameStateSyncType)reader.GetByte());
+                reader.GetBool();
+                reader.GetPackedInt();
+                for (int i = 0; i < 6; ++i)
+                    reader.GetFloat();
+                Assert.AreEqual(42u, reader.GetPackedUInt());
+                Assert.AreEqual(1L, reader.GetPackedLong());
+                Assert.AreEqual(0, reader.GetPackedInt(), "A local-only field must not appear in spawn data");
+                Assert.IsTrue(reader.EndOfData);
+
+                transport.Packets.Clear();
+                behaviour.value.doNotSync = false;
+                behaviour.value.Value = 29;
+                manager.baseLineSyncInterval = -1f;
+                syncMethod.Invoke(manager, new object[] { 2u });
+                Assert.AreEqual(1, transport.Packets.Count, "Turning the flag off must allow updates again");
+                reader = new NetDataReader(transport.Packets[0].Data);
+                Assert.AreEqual(GameMsgTypes.SyncBaseLine, reader.GetPackedUShort());
+                reader.GetPackedUInt();
+                Assert.AreEqual(1, reader.GetUShort());
+                Assert.AreEqual(GameStateSyncType.Data, (GameStateSyncType)reader.GetByte());
+                Assert.AreEqual(42u, reader.GetPackedUInt());
+                Assert.AreEqual(1, reader.GetPackedInt());
+                Assert.AreEqual(behaviour.value.ElementId, reader.GetPackedInt());
+                Assert.AreEqual(29, reader.GetPackedInt());
+                Assert.IsTrue(reader.EndOfData);
+
+                transport.Packets.Clear();
+                owner.SyncingStates.AppendDataSyncState(behaviour.value);
+                owner.SyncingDeltaStates.AppendDataSyncState(behaviour.value);
+                behaviour.value.doNotSync = true;
+                manager.baseLineSyncInterval = float.MaxValue;
+                syncMethod.Invoke(manager, new object[] { 3u });
+                Assert.IsEmpty(transport.Packets, "The flag must also remove unsent baseline and delta data");
+                Assert.AreEqual(29, behaviour.value.Value, "The flag must not prevent local changes");
+
+                behaviour.value.syncMode = LiteNetLibSyncFieldMode.ClientMulticast;
+                behaviour.value.doNotSync = false;
+                Assert.IsTrue(behaviour.value.CanSyncFromOwnerClient());
+                behaviour.value.doNotSync = true;
+                Assert.IsFalse(behaviour.value.CanSyncFromOwnerClient());
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public void OwnerTransfer_SendsCurrentOwnerOnlyValueToNewOwner(bool newOwnerSpawnPending)

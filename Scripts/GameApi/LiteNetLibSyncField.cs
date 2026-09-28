@@ -44,6 +44,8 @@ namespace LiteNetLibManager
 
         internal override sealed bool CanSyncFromServer(LiteNetLibPlayer player, bool isBaseLine)
         {
+            if (!CanSendQueuedToClient(player))
+                return false;
             bool isOwner = ConnectionId == player.ConnectionId;
             bool canSync = false;
             switch (syncMode)
@@ -73,10 +75,27 @@ namespace LiteNetLibManager
 
         internal override sealed bool CanSyncFromOwnerClient()
         {
+            if (doNotSync)
+                return false;
             switch (syncMode)
             {
                 case LiteNetLibSyncFieldMode.ClientMulticast:
                     return IsOwnerClient || IsServer;
+            }
+            return false;
+        }
+
+        internal override bool CanSendQueuedToClient(LiteNetLibPlayer player)
+        {
+            if (doNotSync)
+                return false;
+            switch (syncMode)
+            {
+                case LiteNetLibSyncFieldMode.ServerToClients:
+                case LiteNetLibSyncFieldMode.ClientMulticast:
+                    return true;
+                case LiteNetLibSyncFieldMode.ServerToOwnerClient:
+                    return ConnectionId == player.ConnectionId;
             }
             return false;
         }

@@ -14,6 +14,7 @@ namespace LiteNetLibManager
         protected const double PendingRpcLifetimeSeconds = 120.0;
         protected readonly List<LiteNetLibSyncElement> _updatingClientSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly List<LiteNetLibSyncElement> _updatingServerSyncElements = new List<LiteNetLibSyncElement>();
+        private readonly List<LiteNetLibSyncElement> _sendableServerSyncElements = new List<LiteNetLibSyncElement>();
         protected readonly NetDataWriter _gameStatesWriter = new NetDataWriter(true, 1024);
         protected readonly NetDataWriter _syncElementWriter = new NetDataWriter(true, 1024);
         protected readonly List<PendingRpcData> _pendingRpcs = new List<PendingRpcData>();
@@ -162,10 +163,19 @@ namespace LiteNetLibManager
                         ++stateCount;
                         break;
                     case GameStateSyncType.Data:
-                        if (syncData.SyncElements.Count > 0)
+                        _sendableServerSyncElements.Clear();
+                        foreach (LiteNetLibSyncElement syncElement in syncData.SyncElements)
+                        {
+                            if (syncElement.CanSendQueuedToClient(player))
+                                _sendableServerSyncElements.Add(syncElement);
+                        }
+                        if (_sendableServerSyncElements.Count > 0)
                         {
                             writer.Put((byte)GameStateSyncType.Data);
-                            WriteSyncGameState(writer, objectId, syncData.SyncElements, tick);
+                            writer.PutPackedUInt(objectId);
+                            writer.PutPackedInt(_sendableServerSyncElements.Count);
+                            foreach (LiteNetLibSyncElement syncElement in _sendableServerSyncElements)
+                                WriteSyncElement(writer, syncElement, tick, false);
                             ++stateCount;
                         }
                         break;
@@ -597,6 +607,8 @@ namespace LiteNetLibManager
 
                 foreach (LiteNetLibSyncElement syncElement in syncData.SyncElements)
                 {
+                    if (!syncElement.CanSendQueuedToClient(player))
+                        continue;
                     _syncElementWriter.Reset();
                     _syncElementWriter.PutPackedUInt(objectId);
                     int objectIdLength = _syncElementWriter.Length;
@@ -759,7 +771,7 @@ namespace LiteNetLibManager
                         deltaState.SyncElements.Remove(field);
                 }
 
-                if (newOwner != null && newOwner.IsReady && identity.IsSpawned && identity.HasSubscriber(newOwner.ConnectionId))
+                if (newOwner != null && field.CanSendQueuedToClient(newOwner) && newOwner.IsReady && identity.IsSpawned && identity.HasSubscriber(newOwner.ConnectionId))
                     newOwner.SyncingStates.AppendDataSyncState(field);
             }
         }

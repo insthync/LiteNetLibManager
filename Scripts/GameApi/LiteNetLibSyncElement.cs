@@ -11,6 +11,11 @@ namespace LiteNetLibManager
             return Identity.Subscribers.Contains(player.ConnectionId);
         }
 
+        internal virtual bool CanSendQueuedToClient(LiteNetLibPlayer player)
+        {
+            return true;
+        }
+
         internal virtual bool CanSyncFromOwnerClient()
         {
             return false;
