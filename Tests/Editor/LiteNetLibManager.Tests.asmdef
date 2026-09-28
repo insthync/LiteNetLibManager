@@ -4,6 +4,7 @@
     "references": [
         "LiteNetLibManager",
         "LiteNetLib",
+        "UniTask",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

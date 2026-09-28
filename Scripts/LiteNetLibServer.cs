@@ -152,13 +152,14 @@ namespace LiteNetLibManager
             bool done = false;
             AsyncResponseData<TResponse> responseData = default;
             // Create request
-            CreateAndWriteRequest(s_Writer, requestType, request, (requestHandler, responseCode, response) =>
+            if (!CreateAndWriteRequest(s_Writer, requestType, request, (requestHandler, responseCode, response) =>
             {
                 if (!(response is TResponse))
                     response = default(TResponse);
                 responseData = new AsyncResponseData<TResponse>(requestHandler, responseCode, (TResponse)response);
                 done = true;
-            }, millisecondsTimeout, extraSerializer);
+            }, millisecondsTimeout, extraSerializer))
+                return responseData;
             // Send request to target client
             SendMessage(connectionId, 0, DeliveryMethod.ReliableUnordered, s_Writer);
             // Wait for response
