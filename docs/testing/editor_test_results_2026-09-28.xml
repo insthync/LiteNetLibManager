@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="87" result="Passed" total="87" passed="87" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:35Z" duration="0.6693081">
+  <test-suite type="TestSuite" id="1000" name="UnityMultiplayerARPG" fullname="UnityMultiplayerARPG" runstate="Runnable" testcasecount="2928" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:35Z" duration="0.669308" total="87" passed="87" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1128" name="LiteNetLibManager.Tests.dll" fullname="D:/Projects/MMORPG_KIT/unity-multiplayer-arpg/UnityMultiplayerARPG/Library/ScriptAssemblies/LiteNetLibManager.Tests.dll" runstate="Runnable" testcasecount="87" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:35Z" duration="0.644351" total="87" passed="87" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="44112" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1129" name="LiteNetLibManager" fullname="LiteNetLibManager" runstate="Runnable" testcasecount="87" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:35Z" duration="0.643551" total="87" passed="87" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1130" name="Tests" fullname="LiteNetLibManager.Tests" runstate="Runnable" testcasecount="87" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:35Z" duration="0.642882" total="87" passed="87" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1027" name="GameManagerStateSyncTests" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.163997" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1033" name="BaselineReader_StopsWhenAnElementIsUnknown" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.BaselineReader_StopsWhenAnElementIsUnknown" methodname="BaselineReader_StopsWhenAnElementIsUnknown" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="444021017" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.021985" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: baseline read entity_1
+]]></output>
+            </test-case>
+            <test-case id="1032" name="DeltaElementsThatFit_AreSplitIntoValidUnreliablePackets" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.DeltaElementsThatFit_AreSplitIntoValidUnreliablePackets" methodname="DeltaElementsThatFit_AreSplitIntoValidUnreliablePackets" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="1134238060" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.105368" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: split delta test_1
+]]></output>
+            </test-case>
+            <test-case id="1040" name="DeltaReader_RejectsAnInvalidLengthWithoutMovingPastThePacket" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.DeltaReader_RejectsAnInvalidLengthWithoutMovingPastThePacket" methodname="DeltaReader_RejectsAnInvalidLengthWithoutMovingPastThePacket" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="154003240" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001750" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1039" name="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.012678" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1035" name="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(ExtraClientField,True)" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(ExtraClientField,True)" methodname="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="149361539" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.004693" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: layout server entity_1
+[LiteNetLibIdentity] Scene object ID assigned: layout client entity_1
+]]></output>
+              </test-case>
+              <test-case id="1036" name="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(ExtraServerField,False)" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(ExtraServerField,False)" methodname="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="2039153961" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.003212" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: layout server entity_1
+[LiteNetLibIdentity] Scene object ID assigned: layout client entity_1
+Destroy may not be called from edit mode! Use DestroyImmediate instead.
+Destroying an object in edit mode destroys it permanently.
+]]></output>
+              </test-case>
+              <test-case id="1037" name="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(LeadingServerBehaviour,False)" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(LeadingServerBehaviour,False)" methodname="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="275395732" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.002354" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: layout server entity_1
+[LiteNetLibIdentity] Scene object ID assigned: layout client entity_1
+Destroy may not be called from edit mode! Use DestroyImmediate instead.
+Destroying an object in edit mode destroys it permanently.
+]]></output>
+              </test-case>
+              <test-case id="1038" name="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(TrailingServerBehaviour,True)" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(TrailingServerBehaviour,True)" methodname="DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="400745821" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001043" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: layout server entity_1
+[LiteNetLibIdentity] Scene object ID assigned: layout client entity_1
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-case id="1043" name="GenericSyncField_NullToNullIsNotAChange" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.GenericSyncField_NullToNullIsNotAChange" methodname="GenericSyncField_NullToNullIsNotAChange" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="69219579" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000199" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1034" name="InitialSyncFailure_RollsBackTheSpawnedObject" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.InitialSyncFailure_RollsBackTheSpawnedObject" methodname="InitialSyncFailure_RollsBackTheSpawnedObject" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="144084353" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001198" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: initial sync entity_1
+Destroy may not be called from edit mode! Use DestroyImmediate instead.
+Destroying an object in edit mode destroys it permanently.
+]]></output>
+            </test-case>
+            <test-case id="1044" name="ManagerDataStateAndGenericField_DoNotAllocateAfterWarmup" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.ManagerDataStateAndGenericField_DoNotAllocateAfterWarmup" methodname="ManagerDataStateAndGenericField_DoNotAllocateAfterWarmup" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="1378920457" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.003201" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: data writer test_1
+]]></output>
+            </test-case>
+            <test-case id="1031" name="OversizedDeltaElement_IsSentReliablyInstead" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.OversizedDeltaElement_IsSentReliablyInstead" methodname="OversizedDeltaElement_IsSentReliablyInstead" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="1920525744" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.002674" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: oversized delta test_1
+]]></output>
+            </test-case>
+            <test-case id="1041" name="PendingRpcs_AreCopiedAndBoundedByCountAndBytes" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.PendingRpcs_AreCopiedAndBoundedByCountAndBytes" methodname="PendingRpcs_AreCopiedAndBoundedByCountAndBytes" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="990964776" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.002185" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1042" name="PendingRpcs_ExpireWithoutAnObjectSpawn" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.PendingRpcs_ExpireWithoutAnObjectSpawn" methodname="PendingRpcs_ExpireWithoutAnObjectSpawn" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="479611757" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000361" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1029" name="RecycledStates_AreEmptyBeforeTheNextUpdate" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.RecycledStates_AreEmptyBeforeTheNextUpdate" methodname="RecycledStates_AreEmptyBeforeTheNextUpdate" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="370356947" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000622" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1030" name="ServerBaseline_WritesOnlyNonEmptyStatesAndResetsThem" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.ServerBaseline_WritesOnlyNonEmptyStatesAndResetsThem" methodname="ServerBaseline_WritesOnlyNonEmptyStatesAndResetsThem" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="703355746" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000651" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1028" name="SyncStateUpdates_DoNotAllocateAfterWarmup" fullname="LiteNetLibManager.Tests.GameManagerStateSyncTests.SyncStateUpdates_DoNotAllocateAfterWarmup" methodname="SyncStateUpdates_DoNotAllocateAfterWarmup" classname="LiteNetLibManager.Tests.GameManagerStateSyncTests" runstate="Runnable" seed="1118488473" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001111" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[LiteNetLibIdentity] Scene object ID assigned: state sync test_1
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1045" name="GcAllocationTests" fullname="LiteNetLibManager.Tests.GcAllocationTests" classname="LiteNetLibManager.Tests.GcAllocationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.025231" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1046" name="BuiltInSerializationAndCollectionWrites_DoNotAllocateAfterWarmup" fullname="LiteNetLibManager.Tests.GcAllocationTests.BuiltInSerializationAndCollectionWrites_DoNotAllocateAfterWarmup" methodname="BuiltInSerializationAndCollectionWrites_DoNotAllocateAfterWarmup" classname="LiteNetLibManager.Tests.GcAllocationTests" runstate="Runnable" seed="1842984204" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.004283" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1047" name="BuiltInValueCodecs_PreserveRegistryWireFormat" fullname="LiteNetLibManager.Tests.GcAllocationTests.BuiltInValueCodecs_PreserveRegistryWireFormat" methodname="BuiltInValueCodecs_PreserveRegistryWireFormat" classname="LiteNetLibManager.Tests.GcAllocationTests" runstate="Runnable" seed="430413218" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.018811" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1048" name="CustomValueCodecs_StillOverrideBuiltInCodecs" fullname="LiteNetLibManager.Tests.GcAllocationTests.CustomValueCodecs_StillOverrideBuiltInCodecs" methodname="CustomValueCodecs_StillOverrideBuiltInCodecs" classname="LiteNetLibManager.Tests.GcAllocationTests" runstate="Runnable" seed="688405720" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000838" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1049" name="NetDataExtensionTests" fullname="LiteNetLibManager.Tests.NetDataExtensionTests" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" testcasecount="20" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.016970" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1069" name="CollectionReaders_RejectInvalidCountsBeforeAllocating" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.CollectionReaders_RejectInvalidCountsBeforeAllocating" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001867" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1066" name="CollectionReaders_RejectInvalidCountsBeforeAllocating(-1)" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.CollectionReaders_RejectInvalidCountsBeforeAllocating(-1)" methodname="CollectionReaders_RejectInvalidCountsBeforeAllocating" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="1223005185" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001392" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1067" name="CollectionReaders_RejectInvalidCountsBeforeAllocating(65536)" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.CollectionReaders_RejectInvalidCountsBeforeAllocating(65536)" methodname="CollectionReaders_RejectInvalidCountsBeforeAllocating" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="690388668" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000110" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1068" name="CollectionReaders_RejectInvalidCountsBeforeAllocating(int.MaxValue)" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.CollectionReaders_RejectInvalidCountsBeforeAllocating(int.MaxValue)" methodname="CollectionReaders_RejectInvalidCountsBeforeAllocating" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="240432022" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000066" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1070" name="CollectionWriters_RejectCountsBeyondReaderLimit" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.CollectionWriters_RejectCountsBeyondReaderLimit" methodname="CollectionWriters_RejectCountsBeyondReaderLimit" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="192432838" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001620" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1055" name="Color_UsesFourQuantizedBytes" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Color_UsesFourQuantizedBytes" methodname="Color_UsesFourQuantizedBytes" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="1797653907" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000352" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1065" name="Dictionary_HandlesValuesAndNullAsEmpty" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Dictionary_HandlesValuesAndNullAsEmpty" methodname="Dictionary_HandlesValuesAndNullAsEmpty" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="577960425" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000897" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1052" name="EnumValues_UseTheirUnderlyingWidthsAndReturnEnumValues" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.EnumValues_UseTheirUnderlyingWidthsAndReturnEnumValues" methodname="EnumValues_UseTheirUnderlyingWidthsAndReturnEnumValues" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="1806224163" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001540" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1062" name="GenericArray_HandlesValuesAndNullAsEmpty" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.GenericArray_HandlesValuesAndNullAsEmpty" methodname="GenericArray_HandlesValuesAndNullAsEmpty" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="1492923933" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000644" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1050" name="GenericValue_UsesRegisteredReaderAndWriter" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.GenericValue_UsesRegisteredReaderAndWriter" methodname="GenericValue_UsesRegisteredReaderAndWriter" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="1258038987" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000317" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1064" name="List_HandlesValuesAndNullAsEmpty" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.List_HandlesValuesAndNullAsEmpty" methodname="List_HandlesValuesAndNullAsEmpty" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="2140896551" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000811" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1063" name="ObjectArray_HandlesValuesAndNullAsEmpty" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.ObjectArray_HandlesValuesAndNullAsEmpty" methodname="ObjectArray_HandlesValuesAndNullAsEmpty" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="875554537" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000326" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1056" name="Quaternion_WritesAndReadsComponentsInOrder" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Quaternion_WritesAndReadsComponentsInOrder" methodname="Quaternion_WritesAndReadsComponentsInOrder" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="658322190" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000480" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1053" name="SerializableValue_UsesFallbackForBothOverloads" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.SerializableValue_UsesFallbackForBothOverloads" methodname="SerializableValue_UsesFallbackForBothOverloads" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="2044201322" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001960" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[No writer registered for type: LiteNetLibManager.Tests.NetDataExtensionTests+SerializableValue`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
+No reader registered for type: LiteNetLibManager.Tests.NetDataExtensionTests+SerializableValue`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
+No writer registered for type: LiteNetLibManager.Tests.NetDataExtensionTests+SerializableValue`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
+No reader registered for type: LiteNetLibManager.Tests.NetDataExtensionTests+SerializableValue`1[[System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]
+]]></output>
+            </test-case>
+            <test-case id="1051" name="TypeValue_UsesRegisteredReaderAndWriter" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.TypeValue_UsesRegisteredReaderAndWriter" methodname="TypeValue_UsesRegisteredReaderAndWriter" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="280132638" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000207" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1054" name="UnsupportedValue_ThrowsOnReadAndWrite" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.UnsupportedValue_ThrowsOnReadAndWrite" methodname="UnsupportedValue_ThrowsOnReadAndWrite" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="711130291" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001850" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[No writer registered for type: System.Guid
+No reader registered for type: System.Guid
+]]></output>
+            </test-case>
+            <test-case id="1057" name="Vector2_WritesAndReadsComponentsInOrder" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Vector2_WritesAndReadsComponentsInOrder" methodname="Vector2_WritesAndReadsComponentsInOrder" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="458647672" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000534" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1058" name="Vector2Int_WritesAndReadsComponentsInOrder" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Vector2Int_WritesAndReadsComponentsInOrder" methodname="Vector2Int_WritesAndReadsComponentsInOrder" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="262432578" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000352" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1059" name="Vector3_WritesAndReadsComponentsInOrder" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Vector3_WritesAndReadsComponentsInOrder" methodname="Vector3_WritesAndReadsComponentsInOrder" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="986206585" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000387" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1060" name="Vector3Int_WritesAndReadsComponentsInOrder" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Vector3Int_WritesAndReadsComponentsInOrder" methodname="Vector3Int_WritesAndReadsComponentsInOrder" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="1883124700" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000346" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1061" name="Vector4_WritesAndReadsComponentsInOrder" fullname="LiteNetLibManager.Tests.NetDataExtensionTests.Vector4_WritesAndReadsComponentsInOrder" methodname="Vector4_WritesAndReadsComponentsInOrder" classname="LiteNetLibManager.Tests.NetDataExtensionTests" runstate="Runnable" seed="309380373" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000404" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1071" name="RequestFailureTests" fullname="LiteNetLibManager.Tests.RequestFailureTests" classname="LiteNetLibManager.Tests.RequestFailureTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.009405" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1072" name="FailedRequests_ReportUnimplementedWithoutSendingPreviousPacket" fullname="LiteNetLibManager.Tests.RequestFailureTests.FailedRequests_ReportUnimplementedWithoutSendingPreviousPacket" methodname="FailedRequests_ReportUnimplementedWithoutSendingPreviousPacket" classname="LiteNetLibManager.Tests.RequestFailureTests" runstate="Runnable" seed="1193673125" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.008787" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1073" name="RpcHashIdTests" fullname="LiteNetLibManager.Tests.RpcHashIdTests" classname="LiteNetLibManager.Tests.RpcHashIdTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.002895" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1078" name="GetHashedId_DistinctMethodIds_HaveNoCollisions" fullname="LiteNetLibManager.Tests.RpcHashIdTests.GetHashedId_DistinctMethodIds_HaveNoCollisions" methodname="GetHashedId_DistinctMethodIds_HaveNoCollisions" classname="LiteNetLibManager.Tests.RpcHashIdTests" runstate="Runnable" seed="1247381335" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001354" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1077" name="GetHashedId_EmptyString_DoesNotThrow" fullname="LiteNetLibManager.Tests.RpcHashIdTests.GetHashedId_EmptyString_DoesNotThrow" methodname="GetHashedId_EmptyString_DoesNotThrow" classname="LiteNetLibManager.Tests.RpcHashIdTests" runstate="Runnable" seed="1610986770" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000265" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1076" name="GetHashedId_IgnoresCharactersAfterNullTerminator" fullname="LiteNetLibManager.Tests.RpcHashIdTests.GetHashedId_IgnoresCharactersAfterNullTerminator" methodname="GetHashedId_IgnoresCharactersAfterNullTerminator" classname="LiteNetLibManager.Tests.RpcHashIdTests" runstate="Runnable" seed="643232561" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000163" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1074" name="GetHashedId_IsDeterministic" fullname="LiteNetLibManager.Tests.RpcHashIdTests.GetHashedId_IsDeterministic" methodname="GetHashedId_IsDeterministic" classname="LiteNetLibManager.Tests.RpcHashIdTests" runstate="Runnable" seed="1484973292" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000087" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1075" name="GetHashedId_IsOrderSensitive" fullname="LiteNetLibManager.Tests.RpcHashIdTests.GetHashedId_IsOrderSensitive" methodname="GetHashedId_IsOrderSensitive" classname="LiteNetLibManager.Tests.RpcHashIdTests" runstate="Runnable" seed="1823749684" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000076" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1079" name="GetHashedId_KnownIds_AreStableAcrossVersions" fullname="LiteNetLibManager.Tests.RpcHashIdTests.GetHashedId_KnownIds_AreStableAcrossVersions" methodname="GetHashedId_KnownIds_AreStableAcrossVersions" classname="LiteNetLibManager.Tests.RpcHashIdTests" runstate="Runnable" seed="1163027485" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000077" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1080" name="SerializationRoundTripTests" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.007701" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1083" name="Bool_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Bool_RoundTrips" methodname="Bool_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="12107364" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001089" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1084" name="Byte_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Byte_RoundTrips" methodname="Byte_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="1731317680" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000173" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1086" name="Char_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Char_RoundTrips" methodname="Char_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="148292714" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000183" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1092" name="Color_RoundTripsWithinQuantizationError" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Color_RoundTripsWithinQuantizationError" methodname="Color_RoundTripsWithinQuantizationError" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="960373332" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000167" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1098" name="Dictionary_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Dictionary_RoundTrips" methodname="Dictionary_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="804038588" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000899" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1087" name="Double_RoundTripsExactly" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Double_RoundTripsExactly" methodname="Double_RoundTripsExactly" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="536187435" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000212" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1091" name="Enum_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Enum_RoundTrips" methodname="Enum_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="1296741901" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000149" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1081" name="Float_RoundTripsExactly" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Float_RoundTripsExactly" methodname="Float_RoundTripsExactly" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="1178587251" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000178" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1082" name="FloatArray_RoundTripsExactly" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.FloatArray_RoundTripsExactly" methodname="FloatArray_RoundTripsExactly" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="1360734500" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000183" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1095" name="IntArray_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.IntArray_RoundTrips" methodname="IntArray_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="936402677" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000140" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1097" name="NullArray_WritesEmptyArray" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.NullArray_WritesEmptyArray" methodname="NullArray_WritesEmptyArray" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="436019647" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000114" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1093" name="Quaternion_RoundTripsExactly" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Quaternion_RoundTripsExactly" methodname="Quaternion_RoundTripsExactly" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="2005459855" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000483" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1085" name="SByte_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.SByte_RoundTrips" methodname="SByte_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="1131662751" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000190" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1088" name="SignedIntegers_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.SignedIntegers_RoundTrips" methodname="SignedIntegers_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="513351907" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000247" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1090" name="String_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.String_RoundTrips" methodname="String_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="1274280853" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000351" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1096" name="StringArray_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.StringArray_RoundTrips" methodname="StringArray_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="2113805777" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000164" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1089" name="UnsignedIntegers_RoundTrips" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.UnsignedIntegers_RoundTrips" methodname="UnsignedIntegers_RoundTrips" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="1310244126" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000370" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1094" name="Vectors_RoundTripsExactly" fullname="LiteNetLibManager.Tests.SerializationRoundTripTests.Vectors_RoundTripsExactly" methodname="Vectors_RoundTripsExactly" classname="LiteNetLibManager.Tests.SerializationRoundTripTests" runstate="Runnable" seed="276411361" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000444" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1099" name="ServerRestartTests" fullname="LiteNetLibManager.Tests.ServerRestartTests" classname="LiteNetLibManager.Tests.ServerRestartTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:35Z" duration="0.067432" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1101" name="OfflineServerRestart_DropsQueuedPacketsFromPreviousRun" fullname="LiteNetLibManager.Tests.ServerRestartTests.OfflineServerRestart_DropsQueuedPacketsFromPreviousRun" methodname="OfflineServerRestart_DropsQueuedPacketsFromPreviousRun" classname="LiteNetLibManager.Tests.ServerRestartTests" runstate="Runnable" seed="402553486" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.000375" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1100" name="StopServer_ClearsConnectionIds" fullname="LiteNetLibManager.Tests.ServerRestartTests.StopServer_ClearsConnectionIds" methodname="StopServer_ClearsConnectionIds" classname="LiteNetLibManager.Tests.ServerRestartTests" runstate="Runnable" seed="953652704" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:34Z" duration="0.001090" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1102" name="WebSocketServerRestart_DropsEventsFromPreviousRun" fullname="LiteNetLibManager.Tests.ServerRestartTests.WebSocketServerRestart_DropsEventsFromPreviousRun" methodname="WebSocketServerRestart_DropsEventsFromPreviousRun" classname="LiteNetLibManager.Tests.ServerRestartTests" runstate="Runnable" seed="993274794" result="Passed" start-time="2026-09-28 04:40:34Z" end-time="2026-09-28 04:40:35Z" duration="0.065290" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[WebSocketServer] Started on ws://0.0.0.0:55296/netcode/
+[WebSocketServer] Started on ws://0.0.0.0:55297/netcode/
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1103" name="SyncListOperationTests" fullname="LiteNetLibManager.Tests.SyncListOperationTests" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.005703" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1108" name="Clear_ReplacesAllPriorOperations" fullname="LiteNetLibManager.Tests.SyncListOperationTests.Clear_ReplacesAllPriorOperations" methodname="Clear_ReplacesAllPriorOperations" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="1574158162" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.002252" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1112" name="DeltaSync_Insert_RoundTrips" fullname="LiteNetLibManager.Tests.SyncListOperationTests.DeltaSync_Insert_RoundTrips" methodname="DeltaSync_Insert_RoundTrips" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="185260080" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000372" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1111" name="DeltaSync_RoundTripsOperations" fullname="LiteNetLibManager.Tests.SyncListOperationTests.DeltaSync_RoundTripsOperations" methodname="DeltaSync_RoundTripsOperations" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="1248646017" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000571" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1105" name="Dirty_AtSameIndex_CoalescesPriorDirty" fullname="LiteNetLibManager.Tests.SyncListOperationTests.Dirty_AtSameIndex_CoalescesPriorDirty" methodname="Dirty_AtSameIndex_CoalescesPriorDirty" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="949436430" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000310" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1110" name="InitialSync_RoundTripsFullState" fullname="LiteNetLibManager.Tests.SyncListOperationTests.InitialSync_RoundTripsFullState" methodname="InitialSync_RoundTripsFullState" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="2057982001" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000171" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1113" name="ReadSyncData_FiresOnOperationCallbacks" fullname="LiteNetLibManager.Tests.SyncListOperationTests.ReadSyncData_FiresOnOperationCallbacks" methodname="ReadSyncData_FiresOnOperationCallbacks" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="870890816" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000201" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1107" name="RemoveAt_KeepsSetAtOtherIndexes" fullname="LiteNetLibManager.Tests.SyncListOperationTests.RemoveAt_KeepsSetAtOtherIndexes" methodname="RemoveAt_KeepsSetAtOtherIndexes" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="1352341404" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000159" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1104" name="Set_AtSameIndex_CoalescesPriorSet" fullname="LiteNetLibManager.Tests.SyncListOperationTests.Set_AtSameIndex_CoalescesPriorSet" methodname="Set_AtSameIndex_CoalescesPriorSet" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="345027341" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000149" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1106" name="Set_ReplacesPriorDirtyAtSameIndex" fullname="LiteNetLibManager.Tests.SyncListOperationTests.Set_ReplacesPriorDirtyAtSameIndex" methodname="Set_ReplacesPriorDirtyAtSameIndex" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="881239235" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000142" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1109" name="Synced_ClearsPendingOperationLog" fullname="LiteNetLibManager.Tests.SyncListOperationTests.Synced_ClearsPendingOperationLog" methodname="Synced_ClearsPendingOperationLog" classname="LiteNetLibManager.Tests.SyncListOperationTests" runstate="Runnable" seed="743879516" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000116" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1114" name="TransportHandlerPacketTests" fullname="LiteNetLibManager.Tests.TransportHandlerPacketTests" classname="LiteNetLibManager.Tests.TransportHandlerPacketTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.002488" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1115" name="TruncatedPacketHeaders_AreDroppedWithoutStoppingLaterPackets" fullname="LiteNetLibManager.Tests.TransportHandlerPacketTests.TruncatedPacketHeaders_AreDroppedWithoutStoppingLaterPackets" methodname="TruncatedPacketHeaders_AreDroppedWithoutStoppingLaterPackets" classname="LiteNetLibManager.Tests.TransportHandlerPacketTests" runstate="Runnable" seed="1298457243" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.002114" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1116" name="VarIntPackingTests" fullname="LiteNetLibManager.Tests.VarIntPackingTests" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.002118" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1120" name="PackedInt_RoundTripsIncludingExtremes" fullname="LiteNetLibManager.Tests.VarIntPackingTests.PackedInt_RoundTripsIncludingExtremes" methodname="PackedInt_RoundTripsIncludingExtremes" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" seed="1251956139" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000301" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1122" name="PackedLong_RoundTripsIncludingExtremes" fullname="LiteNetLibManager.Tests.VarIntPackingTests.PackedLong_RoundTripsIncludingExtremes" methodname="PackedLong_RoundTripsIncludingExtremes" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" seed="204568137" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000178" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1121" name="PackedShort_RoundTripsIncludingExtremes" fullname="LiteNetLibManager.Tests.VarIntPackingTests.PackedShort_RoundTripsIncludingExtremes" methodname="PackedShort_RoundTripsIncludingExtremes" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" seed="962728778" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000142" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1118" name="PackedUInt_RoundTrips" fullname="LiteNetLibManager.Tests.VarIntPackingTests.PackedUInt_RoundTrips" methodname="PackedUInt_RoundTrips" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" seed="257552773" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000134" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1117" name="PackedULong_RoundTripsAtEncodingBoundaries" fullname="LiteNetLibManager.Tests.VarIntPackingTests.PackedULong_RoundTripsAtEncodingBoundaries" methodname="PackedULong_RoundTripsAtEncodingBoundaries" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" seed="295267833" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000210" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1119" name="PackedUShort_RoundTripsIncludingExtremes" fullname="LiteNetLibManager.Tests.VarIntPackingTests.PackedUShort_RoundTripsIncludingExtremes" methodname="PackedUShort_RoundTripsIncludingExtremes" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" seed="1625908679" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000175" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1123" name="SmallValues_StayCompact" fullname="LiteNetLibManager.Tests.VarIntPackingTests.SmallValues_StayCompact" methodname="SmallValues_StayCompact" classname="LiteNetLibManager.Tests.VarIntPackingTests" runstate="Runnable" seed="911826663" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.000211" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1124" name="WebSocketClientSendTests" fullname="LiteNetLibManager.Tests.WebSocketClientSendTests" classname="LiteNetLibManager.Tests.WebSocketClientSendTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.087988" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1125" name="ReusedWriter_SendsOwnedPayloadsInOrder" fullname="LiteNetLibManager.Tests.WebSocketClientSendTests.ReusedWriter_SendsOwnedPayloadsInOrder" methodname="ReusedWriter_SendsOwnedPayloadsInOrder" classname="LiteNetLibManager.Tests.WebSocketClientSendTests" runstate="Runnable" seed="390188502" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.087607" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[WebSocketServer] Started on ws://127.0.0.1:55299/netcode/
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1126" name="WebSocketServerLimitTests" fullname="LiteNetLibManager.Tests.WebSocketServerLimitTests" classname="LiteNetLibManager.Tests.WebSocketServerLimitTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.249106" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1127" name="AdditionalConnection_IsRejectedAtConfiguredLimit" fullname="LiteNetLibManager.Tests.WebSocketServerLimitTests.AdditionalConnection_IsRejectedAtConfiguredLimit" methodname="AdditionalConnection_IsRejectedAtConfiguredLimit" classname="LiteNetLibManager.Tests.WebSocketServerLimitTests" runstate="Runnable" seed="215910154" result="Passed" start-time="2026-09-28 04:40:35Z" end-time="2026-09-28 04:40:35Z" duration="0.248696" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[WebSocketServer] Started on ws://127.0.0.1:55301/netcode/
+Saving results to: C:/Users/User/AppData/LocalLow/SURIYUN/UnityMultiplayerARPG\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

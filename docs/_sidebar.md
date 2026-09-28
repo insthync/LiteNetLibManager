@@ -14,3 +14,6 @@
   - [Part 3 - Networking objects spawn/destroy/subscribe/unsubscribe](/how_does_it_work/part003.md)
 - Advanced Topics
   - [Custom Transport Layer](/advanced/custom_transport_layer.md)
+- Testing
+  - [Editor test results (2026-09-28)](/testing/editor_test_results_2026-09-28.md)
+  - [State sync layout results (2026-09-28)](/testing/state_sync_layout_results_2026-09-28.md)
