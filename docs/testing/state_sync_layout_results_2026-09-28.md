@@ -1,6 +1,6 @@
 # Game state syncing: usage, workflow, and layout results
 
-This guide describes the current `LiteNetLibGameManager` state sync path. The [Editor test results](editor_test_results_2026-09-28.md) record the 2026-09-28 run (87 passed, 0 failed); the layout matrix below comes from four cases in that run.
+This guide describes the current `LiteNetLibGameManager` state sync path. The [Editor test results](editor_test_results_2026-09-28.md) record the 2026-09-28 run (91 passed, 0 failed); the layout matrix below comes from four cases in that run.
 
 ## How to use it
 
@@ -60,13 +60,16 @@ Call `SetHealth` and `AddItem` on the spawned server object. These methods guard
 | Element | Who changes it in this example | Initial state | Later updates |
 | --- | --- | --- | --- |
 | `SyncFieldInt` with `ServerToClients` | Server | Current value in the spawn state | Unreliable delta while eligible; reliable baseline when scheduled |
+| `SyncFieldInt` with `ServerToOwnerClient` | Server | Current value only in the subscribed owner's spawn state | Delta or baseline updates only to the subscribed owner |
 | `SyncListInt` | Server | Full list in the spawn state | Operations in reliable baseline state |
 
 `ClientMulticast` is an available field mode for owner-originated values: the owner client queues a reliable update to the server, which applies it and queues forwarding to subscribed clients. Use the default server-to-clients mode for server-owned game state.
 
-### Current owner-only setting limitation
+### Owner-only fields and list limitation
 
-Code inspection shows that `ServerToOwnerClient` follows the same recipient filter as `ServerToClients`, and the list send path never reads `forOwnerOnly`. Do not rely on either setting to keep data private in this version. The 2026-09-28 test run did not separately test owner-only delivery.
+`ServerToOwnerClient` now includes its field only in the subscribed owner's initial spawn state and sends later reliable or unreliable updates only to that owner. Other subscribers still receive the object spawn and any other fields they are allowed to see. The [four owner-recipient test cases](editor_test_results_2026-09-28.md#gamemanagerstatesynctests-20) cover both delivery paths and compare this mode with `ServerToClients`.
+
+The list send path still does not read `forOwnerOnly`. Do not rely on `forOwnerOnly = true` to keep list data private in this version.
 
 ## How state sync works
 
