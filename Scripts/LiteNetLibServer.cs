@@ -80,6 +80,7 @@ namespace LiteNetLibManager
         public void StopServer()
         {
             Transport.StopServer();
+            ConnectionIds.Clear();
             ServerPort = 0;
             _isNetworkActive = false;
             OnStopServer();

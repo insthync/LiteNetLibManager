@@ -55,6 +55,7 @@ namespace LiteNetLibManager
 
         public bool StartServer(int port, int maxConnections)
         {
+            _clientData.Clear();
             _serverData.Clear();
             ServerPeersCount = 0;
             IsServerStarted = true;
