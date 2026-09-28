@@ -13,6 +13,14 @@ namespace LiteNetLibManager.Tests
 {
     public class GameManagerStateSyncTests
     {
+        public enum LayoutDifference
+        {
+            ExtraClientField,
+            ExtraServerField,
+            LeadingServerBehaviour,
+            TrailingServerBehaviour,
+        }
+
         private const int Iterations = 256;
         private delegate ushort WriteServerState(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> states);
 
@@ -316,6 +324,89 @@ namespace LiteNetLibManager.Tests
             }
         }
 
+        [TestCase(LayoutDifference.ExtraClientField, true)]
+        [TestCase(LayoutDifference.ExtraServerField, false)]
+        [TestCase(LayoutDifference.LeadingServerBehaviour, false)]
+        [TestCase(LayoutDifference.TrailingServerBehaviour, true)]
+        public void DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults(LayoutDifference difference, bool shouldSpawn)
+        {
+            var serverManagerObject = new GameObject("layout server manager");
+            var clientManagerObject = new GameObject("layout client manager");
+            var serverObject = new GameObject("layout server entity");
+            var clientObject = new GameObject("layout client entity");
+            try
+            {
+                var serverManager = serverManagerObject.AddComponent<GameManagerHarness>();
+                serverManager.InitializeForTest();
+                serverManager.currentLogLevel = (ELogLevel)byte.MaxValue;
+                var clientManager = clientManagerObject.AddComponent<GameManagerHarness>();
+                clientManager.InitializeForTest();
+                clientManager.currentLogLevel = (ELogLevel)byte.MaxValue;
+
+                var serverIdentity = serverObject.AddComponent<LiteNetLibIdentity>();
+                if (difference == LayoutDifference.LeadingServerBehaviour)
+                    serverObject.AddComponent<LiteNetLibBehaviour>();
+                var serverBehaviour = serverObject.AddComponent<LayoutSyncBehaviour>();
+                if (difference == LayoutDifference.TrailingServerBehaviour)
+                    serverObject.AddComponent<LiteNetLibBehaviour>();
+                if (difference != LayoutDifference.ExtraServerField)
+                    serverBehaviour.optional = null;
+                serverBehaviour.shared.Value = 77;
+                if (serverBehaviour.optional != null)
+                    serverBehaviour.optional.Value = 88;
+
+                var clientIdentity = clientObject.AddComponent<LiteNetLibIdentity>();
+                var clientBehaviour = clientObject.AddComponent<LayoutSyncBehaviour>();
+                if (difference != LayoutDifference.ExtraClientField)
+                    clientBehaviour.optional = null;
+                foreach (var behaviour in serverObject.GetComponents<LiteNetLibBehaviour>())
+                    BindBehaviourIdentity(behaviour, serverIdentity);
+                BindBehaviourIdentity(clientBehaviour, clientIdentity);
+
+                Assert.AreSame(serverIdentity, serverManager.Assets.NetworkSpawn(serverIdentity, 42));
+                var elements = new HashSet<LiteNetLibSyncElement> { serverBehaviour.shared };
+                if (serverBehaviour.optional != null)
+                    elements.Add(serverBehaviour.optional);
+                var writer = new NetDataWriter();
+                typeof(LiteNetLibGameManager).GetMethod("WriteSyncElements", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(serverManager, new object[] { writer, elements, 1u, true });
+
+                if (!shouldSpawn)
+                    LogAssert.Expect(LogType.Error, new Regex("Destroy may not be called from edit mode"));
+                var reader = new NetDataReader(writer.CopyData());
+                var spawned = clientManager.Assets.NetworkSpawn(clientIdentity, 42, -1, reader, 1);
+                if (difference == LayoutDifference.LeadingServerBehaviour)
+                    Assert.AreNotEqual(serverBehaviour.shared.ElementId, clientBehaviour.shared.ElementId);
+                else if (difference == LayoutDifference.TrailingServerBehaviour)
+                    Assert.AreEqual(serverBehaviour.shared.ElementId, clientBehaviour.shared.ElementId);
+                if (shouldSpawn)
+                {
+                    Assert.AreSame(clientIdentity, spawned);
+                    Assert.AreEqual(77, clientBehaviour.shared.Value);
+                    Assert.IsTrue(reader.EndOfData);
+                }
+                else
+                {
+                    Assert.IsNull(spawned);
+                    Assert.IsFalse(clientManager.Assets.SpawnedObjects.ContainsKey(42));
+                    Assert.IsFalse(clientIdentity.IsSpawned);
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(clientObject);
+                UnityEngine.Object.DestroyImmediate(serverObject);
+                UnityEngine.Object.DestroyImmediate(clientManagerObject);
+                UnityEngine.Object.DestroyImmediate(serverManagerObject);
+            }
+        }
+
+        private static void BindBehaviourIdentity(LiteNetLibBehaviour behaviour, LiteNetLibIdentity identity)
+        {
+            typeof(LiteNetLibBehaviour).GetField("_identity", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(behaviour, identity);
+        }
+
         [Test]
         public void DeltaReader_RejectsAnInvalidLengthWithoutMovingPastThePacket()
         {
@@ -539,6 +630,12 @@ namespace LiteNetLibManager.Tests
     public class StateReadBehaviour : LiteNetLibBehaviour
     {
         public LiteNetLibSyncField<int> value = new LiteNetLibSyncField<int>();
+    }
+
+    public class LayoutSyncBehaviour : LiteNetLibBehaviour
+    {
+        public LiteNetLibSyncField<int> shared = new LiteNetLibSyncField<int>();
+        public LiteNetLibSyncField<int> optional = new LiteNetLibSyncField<int>();
     }
 
     public class RecordingGameTransport : ITransport
