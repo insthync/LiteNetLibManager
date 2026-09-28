@@ -22,7 +22,8 @@ namespace LiteNetLibManager.Tests
         }
 
         private const int Iterations = 256;
-        private delegate ushort WriteServerState(NetDataWriter writer, LiteNetLibPlayer player, Dictionary<uint, GameStateSyncData> states);
+        private delegate bool WriteServerState(NetDataWriter writer, LiteNetLibPlayer player,
+            uint objectId, GameStateSyncData state, uint tick);
 
         private static void AssertListStatePacket(RecordingGameTransport.SentPacket sent, int elementId,
             bool spawn, long ownerId, bool fullResync, params int[] values)
@@ -161,17 +162,21 @@ namespace LiteNetLibManager.Tests
             {
                 var manager = gameObject.AddComponent<GameManagerHarness>();
                 manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
                 var player = new LiteNetLibPlayer(manager, 1);
-                var destroy = new GameStateSyncData { StateType = GameStateSyncType.Destroy, DestroyReasons = 7 };
-                var emptyData = new GameStateSyncData { StateType = GameStateSyncType.Data };
-                var states = new Dictionary<uint, GameStateSyncData> { [42] = destroy, [43] = emptyData };
-                var writer = new NetDataWriter();
-                var method = typeof(LiteNetLibGameManager).GetMethod("WriteGameStateFromServer", BindingFlags.Instance | BindingFlags.NonPublic);
+                var destroy = player.SyncingStates.PrepareSyncStateData(0, 42);
+                destroy.StateType = GameStateSyncType.Destroy;
+                destroy.DestroyReasons = 7;
+                var emptyData = player.SyncingStates.PrepareSyncStateData(0, 43);
+                emptyData.StateType = GameStateSyncType.Data;
 
-                ushort count = (ushort)method.Invoke(manager, new object[] { writer, player, states });
+                typeof(LiteNetLibGameManager).GetMethod("SyncGameStateToClient", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, new object[] { player });
 
-                Assert.AreEqual(1, count);
-                var reader = new NetDataReader(writer.CopyData());
+                Assert.AreEqual(1, transport.Packets.Count);
+                var reader = new NetDataReader(transport.Packets[0].Data);
+                Assert.AreEqual(GameMsgTypes.SyncBaseLine, reader.GetPackedUShort());
                 Assert.AreEqual(manager.Tick, reader.GetPackedUInt());
                 Assert.AreEqual(1, reader.GetUShort());
                 Assert.AreEqual(GameStateSyncType.Destroy, (GameStateSyncType)reader.GetByte());
@@ -180,6 +185,109 @@ namespace LiteNetLibManager.Tests
                 Assert.IsTrue(reader.EndOfData);
                 Assert.AreEqual(GameStateSyncType.None, destroy.StateType);
                 Assert.AreEqual(GameStateSyncType.None, emptyData.StateType);
+                Assert.IsEmpty(player.SyncingStates.States[0]);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void ManyServerBaselineStates_AreSplitIntoCompleteOrderedPackets()
+        {
+            const int objectCount = 5000;
+            var gameObject = new GameObject("many baseline states test");
+            try
+            {
+                var manager = gameObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                var player = new LiteNetLibPlayer(manager, 1);
+                for (uint objectId = 1; objectId <= objectCount; ++objectId)
+                {
+                    GameStateSyncData state = player.SyncingStates.PrepareSyncStateData(0, objectId);
+                    state.StateType = GameStateSyncType.Destroy;
+                    state.DestroyReasons = 7;
+                }
+
+                typeof(LiteNetLibGameManager).GetMethod("SyncGameStateToClient", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, new object[] { player });
+
+                Assert.Greater(transport.Packets.Count, 1);
+                uint nextObjectId = 1;
+                int totalBytes = 0;
+                int largestPacket = 0;
+                foreach (RecordingGameTransport.SentPacket sent in transport.Packets)
+                {
+                    Assert.AreEqual(DeliveryMethod.ReliableOrdered, sent.DeliveryMethod);
+                    Assert.LessOrEqual(sent.Data.Length, LiteNetLibGameManager.TARGET_BASELINE_PACKET_SIZE);
+                    totalBytes += sent.Data.Length;
+                    largestPacket = Math.Max(largestPacket, sent.Data.Length);
+                    var reader = new NetDataReader(sent.Data);
+                    Assert.AreEqual(GameMsgTypes.SyncBaseLine, reader.GetPackedUShort());
+                    Assert.AreEqual(manager.Tick, reader.GetPackedUInt());
+                    ushort stateCount = reader.GetUShort();
+                    Assert.Greater(stateCount, 0);
+                    for (int i = 0; i < stateCount; ++i)
+                    {
+                        Assert.AreEqual(GameStateSyncType.Destroy, (GameStateSyncType)reader.GetByte());
+                        Assert.AreEqual(nextObjectId++, reader.GetPackedUInt());
+                        Assert.AreEqual(7, reader.GetByte());
+                    }
+                    Assert.IsTrue(reader.EndOfData);
+                }
+                Assert.AreEqual((uint)(objectCount + 1), nextObjectId);
+                Assert.IsEmpty(player.SyncingStates.States[0]);
+                TestContext.WriteLine($"{objectCount} baseline destroy states: {transport.Packets.Count} packets, {totalBytes} total bytes, {largestPacket} largest packet");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
+        public void SingleOversizedServerBaselineState_RemainsIntact()
+        {
+            var gameObject = new GameObject("oversized baseline state test");
+            try
+            {
+                var manager = gameObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                manager.currentLogLevel = (ELogLevel)byte.MaxValue;
+                gameObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = gameObject.AddComponent<LiteNetLibBehaviour>();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                var player = new LiteNetLibPlayer(manager, 1);
+                var field = new LiteNetLibSyncField<string>
+                {
+                    Value = new string('x', LiteNetLibGameManager.TARGET_BASELINE_PACKET_SIZE + 100)
+                };
+                typeof(LiteNetLibElement).GetMethod("Setup", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(field, new object[] { behaviour, 123 });
+                GameStateSyncData state = player.SyncingStates.PrepareSyncStateData(0, 42);
+                state.StateType = GameStateSyncType.Data;
+                state.SyncElements.Add(field);
+
+                typeof(LiteNetLibGameManager).GetMethod("SyncGameStateToClient", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(manager, new object[] { player });
+
+                Assert.AreEqual(1, transport.Packets.Count);
+                Assert.Greater(transport.Packets[0].Data.Length, LiteNetLibGameManager.TARGET_BASELINE_PACKET_SIZE);
+                var reader = new NetDataReader(transport.Packets[0].Data);
+                Assert.AreEqual(GameMsgTypes.SyncBaseLine, reader.GetPackedUShort());
+                reader.GetPackedUInt(); // tick
+                Assert.AreEqual(1, reader.GetUShort());
+                Assert.AreEqual(GameStateSyncType.Data, (GameStateSyncType)reader.GetByte());
+                Assert.AreEqual(42u, reader.GetPackedUInt());
+                Assert.AreEqual(1, reader.GetPackedInt());
+                Assert.AreEqual(123, reader.GetPackedInt());
+                Assert.AreEqual(field.Value, reader.GetValue<string>());
+                Assert.IsTrue(reader.EndOfData);
+                Assert.IsEmpty(player.SyncingStates.States[0]);
             }
             finally
             {
@@ -1102,18 +1210,20 @@ namespace LiteNetLibManager.Tests
                 typeof(LiteNetLibElement).GetMethod("Setup", BindingFlags.Instance | BindingFlags.NonPublic)
                     .Invoke(field, new object[] { behaviour, 123 });
                 var state = new GameStateSyncData();
-                var states = new Dictionary<uint, GameStateSyncData> { [42] = state };
                 var player = new LiteNetLibPlayer(manager, 1);
                 var writer = new NetDataWriter(true, 1024);
-                var method = typeof(LiteNetLibGameManager).GetMethod("WriteGameStateFromServer", BindingFlags.Instance | BindingFlags.NonPublic);
+                var method = typeof(LiteNetLibGameManager).GetMethod("WriteServerGameState", BindingFlags.Instance | BindingFlags.NonPublic);
                 var write = (WriteServerState)Delegate.CreateDelegate(typeof(WriteServerState), manager, method);
 
                 long allocations = AllocationCount(() =>
                 {
                     writer.Reset();
+                    writer.PutPackedUInt(manager.Tick);
+                    writer.Put((ushort)1);
                     state.StateType = GameStateSyncType.Data;
                     state.SyncElements.Add(field);
-                    write(writer, player, states);
+                    write(writer, player, 42, state, manager.Tick);
+                    state.Reset();
                 });
                 Assert.Zero(allocations, $"Manager data state allocated {allocations} times in {Iterations} updates");
 
