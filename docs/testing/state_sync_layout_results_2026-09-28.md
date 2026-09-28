@@ -1,6 +1,6 @@
 # Game state syncing: usage, workflow, and layout results
 
-This guide describes the current `LiteNetLibGameManager` state sync path. The [Editor test results](editor_test_results_2026-09-28.md) record the 2026-09-28 run (103 passed, 0 failed); the layout matrix below comes from four cases in that run.
+This guide describes the current `LiteNetLibGameManager` state sync path. The [latest large-update test results](large_update_results_2026-09-28.md) record 106 passing Editor cases. The layout matrix below comes from four cases in the [earlier run](editor_test_results_2026-09-28.md).
 
 ## How to use it
 
@@ -102,6 +102,10 @@ Changing a field value or a list registers that element as updating. On each ser
 | Pending field at a baseline interval, or a delta element too large for an unreliable packet | Reliable ordered `SyncBaseLine` | Apply the latest value |
 
 `baseLineSyncInterval` defaults to one second. It governs when pending elements use the reliable baseline path; it does not send an unchanged full world snapshot every second. A changed delta-capable field is sent with a limited redundancy count while pending. The manager splits delta data into packets that fit its unreliable size limit and queues an oversized element for reliable delivery. The client reads object IDs and element IDs to locate the destination value or list; later field updates with an old tick are ignored.
+
+When a server has many baseline object states for one player and channel, it splits them between complete object records at a 16 KiB packet target. Packets use the same `ReliableOrdered` channel and tick, and keep object order. A single object's state remains intact even if it exceeds the target, because the current baseline format has no per-object continuation. Such a state produces a warning and may still be large; keep individual synced values and initial lists reasonably sized. The [large-update tests](large_update_results_2026-09-28.md) exercise both cases.
+
+`DefaultInterestManager` reuses its temporary subscription set across updates. This removes that set's regular GC allocation; it still scans spawned objects for each player-owned object, so large worlds may need an interest index chosen from profiling results.
 
 ### Object removal
 

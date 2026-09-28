@@ -131,6 +131,28 @@ namespace LiteNetLibManager.Tests
         }
 
         [Test]
+        public void DefaultInterestUpdates_DoNotAllocateAfterWarmup()
+        {
+            var gameObject = new GameObject("interest allocation test");
+            try
+            {
+                var manager = gameObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var interest = (DefaultInterestManager)manager.InterestManager;
+                interest.updateInterval = 0f;
+                interest.UpdateInterestManagementImmediate();
+
+                long allocations = AllocationCount(() => interest.UpdateInterestManagement(0f));
+
+                Assert.Zero(allocations, $"Default interest updates allocated {allocations} times in {Iterations} updates");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
         public void RecycledStates_AreEmptyBeforeTheNextUpdate()
         {
             var states = new LiteNetLibSyncingStates();
