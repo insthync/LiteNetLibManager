@@ -16,4 +16,4 @@
   - [Custom Transport Layer](/advanced/custom_transport_layer.md)
 - Testing
   - [Editor test results (2026-09-28)](/testing/editor_test_results_2026-09-28.md)
-  - [State sync layout results (2026-09-28)](/testing/state_sync_layout_results_2026-09-28.md)
+  - [Game state sync guide and layout results](/testing/state_sync_layout_results_2026-09-28.md)

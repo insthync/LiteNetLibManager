@@ -26,8 +26,8 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 
 About configs there are:
 
-- `syncMode`, how its changes handles, you have 3 choices for this. 1) `ServerToClients` Changes handle by server, will send to connected clients when changes occurs on server. 2) `ServerToOwnerClient` Changes handle by server, will send to owner-client when changes occurs on server. 3) `ClientMulticast` Changes handle by owner-client, will send to server then server multicast to other clients when changes occurs on owner-client.
-- `onChange(bool initial, TType oldValue, TType newValue)`, event when data changes on clients.
+- `syncMode` controls who may change a field. `ServerToClients` is the default server-authoritative mode. `ClientMulticast` allows an owner client to send a value to the server for forwarding to subscribed clients. `ServerToOwnerClient` is declared by the API, but the current server send path does not restrict it to the owner; see the [state sync guide](../testing/state_sync_layout_results_2026-09-28.md#current-owner-only-setting-limitation).
+- `onChange(bool initial, TType oldValue, TType newValue)` runs when an initial value is applied or a value changes. It can also run on the server when server code changes a field.
 
 
 Now it's supported with following types:
@@ -94,8 +94,8 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 
 About configs there are:
 
-- `forOwnerOnly`, if this is **TRUE** it will send data to owner client only
-- `onOperation(LiteNetLibSyncListOp op, int itemIndex, TType oldItem, TType newItem)`, event when process operations on clients
+- `forOwnerOnly` is present on the list API, but the current send path does not read it. Do not use it to restrict delivery to the owner; see the [state sync guide](../testing/state_sync_layout_results_2026-09-28.md#current-owner-only-setting-limitation).
+- `onOperation(LiteNetLibSyncListOp op, int itemIndex, TType oldItem, TType newItem)` runs for list operations on clients and when server code changes a list.
 
 Its supported types is like as `LiteNetLibSyncField` and also able to create custom types like it too, so you can do like this
 
@@ -108,13 +108,4 @@ public class CustomNetBehaviour : LiteNetLibBehaviour {
 
 ## How does it work?
 
-State sync message will be sent if it has something changes (spawn/despawn/sync field/sync list) reliably every tick.
-But sync fields will not be packed immediately, it will send updates to clients every ticks, unreliable. Then it will be packed together with state sync message if it has no change in the next tick.
-
-### For example
-```
-Tick | Data
-1001 | 1 send unreliably
-1002 | 2 send unreliably
-1003 | 2 no changes, pack with state sync message and send reliable
-```
+The manager sends spawn, destroy, and list operations through reliable ordered baseline messages. Eligible field changes can use unreliable delta messages, with a reliable baseline when the interval is reached or an element is too large for an unreliable packet. See the [state sync guide and tested layout results](../testing/state_sync_layout_results_2026-09-28.md) for the setup example and full workflow.
