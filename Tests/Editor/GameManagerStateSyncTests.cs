@@ -416,6 +416,142 @@ namespace LiteNetLibManager.Tests
             }
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void OwnerTransfer_SendsCurrentOwnerOnlyValueToNewOwner(bool newOwnerSpawnPending)
+        {
+            var managerObject = new GameObject("owner transfer manager");
+            var entityObject = new GameObject("owner transfer entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                manager.ActivateServerForTest();
+                var previousOwner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                var newOwner = new LiteNetLibPlayer(manager, 2) { IsReady = true };
+                manager.AddPlayerForTest(previousOwner);
+                manager.AddPlayerForTest(newOwner);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerSyncBehaviour>();
+                behaviour.value.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+                behaviour.value.Value = 17;
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+                newOwner.Subscribe(42);
+
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (!newOwnerSpawnPending)
+                    syncMethod.Invoke(manager, new object[] { 1u });
+                transport.Packets.Clear();
+
+                manager.Assets.SetObjectOwnerImmediately(42, 2);
+                Assert.AreEqual(2, identity.ConnectionId);
+                syncMethod.Invoke(manager, new object[] { 2u });
+
+                int newOwnerStatePackets = 0;
+                foreach (var sent in transport.Packets)
+                {
+                    var reader = new NetDataReader(sent.Data);
+                    if (reader.GetPackedUShort() != GameMsgTypes.SyncBaseLine || sent.ConnectionId != 2)
+                        continue;
+                    ++newOwnerStatePackets;
+                    Assert.AreEqual(DeliveryMethod.ReliableOrdered, sent.DeliveryMethod);
+                    reader.GetPackedUInt(); // tick
+                    Assert.AreEqual(1, reader.GetUShort());
+                    Assert.AreEqual(newOwnerSpawnPending ? GameStateSyncType.Spawn : GameStateSyncType.Data,
+                        (GameStateSyncType)reader.GetByte());
+                    if (newOwnerSpawnPending)
+                    {
+                        Assert.IsFalse(reader.GetBool());
+                        reader.GetPackedInt(); // asset ID
+                        for (int i = 0; i < 6; ++i)
+                            reader.GetFloat(); // position and rotation
+                    }
+                    Assert.AreEqual(42u, reader.GetPackedUInt());
+                    if (newOwnerSpawnPending)
+                        Assert.AreEqual(2L, reader.GetPackedLong());
+                    Assert.AreEqual(1, reader.GetPackedInt());
+                    Assert.AreEqual(behaviour.value.ElementId, reader.GetPackedInt());
+                    Assert.AreEqual(17, reader.GetPackedInt());
+                    Assert.IsTrue(reader.EndOfData);
+                }
+                Assert.AreEqual(1, newOwnerStatePackets);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
+        [Test]
+        public void RapidOwnerTransfers_DiscardQueuedOwnerOnlyUpdatesForPreviousOwners()
+        {
+            var managerObject = new GameObject("rapid owner transfer manager");
+            var entityObject = new GameObject("rapid owner transfer entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                manager.ActivateServerForTest();
+                var firstOwner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                var secondOwner = new LiteNetLibPlayer(manager, 2) { IsReady = true };
+                var thirdOwner = new LiteNetLibPlayer(manager, 3) { IsReady = true };
+                manager.AddPlayerForTest(firstOwner);
+                manager.AddPlayerForTest(secondOwner);
+                manager.AddPlayerForTest(thirdOwner);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerSyncBehaviour>();
+                behaviour.value.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+                behaviour.value.Value = 17;
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+                secondOwner.Subscribe(42);
+                thirdOwner.Subscribe(42);
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                syncMethod.Invoke(manager, new object[] { 1u });
+                transport.Packets.Clear();
+
+                firstOwner.SyncingStates.AppendDataSyncState(behaviour.value);
+                firstOwner.SyncingDeltaStates.AppendDataSyncState(behaviour.value);
+                manager.Assets.SetObjectOwnerImmediately(42, 2);
+                manager.Assets.SetObjectOwnerImmediately(42, 3);
+                syncMethod.Invoke(manager, new object[] { 2u });
+
+                int ownerOnlyStatePackets = 0;
+                foreach (var sent in transport.Packets)
+                {
+                    var reader = new NetDataReader(sent.Data);
+                    ushort messageType = reader.GetPackedUShort();
+                    if (messageType != GameMsgTypes.SyncBaseLine && messageType != GameMsgTypes.SyncDelta)
+                        continue;
+                    Assert.AreEqual(3, sent.ConnectionId, "Only the final owner should receive queued owner-only state");
+                    Assert.AreEqual(GameMsgTypes.SyncBaseLine, messageType);
+                    ++ownerOnlyStatePackets;
+                    reader.GetPackedUInt(); // tick
+                    Assert.AreEqual(1, reader.GetUShort());
+                    Assert.AreEqual(GameStateSyncType.Data, (GameStateSyncType)reader.GetByte());
+                    Assert.AreEqual(42u, reader.GetPackedUInt());
+                    Assert.AreEqual(1, reader.GetPackedInt());
+                    Assert.AreEqual(behaviour.value.ElementId, reader.GetPackedInt());
+                    Assert.AreEqual(17, reader.GetPackedInt());
+                    Assert.IsTrue(reader.EndOfData);
+                }
+                Assert.AreEqual(1, ownerOnlyStatePackets);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
         [TestCase(LayoutDifference.ExtraClientField, true)]
         [TestCase(LayoutDifference.ExtraServerField, false)]
         [TestCase(LayoutDifference.LeadingServerBehaviour, false)]
@@ -686,6 +822,12 @@ namespace LiteNetLibManager.Tests
             typeof(LiteNetLibManager).GetProperty("IsServer").SetValue(this, true);
             typeof(LiteNetLibManager).GetField("_serverTransport", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(this, Server.Transport);
+        }
+
+        public void ActivateServerForTest()
+        {
+            typeof(LiteNetLibServer).GetField("_isNetworkActive", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(Server, true);
         }
 
         public void AddPlayerForTest(LiteNetLibPlayer player)

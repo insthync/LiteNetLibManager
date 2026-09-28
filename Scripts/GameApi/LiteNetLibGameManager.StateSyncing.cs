@@ -740,6 +740,30 @@ namespace LiteNetLibManager
             }
         }
 
+        internal void QueueOwnerOnlyStateOnOwnerChange(LiteNetLibIdentity identity, LiteNetLibPlayer previousOwner, LiteNetLibPlayer newOwner)
+        {
+            foreach (LiteNetLibSyncElement element in identity.SyncElements.Values)
+            {
+                if (!(element is LiteNetLibSyncField field) || field.syncMode != LiteNetLibSyncFieldMode.ServerToOwnerClient)
+                    continue;
+
+                if (previousOwner != null)
+                {
+                    if (previousOwner.SyncingStates.States.TryGetValue(field.SyncChannelId, out Dictionary<uint, GameStateSyncData> channelStates) &&
+                        channelStates.TryGetValue(identity.ObjectId, out GameStateSyncData baselineState) &&
+                        baselineState.StateType == GameStateSyncType.Data)
+                    {
+                        baselineState.SyncElements.Remove(field);
+                    }
+                    if (previousOwner.SyncingDeltaStates.States.TryGetValue(identity.ObjectId, out GameStateSyncData deltaState))
+                        deltaState.SyncElements.Remove(field);
+                }
+
+                if (newOwner != null && newOwner.IsReady && identity.IsSpawned && identity.HasSubscriber(newOwner.ConnectionId))
+                    newOwner.SyncingStates.AppendDataSyncState(field);
+            }
+        }
+
         internal void RegisterServerSyncElement(LiteNetLibSyncElement syncElement)
         {
             if (!_updatingServerSyncElements.Contains(syncElement))

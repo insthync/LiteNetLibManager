@@ -604,6 +604,8 @@ namespace LiteNetLibManager
                 spawnedObject.ConnectionId = connectionId;
                 // Call set owner client event
                 spawnedObject.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
+                if (Manager.IsServer)
+                    Manager.QueueOwnerOnlyStateOnOwnerChange(spawnedObject, playerA, playerB);
                 return;
             }
             else if (Manager.LogWarn)
