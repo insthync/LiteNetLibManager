@@ -1,10 +1,10 @@
 # Game state syncing: usage, workflow, and layout results
 
-This guide describes the current `LiteNetLibGameManager` state sync path. The [Editor test results](editor_test_results_2026-09-28.md) record the 2026-09-28 run (103 passed, 0 failed); the layout matrix below comes from four cases in that run.
+This guide describes the current `LiteNetLibGameManager` state sync path. The [earlier Editor test results](editor_test_results_2026-09-28.md) record the packet-reader run (103 passed, 0 failed). The readiness layout tests and full run are in the [schema-check results](editor_test_results_2026-09-28_schema.md).
 
 ## How to use it
 
-1. Put a `LiteNetLibIdentity` and a `LiteNetLibBehaviour` on each networked prefab or scene object. Register the same prefab asset on server and client, or give matching scene objects the same scene-object ID, so the client can resolve a spawn. Keep behaviour types, order, and synced field names consistent across both builds.
+1. Put a `LiteNetLibIdentity` and a `LiteNetLibBehaviour` on each networked prefab or scene object. Register the same prefab asset on server and client, or give matching scene objects the same scene-object ID, so the client can resolve a spawn. Keep behaviour types, order, and synced field names and types consistent across both builds. The ClientReady layout check enforces this before state is sent.
 2. Declare `LiteNetLibSyncField<T>` or `LiteNetLibSyncList<T>` members in the behaviour. The identity discovers these members when it sets up its behaviours. Configure callbacks in `OnSetup`, which runs before the sync elements are set up and before an initial value is read.
 3. Spawn the object through the server's `LiteNetLibAssets.NetworkSpawn` flow. Set server-authoritative fields through `.Value` and change lists through their list methods. The manager queues the changes; application code does not call `WriteSyncElements` or send state packets directly.
 4. On the client, read the synced values or react to `onChange` and `onOperation`. A field callback receives `initial = true` for initial state. Initial list entries arrive as `AddInitial` operations.
@@ -76,6 +76,12 @@ Set a list's `forOwnerOnly` flag in `OnSetup()` to restrict its initial contents
 
 ## How state sync works
 
+### Layout check before state
+
+After the online scene and network assets are initialized, the client sends a fingerprint of its registered prefab and scene-object layouts with `ClientReady`. The server compares it with its own fingerprint before calling `SetPlayerReady` to mark the player ready or spawn the player object. Its response carries the server fingerprint, which the client also checks. Missing headers and mismatches refuse readiness and the client connection; the server logs the local and remote fingerprints on a mismatch. This uses the ClientReady request and response payloads; baseline and delta state packet formats are unchanged.
+
+The fingerprint includes registered IDs, behaviour types and order, and each sync field's name, declared and concrete type, and whether it is present. Register assets before a manual `SendClientReady()`. Keep `packetVersion` current for changes the fingerprint cannot see, such as custom serializers, RPC signatures, dynamically registered assets after readiness, or sync behaviour changed inside method bodies. Override `CalculateSyncSchemaFingerprint()` if custom object registries must be included. Both builds need the new ClientReady header; an older peer is refused.
+
 ```text
 Server: spawn or change field/list -> queue per-object state
        -> each server update filters ready subscribers
@@ -111,19 +117,19 @@ Implementation: [`LiteNetLibGameManager.StateSyncing.cs`](../../Scripts/GameApi/
 
 ## Client/server layout test results
 
-The four parameterized `GameManagerStateSyncTests.DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults` cases passed in the [full Unity EditMode run](editor_test_results_2026-09-28.md). They exercise initial state sync from a server layout to a different client layout.
+The four parameterized `GameManagerStateSyncTests.DifferentBehaviourAndFieldLayouts_HavePredictableInitialSyncResults` cases exercise the packet reader directly, bypassing the join sequence. They passed in the [earlier Unity EditMode run](editor_test_results_2026-09-28.md). The new `DifferentSyncLayouts_RejectClientReadyBeforePlayerSpawn` cases passed in the [schema-check run](editor_test_results_2026-09-28_schema.md). All four differences now fail the readiness check before initial state is sent, including the two cases where the raw packet reader could apply the shared value.
 
-| Server and client layout difference | Expected client result | Observed test result |
+| Server and client layout difference | Raw initial-state reader | ClientReady check |
 | --- | --- | --- |
-| Client has one extra sync field; server sends only the shared field | Spawn succeeds; shared value is 77 | Passed |
-| Server has one extra sync field; client has only the shared field | Spawn fails; object is removed from the spawned-object map and marked unspawned | Passed |
-| Server has an extra behaviour before the shared behaviour | Spawn fails; object is removed from the spawned-object map and marked unspawned | Passed |
-| Server has an extra behaviour after the shared behaviour | Spawn succeeds; shared value is 77 | Passed |
+| Client has one extra sync field; server sends only the shared field | Spawn succeeds; shared value is 77 | Rejects before player spawn |
+| Server has one extra sync field; client has only the shared field | Spawn fails; object is removed from the spawned-object map and marked unspawned | Rejects before player spawn |
+| Server has an extra behaviour before the shared behaviour | Spawn fails; object is removed from the spawned-object map and marked unspawned | Rejects before player spawn |
+| Server has an extra behaviour after the shared behaviour | Spawn succeeds; shared value is 77 | Rejects before player spawn |
 
 The test constructs separate server and client managers and identities in one Unity Editor process. It writes initial sync elements on the server side, then passes the bytes to the client's `NetworkSpawn`. For failed cases it checks that the spawn returns null and that the client object is no longer registered as spawned. For successful cases it checks the shared field's value and that the reader consumed all initial sync bytes.
 
 The order of behaviours matters because a sync element ID is derived from the behaviour's type name, its index, and the field name in [`MakeSyncElementId`](../../Scripts/GameApi/LiteNetLibBehaviour.cs). An extra behaviour before the shared one changes its index and therefore its ID. An extra behaviour after it leaves that ID unchanged.
 
-These cases establish the tested initial-sync outcomes. They do not exercise a real network connection, builds with different compiled assemblies, delta updates for mismatched layouts, or every possible layout difference.
+Additional tests confirm that matching layouts accept the ClientReady header and leave application data unread for custom hooks, an absent client header is rejected before player spawn, an absent server header makes the client refuse the connection, and a missing scene object changes the fingerprint. These are in-process Unity EditMode tests; they do not exercise a real network connection or builds with different compiled assemblies.
 
-Source: [test implementation](../../Tests/Editor/GameManagerStateSyncTests.cs) and [NUnit XML result](editor_test_results_2026-09-28.xml).
+Source: [test implementation](../../Tests/Editor/GameManagerStateSyncTests.cs), [earlier NUnit XML](editor_test_results_2026-09-28.xml), and [schema-check NUnit XML](editor_test_results_2026-09-28_schema.xml).

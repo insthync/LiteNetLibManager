@@ -68,6 +68,6 @@ Set `forOwnerOnly = true` in `OnSetup()` to include a list only in the subscribe
 
 ## Delivery and layout
 
-Spawns and list operations use reliable ordered baseline state. Eligible field changes can use an unreliable delta, with a reliable baseline at the configured interval or when a delta is too large. Keep behaviour types, discovery order, and synced field names consistent between server and client. An unknown element can be skipped safely when its serialized payload is well formed, but a mismatched known field type is not a compatible schema.
+Spawns and list operations use reliable ordered baseline state. Eligible field changes can use an unreliable delta, with a reliable baseline at the configured interval or when a delta is too large. Keep behaviour types, discovery order, and synced field names and types consistent between server and client. The ClientReady layout check rejects differences before state delivery. Baseline packets do not frame individual elements, so an unknown element cannot be skipped safely if the check was bypassed.
 
 See the [state sync guide](../testing/state_sync_layout_results_2026-09-28.md) for the full workflow and [Editor results](../testing/editor_test_results_2026-09-28.md) for the tested owner-only and layout cases.

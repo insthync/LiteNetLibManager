@@ -17,5 +17,6 @@
 - Tutorials
   - [First networked object](/tutorial/shooter.md)
 - Testing
-  - [Editor test results (2026-09-28)](/testing/editor_test_results_2026-09-28.md)
+  - [Editor test results: layout check](/testing/editor_test_results_2026-09-28_schema.md)
+  - [Earlier Editor test results](/testing/editor_test_results_2026-09-28.md)
   - [Game state sync guide and layout results](/testing/state_sync_layout_results_2026-09-28.md)
