@@ -261,14 +261,13 @@ namespace LiteNetLibManager
 
         internal override void ReadSyncData(uint tick, bool initial, NetDataReader reader)
         {
-            TType oldValue = Value;
-            DeserializeValue(reader);
             if (!initial && tick <= _latestReceiveTick)
             {
-                // Don't accept this, revert changes
-                _value = oldValue;
+                DeserializeIgnoredValue(reader);
                 return;
             }
+            TType oldValue = Value;
+            DeserializeValue(reader);
             _latestReceiveTick = tick;
             if (isDebug)
                 Logging.Log(LogTag, $"Read sync data, syncMode {syncMode.ToString()}, connectionId {ConnectionId}, isOwnerClient {IsOwnerClient}, objectId {ObjectId}, tick {tick}, initial {initial}, oldValue {oldValue}, newValue {Value}");
@@ -285,6 +284,13 @@ namespace LiteNetLibManager
                 _value = (TType)reader.GetArrayObject(type.GetElementType());
             else
                 _value = reader.GetValue<TType>();
+        }
+
+        internal virtual void DeserializeIgnoredValue(NetDataReader reader)
+        {
+            TType currentValue = _value;
+            DeserializeValue(reader);
+            _value = currentValue;
         }
 
         internal virtual void SerializeValue(NetDataWriter writer)

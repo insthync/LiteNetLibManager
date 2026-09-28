@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using LiteNetLib.Utils;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -67,6 +68,41 @@ namespace LiteNetLibManager.Tests
             {
                 Object.DestroyImmediate(gameObject);
             }
+        }
+
+        [Test]
+        public void OlderTransformState_DoesNotReplaceTheAcceptedBuffer()
+        {
+            var field = new LiteNetLibTransform.SyncTransformsField();
+            var readSyncData = typeof(LiteNetLibSyncField<LiteNetLibTransform.SyncTransforms>)
+                .GetMethod("ReadSyncData", PrivateInstance);
+            var writer = new NetDataWriter();
+
+            var current = new LiteNetLibTransform.SyncTransforms();
+            current.Add(10, new LiteNetLibTransform.TransformData
+            {
+                Tick = 10,
+                SyncData = LiteNetLibTransform.SyncTransformState.PositionX,
+                Position = new Vector3(10f, 0f, 0f),
+            });
+            current.Serialize(writer);
+            readSyncData.Invoke(field, new object[] { 10u, false, new NetDataReader(writer.CopyData()) });
+            Assert.AreEqual(10f, field.Value[10].Position.x);
+
+            writer.Reset();
+            var older = new LiteNetLibTransform.SyncTransforms();
+            older.Add(9, new LiteNetLibTransform.TransformData
+            {
+                Tick = 9,
+                SyncData = LiteNetLibTransform.SyncTransformState.PositionX,
+                Position = new Vector3(9f, 0f, 0f),
+            });
+            older.Serialize(writer);
+            readSyncData.Invoke(field, new object[] { 9u, false, new NetDataReader(writer.CopyData()) });
+
+            Assert.AreEqual(1, field.Value.Count);
+            Assert.IsTrue(field.Value.ContainsKey(10));
+            Assert.AreEqual(10f, field.Value[10].Position.x);
         }
     }
 }

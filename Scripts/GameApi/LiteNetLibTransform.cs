@@ -164,6 +164,8 @@ namespace LiteNetLibManager
 
         public class SyncTransformsField : LiteNetLibSyncField<SyncTransforms>
         {
+            private readonly SyncTransforms _ignoredValue = new SyncTransforms();
+
             public SyncTransformsField()
             {
                 _value = new SyncTransforms();
@@ -177,6 +179,11 @@ namespace LiteNetLibManager
             internal override void DeserializeValue(NetDataReader reader)
             {
                 _value.Deserialize(reader);
+            }
+
+            internal override void DeserializeIgnoredValue(NetDataReader reader)
+            {
+                _ignoredValue.Deserialize(reader);
             }
 
             protected override bool IsValueChanged(SyncTransforms oldValue, SyncTransforms newValue)
