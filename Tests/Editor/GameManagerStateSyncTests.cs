@@ -324,6 +324,98 @@ namespace LiteNetLibManager.Tests
             }
         }
 
+        [TestCase(LiteNetLibSyncFieldMode.ServerToOwnerClient, false)]
+        [TestCase(LiteNetLibSyncFieldMode.ServerToOwnerClient, true)]
+        [TestCase(LiteNetLibSyncFieldMode.ServerToClients, false)]
+        [TestCase(LiteNetLibSyncFieldMode.ServerToClients, true)]
+        public void ServerFieldModes_FilterInitialAndUpdateRecipients(LiteNetLibSyncFieldMode mode, bool reliableUpdate)
+        {
+            var managerObject = new GameObject("owner sync manager");
+            var entityObject = new GameObject("owner sync entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var transport = new RecordingGameTransport();
+                manager.UseServerTransportForTest(transport);
+                manager.EnableServerForTest();
+                var owner = new LiteNetLibPlayer(manager, 1) { IsReady = true };
+                var observer = new LiteNetLibPlayer(manager, 2) { IsReady = true };
+                manager.AddPlayerForTest(owner);
+                manager.AddPlayerForTest(observer);
+
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var behaviour = entityObject.AddComponent<OwnerSyncBehaviour>();
+                behaviour.value.syncMode = mode;
+                behaviour.value.Value = 17;
+                Assert.AreSame(identity, manager.Assets.NetworkSpawn(identity, 42, 1));
+                observer.Subscribe(42);
+
+                var syncMethod = typeof(LiteNetLibGameManager).GetMethod("ProceedServerGameStateSync", BindingFlags.Instance | BindingFlags.NonPublic);
+                syncMethod.Invoke(manager, new object[] { 1u });
+
+                Assert.AreEqual(2, transport.Packets.Count, "Both subscribers must receive a spawn");
+                var spawnDestinations = new HashSet<long>();
+                foreach (var sent in transport.Packets)
+                {
+                    spawnDestinations.Add(sent.ConnectionId);
+                    Assert.AreEqual(DeliveryMethod.ReliableOrdered, sent.DeliveryMethod);
+                    var reader = new NetDataReader(sent.Data);
+                    Assert.AreEqual(GameMsgTypes.SyncBaseLine, reader.GetPackedUShort());
+                    reader.GetPackedUInt(); // tick
+                    Assert.AreEqual(1, reader.GetUShort());
+                    Assert.AreEqual(GameStateSyncType.Spawn, (GameStateSyncType)reader.GetByte());
+                    Assert.IsFalse(reader.GetBool()); // prefab, not scene object
+                    reader.GetPackedInt(); // asset ID
+                    for (int i = 0; i < 6; ++i)
+                        reader.GetFloat(); // position and rotation
+                    Assert.AreEqual(42u, reader.GetPackedUInt());
+                    Assert.AreEqual(1L, reader.GetPackedLong());
+                    int expectedElements = mode == LiteNetLibSyncFieldMode.ServerToOwnerClient && sent.ConnectionId != 1 ? 0 : 1;
+                    Assert.AreEqual(expectedElements, reader.GetPackedInt());
+                    if (expectedElements == 1)
+                    {
+                        Assert.AreEqual(behaviour.value.ElementId, reader.GetPackedInt());
+                        Assert.AreEqual(17, reader.GetPackedInt());
+                    }
+                    Assert.IsTrue(reader.EndOfData);
+                }
+                CollectionAssert.AreEquivalent(new long[] { 1, 2 }, spawnDestinations);
+
+                transport.Packets.Clear();
+                manager.baseLineSyncInterval = reliableUpdate ? -1f : float.MaxValue;
+                behaviour.value.Value = 29;
+                syncMethod.Invoke(manager, new object[] { 2u });
+
+                var updateDestinations = new HashSet<long>();
+                foreach (var sent in transport.Packets)
+                {
+                    updateDestinations.Add(sent.ConnectionId);
+                    var reader = new NetDataReader(sent.Data);
+                    Assert.AreEqual(reliableUpdate ? GameMsgTypes.SyncBaseLine : GameMsgTypes.SyncDelta, reader.GetPackedUShort());
+                    reader.GetPackedUInt(); // tick
+                    Assert.AreEqual(1, reader.GetUShort()); // state or object count
+                    if (reliableUpdate)
+                        Assert.AreEqual(GameStateSyncType.Data, (GameStateSyncType)reader.GetByte());
+                    Assert.AreEqual(42u, reader.GetPackedUInt());
+                    if (!reliableUpdate)
+                        Assert.Greater(reader.GetUShort(), 0); // object payload length
+                    Assert.AreEqual(1, reliableUpdate ? reader.GetPackedInt() : reader.GetUShort());
+                    Assert.AreEqual(behaviour.value.ElementId, reader.GetPackedInt());
+                    Assert.AreEqual(29, reader.GetPackedInt());
+                    Assert.IsTrue(reader.EndOfData);
+                }
+                CollectionAssert.AreEquivalent(
+                    mode == LiteNetLibSyncFieldMode.ServerToOwnerClient ? new long[] { 1 } : new long[] { 1, 2 },
+                    updateDestinations);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(entityObject);
+                UnityEngine.Object.DestroyImmediate(managerObject);
+            }
+        }
+
         [TestCase(LayoutDifference.ExtraClientField, true)]
         [TestCase(LayoutDifference.ExtraServerField, false)]
         [TestCase(LayoutDifference.LeadingServerBehaviour, false)]
@@ -589,6 +681,18 @@ namespace LiteNetLibManager.Tests
 
     public class GameManagerHarness : LiteNetLibGameManager
     {
+        public void EnableServerForTest()
+        {
+            typeof(LiteNetLibManager).GetProperty("IsServer").SetValue(this, true);
+            typeof(LiteNetLibManager).GetField("_serverTransport", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(this, Server.Transport);
+        }
+
+        public void AddPlayerForTest(LiteNetLibPlayer player)
+        {
+            Players.Add(player.ConnectionId, player);
+        }
+
         public void UseServerTransportForTest(ITransport transport)
         {
             Server = new LiteNetLibServer(this) { Transport = transport };
@@ -638,10 +742,16 @@ namespace LiteNetLibManager.Tests
         public LiteNetLibSyncField<int> optional = new LiteNetLibSyncField<int>();
     }
 
+    public class OwnerSyncBehaviour : LiteNetLibBehaviour
+    {
+        public SyncFieldInt value = new SyncFieldInt();
+    }
+
     public class RecordingGameTransport : ITransport
     {
         public struct SentPacket
         {
+            public long ConnectionId;
             public DeliveryMethod DeliveryMethod;
             public byte[] Data;
         }
@@ -660,7 +770,7 @@ namespace LiteNetLibManager.Tests
         public bool StartServer(int port, int maxConnections) => false;
         public bool ServerSend(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, NetDataWriter writer)
         {
-            Packets.Add(new SentPacket { DeliveryMethod = deliveryMethod, Data = writer.CopyData() });
+            Packets.Add(new SentPacket { ConnectionId = connectionId, DeliveryMethod = deliveryMethod, Data = writer.CopyData() });
             return true;
         }
         public bool ServerReceive(out TransportEventData eventData) { eventData = default; return false; }

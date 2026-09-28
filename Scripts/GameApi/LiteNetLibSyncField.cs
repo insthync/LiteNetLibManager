@@ -50,6 +50,8 @@ namespace LiteNetLibManager
         internal override sealed bool CanSyncFromServer(LiteNetLibPlayer player, bool isBaseLine)
         {
             bool isOwner = ConnectionId == player.ConnectionId;
+            if (syncMode == LiteNetLibSyncFieldMode.ServerToOwnerClient && !isOwner)
+                return false;
             if (_latestChangeSyncedFromOwner && isOwner)
             {
                 // If value was synced from owner client, then don't sync back to the client
