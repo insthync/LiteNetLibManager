@@ -16,6 +16,8 @@ namespace LiteNetLibManager
         private readonly X509Certificate2 _cert;
         private readonly ConcurrentQueue<TransportEventData> _eventQueue;
         private readonly ConcurrentDictionary<long, Fleck.IWebSocketConnection> _peers = new ConcurrentDictionary<long, Fleck.IWebSocketConnection>();
+        private readonly object _peersGate = new object();
+        private readonly int _maxConnections;
         private long _connectionIdOffsets = 1000000;
         private long _nextConnectionId = 1;
 #endif
@@ -43,12 +45,13 @@ namespace LiteNetLibManager
             }
         }
 
-        public WebSocketServer(string location, X509Certificate2 cert, ConcurrentQueue<TransportEventData> eventQueue)
+        public WebSocketServer(string location, X509Certificate2 cert, ConcurrentQueue<TransportEventData> eventQueue, int maxConnections = int.MaxValue)
         {
 #if UNITY_EDITOR || UNITY_STANDALONE
             _location = location;
             _cert = cert;
             _eventQueue = eventQueue;
+            _maxConnections = maxConnections;
 #endif
         }
 
@@ -104,7 +107,18 @@ namespace LiteNetLibManager
 
         private void _socket_OnOpen(Fleck.IWebSocketConnection conn, long connectionId)
         {
-            _peers[connectionId] = conn;
+            bool admitted;
+            lock (_peersGate)
+            {
+                admitted = _peers.Count < _maxConnections;
+                if (admitted)
+                    _peers[connectionId] = conn;
+            }
+            if (!admitted)
+            {
+                conn.Close();
+                return;
+            }
             _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.ConnectEvent,
@@ -114,7 +128,8 @@ namespace LiteNetLibManager
 
         private void _socket_OnClose(Fleck.IWebSocketConnection conn, long connectionId, WebSocketCloseCode code, string reason, bool wasClean)
         {
-            _peers.TryRemove(connectionId, out _);
+            if (!_peers.TryRemove(connectionId, out _))
+                return;
             _eventQueue.Enqueue(new TransportEventData()
             {
                 type = ENetworkEvent.DisconnectEvent,
@@ -156,7 +171,7 @@ namespace LiteNetLibManager
         public bool Disconnect(long connectionId)
         {
 #if UNITY_EDITOR || UNITY_STANDALONE
-            if (!_peers.TryRemove(connectionId, out var ws))
+            if (!_peers.TryGetValue(connectionId, out var ws))
                 return false;
             ws.Close();
             return true;

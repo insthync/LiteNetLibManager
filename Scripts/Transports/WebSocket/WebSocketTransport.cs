@@ -124,7 +124,7 @@ namespace LiteNetLibManager
                         cert = new X509Certificate2(bytes);
                 }
             }
-            _server = new WebSocketServer(location, cert, _serverEventQueue);
+            _server = new WebSocketServer(location, cert, _serverEventQueue, maxConnections);
             return _server.StartServer();
 #else
             return false;
