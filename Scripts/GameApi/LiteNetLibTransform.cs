@@ -43,6 +43,11 @@ namespace LiteNetLibManager
 
             public void Deserialize(NetDataReader reader)
             {
+                Deserialize(reader, null);
+            }
+
+            internal void Deserialize(NetDataReader reader, List<byte[]> reusableExtras)
+            {
                 Tick = reader.GetPackedUInt();
                 SyncData = (SyncTransformState)reader.GetPackedUInt();
 
@@ -66,11 +71,20 @@ namespace LiteNetLibManager
                 byte extraLength = reader.GetByte();
                 if (extraLength > 0)
                 {
-                    Extra = new byte[extraLength];
-                    for (byte i = 0; i < extraLength; ++i)
+                    if (reusableExtras != null)
                     {
-                        Extra[i] = reader.GetByte();
+                        for (int i = reusableExtras.Count - 1; i >= 0; --i)
+                        {
+                            if (reusableExtras[i].Length != extraLength)
+                                continue;
+                            Extra = reusableExtras[i];
+                            reusableExtras.RemoveAt(i);
+                            break;
+                        }
                     }
+                    if (Extra == null)
+                        Extra = new byte[extraLength];
+                    reader.GetBytes(Extra, extraLength);
                 }
             }
 
@@ -146,13 +160,13 @@ namespace LiteNetLibManager
 
         public class SyncTransforms : SortedList<uint, TransformData>, INetSerializable
         {
+            private readonly List<byte[]> _reusableExtraBuffers = new List<byte[]>(4);
+
             public void Serialize(NetDataWriter writer)
             {
                 writer.Put(Count);
-                foreach (var entry in this)
-                {
-                    entry.Value.Serialize(writer);
-                }
+                for (int i = 0; i < Count; ++i)
+                    Values[i].Serialize(writer);
             }
 
             public void Deserialize(NetDataReader reader)
@@ -162,6 +176,25 @@ namespace LiteNetLibManager
                 for (int i = 0; i < count; ++i)
                 {
                     TransformData entry = reader.Get<TransformData>();
+                    Add(entry.Tick, entry);
+                }
+            }
+
+            internal void DeserializeReusable(NetDataReader reader)
+            {
+                for (int i = 0; i < Count; ++i)
+                {
+                    TransformData entry = Values[i];
+                    if (entry.Extra != null && !entry.OwnsExtraBuffer &&
+                        _reusableExtraBuffers.Count < 4)
+                        _reusableExtraBuffers.Add(entry.Extra);
+                }
+                Clear();
+                int count = reader.GetInt();
+                for (int i = 0; i < count; ++i)
+                {
+                    TransformData entry = default;
+                    entry.Deserialize(reader, _reusableExtraBuffers);
                     Add(entry.Tick, entry);
                 }
             }
@@ -183,12 +216,12 @@ namespace LiteNetLibManager
 
             internal override void DeserializeValue(NetDataReader reader)
             {
-                _value.Deserialize(reader);
+                _value.DeserializeReusable(reader);
             }
 
             internal override void DeserializeIgnoredValue(NetDataReader reader)
             {
-                _ignoredValue.Deserialize(reader);
+                _ignoredValue.DeserializeReusable(reader);
             }
 
             protected override bool IsValueChanged(SyncTransforms oldValue, SyncTransforms newValue)
@@ -487,9 +520,9 @@ namespace LiteNetLibManager
                     _interpTick = InitialInterpTick = interpTick;
             }
             // Sync to other clients immediately
-            foreach (var entry in data)
+            for (int i = 0; i < data.Count; ++i)
             {
-                StoreSyncBuffer(_syncBuffers.Value, entry.Value);
+                StoreSyncBuffer(_syncBuffers.Value, data.Values[i]);
             }
             _syncBuffers.MarkAsChanged();
         }
@@ -514,20 +547,21 @@ namespace LiteNetLibManager
 
         private void StoreInterpolateBuffers(SyncTransforms data, int maxBuffers = 3)
         {
-            foreach (var entry in data)
+            for (int i = 0; i < data.Count; ++i)
             {
-                if (_interpBuffers.ContainsKey(entry.Key))
+                uint tick = data.Keys[i];
+                if (_interpBuffers.ContainsKey(tick))
                     continue;
-                TransformData buffered = entry.Value;
+                TransformData buffered = data.Values[i];
                 if (buffered.Extra != null)
                 {
                     s_ExtraReader.SetSource(buffered.Extra);
-                    onReadInterpBuffer?.Invoke(s_ExtraReader, entry.Key);
+                    onReadInterpBuffer?.Invoke(s_ExtraReader, tick);
                 }
                 // Extra is consumed by the callback and may belong to a reused outgoing buffer.
                 buffered.Extra = null;
                 buffered.OwnsExtraBuffer = false;
-                _interpBuffers.Add(entry.Key, buffered);
+                _interpBuffers.Add(tick, buffered);
             }
             // Prune old ticks (keep last N)
             while (_interpBuffers.Count > maxBuffers)
@@ -583,8 +617,8 @@ namespace LiteNetLibManager
 
         private void ReleaseExtraBuffers(SortedList<uint, TransformData> buffers)
         {
-            foreach (var entry in buffers)
-                ReleaseExtraBuffer(entry.Value);
+            for (int i = 0; i < buffers.Count; ++i)
+                ReleaseExtraBuffer(buffers.Values[i]);
         }
 
         private void ReleaseExtraBuffer(TransformData data)

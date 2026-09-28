@@ -13,6 +13,9 @@ namespace LiteNetLibManager.Tests
         private delegate void StoreSyncBufferDelegate(LiteNetLibTransform networkTransform,
             SortedList<uint, LiteNetLibTransform.TransformData> buffers,
             LiteNetLibTransform.TransformData data, int maxBuffers);
+        private delegate void ReadSyncDataDelegate(
+            LiteNetLibSyncField<LiteNetLibTransform.SyncTransforms> field,
+            uint tick, bool initial, NetDataReader reader);
 
         [Test]
         public void SingleReceivedSample_ReachesItsFinalPose()
@@ -88,6 +91,7 @@ namespace LiteNetLibManager.Tests
                 Tick = 10,
                 SyncData = LiteNetLibTransform.SyncTransformState.PositionX,
                 Position = new Vector3(10f, 0f, 0f),
+                Extra = new byte[] { 10 },
             });
             current.Serialize(writer);
             readSyncData.Invoke(field, new object[] { 10u, false, new NetDataReader(writer.CopyData()) });
@@ -100,6 +104,7 @@ namespace LiteNetLibManager.Tests
                 Tick = 9,
                 SyncData = LiteNetLibTransform.SyncTransformState.PositionX,
                 Position = new Vector3(9f, 0f, 0f),
+                Extra = new byte[] { 9 },
             });
             older.Serialize(writer);
             readSyncData.Invoke(field, new object[] { 9u, false, new NetDataReader(writer.CopyData()) });
@@ -107,6 +112,7 @@ namespace LiteNetLibManager.Tests
             Assert.AreEqual(1, field.Value.Count);
             Assert.IsTrue(field.Value.ContainsKey(10));
             Assert.AreEqual(10f, field.Value[10].Position.x);
+            Assert.AreEqual(10, field.Value[10].Extra[0]);
         }
 
         [Test]
@@ -198,6 +204,47 @@ namespace LiteNetLibManager.Tests
                 Object.DestroyImmediate(entityObject);
                 Object.DestroyImmediate(managerObject);
             }
+        }
+
+        [Test]
+        public void ReceivedTransformExtras_DoNotAllocateAfterWarmup()
+        {
+            var field = new LiteNetLibTransform.SyncTransformsField();
+            var samples = new LiteNetLibTransform.SyncTransforms();
+            samples.Add(1, new LiteNetLibTransform.TransformData
+            {
+                Tick = 1,
+                Extra = new byte[] { 1, 2, 3 },
+            });
+            var writer = new NetDataWriter();
+            samples.Serialize(writer);
+            var reader = new NetDataReader(writer.CopyData());
+            var method = typeof(LiteNetLibSyncField<LiteNetLibTransform.SyncTransforms>)
+                .GetMethod("ReadSyncData", PrivateInstance);
+            var read = (ReadSyncDataDelegate)System.Delegate.CreateDelegate(
+                typeof(ReadSyncDataDelegate), method);
+
+            for (uint tick = 1; tick < 64; ++tick)
+            {
+                reader.SetPosition(0);
+                read(field, tick, false, reader);
+            }
+
+            using (var recorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Internal, "GC.Alloc", 1,
+                ProfilerRecorderOptions.SumAllSamplesInFrame |
+                ProfilerRecorderOptions.CollectOnlyOnCurrentThread))
+            {
+                for (uint tick = 64; tick < 320; ++tick)
+                {
+                    reader.SetPosition(0);
+                    read(field, tick, false, reader);
+                }
+                recorder.Stop();
+                long allocations = recorder.Count == 0 ? 0 : recorder.GetSample(0).Count;
+                Assert.Zero(allocations, $"Transform extra reads allocated {allocations} times");
+            }
+            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, field.Value[1].Extra);
         }
     }
 }
