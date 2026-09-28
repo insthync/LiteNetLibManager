@@ -1167,6 +1167,13 @@ namespace LiteNetLibManager
             }
         }
 
+        protected LiteNetLibRPC GetServerRpc(string methodName)
+        {
+            string id = MakeRPCId(methodName);
+            return _serverRpcIds.TryGetValue(id, out int elementId) &&
+                Identity.RPCs.TryGetValue(elementId, out LiteNetLibRPC rpc) ? rpc : null;
+        }
+
         /// <summary>
         /// Call function at target client by connection id
         /// </summary>

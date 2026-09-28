@@ -229,6 +229,7 @@ namespace LiteNetLibManager
         private float _endInterpTime;
 
         private readonly SyncTransforms _clientSyncBuffers = new SyncTransforms();
+        private readonly object[] _ownerSyncRpcParameters = new object[1];
         private readonly List<byte[]> _freeExtraBuffers = new List<byte[]>(4);
         private readonly SyncTransformsField _syncBuffers = new SyncTransformsField()
         {
@@ -237,6 +238,7 @@ namespace LiteNetLibManager
         private SortedList<uint, TransformData> _interpBuffers = new SortedList<uint, TransformData>();
 
         private LogicUpdater _logicUpdater = null;
+        private LiteNetLibRPC _ownerSyncRpc;
         private uint _interpTick;
         public uint InitialInterpTick { get; private set; }
         public uint RenderTick => _interpTick - interpolationTicks;
@@ -253,6 +255,8 @@ namespace LiteNetLibManager
 
         public override void OnIdentityInitialize()
         {
+            _ownerSyncRpc = GetServerRpc(nameof(OwnerSyncTransform));
+            _ownerSyncRpcParameters[0] = _clientSyncBuffers;
             if (_logicUpdater == null)
             {
                 _logicUpdater = Manager.LogicUpdater;
@@ -340,7 +344,8 @@ namespace LiteNetLibManager
             else if (syncByOwnerClient && IsOwnerClient)
             {
                 StoreSyncBuffer(_clientSyncBuffers, transformData);
-                RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _clientSyncBuffers);
+                _ownerSyncRpc?.Call(0, LiteNetLib.DeliveryMethod.Unreliable,
+                    RPCReceivers.Server, _ownerSyncRpcParameters);
             }
         }
 

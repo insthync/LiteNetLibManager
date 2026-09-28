@@ -166,5 +166,38 @@ namespace LiteNetLibManager.Tests
                 Object.DestroyImmediate(gameObject);
             }
         }
+
+        [Test]
+        public void OwnerTransformRpc_IsResolvedOnceDuringInitialization()
+        {
+            var managerObject = new GameObject("transform RPC manager");
+            var entityObject = new GameObject("transform RPC entity");
+            try
+            {
+                var manager = managerObject.AddComponent<GameManagerHarness>();
+                manager.InitializeForTest();
+                var identity = entityObject.AddComponent<LiteNetLibIdentity>();
+                var networkTransform = entityObject.AddComponent<LiteNetLibTransform>();
+                typeof(LiteNetLibIdentity).GetProperty("Manager").SetValue(identity, manager);
+
+                networkTransform.Setup(0);
+                networkTransform.OnIdentityInitialize();
+
+                var cachedRpc = typeof(LiteNetLibTransform).GetField("_ownerSyncRpc", PrivateInstance)
+                    .GetValue(networkTransform);
+                var parameters = (object[])typeof(LiteNetLibTransform)
+                    .GetField("_ownerSyncRpcParameters", PrivateInstance).GetValue(networkTransform);
+                var buffers = typeof(LiteNetLibTransform)
+                    .GetField("_clientSyncBuffers", PrivateInstance).GetValue(networkTransform);
+                Assert.IsNotNull(cachedRpc);
+                Assert.AreEqual(1, parameters.Length);
+                Assert.AreSame(buffers, parameters[0]);
+            }
+            finally
+            {
+                Object.DestroyImmediate(entityObject);
+                Object.DestroyImmediate(managerObject);
+            }
+        }
     }
 }
