@@ -295,7 +295,7 @@ namespace LiteNetLibManager
             TransformData transformData = _prevSyncData;
             bool changed =
                 Vector3.Distance(transform.position, transformData.Position) > positionThreshold ||
-                Vector3.Angle(transform.forward, Quaternion.Euler(transformData.EulerAngles) * Vector3.forward) > eulerAnglesThreshold ||
+                HasRotationChanged(transform.eulerAngles, transformData.EulerAngles) ||
                 Vector3.Distance(transform.localScale, transformData.Scale) > scaleThreshold;
 
             if (!changed)
@@ -327,6 +327,16 @@ namespace LiteNetLibManager
                 StoreSyncBuffer(_clientSyncBuffers, transformData);
                 RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _clientSyncBuffers);
             }
+        }
+
+        private bool HasRotationChanged(Vector3 currentEulerAngles, Vector3 previousEulerAngles)
+        {
+            return (syncData & SyncTransformState.EulerAnglesX) != 0 &&
+                    Mathf.Abs(Mathf.DeltaAngle(previousEulerAngles.x, currentEulerAngles.x)) > eulerAnglesThreshold ||
+                (syncData & SyncTransformState.EulerAnglesY) != 0 &&
+                    Mathf.Abs(Mathf.DeltaAngle(previousEulerAngles.y, currentEulerAngles.y)) > eulerAnglesThreshold ||
+                (syncData & SyncTransformState.EulerAnglesZ) != 0 &&
+                    Mathf.Abs(Mathf.DeltaAngle(previousEulerAngles.z, currentEulerAngles.z)) > eulerAnglesThreshold;
         }
 
         private void Update()

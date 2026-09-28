@@ -40,5 +40,33 @@ namespace LiteNetLibManager.Tests
                 Object.DestroyImmediate(gameObject);
             }
         }
+
+        [Test]
+        public void RotationDetection_TracksConfiguredEulerAxes()
+        {
+            var gameObject = new GameObject("transform rotation detection");
+            try
+            {
+                var networkTransform = gameObject.AddComponent<LiteNetLibTransform>();
+                networkTransform.eulerAnglesThreshold = 1f;
+                var hasRotationChanged = typeof(LiteNetLibTransform).GetMethod("HasRotationChanged", PrivateInstance);
+
+                networkTransform.syncData = LiteNetLibTransform.SyncTransformState.EulerAnglesZ;
+                Assert.IsTrue((bool)hasRotationChanged.Invoke(networkTransform,
+                    new object[] { new Vector3(0f, 0f, 90f), Vector3.zero }));
+                Assert.IsFalse((bool)hasRotationChanged.Invoke(networkTransform,
+                    new object[] { new Vector3(0f, 0f, 0.5f), Vector3.zero }));
+
+                networkTransform.syncData = LiteNetLibTransform.SyncTransformState.EulerAnglesY;
+                Assert.IsFalse((bool)hasRotationChanged.Invoke(networkTransform,
+                    new object[] { new Vector3(0f, 0f, 90f), Vector3.zero }));
+                Assert.IsTrue((bool)hasRotationChanged.Invoke(networkTransform,
+                    new object[] { new Vector3(0f, 90f, 0f), Vector3.zero }));
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
+        }
     }
 }
