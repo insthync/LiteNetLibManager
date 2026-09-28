@@ -343,18 +343,38 @@ namespace LiteNetLibManager
 
         private void InterpolateTransform()
         {
-            if (_interpBuffers.Count < 2)
+            if (_interpBuffers.Count == 0)
             {
                 _prevInterpFromTick = 0;
                 return;
             }
 
+            if (_interpTick < interpolationTicks)
+                return;
+
             float currentTime = Time.time;
             uint renderTick = RenderTick;
 
+            TransformData latestData = _interpBuffers.Values[_interpBuffers.Count - 1];
+            if (renderTick >= latestData.Tick)
+            {
+                _prevInterpFromTick = 0;
+                TransformData currentData = new TransformData()
+                {
+                    Tick = latestData.Tick,
+                    Position = latestData.GetPosition(transform.position),
+                    EulerAngles = latestData.GetEulerAngles(transform.eulerAngles),
+                    Scale = latestData.GetScale(transform.localScale),
+                };
+                ApplyInterpolatedTransform(currentData, currentData, currentData, 1f);
+                return;
+            }
+
+            if (_interpBuffers.Count < 2)
+                return;
+
             // Find two ticks around renderTick
-            uint interpFromTick = 0;
-            uint interpToTick = 0;
+            bool foundInterval = false;
 
             for (int i = _interpBuffers.Count - 1; i >= 1; --i)
             {
@@ -365,8 +385,7 @@ namespace LiteNetLibManager
 
                 if (tick1 <= renderTick && renderTick <= tick2)
                 {
-                    interpFromTick = tick1;
-                    interpToTick = tick2;
+                    foundInterval = true;
                     _interpFromData = new TransformData()
                     {
                         Tick = data1.Tick,
@@ -381,15 +400,18 @@ namespace LiteNetLibManager
                         EulerAngles = data2.GetEulerAngles(transform.eulerAngles),
                         Scale = data2.GetScale(transform.localScale),
                     };
-                    if (_prevInterpFromTick != interpFromTick)
+                    if (_prevInterpFromTick != tick1)
                     {
                         _startInterpTime = currentTime;
                         _endInterpTime = currentTime + (_logicUpdater.DeltaTimeF * (tick2 - tick1));
-                        _prevInterpFromTick = interpFromTick;
+                        _prevInterpFromTick = tick1;
                     }
                     break;
                 }
             }
+
+            if (!foundInterval)
+                return;
 
             float t = Mathf.InverseLerp(_startInterpTime, _endInterpTime, currentTime);
             Quaternion fromRot = Quaternion.Euler(_interpFromData.EulerAngles);
@@ -401,15 +423,21 @@ namespace LiteNetLibManager
                 EulerAngles = currentRot.eulerAngles,
                 Scale = Vector3.Lerp(_interpFromData.Scale, _interpToData.Scale, t),
             };
-            if (onValidateInterpolation != null && !onValidateInterpolation.Invoke(_interpFromData, _interpToData, currentInterp, t))
+            ApplyInterpolatedTransform(_interpFromData, _interpToData, currentInterp, t);
+        }
+
+        private void ApplyInterpolatedTransform(TransformData fromData, TransformData toData,
+            TransformData currentData, float interpolationTime)
+        {
+            if (onValidateInterpolation != null && !onValidateInterpolation.Invoke(fromData, toData, currentData, interpolationTime))
             {
                 // Not pass the validation
                 return;
             }
-            transform.position = currentInterp.Position;
-            transform.eulerAngles = currentInterp.EulerAngles;
-            transform.localScale = currentInterp.Scale;
-            onInterpolate?.Invoke(_interpFromData, _interpToData, t);
+            transform.position = currentData.Position;
+            transform.eulerAngles = currentData.EulerAngles;
+            transform.localScale = currentData.Scale;
+            onInterpolate?.Invoke(fromData, toData, interpolationTime);
         }
 
         [ServerRpc]
