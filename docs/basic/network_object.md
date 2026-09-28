@@ -4,7 +4,7 @@
 
 Put one `LiteNetLibIdentity` on each networked scene object or prefab. The server assigns its runtime `ObjectId`; clients use that ID to find later updates. Register runtime prefabs in `LiteNetLibAssets.spawnablePrefabs` on both server and client. Scene objects need matching scene-object IDs across builds.
 
-`LiteNetLibIdentity` finds `LiteNetLibBehaviour` components on itself and its active children with `GetComponentsInChildren<LiteNetLibBehaviour>()`. Keep their types, discovery order, and sync field names consistent between builds. At ClientReady, the manager compares registered prefab and scene-object layouts and refuses a mismatch before sending state. The [layout tests](../testing/state_sync_layout_results_2026-09-28.md) explain the packet reader and readiness results.
+`LiteNetLibIdentity` finds `LiteNetLibBehaviour` components on itself and its active children with `GetComponentsInChildren<LiteNetLibBehaviour>()`. Keep their types, discovery order, and sync field names consistent between builds. The [layout tests](../testing/state_sync_layout_results_2026-09-28.md) explain what happens when they differ.
 
 ## Behaviour
 

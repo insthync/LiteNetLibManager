@@ -564,7 +564,7 @@ namespace LiteNetLibManager
         {
             if (!IsClientConnected)
                 return;
-            ClientSendRequest(GameReqTypes.ClientReady, EmptyMessage.Value, extraRequestSerializer: WriteClientReadyWithSyncSchema);
+            ClientSendRequest(GameReqTypes.ClientReady, EmptyMessage.Value, extraRequestSerializer: SerializeClientReadyData);
         }
 
         public virtual void SendClientNotReady()
@@ -709,16 +709,11 @@ namespace LiteNetLibManager
             RequestProceedResultDelegate<EmptyMessage> result)
         {
             AckResponseCode responseCode = AckResponseCode.Error;
-            if (ValidateSyncSchemaHeader(requestHandler.Reader, $"client {requestHandler.ConnectionId}") &&
-                await SetPlayerReady(requestHandler.RequestId, requestHandler.ConnectionId, requestHandler.Reader))
+            if (await SetPlayerReady(requestHandler.RequestId, requestHandler.ConnectionId, requestHandler.Reader))
             {
                 responseCode = AckResponseCode.Success;
             }
-            result.Invoke(responseCode, EmptyMessage.Value, serializer =>
-            {
-                WriteSyncSchemaHeader(serializer);
-                WriteExtraClientReadyResponse(requestHandler.RequestId, requestHandler.ConnectionId, responseCode, serializer);
-            });
+            result.Invoke(responseCode, EmptyMessage.Value, serializer => WriteExtraClientReadyResponse(requestHandler.RequestId, requestHandler.ConnectionId, responseCode, serializer));
         }
 
         /// <summary>
@@ -738,16 +733,6 @@ namespace LiteNetLibManager
             AckResponseCode responseCode,
             EmptyMessage response)
         {
-            if (responseCode == AckResponseCode.Timeout || responseCode == AckResponseCode.Exception)
-            {
-                ReadExtraClientReadyResponse(responseCode, response, responseHandler.Reader);
-                return;
-            }
-            if (!ValidateSyncSchemaHeader(responseHandler.Reader, "server"))
-            {
-                OnClientConnectionRefused();
-                return;
-            }
             ReadExtraClientReadyResponse(responseCode, response, responseHandler.Reader);
         }
 
