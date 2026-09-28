@@ -17,6 +17,7 @@ public sealed class CharacterState : LiteNetLibBehaviour
     public override void OnSetup()
     {
         privateScore.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+        itemIds.forOwnerOnly = true;
         health.onChange += OnHealthChanged;
         itemIds.onOperation += OnItemOperation;
     }
@@ -55,13 +56,15 @@ public sealed class CharacterState : LiteNetLibBehaviour
 
 `ServerToOwnerClient` applies to the initial spawn state and later reliable or unreliable updates. Other subscribers can still receive the object and its public fields. Set a field's mode on both peers before the spawn is read, for example in `OnSetup()`. The `onChange(bool initial, T oldValue, T newValue)` callback runs when an initial value is applied or a value changes; it may also run during a local server change.
 
+Set `doNotSync = true` for a field that should stay local. Its value can still change and invoke local callbacks, but neither the server nor an owner client sends it. If you turn syncing back on after spawn, change the value or call `MarkAsChanged()` on the authoritative peer to queue the current value.
+
 For a custom struct implementing `INetSerializable`, use `SyncFieldNetSerializableStruct<T>`. Custom reference types can derive from `SyncFieldNetSerializableClass<T>` and implement `Construct()`. Both peers must serialize fields in the same order.
 
 ## Lists
 
 `LiteNetLibSyncList<T>` is server controlled after spawn. Initial contents arrive with `AddInitial` operations; later changes arrive as reliable list operations. `onOperation(LiteNetLibSyncListOp op, int index, T oldItem, T newItem)` runs on receipt and for local server changes.
 
-The list API exposes `forOwnerOnly`, but the current send path does not use it to restrict recipients. Do not put private data in a list solely because `forOwnerOnly` is true.
+Set `forOwnerOnly = true` in `OnSetup()` to include a list only in the subscribed owner's spawn and later reliable updates. On ownership transfer, a new owner that already has the object receives a reliable full-list replacement; a pending spawn carries the full list instead. Set the flag before any private contents are sent: enabling it later cannot erase data already received by other clients.
 
 ## Delivery and layout
 
