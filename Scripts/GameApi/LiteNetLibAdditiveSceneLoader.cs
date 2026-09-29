@@ -3,6 +3,7 @@ using Insthync.AddressableAssetTools;
 using UnityEngine;
 #if !DISABLE_ADDRESSABLES
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
 using UnityEngine.SceneManagement;
 
@@ -151,6 +152,12 @@ namespace LiteNetLibManager
                     await UniTask.Yield();
                     float percentageComplete = op.GetDownloadStatus().Percent;
                     manager.Assets.onLoadSceneProgress.Invoke(loadingName, true, isOnline, percentageComplete);
+                }
+                if (op.Status != AsyncOperationStatus.Succeeded)
+                {
+                    System.Exception exception = op.OperationException ?? new System.Exception($"Unable to load addressable scene: {addressableScenes[i].RuntimeKey}");
+                    Addressables.Release(op);
+                    throw exception;
                 }
                 await UniTask.Yield();
                 manager.Assets.onLoadSceneFinish.Invoke(loadingName, true, isOnline, 1f);

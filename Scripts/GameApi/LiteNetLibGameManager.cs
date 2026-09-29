@@ -250,14 +250,24 @@ namespace LiteNetLibManager
             if (serverSceneInfo.isAddressable)
             {
                 // Download the scene
-                await AddressableAssetDownloadManager.Download(
-                    serverSceneInfo.addressableKey,
-                    Assets.onSceneFileSizeRetrieving.Invoke,
-                    Assets.onSceneFileSizeRetrieved.Invoke,
-                    Assets.onSceneDepsDownloading.Invoke,
-                    Assets.onSceneDepsFileDownloading.Invoke,
-                    Assets.onSceneDepsDownloaded.Invoke,
-                    null);
+                try
+                {
+                    await AddressableAssetDownloadManager.Download(
+                        serverSceneInfo.addressableKey,
+                        Assets.onSceneFileSizeRetrieving.Invoke,
+                        Assets.onSceneFileSizeRetrieved.Invoke,
+                        Assets.onSceneDepsDownloading.Invoke,
+                        Assets.onSceneDepsFileDownloading.Invoke,
+                        Assets.onSceneDepsDownloaded.Invoke,
+                        null);
+                }
+                catch (Exception ex)
+                {
+                    Logging.LogError($"Unable to download addressable scene `{serverSceneInfo.addressableKey}`: {ex}");
+                    LoadingServerScenes.RemoveAt(0);
+                    Assets.onLoadSceneFail.Invoke();
+                    return;
+                }
                 await AddressableAssetsManager.UnloadAddressableScenes();
                 AsyncOperationHandle<SceneInstance> addressableAsyncOp = Addressables.LoadSceneAsync(
                     serverSceneInfo.addressableKey,
@@ -274,6 +284,10 @@ namespace LiteNetLibManager
                 {
                     await addressableAsyncOp.Result.ActivateAsync();
                     sceneLoaded = true;
+                }
+                else if (addressableAsyncOp.IsValid())
+                {
+                    Addressables.Release(addressableAsyncOp);
                 }
             }
             else
@@ -345,7 +359,16 @@ namespace LiteNetLibManager
                     Assets.onLoadAdditiveSceneStart.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                     for (int j = 0; j < listOfLoaders.Count; ++j)
                     {
-                        await listOfLoaders[j].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline);
+                        try
+                        {
+                            await listOfLoaders[j].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.LogError($"Unable to load additive scene: {ex}");
+                            Assets.onLoadSceneFail.Invoke();
+                            return;
+                        }
                     }
                     Assets.onLoadAdditiveSceneFinish.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                 }
