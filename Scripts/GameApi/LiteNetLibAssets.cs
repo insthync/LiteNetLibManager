@@ -56,6 +56,8 @@ namespace LiteNetLibManager
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;
         public bool limitByPoolingSize = true;
+        [Tooltip("Create all configured pool instances before gameplay. Leave off to create instances only when needed and reuse them after despawning.")]
+        public bool prewarmPooling = false;
         public bool manuallyApplyOwnerChanges = false;
 
         internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
@@ -271,8 +273,7 @@ namespace LiteNetLibManager
 
         public void InitPoolingQueues()
         {
-            // No pooling
-            if (disablePooling)
+            if (disablePooling || !prewarmPooling)
                 return;
 
             foreach (int hashAssetId in GuidToPrefabs.Keys)
@@ -299,7 +300,8 @@ namespace LiteNetLibManager
 
             queue = new Queue<LiteNetLibIdentity>();
             LiteNetLibIdentity tempInstance;
-            for (int i = 0; i < prefab.PoolingSize; ++i)
+            int initialSize = prewarmPooling ? prefab.PoolingSize : 0;
+            for (int i = 0; i < initialSize; ++i)
             {
                 tempInstance = Instantiate(prefab);
                 tempInstance.IsPooledInstance = true;
@@ -332,6 +334,7 @@ namespace LiteNetLibManager
                 LiteNetLibIdentity instance = Instantiate(prefab, position, rotation);
                 instance.IsPooledInstance = true;
                 instance.gameObject.SetActive(false);
+                instance.OnGetInstance();
                 return instance;
             }
 
@@ -342,7 +345,7 @@ namespace LiteNetLibManager
         {
             if (instance == null)
             {
-                Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance's is empty.");
+                Debug.LogWarning("[PoolSystem] Cannot push back. The instance's is empty.");
                 return;
             }
             if (!instance.IsPooledInstance)
