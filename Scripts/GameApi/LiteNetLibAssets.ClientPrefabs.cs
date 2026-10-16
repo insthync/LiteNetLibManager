@@ -197,6 +197,10 @@ namespace LiteNetLibManager
 #endif
         }
 
-        private void OnDestroy() { ClearClientPrefabLoads(); }
+        private void OnDestroy()
+        {
+            ClearClientPrefabLoads();
+            ReleaseServerPrefabAssets();
+        }
     }
 }

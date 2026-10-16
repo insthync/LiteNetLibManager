@@ -107,10 +107,13 @@ namespace LiteNetLibManager
 
         public async UniTask Initialize()
         {
+            int generation = assetInitializationGeneration;
             IsInitialized = false;
             if (onInitializeStart != null)
                 onInitializeStart.Invoke();
             await RegisterPrefabs();
+            if (generation != assetInitializationGeneration || !await PreloadServerPrefabAssets(generation))
+                return;
             RegisterSpawnPoints();
             RegisterSceneObjects();
             IsInitialized = true;
@@ -124,6 +127,7 @@ namespace LiteNetLibManager
             ClearClientPrefabLoads();
             ClearSpawnedObjects();
             ClearPooledObjects();
+            ReleaseServerPrefabAssets();
             SpawnPoints.Clear();
             SceneObjects.Clear();
             GuidToPrefabs.Clear();
