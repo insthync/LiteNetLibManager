@@ -313,6 +313,9 @@ namespace LiteNetLibManager
 
         private bool ReadSpawnGameState(NetDataReader reader, uint tick)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long spawnStarted = System.Diagnostics.Stopwatch.GetTimestamp();
+#endif
             bool isSceneObject = reader.GetBool();
             int hashSceneObjectId = 0;
             int hashAssetId = 0;
@@ -360,6 +363,9 @@ namespace LiteNetLibManager
                     identity.ProcessRPC(pendingRpc.info, pendingRpc.reader, true);
                 }
             }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RecordClientSpawn(spawnStarted);
+#endif
             return true;
         }
 

@@ -162,6 +162,9 @@ namespace LiteNetLibManager
                 RegisterClientPrefabReferences();
                 return;
             }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var clientPreloadTimer = Manager != null && Manager.IsClient && !Manager.IsServer ? System.Diagnostics.Stopwatch.StartNew() : null;
+#endif
             List<UniTask<LiteNetLibIdentity>> ops = new List<UniTask<LiteNetLibIdentity>>();
             for (int i = 0; i < addressableSpawnablePrefabs.Length; ++i)
             {
@@ -175,6 +178,10 @@ namespace LiteNetLibManager
                 ops.Add(RegisterAddressablePrefabAsync(addressablePlayerPrefab));
             }
             await UniTask.WhenAll(ops);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (clientPreloadTimer != null)
+                Debug.Log($"[Client Prefabs] Preloaded {GuidToPrefabs.Count} prefab assets in {clientPreloadTimer.Elapsed.TotalMilliseconds:F1} ms.");
+#endif
 #else
             await UniTask.Yield();
 #endif

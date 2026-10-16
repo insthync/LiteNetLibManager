@@ -25,6 +25,7 @@ namespace LiteNetLibManager
         private readonly Dictionary<int, AssetReferenceLiteNetLibIdentity> clientPrefabReferences = new Dictionary<int, AssetReferenceLiteNetLibIdentity>();
         private readonly Dictionary<int, ClientPrefabLoad> clientPrefabLoads = new Dictionary<int, ClientPrefabLoad>();
         private readonly List<int> idleClientPrefabs = new List<int>();
+        private readonly HashSet<int> activeClientPrefabs = new HashSet<int>();
         private CancellationTokenSource clientPrefabCancellation;
         private float nextClientPrefabMaintenance;
 
@@ -34,6 +35,8 @@ namespace LiteNetLibManager
             internal AsyncOperationHandle<GameObject> handle;
             internal bool loaded;
             internal float idleSince;
+            internal int waiters;
+            internal CancellationTokenSource cancellation;
         }
 
         private void RegisterClientPrefabReferences()
@@ -66,11 +69,17 @@ namespace LiteNetLibManager
             if (!clientPrefabLoads.TryGetValue(hashAssetId, out var load))
             {
                 if (clientPrefabCancellation == null) clientPrefabCancellation = new CancellationTokenSource();
-                load = new ClientPrefabLoad();
+                load = new ClientPrefabLoad { cancellation = CancellationTokenSource.CreateLinkedTokenSource(clientPrefabCancellation.Token) };
                 clientPrefabLoads.Add(hashAssetId, load);
-                LoadClientPrefab(hashAssetId, reference, load, clientPrefabCancellation.Token).Forget();
+                LoadClientPrefab(hashAssetId, reference, load, load.cancellation.Token).Forget();
             }
-            return await load.completion.Task.AttachExternalCancellation(token);
+            ++load.waiters;
+            try { return await load.completion.Task.AttachExternalCancellation(token); }
+            finally
+            {
+                if (--load.waiters == 0 && !load.loaded)
+                    load.cancellation?.Cancel();
+            }
         }
 
         private async UniTask LoadClientPrefab(int hashAssetId, AssetReferenceLiteNetLibIdentity reference,
@@ -78,6 +87,9 @@ namespace LiteNetLibManager
         {
             try
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                var timer = System.Diagnostics.Stopwatch.StartNew();
+#endif
                 load.handle = LoadClientPrefabAsset(reference.RuntimeKey);
                 var prefab = await load.handle.ToUniTask(cancellationToken: token, cancelImmediately: true);
                 token.ThrowIfCancellationRequested();
@@ -88,9 +100,12 @@ namespace LiteNetLibManager
                 GuidToPrefabs[hashAssetId] = identity;
                 load.loaded = true;
                 load.idleSince = Time.unscaledTime;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                timer.Stop();
+#endif
                 load.completion.TrySetResult(identity);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[Client Prefabs] Loaded {identity.name} ({hashAssetId}) on demand; {clientPrefabLoads.Count} requested prefabs.");
+                Debug.Log($"[Client Prefabs] Loaded {identity.name} ({hashAssetId}) on demand in {timer.Elapsed.TotalMilliseconds:F1} ms; {clientPrefabLoads.Count} requested prefabs.");
 #endif
             }
             catch (Exception ex)
@@ -101,6 +116,11 @@ namespace LiteNetLibManager
                     clientPrefabLoads.Remove(hashAssetId);
                 if (ex is OperationCanceledException) load.completion.TrySetCanceled(token);
                 else load.completion.TrySetException(ex);
+            }
+            finally
+            {
+                load.cancellation.Dispose();
+                load.cancellation = null;
             }
         }
 
@@ -119,13 +139,13 @@ namespace LiteNetLibManager
         internal void ReleaseIdleClientPrefabs(float now)
         {
             idleClientPrefabs.Clear();
+            activeClientPrefabs.Clear();
+            foreach (var identity in SpawnedObjects.Values)
+                if (identity != null) activeClientPrefabs.Add(identity.HashAssetId);
             foreach (var entry in clientPrefabLoads)
             {
                 if (!entry.Value.loaded) continue;
-                bool active = false;
-                foreach (var identity in SpawnedObjects.Values)
-                    if (identity != null && identity.HashAssetId == entry.Key) { active = true; break; }
-                if (active) entry.Value.idleSince = now;
+                if (activeClientPrefabs.Contains(entry.Key)) entry.Value.idleSince = now;
                 else if (now - entry.Value.idleSince >= Mathf.Max(1f, clientPrefabIdleSeconds))
                     idleClientPrefabs.Add(entry.Key);
             }
@@ -139,7 +159,7 @@ namespace LiteNetLibManager
                     while (pool.Count > 0)
                     {
                         var instance = pool.Dequeue();
-                        if (instance != null) Destroy(instance.gameObject);
+                        if (instance != null) DestroyIdleClientPrefabInstance(instance);
                     }
                     PooledObjects.Remove(id);
                 }
@@ -155,6 +175,11 @@ namespace LiteNetLibManager
             // Destroyed instances must finish teardown before their AssetBundle can be unloaded.
             await UniTask.DelayFrame(1, PlayerLoopTiming.LastPostLateUpdate);
             if (handle.IsValid()) Addressables.Release(handle);
+        }
+
+        protected virtual void DestroyIdleClientPrefabInstance(LiteNetLibIdentity instance)
+        {
+            Destroy(instance.gameObject);
         }
 #endif
 

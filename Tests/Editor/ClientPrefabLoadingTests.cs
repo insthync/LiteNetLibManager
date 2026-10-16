@@ -33,6 +33,11 @@ namespace LiteNetLibManager.Tests
             requestedHandle = Addressables.ResourceManager.StartOperation(operation, default);
             return requestedHandle;
         }
+
+        protected override void DestroyIdleClientPrefabInstance(LiteNetLibIdentity instance)
+        {
+            Object.DestroyImmediate(instance.gameObject);
+        }
     }
 
     public class ClientPrefabLoadingTests
@@ -98,7 +103,7 @@ namespace LiteNetLibManager.Tests
                 .Invoke(manager, new object[] { new MessageHandlerData(type, null, 1, new NetDataReader(bytes)) });
         }
 
-        private byte[] SpawnPacket()
+        private byte[] SpawnPacket(uint objectId = 42)
         {
             var writer = new NetDataWriter();
             writer.PutPackedUInt(10);
@@ -107,7 +112,7 @@ namespace LiteNetLibManager.Tests
             writer.Put(false);
             writer.PutPackedInt(prefab.HashAssetId);
             for (int i = 0; i < 6; ++i) writer.Put(0f);
-            writer.PutPackedUInt(42);
+            writer.PutPackedUInt(objectId);
             writer.PutPackedLong(-1);
             writer.PutPackedInt(0);
             return writer.CopyData();
@@ -171,6 +176,12 @@ namespace LiteNetLibManager.Tests
             Receive("HandleServerCallFunction", GameMsgTypes.RPC, rpc);
             Array.Clear(rpc, 0, rpc.Length);
 
+            assets.operation.Finish(prefabRoot);
+            yield return Until(() => assets.SpawnedObjects.ContainsKey(42));
+            Assert.AreEqual(123, assets.ChangingOwnerObjects[42]);
+            Assert.AreEqual(1, manager.PendingRpcCount);
+            Assert.AreEqual(7, manager.OldestPendingRpcFirstByte);
+
             writer.Reset();
             writer.PutPackedUInt(11);
             writer.Put((ushort)1);
@@ -179,12 +190,160 @@ namespace LiteNetLibManager.Tests
             writer.Put(DestroyObjectReasons.RequestedToDestroy);
             Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, writer.CopyData());
 
-            assets.operation.Finish(prefabRoot);
             yield return Until(() => assets.PooledObjects.Count > 0);
             Assert.IsEmpty(assets.SpawnedObjects, "The queued despawn must remove the delayed spawn.");
-            Assert.AreEqual(123, assets.ChangingOwnerObjects[42]);
-            Assert.AreEqual(1, manager.PendingRpcCount);
-            Assert.AreEqual(7, manager.OldestPendingRpcFirstByte);
+        }
+
+        private byte[] DestroyPacket(uint objectId)
+        {
+            var writer = new NetDataWriter();
+            writer.PutPackedUInt(11);
+            writer.Put((ushort)1);
+            writer.Put((byte)GameStateSyncType.Destroy);
+            writer.PutPackedUInt(objectId);
+            writer.Put(DestroyObjectReasons.RequestedToDestroy);
+            return writer.CopyData();
+        }
+
+        [UnityTest]
+        public IEnumerator DespawnCancelsAnObsoleteSpawnWithoutInstantiatingIt()
+        {
+            int spawned = 0;
+            assets.onObjectSpawn.AddListener(_ => ++spawned);
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, SpawnPacket());
+            var operation = assets.operation;
+            var writer = new NetDataWriter();
+            writer.PutPackedUInt(10);
+            writer.Put((ushort)1);
+            writer.Put((byte)GameStateSyncType.Data);
+            writer.PutPackedUInt(42);
+            writer.PutPackedInt(0);
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, writer.CopyData());
+            assets.manuallyApplyOwnerChanges = true;
+            writer.Reset();
+            new ServerSetObjectOwner { objectId = 42, connectionId = 123 }.Serialize(writer);
+            Receive("HandleServerSetObjectOwner", GameMsgTypes.ServerSetObjectOwner, writer.CopyData());
+            writer.Reset();
+            LiteNetLibElementInfo.SerializeInfo(new LiteNetLibElementInfo { objectId = 42, elementId = 1 }, writer);
+            writer.Put((byte)7);
+            Receive("HandleServerCallFunction", GameMsgTypes.RPC, writer.CopyData());
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, DestroyPacket(42));
+            operation.Finish(prefabRoot);
+            yield return null;
+            Assert.Zero(spawned);
+            Assert.IsEmpty(assets.SpawnedObjects);
+            Assert.IsEmpty(assets.PooledObjects);
+            Assert.IsEmpty(assets.GuidToPrefabs);
+            Assert.IsEmpty(assets.ChangingOwnerObjects);
+            Assert.Zero(manager.PendingRpcCount);
+            Assert.IsFalse(assets.requestedHandle.IsValid());
+        }
+
+        [UnityTest]
+        public IEnumerator CancelingOneWaiterDoesNotReleaseAnotherWaitersPrefabLoad()
+        {
+            using (var cancellation = new CancellationTokenSource())
+            {
+                var first = assets.EnsureClientPrefabAsync(prefab.HashAssetId, cancellation.Token).AsTask();
+                var second = assets.EnsureClientPrefabAsync(prefab.HashAssetId, CancellationToken.None).AsTask();
+                cancellation.Cancel();
+                Assert.Throws<OperationCanceledException>(() => first.GetAwaiter().GetResult());
+                Assert.IsTrue(assets.requestedHandle.IsValid());
+                assets.operation.Finish(prefabRoot);
+                yield return Until(() => second.IsCompleted);
+                Assert.AreSame(prefab, second.Result);
+                Assert.AreEqual(1, assets.loads);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator AQueuedSpawnStillLoadsAfterAnEarlierSpawnOfTheSamePrefabIsCanceled()
+        {
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, SpawnPacket());
+            var oldOperation = assets.operation;
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, SpawnPacket(43));
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, DestroyPacket(42));
+            Assert.AreEqual(2, assets.loads);
+            oldOperation.Finish(prefabRoot);
+            assets.operation.Finish(prefabRoot);
+            yield return Until(() => assets.SpawnedObjects.ContainsKey(43));
+            Assert.IsFalse(assets.SpawnedObjects.ContainsKey(42));
+            Assert.AreEqual(1, assets.SpawnedObjects.Count);
+        }
+
+        [UnityTest]
+        public IEnumerator MixedDespawnAndSpawnPacketsKeepTheirOriginalDecodingOrder()
+        {
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, SpawnPacket());
+            var bytes = SpawnPacket(43);
+            var spawnReader = new NetDataReader(bytes);
+            spawnReader.GetPackedUInt();
+            spawnReader.GetUShort();
+            var writer = new NetDataWriter();
+            writer.PutPackedUInt(11);
+            writer.Put((ushort)2);
+            writer.Put((byte)GameStateSyncType.Destroy);
+            writer.PutPackedUInt(42);
+            writer.Put(DestroyObjectReasons.RequestedToDestroy);
+            writer.Put(bytes, spawnReader.Position, spawnReader.AvailableBytes);
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, writer.CopyData());
+            Assert.IsTrue(assets.requestedHandle.IsValid());
+            assets.operation.Finish(prefabRoot);
+            yield return Until(() => assets.SpawnedObjects.ContainsKey(43));
+            Assert.IsFalse(assets.SpawnedObjects.ContainsKey(42));
+            Assert.AreEqual(1, assets.loads);
+        }
+
+        [UnityTest]
+        public IEnumerator ANewMapSessionDoesNotReceiveAnOldSessionsLoadCompletion()
+        {
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, SpawnPacket());
+            var oldOperation = assets.operation;
+            assets.Clear();
+            assets.RegisterPrefabs().GetAwaiter().GetResult();
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, SpawnPacket(43));
+            oldOperation.Finish(prefabRoot);
+            yield return null;
+            Assert.IsEmpty(assets.SpawnedObjects);
+            assets.operation.Finish(prefabRoot);
+            yield return Until(() => assets.SpawnedObjects.ContainsKey(43));
+            Assert.IsFalse(assets.SpawnedObjects.ContainsKey(42));
+        }
+
+        [UnityTest]
+        public IEnumerator CachedSpawnsDoNotCreateAnAsyncMessageQueue()
+        {
+            var loaded = assets.EnsureClientPrefabAsync(prefab.HashAssetId, CancellationToken.None).AsTask();
+            assets.operation.Finish(prefabRoot);
+            yield return Until(() => loaded.IsCompleted);
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, SpawnPacket());
+            Assert.IsTrue(assets.SpawnedObjects.ContainsKey(42));
+            Assert.IsNull(typeof(LiteNetLibGameManager).GetField("clientPrefabMessages", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(manager));
+            Assert.AreEqual(1, assets.loads);
+        }
+
+        [UnityTest]
+        public IEnumerator ASpawnBurstIsSpreadAcrossFramesAndKeepsQueuedDespawnOrder()
+        {
+            var writer = new NetDataWriter();
+            writer.PutPackedUInt(10);
+            writer.Put((ushort)48);
+            for (uint id = 1; id <= 48; ++id)
+            {
+                var bytes = SpawnPacket(id);
+                var packet = new NetDataReader(bytes);
+                packet.GetPackedUInt();
+                packet.GetUShort();
+                writer.Put(bytes, packet.Position, packet.AvailableBytes);
+            }
+            Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, writer.CopyData());
+            for (uint id = 1; id <= 48; ++id)
+                Receive("HandleServerSyncBaseLine", GameMsgTypes.SyncBaseLine, DestroyPacket(id));
+            assets.operation.Finish(prefabRoot);
+            Assert.Less(assets.SpawnedObjects.Count, 48, "A burst must yield before spawning every object in one frame.");
+            yield return Until(() => assets.PooledObjects.TryGetValue(prefab.HashAssetId, out var pool) && pool.Count == 48);
+            Assert.IsEmpty(assets.SpawnedObjects);
+            Assert.AreEqual(1, assets.loads);
         }
 
         [UnityTest]
@@ -227,6 +386,22 @@ namespace LiteNetLibManager.Tests
             assets.ReleaseIdleClientPrefabs(Time.unscaledTime + 120);
             Assert.IsTrue(assets.GuidToPrefabs.ContainsKey(prefab.HashAssetId));
             Assert.IsTrue(assets.requestedHandle.IsValid());
+        }
+
+        [UnityTest]
+        public IEnumerator IdleReleaseDestroysUnusedPooledInstancesBeforeReleasingTheAsset()
+        {
+            var loaded = assets.EnsureClientPrefabAsync(prefab.HashAssetId, CancellationToken.None).AsTask();
+            assets.operation.Finish(prefabRoot);
+            yield return Until(() => loaded.IsCompleted);
+            var instance = assets.NetworkSpawn(prefab.HashAssetId, Vector3.zero, Quaternion.identity, 42);
+            Assert.IsTrue(assets.NetworkDestroy(instance, DestroyObjectReasons.RequestedToDestroy));
+            Assert.AreEqual(1, assets.PooledObjects[prefab.HashAssetId].Count);
+            assets.ReleaseIdleClientPrefabs(Time.unscaledTime + 61);
+            Assert.IsTrue(instance == null);
+            Assert.IsEmpty(assets.PooledObjects);
+            Assert.IsEmpty(assets.GuidToPrefabs);
+            yield return Until(() => !assets.requestedHandle.IsValid());
         }
 
         [UnityTest]
