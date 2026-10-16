@@ -873,6 +873,8 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerCallFunction(MessageHandlerData messageHandler)
         {
+            if (TryQueueClientPrefabMessage(messageHandler))
+                return;
             LiteNetLibElementInfo info = LiteNetLibElementInfo.DeserializeInfo(messageHandler.Reader);
             LiteNetLibIdentity identity;
             if (Assets.TryGetSpawnedObject(info.objectId, out identity))
@@ -903,6 +905,7 @@ namespace LiteNetLibManager
 
         protected virtual async void HandleServerSceneChange(ServerSceneInfo serverSceneInfo)
         {
+            ClearClientPrefabMessages();
             // Scene loaded at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;
@@ -927,6 +930,8 @@ namespace LiteNetLibManager
 
         protected virtual void HandleServerSetObjectOwner(MessageHandlerData messageHandler)
         {
+            if (TryQueueClientPrefabMessage(messageHandler))
+                return;
             // Object owner was set at server, if this is host (client and server) then skip it.
             if (IsServer)
                 return;

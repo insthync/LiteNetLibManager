@@ -471,7 +471,7 @@ namespace LiteNetLibManager
             Server.UnregisterMessageHandler(msgType);
         }
 
-        public void RegisterClientMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
+        public virtual void RegisterClientMessage(ushort msgType, MessageHandlerDelegate handlerDelegate)
         {
             Client.RegisterMessageHandler(msgType, handlerDelegate);
         }

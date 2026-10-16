@@ -58,6 +58,7 @@ namespace LiteNetLibManager
 
         private void ClearPendingRpcs()
         {
+            ClearClientPrefabMessages();
             _pendingRpcs.Clear();
             _pendingRpcBytes = 0;
         }
@@ -66,12 +67,16 @@ namespace LiteNetLibManager
         {
             if (IsServer)
                 return;
+            if (TryQueueClientPrefabMessage(messageHandler))
+                return;
             ReadGameStateFromServer(messageHandler.Reader);
         }
 
         protected virtual void HandleServerSyncDelta(MessageHandlerData messageHandler)
         {
             if (IsServer)
+                return;
+            if (TryQueueClientPrefabMessage(messageHandler))
                 return;
             ReadDeltaDataFromServer(messageHandler.Reader);
         }

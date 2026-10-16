@@ -10,7 +10,7 @@ using UnityEngine.Serialization;
 
 namespace LiteNetLibManager
 {
-    public class LiteNetLibAssets : MonoBehaviour
+    public partial class LiteNetLibAssets : MonoBehaviour
     {
         public const string TAG_NULL = "A?";
         private static int s_spawnPositionCounter = 0;
@@ -59,6 +59,8 @@ namespace LiteNetLibManager
         [Tooltip("Create all configured pool instances before gameplay. Leave off to create instances only when needed and reuse them after despawning.")]
         public bool prewarmPooling = false;
         public bool manuallyApplyOwnerChanges = false;
+        [Tooltip("Clients register Addressable prefab IDs without loading every prefab. Servers and hosts still preload them.")]
+        public bool loadClientPrefabsOnDemand = false;
 
         internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
@@ -119,6 +121,7 @@ namespace LiteNetLibManager
         public void Clear(bool doNotResetObjectId = false)
         {
             IsInitialized = false;
+            ClearClientPrefabLoads();
             ClearSpawnedObjects();
             ClearPooledObjects();
             SpawnPoints.Clear();
@@ -154,6 +157,11 @@ namespace LiteNetLibManager
 #endif
 
 #if !DISABLE_ADDRESSABLES
+            if (UsesClientPrefabLoading)
+            {
+                RegisterClientPrefabReferences();
+                return;
+            }
             List<UniTask<LiteNetLibIdentity>> ops = new List<UniTask<LiteNetLibIdentity>>();
             for (int i = 0; i < addressableSpawnablePrefabs.Length; ++i)
             {
@@ -203,6 +211,11 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - prefab is null.");
                 return null;
             }
+            if (UsesClientPrefabLoading)
+            {
+                RegisterClientPrefabReference(addressablePrefab);
+                return await EnsureClientPrefabAsync(addressablePrefab.HashAssetId, default);
+            }
             LiteNetLibIdentity prefab = await addressablePrefab.GetOrLoadAssetAsync<LiteNetLibIdentity>();
             if (prefab == null)
             {
@@ -229,7 +242,10 @@ namespace LiteNetLibManager
                 return false;
             }
             if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab: {addressablePrefab.HashAssetId}");
-            return GuidToPrefabs.Remove(addressablePrefab.HashAssetId);
+            bool removed = GuidToPrefabs.Remove(addressablePrefab.HashAssetId);
+            if (UsesClientPrefabLoading)
+                removed |= clientPrefabReferences.Remove(addressablePrefab.HashAssetId);
+            return removed;
         }
 #endif
 

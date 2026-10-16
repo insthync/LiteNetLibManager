@@ -5,6 +5,9 @@
         "LiteNetLibManager",
         "LiteNetLib",
         "UniTask",
+        "AddressableAssetTools",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
